@@ -1,0 +1,212 @@
+anzu_systems_core_dam:
+  settings:
+    api_domain: '%env(resolve:string:DOMAIN_CORE_DAM_API)%'
+    youtube_api_key: '%env(resolve:string:YOUTUBE_API_KEY)%'
+    elastic_index_prefix: '%env(resolve:string:ELASTIC_INDEX_PREFIX)%'
+    distribution_auth_redirect_url: '%env(resolve:string:DISTRIBUTION_AUTH_REDIRECT_URL)%'
+    default_ext_system_id: 1
+    default_asset_licence_id: 1
+    allow_select_ext_system: false
+    allow_select_licence: false
+    admin_allow_list_name: 'admin'
+    max_bulk_item_count: 10
+    app_redis: TestRedis
+    cache_redis: TestRedis
+    image_chunk_config:
+      min_size: 5000
+      max_size: 70000
+    acl_check_enabled: false
+  display_title:
+    image:
+      - 'customData:title'
+      - 'customData:headline'
+      - 'assetTexts:title'
+      - 'assetFileAttributes:originFileName'
+      - 'asset:id'
+      - 'assetFile:id'
+      - 'assetTexts:title'
+    audio:
+      - 'customData:title'
+      - 'customData:headline'
+      - 'assetTexts:title'
+      - 'assetFileAttributes:originFileName'
+      - 'asset:id'
+      - 'assetFile:id'
+      - 'assetTexts:title'
+    video:
+      - 'customData:title'
+      - 'customData:headline'
+      - 'assetTexts:title'
+      - 'assetFileAttributes:originFileName'
+      - 'asset:id'
+      - 'assetFile:id'
+      - 'assetTexts:title'
+    document:
+      - 'customData:title'
+      - 'customData:headline'
+      - 'assetTexts:title'
+      - 'assetFileAttributes:originFileName'
+      - 'asset:id'
+      - 'assetFile:id'
+      - 'assetTexts:title'
+  file_operations:
+    tmp_dir_path: '%kernel.project_dir%/var/mnt/data/tmp'
+    fixtures_dir_path: '%kernel.project_dir%/var/mnt/data/fixtures'
+  exif_metadata:
+    common_metadata:
+      Software: ~
+      ExifVersion:
+      ObjectName: ~
+      ByLine: ~
+      CaptionAbstract: ~
+      CopyrightNotice: ~
+      CountryPrimaryLocationName: ~
+      Make: ~
+      Artist: ~
+      Copyright: ~
+      Description: ~
+      Rights: ~
+      RightsUsageTerms: ~
+      Title: ~
+      Subject: ~
+      Headline: ~
+      SpecialInstructions: ~
+      SubLocation: ~
+      City: ~
+      Credit: ~
+      Source: ~
+      State: ~
+      Creator: ~
+      Country: ~
+      DateCreated: ~
+      CreditLine: ~
+      ProfileCopyright: ~
+      OwnerName: ~
+      Keywords: ~
+      Orientation: ~
+      ColorSpace: ~
+      Author: ~
+      Geolocation: ~
+    image_metadata:
+      Flash: ~
+      ImageDescription: ~
+      PersonInImage: ~
+  image_settings:
+    optimal_resizes: [ 500, 100, 50 ]
+    enable_crop_cache: true
+    color_set:
+      red:
+        rgb: [ 238, 2, 2 ]
+      yellow:
+        rgb: [ 251, 239, 0 ]
+      blue:
+        rgb: [ 30, 21, 246 ]
+      orange:
+        rgb: [ 244, 114, 0 ]
+      green:
+        rgb: [ 46, 145, 2 ]
+      purple:
+        rgb: [ 158, 11, 246 ]
+      white:
+        rgb: [ 255, 255, 255 ]
+      black:
+        rgb: [ 0, 0, 0 ]
+      pink:
+        rgb: [ 210, 7, 151 ]
+      brown:
+        rgb: [ 154, 0, 5 ]
+    crop_allow_list:
+      admin:
+        domains: [ admin ]
+        quality_whitelist: [ ]
+        crops:
+          - { width: 0, height: 200, tags: ['list'] }       # admin DAM listing
+          - { width: 1920, height: 0, tags: ['detail'] }    # admin DAM image crop
+          - { width: 200, height: 100}    # admin DAM image crop
+      web_cms:
+        domains: [ web_cms ]
+        quality_whitelist: [ 90 ]
+        crops:
+          - { width: 800, height: 450 }   # anzu web general
+          - { width: 350, height: 197 }   # anzu web box item photo
+  ext_systems:
+    cms:
+      id: 1
+      image:
+        title: ['customData:title']
+        custom_metadata_pinned_amount: 3
+        storage_name: 'cms.image'
+        crop_storage_name: 'cms.crop'
+        chunk_storage_name: 'cms.image'
+        size_limit: 104857600 # 100MB
+        roi_width: 16
+        roi_height: 9
+        file_versions:
+          default: default
+          versions: [ default, free ]
+      audio:
+        title: [ 'customData:title' ]
+        custom_metadata_pinned_amount: 3
+        storage_name: 'cms.audio'
+        chunk_storage_name: 'cms.audio'
+        size_limit: 104857600 # 100MB
+        file_versions:
+          default: free
+          versions: [ free, paid ]
+      video:
+        title: [ 'customData:title' ]
+        custom_metadata_pinned_amount: 3
+        storage_name: 'cms.video'
+        chunk_storage_name: 'cms.video'
+        size_limit: 5242880000  # 5GB
+        file_versions: ~
+        distribution:
+          distribution_services: [ youtube_cms_main ]
+          distribution_requirements:
+            youtube_cms_main:
+              title: 'Youtube CMS'
+              blocked_by: [ ]
+              strategy: none
+              distribution_metadata_map:
+                title: [ 'customData:title', 'customData:headline' ]
+                description: [ 'customData:description' ]
+              category_select:
+                enabled: true
+                required: false
+      document:
+        title: [ 'customData:title' ]
+        custom_metadata_pinned_amount: 3
+        storage_name: 'cms.document'
+        chunk_storage_name: 'cms.document'
+        size_limit: 1048576000 # 1GB
+        file_versions: ~
+  domains:
+    admin:
+      domain: '%env(resolve:string:DOMAIN_ADMIN_WEB)%'
+    web_cms:
+      domain: '%env(resolve:string:DOMAIN_CMS_WEB)%'
+  storages:
+    cms.audio:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/audio'
+    cms.image:
+        adapter: 'local'
+        options:
+            directory: '%kernel.project_dir%/var/mnt/data/image'
+    cms.document:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/document'
+    cms.video:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/video'
+    cms.chunk:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/chunk'
+    cms.crop:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/crop'

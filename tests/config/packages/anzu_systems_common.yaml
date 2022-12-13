@@ -1,0 +1,42 @@
+anzu_systems_common:
+    settings:
+        app_redis: TestRedis
+        app_cache_proxy_enabled: '%env(bool:APP_CACHE_PROXY_ENABLED)%'
+        user_entity_class: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User
+        app_entity_namespace: AnzuSystems\CoreDamBundle\Tests\Data\Entity
+        app_value_object_namespace: AnzuSystems\CoreDamBundle\Model\ValueObject
+        unlocked_commands:
+            - Doctrine\Bundle\DoctrineBundle\Command\DropDatabaseDoctrineCommand
+            - Doctrine\Bundle\DoctrineBundle\Command\CreateDatabaseDoctrineCommand
+            - Doctrine\Bundle\DoctrineBundle\Command\Proxy\UpdateSchemaDoctrineCommand
+            - AnzuSystems\CoreDamBundle\Command\GenerateFixturesCommand
+    health_check:
+        enabled: true
+        mysql_table_name: _doctrine_migration_versions
+        mongo_collections: [anzu_mongo_app_log_collection, anzu_mongo_audit_log_collection]
+        modules: []
+    errors:
+        enabled: true
+        default_exception_handler: AnzuSystems\CommonBundle\Exception\Handler\DefaultExceptionHandler
+        exception_handlers: []
+    logs:
+        enabled: true
+        messenger_transport:
+            name: 'common_bundle_log'
+            dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+        app:
+            mongo:
+                uri: '%env(ANZU_MONGODB_APP_LOG_URI)%'
+                username: '%env(ANZU_MONGODB_APP_LOG_USERNAME)%'
+                password: '%env(ANZU_MONGODB_APP_LOG_PASSWORD)%'
+                database: '%env(ANZU_MONGODB_APP_LOG_DB)%'
+                ssl: '%env(bool:ANZU_MONGODB_APP_LOG_SSL)%'
+            ignored_exceptions:
+                - Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+        audit:
+            mongo:
+                uri: '%env(ANZU_MONGODB_AUDIT_LOG_URI)%'
+                username: '%env(ANZU_MONGODB_AUDIT_LOG_USERNAME)%'
+                password: '%env(ANZU_MONGODB_AUDIT_LOG_PASSWORD)%'
+                database: '%env(ANZU_MONGODB_AUDIT_LOG_DB)%'
+                ssl: '%env(bool:ANZU_MONGODB_AUDIT_LOG_SSL)%'

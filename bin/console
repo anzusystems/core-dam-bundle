@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+use AnzuSystems\CoreDamBundle\Tests\AnzuTestKernel;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+
+if (!is_file(dirname(__DIR__).'/vendor/autoload_runtime.php')) {
+    throw new LogicException('Symfony Runtime is missing. Try running "composer require symfony/runtime".');
+}
+
+require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
+
+return static function (array $context): Application {
+    $kernel = new AnzuTestKernel(
+        appSystem: $context['APP_SYSTEM'],
+        appVersion: $context['APP_VERSION'],
+        appReadOnlyMode: (bool) $context['APP_READ_ONLY_MODE'],
+        environment: $context['APP_ENV'],
+        debug: (bool) $context['APP_DEBUG'],
+    );
+
+    return new Application($kernel);
+};

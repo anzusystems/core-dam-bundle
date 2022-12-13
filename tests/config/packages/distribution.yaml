@@ -1,0 +1,12 @@
+anzu_systems_core_dam:
+  distribution_services:
+    youtube_cms_main:
+      type: youtubeDistribution
+      title: Youtube CMS
+      module: AnzuSystems\CoreDamBundle\Distribution\Modules\YoutubeDistributionModule
+      auth_redirect_url: http://localhost/yt_cms
+      required_auth: true
+      options:
+        oauth_credentials: '%kernel.project_dir%/var/secure/youtube/yt_oauth2_credentials.json'
+        channel_id: ''
+        region_code: 'SK'

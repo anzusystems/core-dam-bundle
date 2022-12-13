@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
+
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Throwable;
+
+#[AsMessageHandler]
+final class AssetFileChangeStateHandler
+{
+    public function __construct(
+        private readonly AssetFileRepository $assetFileRepository,
+        private readonly AssetFileStatusFacadeProvider $facadeProvider,
+        private readonly DamLogger $damLogger,
+    ) {
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws RuntimeException
+     */
+    public function __invoke(AssetFileChangeStateMessage $message): void
+    {
+        $assetFile = $this->assetFileRepository->find($message->getAssetId());
+
+        if (null === $assetFile) {
+            return;
+        }
+
+        try {
+            match ($assetFile->getAssetAttributes()->getStatus()) {
+                AssetFileProcessStatus::Uploaded => $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile),
+                default => $this->damLogger->info(
+                    DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
+                    sprintf(
+                        'AssetFile (%s) change state to (%s) not suitable for handle',
+                        $assetFile->getId(),
+                        $assetFile->getAssetAttributes()->getStatus()->toString()
+                    ),
+                )
+            };
+        } catch (Throwable $e) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_CHANGE_STATE,
+                sprintf(
+                    'AssetFile (%s) change state to (%s) failed',
+                    $assetFile->getId(),
+                    $assetFile->getAssetAttributes()->getStatus()->toString()
+                ),
+                $e
+            );
+
+            throw new RuntimeException(message: $e->getMessage(), previous: $e);
+        }
+    }
+}
