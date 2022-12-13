@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Event\Subscriber;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropCache;
 use AnzuSystems\CoreDamBundle\Event\AssetFileDeleteEvent;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Notification\AssetFileNotificationDispatcher;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -14,6 +16,7 @@ final class AssetFileDeleteEventSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private readonly CropCache $cropCache,
+        private readonly AssetFileNotificationDispatcher $dispatcher
     ) {
     }
 
@@ -26,6 +29,7 @@ final class AssetFileDeleteEventSubscriber implements EventSubscriberInterface
 
     /**
      * @throws FilesystemException
+     * @throws SerializerException
      */
     public function deleteAssetFile(AssetFileDeleteEvent $event): void
     {
@@ -37,5 +41,7 @@ final class AssetFileDeleteEventSubscriber implements EventSubscriberInterface
                 );
             }
         }
+
+        $this->dispatcher->notifyAssetFileDeleted($event);
     }
 }

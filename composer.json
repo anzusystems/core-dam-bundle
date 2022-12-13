@@ -23,6 +23,7 @@
     "jcupitt/vips": "^1.0",
     "league/flysystem": "^3.7",
     "league/flysystem-google-cloud-storage": "^3.7",
+    "petitpress/gps-messenger-bundle": "^1.4",
     "php-ffmpeg/php-ffmpeg": "^1.0",
     "phpexiftool/exiftool": "^10.16",
     "sensio/framework-extra-bundle": "^6.2",
