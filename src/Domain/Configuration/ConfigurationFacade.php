@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Decorator\ExtSystemAdmGetDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Configuration\ConfigurationAdmGetDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Configuration\ConfigurationPubGetDto;
 
 final class ConfigurationFacade
 {
@@ -27,6 +28,15 @@ final class ConfigurationFacade
             $this->configurationProvider->getColorSet(),
             $this->assetExternalProviderConfigurationProvider->getAssetExternalProviders(),
             $this->distributionConfigurationProvider->getDistributionServices()
+        );
+    }
+
+    public function decoratePub(): ConfigurationPubGetDto
+    {
+        $decorator = $this->configurationProvider->getSettings();
+
+        return ConfigurationPubGetDto::getInstance(
+            $decorator
         );
     }
 

@@ -73,7 +73,7 @@ final class ElasticSearch
             if (false === $entities->containsKey($id)) {
                 $this->damLogger->error(
                     DamLogger::NAMESPACE_ELASTICSEARCH,
-                    "Entity ({$entityClassName}) with id (${id}) not exists in database"
+                    "Entity ({$entityClassName}) with id ({$id}) not exists in database"
                 );
 
                 continue;
