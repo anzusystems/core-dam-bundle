@@ -73,10 +73,27 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $distributionTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionTopic}";
         $distributionRemoteProcessedCheckTopic = '%env(MESSENGER_DISTRIBUTION_REMOTE_PROCESSED_CHECK_TOPIC)%';
         $distributionRemoteProcessedCheckTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
+        $notificationTopic = '%env(MESSENGER_NOTIFICATION_TOPIC)%';
+        $notificationTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
 
         $container->prependExtensionConfig('framework', [
             'messenger' => [
                 'transports' => [
+                    $notificationTopic => [
+                        'dsn' => $notificationTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $notificationTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $notificationTopic,
+                                        'topic' => $notificationTopic,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                     $distributionRemoteProcessedCheckTopic => [
                         'dsn' => $distributionRemoteProcessedCheckTopicDsn,
                         'options' => [

@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 final class SettingsConfiguration
 {
     public const API_DOMAIN_KEY = 'api_domain';
+    public const ENABLE_NOTIFICATIONS = 'enable_notifications';
     public const DEFAULT_EXT_SYSTEM_ID_KEY = 'default_ext_system_id';
     public const YOUTUBE_API_KEY_KEY = 'youtube_api_key';
     public const DISTRIBUTION_AUTH_REDIRECT_URL_KEY = 'distribution_auth_redirect_url';
@@ -26,6 +27,7 @@ final class SettingsConfiguration
 
     public function __construct(
         private readonly string $elasticIndexPrefix,
+        private readonly bool $enableNotifications,
         private readonly array $elasticLanguageDictionaries,
         private readonly string $apiDomainKey,
         private readonly string $youtubeApiKey,
@@ -46,6 +48,7 @@ final class SettingsConfiguration
     ): self {
         return new self(
             $settings[self::ELASTIC_INDEX_PREFIX_KEY] ?? '',
+            $settings[self::ENABLE_NOTIFICATIONS] ?? true,
             array_map(fn (string $language) => Language::from($language), $settings[self::ELASTIC_LANGUAGE_DICTIONARIES_KEY] ?? []),
             $settings[self::API_DOMAIN_KEY] ?? '',
             $settings[self::YOUTUBE_API_KEY_KEY] ?? '',
@@ -64,6 +67,11 @@ final class SettingsConfiguration
     public function getApiDomainKey(): string
     {
         return $this->apiDomainKey;
+    }
+
+    public function isEnableNotifications(): bool
+    {
+        return $this->enableNotifications;
     }
 
     public function getDefaultExtSystemId(): int

@@ -38,6 +38,8 @@ return static function (ContainerConfigurator $configurator): void {
         ->defaults()
         ->autowire(true)
         ->autoconfigure(true)
+
+        ->bind('$notificationTopic', env('string:MESSENGER_NOTIFICATION_TOPIC'))
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))
         ->bind('$distributionServices', param('anzu_systems.dam_bundle.distribution_services'))
