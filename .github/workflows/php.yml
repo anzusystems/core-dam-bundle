@@ -1,0 +1,74 @@
+name: CI for AnzuSystems Core-DAM Bundle by Petit Press a.s. (www.sme.sk)
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - php-version: 8.2
+            docker-image: anzusystems/php:1.0.0-php82-cli
+
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+        ports:
+          - 9200:9200
+        env:
+          cluster.routing.allocation.disk.threshold_enabled: false
+          discovery.type: "single-node"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          xpack.security.enabled: false
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_DATABASE: commonbundle
+      mongo:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: admin
+      redis:
+        image: redis:6.2
+        ports:
+          - 6379:6379
+
+    name: PHP ${{ matrix.php-version }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.docker-image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Validate composer.json
+        run: composer validate
+
+      - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-ansi --no-interaction --no-scripts
+
+      - name: Run Security check
+        run: local-php-security-checker --path=composer.lock
+
+      - name: Run ECS style check
+        run: vendor/bin/ecs check -vv
+
+      - name: Run PHPUnit tests
+        run: vendor/bin/phpunit

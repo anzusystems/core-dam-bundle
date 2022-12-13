@@ -1,0 +1,82 @@
+services:
+  app:
+    build:
+      args:
+        - DOCKER_USER=${DOCKER_USER:-user}
+        - DOCKER_USER_ID=${DOCKER_USER_ID:-1000}
+        - DOCKER_GROUP_ID=${DOCKER_GROUP_ID:-1000}
+      context: .
+    env_file:
+      - .env.docker.dist
+      - .env.docker.local
+    volumes:
+      - .:/var/www/html:cached
+      - ./tests/coverage:/opt/phpstorm-coverage:cached
+    hostname: core-dam-bundle
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+    environment:
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data:cached
+    ports:
+      - ${ELASTICSEARCH_DOCKER_PORT:-9410}:9200
+    hostname: elasticsearch
+
+  mongo:
+    image: mongo:5.0
+    command: --logappend ${MONGO_NOTABLESCAN:-}
+    env_file:
+      - .env.docker.dist
+      - .env.docker.local
+    volumes:
+      - mongo_data:/data/db:cached
+    ports:
+      - ${MONGO_DOCKER_PORT:-27417}:27017
+    hostname: mongo
+
+  mysql:
+    image: mysql:8.0
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --disable-log-bin
+    env_file:
+      - .env.docker.dist
+      - .env.docker.local
+    volumes:
+      - mysql_data:/var/lib/mysql:cached
+    ports:
+      - ${MYSQL_DOCKER_PORT:-3416}:3306
+    hostname: mysql
+
+  redis:
+    image: redis:6.2
+    volumes:
+      - redis_data:/data:cached
+    ports:
+      - ${REDIS_DOCKER_PORT:-6419}:6379
+    hostname: redis
+
+volumes:
+  elasticsearch_data:
+    driver: local
+
+  mongo_data:
+    driver: local
+
+  mysql_data:
+    driver: local
+
+  redis_data:
+    driver: local
+
+networks:
+  default:
