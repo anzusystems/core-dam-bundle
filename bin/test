@@ -8,7 +8,7 @@ cd "${PROJECT_ROOT}" || exit 1
 
 if [ -f /.dockerenv ]; then
     echo "[INFO] Running PHPUnit tests"
-    vendor/bin/phpunit "${ARGS}"
+    vendor/bin/simple-phpunit "${ARGS}"
     exit
 fi
 

@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
+use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -214,6 +215,10 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode(SettingsConfiguration::CACHE_REDIS_KEY)
                     ->isRequired()
+                ->end()
+                ->enumNode(SettingsConfiguration::USER_AUTH_TYPE_KEY)
+                    ->values(UserAuthType::values())
+                    ->defaultValue(UserAuthType::Default->toString())
                 ->end()
                 ->append($this->addChunkConfiguration())
             ->end();

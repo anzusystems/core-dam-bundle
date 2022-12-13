@@ -13,6 +13,7 @@ anzu_systems_core_dam:
     max_bulk_item_count: 10
     app_redis: TestRedis
     cache_redis: TestRedis
+    user_auth_type: json_credentials
     image_chunk_config:
       min_size: 5000
       max_size: 70000

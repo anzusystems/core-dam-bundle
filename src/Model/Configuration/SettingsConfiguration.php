@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
+use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 
 final class SettingsConfiguration
 {
@@ -21,6 +22,7 @@ final class SettingsConfiguration
     public const ACL_CHECK_ENABLED_KEY = 'acl_check_enabled';
     public const APP_REDIS_KEY = 'app_redis';
     public const CACHE_REDIS_KEY = 'cache_redis';
+    public const USER_AUTH_TYPE_KEY = 'user_auth_type';
     public const ADMIN_ALLOW_LIST_NAME_KEY = 'admin_allow_list_name';
     public const ELASTIC_INDEX_PREFIX_KEY = 'elastic_index_prefix';
     public const ELASTIC_LANGUAGE_DICTIONARIES_KEY = 'elastic_language_dictionaries';
@@ -38,6 +40,7 @@ final class SettingsConfiguration
         private readonly int $maxBulkItemCount,
         private readonly SettingsChunkConfiguration $imageChunkConfig,
         private readonly bool $aclCheckEnabled,
+        private readonly UserAuthType $userAuthType,
         private readonly string $adminAllowListName,
         private readonly string $distributionAuthRedirectUrl,
     ) {
@@ -59,6 +62,7 @@ final class SettingsConfiguration
             $settings[self::MAX_BULK_ITEM_COUNT_KEY] ?? 0,
             SettingsChunkConfiguration::getFromArrayConfiguration($settings[self::IMAGE_CHUNK_CONFIG_KEY] ?? []),
             $settings[self::ACL_CHECK_ENABLED_KEY] ?? true,
+            UserAuthType::tryFrom($settings[self::USER_AUTH_TYPE_KEY]) ?? UserAuthType::Default,
             $settings[self::ADMIN_ALLOW_LIST_NAME_KEY] ?? '',
             $settings[self::DISTRIBUTION_AUTH_REDIRECT_URL_KEY] ?? '',
         );
@@ -135,5 +139,10 @@ final class SettingsConfiguration
     public function getDistributionAuthRedirectUrl(): string
     {
         return $this->distributionAuthRedirectUrl;
+    }
+
+    public function getUserAuthType(): UserAuthType
+    {
+        return $this->userAuthType;
     }
 }

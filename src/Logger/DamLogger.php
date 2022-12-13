@@ -53,6 +53,6 @@ final class DamLogger
         $context->setContent($content);
         $context->setParams($params);
 
-        $this->appLogger->info("[${namespace}] ${message}", $this->serializer->toArray($context));
+        $this->appLogger->info("[{$namespace}] ${message}", $this->serializer->toArray($context));
     }
 }
