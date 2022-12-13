@@ -39,6 +39,10 @@ abstract class AbstractNotificationDispatcher
      */
     protected function notify(array $userIds, string $eventName, object $data = null): void
     {
+        if (false === $this->configurationProvider->getSettings()->isEnableNotifications()) {
+            return;
+        }
+
         $pubSubClient = new PubSubClient();
 
         $pubSubClient->topic($this->configurationProvider->getNotificationTopic())->publish(
