@@ -11,7 +11,7 @@ jobs:
       matrix:
         include:
           - php-version: 8.2
-            docker-image: anzusystems/php:1.0.0-php82-cli
+            docker-image: anzusystems/php:1.0.0-php82-cli-vipsffmpeg
 
     services:
       elasticsearch:
