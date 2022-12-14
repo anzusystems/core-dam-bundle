@@ -80,10 +80,10 @@ class DamPermissions
     public const DAM_PODCAST_DELETE = 'dam_podcast_delete';
 
     // Podcast Episode
-    public const DAM_PODCAST_EPISODE_CREATE = 'dam_podcast_episode_create';
-    public const DAM_PODCAST_EPISODE_UPDATE = 'dam_podcast_episode_update';
-    public const DAM_PODCAST_EPISODE_VIEW = 'dam_podcast_episode_view';
-    public const DAM_PODCAST_EPISODE_DELETE = 'dam_podcast_episode_delete';
+    public const DAM_PODCAST_EPISODE_CREATE = 'dam_podcastEpisode_create';
+    public const DAM_PODCAST_EPISODE_UPDATE = 'dam_podcastEpisode_update';
+    public const DAM_PODCAST_EPISODE_VIEW = 'dam_podcastEpisode_view';
+    public const DAM_PODCAST_EPISODE_DELETE = 'dam_podcastEpisode_delete';
 
     // Distribution Category
     public const DAM_DISTRIBUTION_CATEGORY_CREATE = 'dam_distributionCategory_create';
