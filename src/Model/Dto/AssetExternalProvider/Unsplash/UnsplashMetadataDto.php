@@ -12,7 +12,6 @@ final class UnsplashMetadataDto extends AssetExternalProviderMetadataDto
     private int $width;
     private int $height;
     private array $tags;
-    private string $authorName;
     private string $authorPortfolio;
 
     public static function getInstance(UnsplashImageDto $imageDto): self
@@ -61,19 +60,6 @@ final class UnsplashMetadataDto extends AssetExternalProviderMetadataDto
     public function setTags(array $tags): self
     {
         $this->tags = $tags;
-
-        return $this;
-    }
-
-    #[Serialize]
-    public function getAuthorName(): string
-    {
-        return $this->authorName;
-    }
-
-    public function setAuthorName(string $authorName): self
-    {
-        $this->authorName = $authorName;
 
         return $this;
     }
