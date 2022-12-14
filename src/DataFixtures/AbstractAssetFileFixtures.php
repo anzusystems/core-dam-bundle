@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
 
 abstract class AbstractAssetFileFixtures extends AbstractFixtures
 {
-    public const DATA_PATH = __DIR__ . '/../../tests/data/File/';
+    public const DATA_PATH = __DIR__ . '/../Resources/fixtures/';
 
     protected function getFile(LocalFilesystem $fileSystem, string $fileName): File
     {
