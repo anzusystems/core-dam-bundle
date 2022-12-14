@@ -122,18 +122,6 @@ final class AssetAdmSearchDto extends AbstractSearchDto
         return Asset::getResourceName();
     }
 
-    public function getPodcastIds(): array
-    {
-        return $this->podcastIds;
-    }
-
-    public function setPodcastIds(array $podcastIds): self
-    {
-        $this->podcastIds = $podcastIds;
-
-        return $this;
-    }
-
     public function getText(): string
     {
         return $this->text;
@@ -142,6 +130,18 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setText(string $text): self
     {
         $this->text = $text;
+
+        return $this;
+    }
+
+    public function getPodcastIds(): array
+    {
+        return $this->podcastIds;
+    }
+
+    public function setPodcastIds(array $podcastIds): self
+    {
+        $this->podcastIds = $podcastIds;
 
         return $this;
     }
@@ -170,6 +170,54 @@ final class AssetAdmSearchDto extends AbstractSearchDto
         return $this;
     }
 
+    public function getMostDominantColor(): array
+    {
+        return $this->mostDominantColor;
+    }
+
+    public function setMostDominantColor(array $mostDominantColor): self
+    {
+        $this->mostDominantColor = $mostDominantColor;
+
+        return $this;
+    }
+
+    public function getClosestMostDominantColor(): array
+    {
+        return $this->closestMostDominantColor;
+    }
+
+    public function setClosestMostDominantColor(array $closestMostDominantColor): self
+    {
+        $this->closestMostDominantColor = $closestMostDominantColor;
+
+        return $this;
+    }
+
+    public function getCodecName(): array
+    {
+        return $this->codecName;
+    }
+
+    public function setCodecName(array $codecName): self
+    {
+        $this->codecName = $codecName;
+
+        return $this;
+    }
+
+    public function getOrientation(): array
+    {
+        return $this->orientation;
+    }
+
+    public function setOrientation(array $orientation): self
+    {
+        $this->orientation = $orientation;
+
+        return $this;
+    }
+
     public function isDescribed(): ?bool
     {
         return $this->described;
@@ -190,6 +238,18 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setVisible(?bool $visible): self
     {
         $this->visible = $visible;
+
+        return $this;
+    }
+
+    public function isInPodcast(): ?bool
+    {
+        return $this->inPodcast;
+    }
+
+    public function setInPodcast(?bool $inPodcast): self
+    {
+        $this->inPodcast = $inPodcast;
 
         return $this;
     }
@@ -230,6 +290,54 @@ final class AssetAdmSearchDto extends AbstractSearchDto
         return $this;
     }
 
+    public function getWidthFrom(): ?int
+    {
+        return $this->widthFrom;
+    }
+
+    public function setWidthFrom(?int $widthFrom): self
+    {
+        $this->widthFrom = $widthFrom;
+
+        return $this;
+    }
+
+    public function getWidthUntil(): ?int
+    {
+        return $this->widthUntil;
+    }
+
+    public function setWidthUntil(?int $widthUntil): self
+    {
+        $this->widthUntil = $widthUntil;
+
+        return $this;
+    }
+
+    public function getHeightFrom(): ?int
+    {
+        return $this->heightFrom;
+    }
+
+    public function setHeightFrom(?int $heightFrom): self
+    {
+        $this->heightFrom = $heightFrom;
+
+        return $this;
+    }
+
+    public function getHeightUntil(): ?int
+    {
+        return $this->heightUntil;
+    }
+
+    public function setHeightUntil(?int $heightUntil): self
+    {
+        $this->heightUntil = $heightUntil;
+
+        return $this;
+    }
+
     public function getRatioWidthFrom(): ?int
     {
         return $this->ratioWidthFrom;
@@ -250,6 +358,30 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setRatioWidthUntil(?int $ratioWidthUntil): self
     {
         $this->ratioWidthUntil = $ratioWidthUntil;
+
+        return $this;
+    }
+
+    public function getRatioHeightFrom(): ?int
+    {
+        return $this->ratioHeightFrom;
+    }
+
+    public function setRatioHeightFrom(?int $ratioHeightFrom): self
+    {
+        $this->ratioHeightFrom = $ratioHeightFrom;
+
+        return $this;
+    }
+
+    public function getRatioHeightUntil(): ?int
+    {
+        return $this->ratioHeightUntil;
+    }
+
+    public function setRatioHeightUntil(?int $ratioHeightUntil): self
+    {
+        $this->ratioHeightUntil = $ratioHeightUntil;
 
         return $this;
     }
@@ -322,131 +454,6 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setBitrateUntil(?int $bitrateUntil): self
     {
         $this->bitrateUntil = $bitrateUntil;
-
-        return $this;
-    }
-
-    public function getMostDominantColor(): array
-    {
-        return $this->mostDominantColor;
-    }
-
-    public function setMostDominantColor(array $mostDominantColor): self
-    {
-        $this->mostDominantColor = $mostDominantColor;
-
-        return $this;
-    }
-
-    public function getClosestMostDominantColor(): array
-    {
-        return $this->closestMostDominantColor;
-    }
-
-    public function setClosestMostDominantColor(array $closestMostDominantColor): self
-    {
-        $this->closestMostDominantColor = $closestMostDominantColor;
-
-        return $this;
-    }
-
-    public function getCodecName(): array
-    {
-        return $this->codecName;
-    }
-
-    public function setCodecName(array $codecName): self
-    {
-        $this->codecName = $codecName;
-
-        return $this;
-    }
-
-    public function getRatioHeightFrom(): ?int
-    {
-        return $this->ratioHeightFrom;
-    }
-
-    public function setRatioHeightFrom(?int $ratioHeightFrom): self
-    {
-        $this->ratioHeightFrom = $ratioHeightFrom;
-
-        return $this;
-    }
-
-    public function getRatioHeightUntil(): ?int
-    {
-        return $this->ratioHeightUntil;
-    }
-
-    public function setRatioHeightUntil(?int $ratioHeightUntil): self
-    {
-        $this->ratioHeightUntil = $ratioHeightUntil;
-
-        return $this;
-    }
-
-    public function getWidthFrom(): ?int
-    {
-        return $this->widthFrom;
-    }
-
-    public function setWidthFrom(?int $widthFrom): self
-    {
-        $this->widthFrom = $widthFrom;
-
-        return $this;
-    }
-
-    public function getWidthUntil(): ?int
-    {
-        return $this->widthUntil;
-    }
-
-    public function setWidthUntil(?int $widthUntil): self
-    {
-        $this->widthUntil = $widthUntil;
-
-        return $this;
-    }
-
-    public function getHeightFrom(): ?int
-    {
-        return $this->heightFrom;
-    }
-
-    public function setHeightFrom(?int $heightFrom): self
-    {
-        $this->heightFrom = $heightFrom;
-
-        return $this;
-    }
-
-    public function getHeightUntil(): ?int
-    {
-        return $this->heightUntil;
-    }
-
-    public function setHeightUntil(?int $heightUntil): self
-    {
-        $this->heightUntil = $heightUntil;
-
-        return $this;
-    }
-
-    public function getOrientation(): array
-    {
-        return $this->orientation;
-    }
-
-    public function isInPodcast(): ?bool
-    {
-        return $this->inPodcast;
-    }
-
-    public function setInPodcast(?bool $inPodcast): self
-    {
-        $this->inPodcast = $inPodcast;
 
         return $this;
     }
