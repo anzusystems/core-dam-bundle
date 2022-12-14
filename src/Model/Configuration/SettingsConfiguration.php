@@ -62,7 +62,7 @@ final class SettingsConfiguration
             $settings[self::MAX_BULK_ITEM_COUNT_KEY] ?? 0,
             SettingsChunkConfiguration::getFromArrayConfiguration($settings[self::IMAGE_CHUNK_CONFIG_KEY] ?? []),
             $settings[self::ACL_CHECK_ENABLED_KEY] ?? true,
-            UserAuthType::tryFrom($settings[self::USER_AUTH_TYPE_KEY]) ?? UserAuthType::Default,
+            UserAuthType::tryFrom((string) $settings[self::USER_AUTH_TYPE_KEY]) ?? UserAuthType::Default,
             $settings[self::ADMIN_ALLOW_LIST_NAME_KEY] ?? '',
             $settings[self::DISTRIBUTION_AUTH_REDIRECT_URL_KEY] ?? '',
         );

@@ -1,6 +1,3 @@
-# Test files used for fixtures
-!tests/data/File/*
-
 .docker-composer.linux.yml export-ignore
 .docker-composer.yml export-ignore
 .dockerignore export-ignore
