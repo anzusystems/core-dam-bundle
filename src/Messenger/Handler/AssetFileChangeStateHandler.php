@@ -18,7 +18,6 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
-#[AsMessageHandler]
 final readonly class AssetFileChangeStateHandler
 {
     public function __construct(
