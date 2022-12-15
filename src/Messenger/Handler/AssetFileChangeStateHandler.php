@@ -7,7 +7,11 @@ namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AbstractAssetFileMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -15,12 +19,12 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
 #[AsMessageHandler]
-final class AssetFileChangeStateHandler
+final readonly class AssetFileChangeStateHandler
 {
     public function __construct(
-        private readonly AssetFileRepository $assetFileRepository,
-        private readonly AssetFileStatusFacadeProvider $facadeProvider,
-        private readonly DamLogger $damLogger,
+        private AssetFileRepository $assetFileRepository,
+        private AssetFileStatusFacadeProvider $facadeProvider,
+        private DamLogger $damLogger,
     ) {
     }
 
@@ -28,7 +32,47 @@ final class AssetFileChangeStateHandler
      * @throws SerializerException
      * @throws RuntimeException
      */
-    public function __invoke(AssetFileChangeStateMessage $message): void
+    #[AsMessageHandler]
+    public function handleVideoFile(VideoFileChangeStateMessage $message): void
+    {
+        $this->handleAssetFile($message);
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws RuntimeException
+     */
+    #[AsMessageHandler]
+    public function handleAudioFile(AudioFileChangeStateMessage $message): void
+    {
+        $this->handleAssetFile($message);
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws RuntimeException
+     */
+    #[AsMessageHandler]
+    public function handleImageFile(ImageFileChangeStateMessage $message): void
+    {
+        $this->handleAssetFile($message);
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws RuntimeException
+     */
+    #[AsMessageHandler]
+    public function handleDocumentFile(DocumentFileChangeStateMessage $message): void
+    {
+        $this->handleAssetFile($message);
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws RuntimeException
+     */
+    private function handleAssetFile(AbstractAssetFileMessage $message): void
     {
         $assetFile = $this->assetFileRepository->find($message->getAssetId());
 
