@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -48,6 +48,6 @@ final class EpisodeRssImportManager
 
         $this->assetFileStatusManager->toUploaded($audioFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($audioFile);
-        $this->messageBus->dispatch(new AssetFileChangeStateMessage($audioFile));
+        $this->messageBus->dispatch(new VideoFileChangeStateMessage($audioFile));
     }
 }
