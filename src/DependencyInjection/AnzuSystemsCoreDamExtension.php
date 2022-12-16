@@ -359,7 +359,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     ],
                 ]);
 
-                if (true === ($config['settings']['notifications']['enabled'] ?? true)) {
+                if (true === $configSettings['notifications']['enabled'] ?? true)) {
                     $notificationTopic = '%env(MESSENGER_NOTIFICATION_TOPIC)%';
                     $notificationTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$notificationTopic}";
                     $container->prependExtensionConfig('anzu_systems_core_dam', [
