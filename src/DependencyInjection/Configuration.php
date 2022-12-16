@@ -386,6 +386,7 @@ class Configuration implements ConfigurationInterface
 
         if ($type->is(AssetType::Audio)) {
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
+            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }
 
         $config->append($this->addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));
