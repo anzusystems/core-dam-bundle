@@ -14,10 +14,13 @@ use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\GCloudFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileMetadataProcessMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
@@ -63,8 +66,15 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         ]);
 
         $applicationName = 'core_dam';
-        $assetFileChangeStateTopic = '%env(MESSENGER_ASSET_FILE_CHANGE_STATE_TOPIC)%';
-        $assetFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetFileChangeStateTopic}";
+
+        $imageFileChangeStateTopic = '%env(MESSENGER_IMAGE_FILE_CHANGE_STATE_TOPIC)%';
+        $imageFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$imageFileChangeStateTopic}";
+        $videoFileChangeStateTopic = '%env(MESSENGER_VIDEO_FILE_CHANGE_STATE_TOPIC)%';
+        $videoFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$videoFileChangeStateTopic}";
+        $documentFileChangeStateTopic = '%env(MESSENGER_DOCUMENT_FILE_CHANGE_STATE_TOPIC)%';
+        $documentFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$documentFileChangeStateTopic}";
+        $audioFileChangeStateTopic = '%env(MESSENGER_AUDIO_FILE_CHANGE_STATE_TOPIC)%';
+        $audioFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$audioFileChangeStateTopic}";
         $assetDeleteTopic = '%env(MESSENGER_ASSET_CHANGE_STATE_TOPIC)%';
         $assetDeleteTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetDeleteTopic}";
         $assetFileMetadataProcessTopic = '%env(MESSENGER_ASSET_METADATA_PROCESS_TOPIC)%';
@@ -123,25 +133,109 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                         ],
                     ],
-                    $assetFileChangeStateTopic => [
-                        'dsn' => $assetFileChangeStateTopicDsn,
+                    $imageFileChangeStateTopic => [
+                        'dsn' => $imageFileChangeStateTopicDsn,
                         'options' => [
                             'topic' => [
-                                'name' => $assetFileChangeStateTopic,
+                                'name' => $imageFileChangeStateTopic,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
-                                        'name' => $assetFileChangeStateTopic,
-                                        'topic' => $assetFileChangeStateTopic,
+                                        'name' => $imageFileChangeStateTopic,
+                                        'topic' => $imageFileChangeStateTopic,
                                     ],
                                 ],
                             ],
                             'subscription' => [
-                                'name' => $assetFileChangeStateTopic,
+                                'name' => $imageFileChangeStateTopic,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
-                                        'name' => $assetFileChangeStateTopic,
+                                        'name' => $imageFileChangeStateTopic,
+                                    ],
+                                    'retryPolicy' => [
+                                        'minimumBackoff' => '2s',
+                                        'maximumBackoff' => '600s',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    $documentFileChangeStateTopic => [
+                        'dsn' => $documentFileChangeStateTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $documentFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $documentFileChangeStateTopic,
+                                        'topic' => $documentFileChangeStateTopic,
+                                    ],
+                                ],
+                            ],
+                            'subscription' => [
+                                'name' => $documentFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $documentFileChangeStateTopic,
+                                    ],
+                                    'retryPolicy' => [
+                                        'minimumBackoff' => '2s',
+                                        'maximumBackoff' => '600s',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    $audioFileChangeStateTopic => [
+                        'dsn' => $audioFileChangeStateTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $audioFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $audioFileChangeStateTopic,
+                                        'topic' => $audioFileChangeStateTopic,
+                                    ],
+                                ],
+                            ],
+                            'subscription' => [
+                                'name' => $audioFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $audioFileChangeStateTopic,
+                                    ],
+                                    'retryPolicy' => [
+                                        'minimumBackoff' => '2s',
+                                        'maximumBackoff' => '600s',
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    $videoFileChangeStateTopic => [
+                        'dsn' => $videoFileChangeStateTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $videoFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $videoFileChangeStateTopic,
+                                        'topic' => $videoFileChangeStateTopic,
+                                    ],
+                                ],
+                            ],
+                            'subscription' => [
+                                'name' => $videoFileChangeStateTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $videoFileChangeStateTopic,
                                     ],
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
@@ -237,7 +331,10 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     ],
                 ],
                 'routing' => [
-                    AssetFileChangeStateMessage::class => $assetFileChangeStateTopic,
+                    VideoFileChangeStateMessage::class => $videoFileChangeStateTopic,
+                    AudioFileChangeStateMessage::class => $audioFileChangeStateTopic,
+                    DocumentFileChangeStateMessage::class => $documentFileChangeStateTopic,
+                    ImageFileChangeStateMessage::class => $imageFileChangeStateTopic,
                     AssetChangeStateMessage::class => $assetDeleteTopic,
                     AssetFileMetadataProcessMessage::class => $assetFileMetadataProcessTopic,
                     DistributeMessage::class => $distributionTopic,

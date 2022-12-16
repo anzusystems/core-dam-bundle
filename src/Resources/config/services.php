@@ -9,9 +9,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNamGeneratorInterface;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGeneratorInterface;
-use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileChangeStateHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileMetadataProcessHandler;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\AssetExternalProviderApiParamConverter;
 use Elasticsearch\Client;
@@ -66,10 +64,6 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(FileNameGeneratorInterface::class . ' $fileNameGenerator', FileNameGenerator::class);
     $services->set(DirectoryNamGeneratorInterface::class . ' $directoryNameGenerator', DirectoryNameGenerator::class);
-
-    $services->set(AssetFileChangeStateHandler::class)
-        ->tag('messenger.message_handler', ['handler' => AssetFileChangeStateMessage::class])
-    ;
 
     $services->set(AssetFileMetadataProcessHandler::class)
         ->tag('messenger.message_handler', ['handler' => DistributionRemoteProcessingCheckMessage::class])

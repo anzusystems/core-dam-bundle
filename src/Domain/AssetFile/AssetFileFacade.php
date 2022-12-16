@@ -18,7 +18,7 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDtoInterface;
@@ -145,7 +145,7 @@ abstract class AssetFileFacade
             throw new RuntimeException('asset_file_upload_failed', 0, $exception);
         }
 
-        $this->messageBus->dispatch(new AssetFileChangeStateMessage($assetFile));
+        $this->messageBus->dispatch(new VideoFileChangeStateMessage($assetFile));
 
         return $assetFile;
     }

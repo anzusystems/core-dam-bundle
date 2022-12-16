@@ -17,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
-use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -34,14 +33,13 @@ use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 {
     protected AssetFileStatusManager $assetStatusManager;
-    protected MessageBusInterface $messageBus;
+    protected AssetFileMessageDispatcher $assetFileMessageDispatcher;
     protected FileFactory $fileFactory;
     protected AssetFileStorageOperator $assetFileStorageOperator;
     protected AssetFileEventDispatcher $assetFileEventDispatcher;
@@ -109,9 +107,9 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     }
 
     #[Required]
-    public function setMessageBus(MessageBusInterface $messageBus): void
+    public function setAssetFileMessageDispatcher(AssetFileMessageDispatcher $assetFileMessageDispatcher): void
     {
-        $this->messageBus = $messageBus;
+        $this->assetFileMessageDispatcher = $assetFileMessageDispatcher;
     }
 
     #[Required]
@@ -148,7 +146,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->assetStatusManager->setNotifyTo($assetFile);
         $this->assetStatusManager->toUploaded($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
-        $this->messageBus->dispatch(new AssetFileChangeStateMessage($assetFile));
+        $this->assetFileMessageDispatcher->dispatchAssetFileChangeState($assetFile);
 
         return $assetFile;
     }
@@ -157,6 +155,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws FilesystemException
      * @throws NonUniqueResultException
      * @throws SerializerException
+     * @throws TransportExceptionInterface
      */
     public function storeAndProcess(AssetFile $assetFile, ?File $file = null): AssetFile
     {
@@ -230,7 +229,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->indexManager->index($assetFile->getAsset()->getAsset());
 
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
-        $this->messageBus->dispatch(new AssetFileChangeStateMessage($assetFile));
 
         return $assetFile;
     }
