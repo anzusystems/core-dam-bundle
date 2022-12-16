@@ -15,6 +15,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\PodcastEpisodeApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
+use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeBodyFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -38,6 +39,7 @@ final class PodcastEpisodeController extends AbstractApiController
     public function __construct(
         private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
         private readonly PodcastEpisodeFacade $podcastEpisodeFacade,
+        private readonly PodcastEpisodeBodyFacade $episodeBodyFacade,
     ) {
     }
 
@@ -48,6 +50,19 @@ final class PodcastEpisodeController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $podcastEpisode);
 
         return $this->okResponse($podcastEpisode);
+    }
+
+    /**
+     * @throws ORMException
+     */
+    #[Route('/asset/{asset}/podcast/{podcast}/prepare-payload', name: 'prepare_payload', methods: [Request::METHOD_GET])]
+    #[OAResponse([PodcastEpisode::class])]
+    public function preparePayload(Asset $asset, Podcast $podcast): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+
+        return $this->okResponse($this->episodeBodyFacade->preparePayload($asset, $podcast));
     }
 
     /**
