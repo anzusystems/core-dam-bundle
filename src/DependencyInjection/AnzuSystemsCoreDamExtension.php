@@ -83,27 +83,10 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $distributionTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionTopic}";
         $distributionRemoteProcessedCheckTopic = '%env(MESSENGER_DISTRIBUTION_REMOTE_PROCESSED_CHECK_TOPIC)%';
         $distributionRemoteProcessedCheckTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
-        $notificationTopic = '%env(MESSENGER_NOTIFICATION_TOPIC)%';
-        $notificationTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
 
         $container->prependExtensionConfig('framework', [
             'messenger' => [
                 'transports' => [
-                    $notificationTopic => [
-                        'dsn' => $notificationTopicDsn,
-                        'options' => [
-                            'topic' => [
-                                'name' => $notificationTopic,
-                                'options' => [
-                                    'labels' => [
-                                        'application' => $applicationName,
-                                        'name' => $notificationTopic,
-                                        'topic' => $notificationTopic,
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ],
                     $distributionRemoteProcessedCheckTopic => [
                         'dsn' => $distributionRemoteProcessedCheckTopicDsn,
                         'options' => [
@@ -356,24 +339,67 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             ],
         ]);
 
-        foreach ($container->getExtensionConfig($this->getAlias()) as $configCategories) {
-            if (array_key_exists('settings', $configCategories)) {
+        foreach ($container->getExtensionConfig($this->getAlias()) as $config) {
+            if (array_key_exists('settings', $config)) {
+                $configSettings = $config['settings'];
                 $container->prependExtensionConfig('framework', [
                     'cache' => [
                         'pools' => [
                             'core_dam_bundle.asset_external_provider_cache' => [
                                 'adapter' => 'cache.adapter.redis',
-                                'provider' => $configCategories['settings'][SettingsConfiguration::CACHE_REDIS_KEY],
+                                'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
                                 'default_lifetime' => 'PT3M',
                             ],
                             'core_dam_bundle.youtube_cache' => [
                                 'adapter' => 'cache.adapter.redis',
-                                'provider' => $configCategories['settings'][SettingsConfiguration::CACHE_REDIS_KEY],
+                                'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
                                 'default_lifetime' => 'PT1M',
                             ],
                         ],
                     ],
                 ]);
+
+                if (true === ($config['settings']['notifications']['enabled'] ?? true)) {
+                    $notificationTopic = '%env(MESSENGER_NOTIFICATION_TOPIC)%';
+                    $notificationTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$notificationTopic}";
+                    $container->prependExtensionConfig('anzu_systems_core_dam', [
+                        'settings' => [
+                            'notifications' => [
+                                'topic' => $notificationTopic,
+                            ],
+                        ],
+                    ]);
+                    $container->prependExtensionConfig('framework', [
+                        'cache' => [
+                            'pools' => [
+                                'core_dam_bundle.pub_sub_token_cache' => [
+                                    'adapter' => 'cache.adapter.redis',
+                                    'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
+                                    'default_lifetime' => '1 day',
+                                ],
+                            ],
+                        ],
+                        'messenger' => [
+                            'transports' => [
+                                $notificationTopic => [
+                                    'dsn' => $notificationTopicDsn,
+                                    'options' => [
+                                        'topic' => [
+                                            'name' => $notificationTopic,
+                                            'options' => [
+                                                'labels' => [
+                                                    'application' => $applicationName,
+                                                    'name' => $notificationTopic,
+                                                    'topic' => $notificationTopic,
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ]);
+                }
             }
         }
     }
