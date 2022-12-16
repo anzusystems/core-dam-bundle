@@ -1,7 +1,7 @@
 anzu_systems_core_dam:
   settings:
     api_domain: '%env(resolve:string:DOMAIN_CORE_DAM_API)%'
-    enable_notifications: false
+    notifications: false
     youtube_api_key: '%env(resolve:string:YOUTUBE_API_KEY)%'
     elastic_index_prefix: '%env(resolve:string:ELASTIC_INDEX_PREFIX)%'
     distribution_auth_redirect_url: '%env(resolve:string:DISTRIBUTION_AUTH_REDIRECT_URL)%'
