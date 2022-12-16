@@ -52,14 +52,11 @@ final class PodcastEpisodeController extends AbstractApiController
         return $this->okResponse($podcastEpisode);
     }
 
-    /**
-     * @throws ORMException
-     */
     #[Route('/asset/{asset}/podcast/{podcast}/prepare-payload', name: 'prepare_payload', methods: [Request::METHOD_GET])]
-    #[OAResponse([PodcastEpisode::class])]
+    #[OAResponse(PodcastEpisode::class)]
     public function preparePayload(Asset $asset, Podcast $podcast): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $podcast);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
 
         return $this->okResponse($this->episodeBodyFacade->preparePayload($asset, $podcast));
