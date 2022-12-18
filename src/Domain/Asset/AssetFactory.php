@@ -13,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetAttributes;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetTexts;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
@@ -30,10 +29,7 @@ final class AssetFactory
 
     public function createFromAdmDto(AssetAdmCreateDto $createDto, AssetLicence $assetLicence): Asset
     {
-        return $this->initAsset($createDto->getType(), $assetLicence)
-            ->setTexts(
-                (new AssetTexts())
-            );
+        return $this->initAsset($createDto->getType(), $assetLicence);
     }
 
     public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence): Asset
