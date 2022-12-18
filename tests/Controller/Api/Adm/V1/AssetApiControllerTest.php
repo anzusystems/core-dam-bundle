@@ -64,4 +64,22 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
         $this->assertEquals(0, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
     }
+
+    /**
+     * @dataProvider getData
+     */
+    public function testCreate(string $type): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $response = $client->post('/api/adm/v1/asset/licence/'.AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
+
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+    }
+
+    private function getData(): array
+    {
+        return [
+            ['image'],
+        ];
+    }
 }
