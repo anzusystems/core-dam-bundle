@@ -11,13 +11,13 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 
-final readonly class PodcastEpisodeBodyFacade
+final class PodcastEpisodeBodyFacade
 {
     public function __construct(
-        private PodcastEpisodeManager $podcastManager,
-        private AssetTextsWriter $assetTextsWriter,
-        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
-        private PodcastEpisodeRepository $podcastEpisodeRepository,
+        private readonly PodcastEpisodeManager $podcastManager,
+        private readonly AssetTextsWriter $assetTextsWriter,
+        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
     ) {
     }
 
