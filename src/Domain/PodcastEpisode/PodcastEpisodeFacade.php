@@ -8,11 +8,11 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 
-final class PodcastEpisodeFacade
+final readonly class PodcastEpisodeFacade
 {
     public function __construct(
-        private readonly EntityValidator $validator,
-        private readonly PodcastEpisodeManager $podcastManager,
+        private EntityValidator $validator,
+        private PodcastEpisodeManager $podcastManager,
     ) {
     }
 

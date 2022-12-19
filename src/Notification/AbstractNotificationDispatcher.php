@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Cloud\PubSub\Message;
 use Google\Cloud\PubSub\PubSubClient;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractNotificationDispatcher
@@ -18,6 +19,7 @@ abstract class AbstractNotificationDispatcher
 
     protected CurrentAnzuUserProvider $currentUserProvider;
     protected ConfigurationProvider $configurationProvider;
+    private CacheItemPoolInterface $coreDamBundlePubSubTokenCache;
 
 
     #[Required]
@@ -32,6 +34,12 @@ abstract class AbstractNotificationDispatcher
         $this->configurationProvider = $configurationProvider;
     }
 
+    #[Required]
+    public function setCoreDamBundlePubSubTokenCache(CacheItemPoolInterface $coreDamBundlePubSubTokenCache): void
+    {
+        $this->coreDamBundlePubSubTokenCache = $coreDamBundlePubSubTokenCache;
+    }
+
     /**
      * @param list<int> $userIds
      *
@@ -39,13 +47,17 @@ abstract class AbstractNotificationDispatcher
      */
     protected function notify(array $userIds, string $eventName, object $data = null): void
     {
-        if (false === $this->configurationProvider->getSettings()->isEnableNotifications()) {
+        $notificationsConfig = $this->configurationProvider->getSettings()->getNotificationsConfig();
+        if ($notificationsConfig->isDisabled()) {
             return;
         }
 
-        $pubSubClient = new PubSubClient();
+        $pubSubClient = new PubSubClient([
+            ...$notificationsConfig->getGpsConfig(),
+            ...['authCache' => $this->coreDamBundlePubSubTokenCache],
+        ]);
 
-        $pubSubClient->topic($this->configurationProvider->getNotificationTopic())->publish(
+        $pubSubClient->topic($notificationsConfig->getTopic())->publish(
             new Message([
                 'attributes' => [
                     'targetSsoUserIds' => json_encode($userIds),

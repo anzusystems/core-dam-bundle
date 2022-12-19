@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadata
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
@@ -159,8 +160,14 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(SettingsConfiguration::API_DOMAIN_KEY)
                     ->isRequired()
                 ->end()
-                ->booleanNode(SettingsConfiguration::ENABLE_NOTIFICATIONS)
-                    ->defaultTrue()
+                ->arrayNode(SettingsConfiguration::NOTIFICATIONS)
+                    ->canBeDisabled()
+                    ->children()
+                        ->scalarNode(NotificationsConfiguration::TOPIC)->end()
+                        ->arrayNode(NotificationsConfiguration::GPS_CONFIG)
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
                 ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()
@@ -386,6 +393,7 @@ class Configuration implements ConfigurationInterface
 
         if ($type->is(AssetType::Audio)) {
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
+            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }
 
         $config->append($this->addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));

@@ -4,22 +4,21 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class AssetTextsWriter
+final readonly class AssetTextsWriter
 {
     public function __construct(
-        private readonly PropertyAccessorInterface $propertyAccessor,
-        private readonly AssetTextStringNormalizer $textStringNormalizer,
+        private PropertyAccessorInterface $propertyAccessor,
+        private AssetTextStringNormalizer $textStringNormalizer,
     ) {
     }
 
     /**
      * @param array<string, TextsWriterConfiguration> $config
      */
-    public function writeValues(object $from, ExtSystemInterface $to, array $config): void
+    public function writeValues(object $from, object $to, array $config): void
     {
         foreach ($config as $propertyConfig) {
             $this->propertyAccessor->setValue(
@@ -41,6 +40,6 @@ final class AssetTextsWriter
             $value = $this->textStringNormalizer->normalizeAll($value, $configuration->getNormalizers());
         }
 
-        return $value;
+        return (string) $value;
     }
 }

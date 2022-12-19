@@ -25,13 +25,7 @@ final class ConfigurationProvider
         private readonly AllowListConfiguration $allowListConfiguration,
         private readonly AssetLicenceRepository $repository,
         private readonly array $colorSet,
-        private readonly string $notificationTopic,
     ) {
-    }
-
-    public function getNotificationTopic(): string
-    {
-        return $this->notificationTopic;
     }
 
     public function getColorSet(): array
