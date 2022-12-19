@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final readonly class AssetTextsWriter
+final class AssetTextsWriter
 {
     public function __construct(
         private PropertyAccessorInterface $propertyAccessor,

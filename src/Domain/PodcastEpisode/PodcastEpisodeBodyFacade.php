@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 
-final readonly class PodcastEpisodeBodyFacade
+final class PodcastEpisodeBodyFacade
 {
     public function __construct(
         private PodcastEpisodeManager $podcastManager,

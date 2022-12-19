@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
-final readonly class NotificationsConfiguration
+final class NotificationsConfiguration
 {
     public const ENABLED = 'enabled';
     public const TOPIC = 'topic';

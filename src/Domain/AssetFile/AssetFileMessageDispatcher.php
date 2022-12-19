@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-readonly class AssetFileMessageDispatcher
+class AssetFileMessageDispatcher
 {
     public function __construct(
         protected MessageBusInterface $messageBus,
