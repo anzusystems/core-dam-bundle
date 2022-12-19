@@ -29,6 +29,7 @@ class AssetManager extends AbstractManager
 
     public function delete(Asset $asset, bool $flush = true): bool
     {
+        $asset->setMainFile(null);
         $this->entityManager->remove($asset);
         $this->flush($flush);
 

@@ -100,10 +100,10 @@ final class DocumentController extends AbstractApiController
      * @throws AssetFileVersionUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('document', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, DocumentAdmCreateDto $document, string $position): JsonResponse
+    public function createToAsset(Asset $asset, DocumentAdmCreateDto $document, string $position): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $asset);

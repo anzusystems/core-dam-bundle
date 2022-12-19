@@ -13,6 +13,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
@@ -46,6 +47,7 @@ final class ImageController extends AbstractApiController
         private readonly ImageStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly AssetFilePositionFacade $assetFilePositionFacade,
     ) {
     }
 
@@ -99,16 +101,39 @@ final class ImageController extends AbstractApiController
      * @throws AssetFileVersionUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, ImageAdmCreateDto $image, string $position): JsonResponse
+    public function createToAsset(Asset $asset, ImageAdmCreateDto $image, string $position): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $asset);
 
         return $this->createdResponse(
             ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $position))
+        );
+    }
+
+    /**
+     * Create image for asset and assign to specific position.
+     *
+     * @throws ValidationException
+     * @throws ForbiddenOperationException
+     * @throws InvalidExtSystemConfigurationException
+     * @throws AssetFileVersionUsedException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{image}/asset/{asset}/position/{position}', name: 'set_to_position', methods: [Request::METHOD_PATCH])]
+    #[ParamConverter('image', converter: SerializerParamConverter::class)]
+    #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function setToPosition(Asset $asset, ImageFile $image, string $position): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $asset);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $position))
         );
     }
 

@@ -25,6 +25,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDtoInterface
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -181,6 +182,7 @@ abstract class AssetFileFacade
      * @return T
      *
      * @throws AssetFileVersionUsedException
+     * @throws NonUniqueResultException
      * @throws ValidationException
      */
     public function addAssetFileToAsset(Asset $asset, AssetFileAdmCreateDto $createDto, string $version): AssetFile
@@ -213,12 +215,28 @@ abstract class AssetFileFacade
         }
     }
 
+    public function setToPosition(Asset $asset, AssetFile $assetFile, string $version): AssetFile
+    {
+        // validation
+        // todo special lock
+        // todo validate same licence
+        //
+
+        return $assetFile;
+    }
+
     public function delete(AssetFile $assetFile): void
     {
         try {
             $this->getManager()->beginTransaction();
             $deleteId = $assetFile->getId();
             $asset = $assetFile->getAsset()->getAsset();
+
+            if ($assetFile === $asset->getMainFile()) {
+                // todo refactor
+                $asset->setMainFile(null);
+            }
+
             $this->getManager()->delete($assetFile);
 
             if ($asset->getFiles()->isEmpty()) {

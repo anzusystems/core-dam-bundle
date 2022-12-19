@@ -9,8 +9,12 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
@@ -88,6 +92,30 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         );
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
         $this->assertEquals(0, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
+    }
+
+    public function testCreateToAsset(): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $response = $client->post(AssetUrl::createPath(), ['type' => 'image']);
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
+
+        $response = $this->addToPosition(
+            apiClient: $client,
+            assetUrl: new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID),
+            file: $this->getFile(self::TEST_DATA_FILENAME),
+            assetId: $asset->getId(),
+            position: 'default',
+            expectedStatusCode: Response::HTTP_CREATED
+        );
+        $imageAtPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+
+        $response = $client->patch(
+            (new ImageUrl(1))
+                ->setToPositionPath($asset->getId(), $imageAtPosition->getId(), 'free'),
+            ['type' => 'image']
+        );
     }
 
     public function testCreateImageFailed(): void

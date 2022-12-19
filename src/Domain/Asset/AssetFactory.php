@@ -18,12 +18,12 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
-final class AssetFactory
+final readonly class AssetFactory
 {
     public function __construct(
-        private readonly AssetManager $assetManager,
-        private readonly AssetHasFileFactory $assetHasFileFactory,
-        private readonly AssetMetadataManager $assetMetadataManager,
+        private AssetManager $assetManager,
+        private AssetHasFileFactory $assetHasFileFactory,
+        private AssetMetadataManager $assetMetadataManager,
     ) {
     }
 

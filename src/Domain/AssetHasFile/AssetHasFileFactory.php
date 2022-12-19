@@ -18,13 +18,17 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguratio
 class AssetHasFileFactory
 {
     public function __construct(
-        private readonly AssetHasFileManager $manager,
-        private readonly ExtSystemConfigurationProvider $configurationProvider,
+        private AssetHasFileManager $manager,
+        private ExtSystemConfigurationProvider $configurationProvider,
     ) {
     }
 
     public function createRelation(Asset $asset, AssetFile $assetFile, ?string $version = null, bool $flush = true): AssetHasFile
     {
+        if ($asset->getFiles()->isEmpty()) {
+            $asset->setMainFile($assetFile);
+        }
+
         $assetHasFile = $this->initRelationEntity($asset, $version);
         $assetHasFile->setAsset($asset);
         $asset->getFiles()->add($assetHasFile);
@@ -45,7 +49,9 @@ class AssetHasFileFactory
     {
         $configuration = $this->configurationProvider->getExtSystemConfigurationByAsset($asset);
         $assetHasFile = new AssetHasFile();
+
         $versionString = $this->getVersionString($configuration, $version);
+
         $assetHasFile->setVersionTitle($versionString);
         $assetHasFile->setDefault($configuration->getFileVersions()->getDefault() === $versionString);
 

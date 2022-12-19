@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\MainFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 class AssetAdmListDto extends AbstractEntityDto
@@ -43,10 +44,10 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: MainFileHandler::class, type: ImageCropTag::LIST)]
-    public function getMainFile(): Asset
+    #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::LIST)]
+    public function getMainFile(): ?AssetFile
     {
-        return $this->asset;
+        return $this->asset->getMainFile();
     }
 
     public function getAttributes(): AssetAttributesAdmDto

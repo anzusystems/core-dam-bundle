@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileVersionProvider;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
@@ -39,8 +38,12 @@ final class AssetFileHandler extends AbstractHandler
     /**
      * @throws SerializerException
      */
-    public function serialize(mixed $value, Metadata $metadata): mixed
+    public function serialize(mixed $value, Metadata $metadata): ?array
     {
+        if (null === $value) {
+            return null;
+        }
+
         $type = ImageCropTag::tryFrom((string) $metadata->customType);
 
         if (null === $type) {
@@ -55,7 +58,10 @@ final class AssetFileHandler extends AbstractHandler
             );
         }
 
-        throw new SerializerException(sprintf('Value should be instance of (%s)', Asset::class));
+        throw new SerializerException(sprintf(
+            'Value should be instance of (%s)',
+            AssetFile::class,
+        ));
     }
 
     /**

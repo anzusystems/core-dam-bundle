@@ -101,10 +101,10 @@ final class AudioController extends AbstractApiController
      * @throws AssetFileVersionUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('audio', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, AudioAdmCreateDto $audio, string $position): JsonResponse
+    public function createToAsset(Asset $asset, AudioAdmCreateDto $audio, string $position): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $asset);

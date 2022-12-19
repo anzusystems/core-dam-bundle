@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
@@ -14,7 +15,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\MainFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\Collection;
@@ -123,10 +124,10 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this;
     }
 
-    #[Serialize(handler: MainFileHandler::class, type: ImageCropTag::DETAIL)]
-    public function getMainFile(): Asset
+    #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::DETAIL)]
+    public function getMainFile(): ?AssetFile
     {
-        return $this->asset;
+        return $this->asset->getMainFile();
     }
 
     #[Serialize]

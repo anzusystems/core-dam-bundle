@@ -145,7 +145,7 @@ anzu_systems_core_dam:
         roi_height: 9
         file_versions:
           default: default
-          versions: [ default, free ]
+          versions: [ default, free, extra ]
       audio:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3

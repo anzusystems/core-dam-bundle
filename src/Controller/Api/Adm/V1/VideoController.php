@@ -99,10 +99,10 @@ final class VideoController extends AbstractApiController
      * @throws AssetFileVersionUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('video', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, VideoAdmCreateDto $video, string $position): JsonResponse
+    public function createToAsset(Asset $asset, VideoAdmCreateDto $video, string $position): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $asset);
