@@ -18,12 +18,12 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
-final readonly class AssetFileChangeStateHandler
+final class AssetFileChangeStateHandler
 {
     public function __construct(
-        private AssetFileRepository $assetFileRepository,
-        private AssetFileStatusFacadeProvider $facadeProvider,
-        private DamLogger $damLogger,
+        private readonly AssetFileRepository $assetFileRepository,
+        private readonly AssetFileStatusFacadeProvider $facadeProvider,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
