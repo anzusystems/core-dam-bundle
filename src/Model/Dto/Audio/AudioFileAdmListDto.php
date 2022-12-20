@@ -53,6 +53,6 @@ class AudioFileAdmListDto extends AbstractEntityDto
     #[Serialize(handler: EntityIdHandler::class)]
     public function getAsset(): Asset
     {
-        return $this->audio->getAsset()->getAsset();
+        return $this->audio->getAsset();
     }
 }

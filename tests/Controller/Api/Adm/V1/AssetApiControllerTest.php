@@ -49,7 +49,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $originImagePath = $this->nameGenerator->getPath($imageEntity->getAssetAttributes()->getFilePath());
 
         $secondFile = $this->getFile(self::TEST_DATA_2_FILENAME);
-        $assetId = $imageEntity->getAsset()->getAsset()->getId();
+        $assetId = $imageEntity->getAsset()->getId();
 
         $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -58,7 +58,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
-        $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getAsset()->getId());
+        $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getId());
         $this->assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
 
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));

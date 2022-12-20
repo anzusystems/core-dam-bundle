@@ -27,16 +27,16 @@ class AssetHasFile implements UuidIdentifiableInterface
     #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'files')]
     private Asset $asset;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: ImageFile::class)]
+    #[ORM\ManyToOne(targetEntity: ImageFile::class)]
     private ?ImageFile $image;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: AudioFile::class)]
+    #[ORM\ManyToOne(targetEntity: AudioFile::class)]
     private ?AudioFile $audio;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: VideoFile::class)]
+    #[ORM\ManyToOne(targetEntity: VideoFile::class)]
     private ?VideoFile $video;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: DocumentFile::class)]
+    #[ORM\ManyToOne(targetEntity: DocumentFile::class)]
     private ?DocumentFile $document;
 
     public function __construct()

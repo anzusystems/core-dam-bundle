@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -15,17 +13,8 @@ final class AssetTextsProcessor
 {
     public function __construct(
         private readonly ConfigurationProvider $configurationProvider,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly AssetPropertyAccessor $accessor,
     ) {
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function updateAssetFileDisplayTitle(AssetFile $assetFile): void
-    {
-        $this->updateAssetDisplayTitle($assetFile->getAsset()->getAsset());
     }
 
     /**

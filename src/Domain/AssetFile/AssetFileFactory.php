@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
@@ -34,10 +34,10 @@ abstract class AssetFileFactory
 {
     public function __construct(
         private readonly AssetFactory $assetFactory,
+        private readonly AssetManager $assetManager,
         private readonly AssetFileManager $assetFileManager,
         private readonly AssetFileMetadataManager $assetFileMetadataManager,
         private readonly AssetTextsWriter $textsWriter,
-        private readonly AssetTextsProcessor $assetTextsProcessor,
         private readonly ExtSystemConfigurationProvider $configurationProvider,
     ) {
     }
@@ -49,6 +49,29 @@ abstract class AssetFileFactory
     {
         $assetFile = $this->createBlankAssetFile($file, $assetLicence, $id);
         $this->assetFactory->createForAssetFile($assetFile, $assetLicence);
+
+        return $assetFile;
+    }
+
+    public function createBlankAssetFile(File $file, AssetLicence $licence, ?string $id = null): AssetFile
+    {
+        $assetFile = null;
+        if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankImage($licence, $id);
+        }
+        if (in_array($file->getMimeType(), AudioMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankAudio($licence, $id);
+        }
+        if (in_array($file->getMimeType(), DocumentMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankDocument($licence, $id);
+        }
+        if (in_array($file->getMimeType(), VideoMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankVideo($licence, $id);
+        }
+
+        if (null === $assetFile) {
+            throw new DomainException(sprintf('File with mime type (%s) cannot be created', $file->getMimeType()));
+        }
 
         return $this->assetFileManager->create($assetFile, false);
     }
@@ -68,7 +91,7 @@ abstract class AssetFileFactory
             to: $asset,
             config: $this->configurationProvider->getExtSystemConfigurationByAsset($asset)->getAssetExternalProvidersMap()
         );
-        $this->assetTextsProcessor->updateAssetDisplayTitle($asset);
+        $this->assetManager->updateExisting($asset, false);
 
         return $this->assetFileManager->create($assetFile, false);
     }
@@ -145,23 +168,5 @@ abstract class AssetFileFactory
         ;
 
         return $assetFile;
-    }
-
-    private function createBlankAssetFile(File $file, AssetLicence $licence, ?string $id = null): AssetFile
-    {
-        if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {
-            return $this->createBlankImage($licence, $id);
-        }
-        if (in_array($file->getMimeType(), AudioMimeTypes::values(), true)) {
-            return $this->createBlankAudio($licence, $id);
-        }
-        if (in_array($file->getMimeType(), DocumentMimeTypes::values(), true)) {
-            return $this->createBlankDocument($licence, $id);
-        }
-        if (in_array($file->getMimeType(), VideoMimeTypes::values(), true)) {
-            return $this->createBlankVideo($licence, $id);
-        }
-
-        throw new DomainException(sprintf('File with mime type (%s) cannot be created', $file->getMimeType()));
     }
 }

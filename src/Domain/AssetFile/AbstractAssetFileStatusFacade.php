@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\ExternalProviderFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
@@ -51,6 +52,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected AssetTextsProcessor $displayTitleProcessor;
     protected ExternalProviderFileFactory $externalProviderFileFactory;
     protected UrlFileFactory $urlFileFactory;
+    protected AssetManager $assetManager;
 
     #[Required]
     public function setUrlFileFactory(UrlFileFactory $urlFileFactory): void
@@ -136,6 +138,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->externalProviderFileFactory = $externalProviderFileFactory;
     }
 
+    #[Required]
+    public function setAssetManager(AssetManager $assetManager): void
+    {
+        $this->assetManager = $assetManager;
+    }
+
     /**
      * @throws ValidationException
      */
@@ -219,14 +227,14 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
         $this->processAssetFile($assetFile, $file);
 
-        $assetFile->getAsset()->getAsset()->getAttributes()->setStatus(AssetStatus::WithFile);
+        $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::WithFile);
         if (false === $assetFile->getFlags()->isProcessedMetadata()) {
             $this->metadataProcessor->process($assetFile, $file);
         }
-        $this->displayTitleProcessor->updateAssetFileDisplayTitle($assetFile);
 
+        $this->assetManager->updateExisting($assetFile->getAsset(), false);
         $this->assetStatusManager->toProcessed($assetFile);
-        $this->indexManager->index($assetFile->getAsset()->getAsset());
+        $this->indexManager->index($assetFile->getAsset());
 
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
@@ -237,7 +245,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     {
         $mimeType = (string) $file->getMimeType();
 
-        return match ($assetFile->getAsset()->getAsset()->getAttributes()->getAssetType()) {
+        return match ($assetFile->getAsset()->getAttributes()->getAssetType()) {
             AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
             AssetType::Video => in_array($mimeType, VideoMimeTypes::CHOICES, true),
             AssetType::Audio => in_array($mimeType, AudioMimeTypes::CHOICES, true),

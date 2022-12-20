@@ -53,6 +53,6 @@ class VideoFileAdmListDto extends AbstractEntityDto
     #[Serialize(handler: EntityIdHandler::class)]
     public function getAsset(): Asset
     {
-        return $this->video->getAsset()->getAsset();
+        return $this->video->getAsset();
     }
 }

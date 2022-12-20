@@ -28,7 +28,7 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
         return parent::getInstance($image)
             ->setImageAttributes(ImageAttributesAdmDto::getInstance($image->getImageAttributes()))
             ->setMetadata(AssetFileMetadataAdmDetailDto::getInstance($image->getMetadata()))
-            ->setAssetMetadata(AssetMetadataAdmDetailDto::getInstance($image->getAsset()->getAsset()->getMetadata()))
+            ->setAssetMetadata(AssetMetadataAdmDetailDto::getInstance($image->getAsset()->getMetadata()))
         ;
     }
 

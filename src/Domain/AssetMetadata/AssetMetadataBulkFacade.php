@@ -57,7 +57,6 @@ final class AssetMetadataBulkFacade
             if ($updateDto->isDescribed()) {
                 $this->assetMetadataManager->removeSuggestions($updateDto->getAsset()->getMetadata(), false);
             }
-            $this->displayTitleProcessor->updateAssetDisplayTitle($asset);
         }
 
         $this->assetManager->flush();

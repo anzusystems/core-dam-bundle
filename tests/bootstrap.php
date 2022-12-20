@@ -29,7 +29,7 @@ $kernel->boot();
 $app = new Application($kernel);
 $app->setAutoExit(false);
 
-return;
+//return;
 
 $output = new ConsoleOutput();
 

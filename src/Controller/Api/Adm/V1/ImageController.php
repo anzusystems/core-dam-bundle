@@ -32,6 +32,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -100,6 +101,7 @@ final class ImageController extends AbstractApiController
      * @throws InvalidExtSystemConfigurationException
      * @throws AssetFileVersionUsedException
      * @throws AppReadOnlyModeException
+     * @throws NonUniqueResultException
      */
     #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('image', converter: SerializerParamConverter::class)]
@@ -124,13 +126,14 @@ final class ImageController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{image}/asset/{asset}/position/{position}', name: 'set_to_position', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
     public function setToPosition(Asset $asset, ImageFile $image, string $position): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $asset);
+
+        $this->assetFilePositionFacade->setToPosition($asset, $image, $position);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $position))

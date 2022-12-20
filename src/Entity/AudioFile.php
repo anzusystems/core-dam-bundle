@@ -15,8 +15,8 @@ class AudioFile extends AssetFile
     #[ORM\Embedded(class: AudioAttributes::class)]
     private AudioAttributes $attributes;
 
-    #[ORM\OneToOne(mappedBy: 'audio', targetEntity: AssetHasFile::class)]
-    private AssetHasFile $asset;
+    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    private Asset $asset;
 
     public function __construct()
     {
@@ -36,12 +36,12 @@ class AudioFile extends AssetFile
         return $this;
     }
 
-    public function getAsset(): AssetHasFile
+    public function getAsset(): Asset
     {
         return $this->asset;
     }
 
-    public function setAsset(AssetHasFile $asset): static
+    public function setAsset(Asset $asset): static
     {
         $this->asset = $asset;
 

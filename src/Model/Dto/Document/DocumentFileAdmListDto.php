@@ -53,6 +53,6 @@ class DocumentFileAdmListDto extends AbstractEntityDto
     #[Serialize(handler: EntityIdHandler::class)]
     public function getAsset(): Asset
     {
-        return $this->document->getAsset()->getAsset();
+        return $this->document->getAsset();
     }
 }

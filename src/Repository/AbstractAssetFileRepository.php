@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\DBAL\Types\Types;
@@ -59,23 +60,10 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
             ->getOneOrNullResult();
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function getDefaultByAsset(string $assetId): ?AssetFile
-    {
-        return $this->getByAssetIdQb($assetId)
-            ->andWhere('assetHasFile.default = :true')
-            ->setParameter('true', true)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
     public function getByAssetIdQb(string $assetId): QueryBuilder
     {
         return $this->createQueryBuilder('entity')
-            ->innerJoin('entity.asset', 'assetHasFile')
-            ->andWhere('IDENTITY(assetHasFile.asset) = :assetId')
+            ->andWhere('IDENTITY(entity.asset) = :assetId')
             ->setParameter('assetId', $assetId);
     }
 }

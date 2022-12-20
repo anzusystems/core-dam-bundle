@@ -54,4 +54,13 @@ abstract class AbstractApiControllerTest extends AbstractControllerTest
             }
         }
     }
+
+    protected function assertForbiddenOperationError(string $responseContent, string $error): void
+    {
+        $data = json_decode($responseContent, true);
+
+        $this->assertArrayHasKey('error', $data);
+        $this->assertArrayHasKey('detail', $data);
+        $this->assertSame($error, $data['detail']);
+    }
 }

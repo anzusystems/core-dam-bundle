@@ -10,6 +10,11 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDt
 
 class AssetManager extends AbstractManager
 {
+    public function __construct(
+        private readonly AssetPropertiesRefresher $propertiesRefresher
+    ) {
+    }
+
     public function create(Asset $asset, bool $flush = true): Asset
     {
         $this->trackCreation($asset);
@@ -22,6 +27,7 @@ class AssetManager extends AbstractManager
     public function updateExisting(Asset $asset, bool $flush = true): Asset
     {
         $this->trackModification($asset);
+        $this->propertiesRefresher->refreshProperties($asset);
         $this->flush($flush);
 
         return $asset;
@@ -41,8 +47,6 @@ class AssetManager extends AbstractManager
         FormProvidableMetadataBulkUpdateDto $dto,
         bool $flush = true
     ): Asset {
-        $this->trackModification($asset);
-
         $asset->getAssetFlags()
             ->setDescribed($dto->isDescribed());
         $this->colUpdate(
@@ -54,8 +58,6 @@ class AssetManager extends AbstractManager
             newCollection: $dto->getAuthors(),
         );
 
-        $this->flush($flush);
-
-        return $asset;
+        return $this->updateExisting($asset, $flush);
     }
 }

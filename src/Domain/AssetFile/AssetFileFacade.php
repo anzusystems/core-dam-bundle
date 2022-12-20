@@ -138,7 +138,7 @@ abstract class AssetFileFacade
             );
             $this->assetStatusManager->setNotifyTo($assetFile);
             $this->getManager()->flush();
-            $this->indexManager->index($assetFile->getAsset()->getAsset());
+            $this->indexManager->index($assetFile->getAsset());
             $this->getManager()->commit();
         } catch (Throwable $exception) {
             $this->getManager()->rollback();
@@ -167,7 +167,7 @@ abstract class AssetFileFacade
         try {
             $this->getManager()->beginTransaction();
             $this->getManager()->create($assetFile);
-            $this->indexManager->index($assetFile->getAsset()->getAsset());
+            $this->indexManager->index($assetFile->getAsset());
             $this->getManager()->commit();
 
             return $assetFile;
@@ -204,7 +204,7 @@ abstract class AssetFileFacade
             $this->getManager()->create($assetFile);
             $this->assetHasFileFactory->createRelation($asset, $assetFile, $version);
 
-            $this->indexManager->index($assetFile->getAsset()->getAsset());
+            $this->indexManager->index($assetFile->getAsset());
             $this->getManager()->commit();
 
             return $assetFile;
@@ -230,7 +230,7 @@ abstract class AssetFileFacade
         try {
             $this->getManager()->beginTransaction();
             $deleteId = $assetFile->getId();
-            $asset = $assetFile->getAsset()->getAsset();
+            $asset = $assetFile->getAsset();
 
             if ($assetFile === $asset->getMainFile()) {
                 // todo refactor
@@ -240,7 +240,7 @@ abstract class AssetFileFacade
             $this->getManager()->delete($assetFile);
 
             if ($asset->getFiles()->isEmpty()) {
-                $assetFile->getAsset()->getAsset()->getAttributes()->setStatus(AssetStatus::Draft);
+                $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::Draft);
             }
 
             $this->indexManager->index($asset);

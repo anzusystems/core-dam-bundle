@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileVersionProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\CustomData\AssetMetadataCustomData;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
@@ -21,7 +20,6 @@ final class AssetIndexFactory implements IndexFactoryInterface
 {
     public function __construct(
         private readonly AssetMetadataCustomData $assetMetadataCustomData,
-        private readonly AssetFileVersionProvider $assetFileVersionProvider,
         private readonly ClosestColorProvider $closestColorProvider,
     ) {
     }
@@ -56,40 +54,39 @@ final class AssetIndexFactory implements IndexFactoryInterface
      */
     private function getSpecificAssetFields(Asset $entity): array
     {
-        $defaultFile = $this->assetFileVersionProvider->getDefaultFile($entity);
-
-        if (null === $defaultFile) {
+        $mainFile = $entity->getMainFile();
+        if (null === $mainFile) {
             return [];
         }
 
         $fields = [
-            'originFileName' => $defaultFile->getAssetAttributes()->getOriginFileName(),
-            'mimeType' => $defaultFile->getAssetAttributes()->getMimeType(),
-            'size' => $defaultFile->getAssetAttributes()->getSize(),
+            'originFileName' => $mainFile->getAssetAttributes()->getOriginFileName(),
+            'mimeType' => $mainFile->getAssetAttributes()->getMimeType(),
+            'size' => $mainFile->getAssetAttributes()->getSize(),
         ];
 
-        if ($defaultFile instanceof ImageFile) {
+        if ($mainFile instanceof ImageFile) {
             return [
                 ...$fields,
-                ...$this->getImageFields($defaultFile),
+                ...$this->getImageFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof VideoFile) {
+        if ($mainFile instanceof VideoFile) {
             return [
                 ...$fields,
-                ...$this->getVideoFields($defaultFile),
+                ...$this->getVideoFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof AudioFile) {
+        if ($mainFile instanceof AudioFile) {
             return [
                 ...$fields,
-                ...$this->getAudioFields($defaultFile),
+                ...$this->getAudioFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof DocumentFile) {
+        if ($mainFile instanceof DocumentFile) {
             return [
                 ...$fields,
-                ...$this->getDocumentFields($defaultFile),
+                ...$this->getDocumentFields($mainFile),
             ];
         }
 
@@ -151,7 +148,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
 
     private function getPodcastIds(AudioFile $audioFile): array
     {
-        return $audioFile->getAsset()->getAsset()->getEpisodes()->map(
+        return $audioFile->getAsset()->getEpisodes()->map(
             fn (PodcastEpisode $podcastEpisode): string => (string) $podcastEpisode->getPodcast()->getId()
         )->getValues();
     }

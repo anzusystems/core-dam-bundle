@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileVersionProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
@@ -29,11 +28,6 @@ use AnzuSystems\SerializerBundle\Metadata\Metadata;
 final class AssetFileHandler extends AbstractHandler
 {
     use SerializerAwareTrait;
-
-    public function __construct(
-        private readonly AssetFileVersionProvider $assetFileDefaultProvider
-    ) {
-    }
 
     /**
      * @throws SerializerException

@@ -16,7 +16,7 @@ final class AssetFileStatusAdmNotificationDecorator extends AsseFileAdmNotificat
     public static function getInstance(AssetFile $assetFile): self
     {
         return parent::getBaseInstance(
-            assetId: $assetFile->getAsset()->getAsset()->getId(),
+            assetId: $assetFile->getAsset()->getId(),
             assetFileId: $assetFile->getId()
         )->setAssetFile($assetFile);
     }
@@ -42,7 +42,7 @@ final class AssetFileStatusAdmNotificationDecorator extends AsseFileAdmNotificat
     #[Serialize]
     public function getAssetType(): AssetType
     {
-        return $this->assetFile->getAsset()->getAsset()->getAttributes()->getAssetType();
+        return $this->assetFile->getAsset()->getAttributes()->getAssetType();
     }
 
     #[Serialize]

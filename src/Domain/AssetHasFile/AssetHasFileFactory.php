@@ -33,7 +33,7 @@ class AssetHasFileFactory
         $assetHasFile->setAsset($asset);
         $asset->getFiles()->add($assetHasFile);
 
-        $assetFile->setAsset($assetHasFile);
+        $assetFile->setAsset($asset);
 
         match ($assetFile::class) {
             ImageFile::class => $assetHasFile->setImage($assetFile),
