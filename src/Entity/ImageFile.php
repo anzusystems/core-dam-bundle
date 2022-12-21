@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ImageAttributes;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
@@ -26,13 +27,18 @@ class ImageFile extends AssetFile
     private Collection $regionsOfInterest;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
+
+    #[ORM\OneToMany(mappedBy: 'image', targetEntity: AssetHasFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    private Collection $slots;
 
     public function __construct()
     {
         $this->setImageAttributes(new ImageAttributes());
         $this->setRegionsOfInterest(new ArrayCollection());
         $this->setResizes(new ArrayCollection());
+        $this->setSlots(new ArrayCollection());
         parent::__construct();
     }
 
@@ -93,5 +99,17 @@ class ImageFile extends AssetFile
     public function getAssetType(): AssetType
     {
         return AssetType::Image;
+    }
+
+    public function getSlots(): Collection
+    {
+        return $this->slots;
+    }
+
+    public function setSlots(Collection $slots): self
+    {
+        $this->slots = $slots;
+
+        return $this;
     }
 }

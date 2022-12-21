@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -54,6 +56,11 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
+
+        $images = $this->entityManager->getRepository(ImageFile::class)->findBy([
+            'asset' => $assetId
+        ]);
+        $asset = $this->entityManager->find(Asset::class, $assetId);
 
         $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());

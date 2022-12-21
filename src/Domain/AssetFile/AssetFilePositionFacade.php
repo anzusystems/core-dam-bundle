@@ -51,9 +51,12 @@ final class AssetFilePositionFacade
     {
         $this->validateSlot($asset, $version);
         $this->validate($asset, $assetFile);
+
         $originAsset = $assetFile->getAsset();
-        $this->assetHasFileManager->delete($assetFile->getAsset(), false);
+
+        $this->removeOtherAssetSlots($asset, $assetFile);
         $this->assetHasFileFactory->createRelation($asset, $assetFile, $version, false);
+        $assetFile->setAsset($asset);
 
         if (false === ($asset === $originAsset)) {
             $this->assetManager->updateExisting($originAsset, false);
@@ -64,8 +67,23 @@ final class AssetFilePositionFacade
         return $assetFile;
     }
 
+    private function removeOtherAssetSlots(Asset $asset, AssetFile $assetFile): void
+    {
+        foreach ($assetFile->getSlots() as $slot) {
+            if ($slot->getAsset() === $asset) {
+                continue;
+            }
+
+            $this->assetHasFileManager->delete($slot, false);
+        }
+    }
+
     private function validate(Asset $asset, AssetFile $assetFile): void
     {
+        if (false === ($asset->getAttributes()->getAssetType() === $assetFile->getAssetType())) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_TYPE);
+        }
+
         if (false === ($asset->getAttributes()->getAssetType() === $assetFile->getAssetType())) {
             throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_TYPE);
         }
@@ -74,6 +92,7 @@ final class AssetFilePositionFacade
             throw new ForbiddenOperationException(ForbiddenOperationException::LICENCE_MISMATCH);
         }
 
+        // todo fix same file on multiple positions
         if (1 === $assetFile->getAsset()->getFiles()->count()) {
             throw new ForbiddenOperationException(ForbiddenOperationException::LAST_FILE);
         }

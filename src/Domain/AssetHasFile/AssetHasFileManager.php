@@ -21,6 +21,7 @@ class AssetHasFileManager extends AbstractManager
     public function delete(AssetHasFile $assetHasFile, bool $flush = true): bool
     {
         $assetHasFile->getAsset()->getFiles()->removeElement($assetHasFile);
+        $assetHasFile->getAssetFile()->getSlots()->removeElement($assetHasFile);
         $this->entityManager->remove($assetHasFile);
         $this->flush($flush);
 

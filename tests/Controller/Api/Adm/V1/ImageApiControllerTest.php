@@ -120,6 +120,8 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $imageAtSecondPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+
+        // todo test choose main file of another asset (integrity problem)
     }
 
     /**
@@ -145,7 +147,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
     {
         return [
             [
-                ImageFixtures::IMAGE_ID_1_1,
+                ImageFixtures::IMAGE_ID_2,
                 'free',
                 ForbiddenOperationException::LAST_FILE
             ],

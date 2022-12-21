@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDtoInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetHasFileRepository;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -46,6 +47,13 @@ abstract class AssetFileFacade
     protected FileStash $fileDeleteStash;
     protected AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher;
     protected AssetExternalProviderContainer $assetExternalProviderContainer;
+    protected AssetHasFileRepository $assetHasFileRepository;
+
+    #[Required]
+    public function setAssetHasFileRepository(AssetHasFileRepository $assetHasFileRepository): void
+    {
+        $this->assetHasFileRepository = $assetHasFileRepository;
+    }
 
     #[Required]
     public function setAssetFileDeleteEventDispatcher(AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher): void
@@ -191,10 +199,10 @@ abstract class AssetFileFacade
         $this->validateFileVersion($asset, $version);
         $this->entityValidator->validateDto($createDto);
 
-        $assetFile = $this->getRepository()->getByAssetAndFileVersionName($asset->getId(), $version);
+        $slot = $this->assetHasFileRepository->findSlotByAssetAndTitle($asset->getId(), $version);
 
-        if ($assetFile instanceof AssetFile) {
-            throw new AssetFileVersionUsedException($assetFile, $version);
+        if ($slot) {
+            throw new AssetFileVersionUsedException($slot->getAssetFile(), $version);
         }
 
         $assetFile = $this->getFactory()->createFromAdmDto($asset->getLicence(), $createDto);

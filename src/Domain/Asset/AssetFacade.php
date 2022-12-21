@@ -83,6 +83,7 @@ class AssetFacade
 
             foreach ($asset->getFiles() as $assetHasFile) {
                 $assetFile = $assetHasFile->getAssetFile();
+                $assetFile->setAsset(new Asset());
                 $this->assetFileDeleteEventDispatcher->addEvent(
                     (string) $assetFile->getId(),
                     $deleteId,

@@ -14,6 +14,14 @@ use AnzuSystems\CoreDamBundle\Entity\AssetHasFile;
  */
 final class AssetHasFileRepository extends AbstractAnzuRepository
 {
+    public function findSlotByAssetAndTitle(string $assetId, string $title): ?AssetHasFile
+    {
+        return $this->findOneBy([
+            'asset' => $assetId,
+            'versionTitle' => $title,
+        ]);
+    }
+
     protected function getEntityClass(): string
     {
         return AssetHasFile::class;

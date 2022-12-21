@@ -133,8 +133,6 @@ final class ImageController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $asset);
 
-        $this->assetFilePositionFacade->setToPosition($asset, $image, $position);
-
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $position))
         );

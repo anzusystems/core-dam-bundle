@@ -49,7 +49,10 @@ class AssetFileManager extends AbstractManager
 
     public function delete(AssetFile $assetFile, bool $flush = true): bool
     {
-        $this->assetHasFileManager->delete($assetFile->getAsset(), false);
+        foreach ($assetFile->getSlots() as $slot) {
+            $this->assetHasFileManager->delete($slot, false);
+        }
+
         $this->chunkManager->deleteByAsset($assetFile);
         $this->deleteAssetFileRelations($assetFile);
         if (false === empty($assetFile->getAssetAttributes()->getFilePath())) {
