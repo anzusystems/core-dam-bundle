@@ -231,9 +231,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         if (false === $assetFile->getFlags()->isProcessedMetadata()) {
             $this->metadataProcessor->process($assetFile, $file);
         }
-
+        $this->assetStatusManager->toProcessed($assetFile, false);
         $this->assetManager->updateExisting($assetFile->getAsset(), false);
-        $this->assetStatusManager->toProcessed($assetFile);
         $this->indexManager->index($assetFile->getAsset());
 
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);

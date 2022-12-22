@@ -82,7 +82,7 @@ abstract class AssetFilePositionFacade
     public function setToSlot(Asset $asset, AssetFile $assetFile, string $slotName): AssetFile
     {
         $this->validateSlot($asset, $slotName);
-        $this->validate($asset, $assetFile);
+        $this->validate($asset, $assetFile, $slotName);
 
         try {
             $this->assetManager->beginTransaction();
@@ -100,6 +100,7 @@ abstract class AssetFilePositionFacade
             if (false === ($asset === $originAsset)) {
                 $this->indexManager->index($originAsset);
             }
+            $this->assetManager->commit();
 
             return $assetFile;
         } catch (Throwable $exception) {
@@ -120,10 +121,12 @@ abstract class AssetFilePositionFacade
         }
     }
 
-    private function validate(Asset $asset, AssetFile $assetFile): void
+    private function validate(Asset $asset, AssetFile $assetFile, string $slotName): void
     {
-        if (false === ($asset->getAttributes()->getAssetType() === $assetFile->getAssetType())) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_TYPE);
+        foreach ($asset->getSlots() as $slot) {
+            if ($slot->getAssetFile() === $assetFile && $slot->getName() === $slotName) {
+                throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+            }
         }
 
         if (false === ($asset->getAttributes()->getAssetType() === $assetFile->getAssetType())) {

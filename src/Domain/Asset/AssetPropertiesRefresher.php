@@ -34,6 +34,10 @@ class AssetPropertiesRefresher extends AbstractManager
 
     private function refreshStatus(Asset $asset): void
     {
+        if ($asset->getAttributes()->getStatus()->is(AssetStatus::Deleting)) {
+            return;
+        }
+
         foreach ($asset->getSlots() as $slot) {
             if ($slot->getAssetFile()->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
                 $asset->getAttributes()->setStatus(AssetStatus::WithFile);
