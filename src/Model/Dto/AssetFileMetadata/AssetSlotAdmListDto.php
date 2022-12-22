@@ -5,30 +5,30 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\AssetHasFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-class AssetHasFileAdmListDto
+class AssetSlotAdmListDto
 {
-    protected string $resourceName = AssetHasFile::class;
-    protected AssetHasFile $assetHasFile;
+    protected string $resourceName = AssetSlot::class;
+    protected AssetSlot $assetSlot;
 
-    public static function getInstance(AssetHasFile $assetHasFile): static
+    public static function getInstance(AssetSlot $assetSlot): static
     {
         return (new self())
-            ->setAssetHasFile($assetHasFile);
+            ->setAssetSlot($assetSlot);
     }
 
-    public function getAssetHasFile(): AssetHasFile
+    public function getAssetSlot(): AssetSlot
     {
-        return $this->assetHasFile;
+        return $this->assetSlot;
     }
 
-    public function setAssetHasFile(AssetHasFile $assetHasFile): self
+    public function setAssetSlot(AssetSlot $assetSlot): self
     {
-        $this->assetHasFile = $assetHasFile;
+        $this->assetSlot = $assetSlot;
 
         return $this;
     }
@@ -36,25 +36,25 @@ class AssetHasFileAdmListDto
     #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::LIST)]
     public function getAssetFile(): AssetFile
     {
-        return $this->assetHasFile->getAssetFile();
+        return $this->assetSlot->getAssetFile();
     }
 
     #[Serialize]
-    public function getVersionTitle(): string
+    public function getSlotName(): string
     {
-        return $this->assetHasFile->getVersionTitle();
+        return $this->assetSlot->getName();
     }
 
     #[Serialize]
     public function isDefault(): bool
     {
-        return $this->assetHasFile->isDefault();
+        return $this->assetSlot->isDefault();
     }
 
     #[Serialize]
     public function isMain(): bool
     {
         // todo implement main
-        return $this->assetHasFile->isDefault();
+        return $this->assetSlot->isDefault();
     }
 }

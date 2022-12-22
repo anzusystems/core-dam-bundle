@@ -30,7 +30,7 @@ class ImageFile extends AssetFile
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'image', targetEntity: AssetHasFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(mappedBy: 'image', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()

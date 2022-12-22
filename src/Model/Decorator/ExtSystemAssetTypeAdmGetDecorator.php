@@ -25,9 +25,9 @@ class ExtSystemAssetTypeAdmGetDecorator
     }
 
     #[Serialize]
-    public function getDefaultFileVersion(): string
+    public function getDefaultSlotName(): string
     {
-        return $this->configuration->getFileVersions()->getDefault();
+        return $this->configuration->getSlots()->getDefault();
     }
 
     #[Serialize]
@@ -43,9 +43,9 @@ class ExtSystemAssetTypeAdmGetDecorator
     }
 
     #[Serialize]
-    public function getVersions(): array
+    public function getSlots(): array
     {
-        return $this->configuration->getFileVersions()->getVersions();
+        return $this->configuration->getSlots()->getSlots();
     }
 
     #[Serialize]

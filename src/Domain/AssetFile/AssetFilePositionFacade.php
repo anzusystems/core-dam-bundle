@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileFactory;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -18,21 +18,21 @@ use Symfony\Contracts\Service\Attribute\Required;
  */
 final class AssetFilePositionFacade
 {
-    private AssetHasFileFactory $assetHasFileFactory;
-    private AssetHasFileManager $assetHasFileManager;
+    private AssetSlotFactory $assetSlotFactory;
+    private AssetSlotManager $assetSlotManager;
     private AssetManager $assetManager;
     private ExtSystemConfigurationProvider $extSystemConfigurationProvider;
 
     #[Required]
-    public function setAssetHasFileFactory(AssetHasFileFactory $assetHasFileFactory): void
+    public function setAssetSlotFactory(AssetSlotFactory $assetSlotFactory): void
     {
-        $this->assetHasFileFactory = $assetHasFileFactory;
+        $this->assetSlotFactory = $assetSlotFactory;
     }
 
     #[Required]
-    public function setAssetHasFileManager(AssetHasFileManager $assetHasFileManager): void
+    public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
     {
-        $this->assetHasFileManager = $assetHasFileManager;
+        $this->assetSlotManager = $assetSlotManager;
     }
 
     #[Required]
@@ -47,15 +47,15 @@ final class AssetFilePositionFacade
         $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
     }
 
-    public function setToPosition(Asset $asset, AssetFile $assetFile, string $version): AssetFile
+    public function setToPosition(Asset $asset, AssetFile $assetFile, string $slotName): AssetFile
     {
-        $this->validateSlot($asset, $version);
+        $this->validateSlot($asset, $slotName);
         $this->validate($asset, $assetFile);
 
         $originAsset = $assetFile->getAsset();
 
         $this->removeOtherAssetSlots($asset, $assetFile);
-        $this->assetHasFileFactory->createRelation($asset, $assetFile, $version, false);
+        $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName, false);
         $assetFile->setAsset($asset);
 
         if (false === ($asset === $originAsset)) {
@@ -74,7 +74,7 @@ final class AssetFilePositionFacade
                 continue;
             }
 
-            $this->assetHasFileManager->delete($slot, false);
+            $this->assetSlotManager->delete($slot, false);
         }
     }
 
@@ -93,7 +93,7 @@ final class AssetFilePositionFacade
         }
 
         // todo fix same file on multiple positions
-        if (1 === $assetFile->getAsset()->getFiles()->count()) {
+        if (1 === $assetFile->getAsset()->getSlots()->count()) {
             throw new ForbiddenOperationException(ForbiddenOperationException::LAST_FILE);
         }
     }
@@ -105,10 +105,10 @@ final class AssetFilePositionFacade
             $asset->getAttributes()->getAssetType()
         );
 
-        if (in_array($slot, $assetTypeConfiguration->getFileVersions()->getVersions(), true)) {
+        if (in_array($slot, $assetTypeConfiguration->getSlots()->getSlots(), true)) {
             return;
         }
 
-        throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_FILE_VERSION);
+        throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT);
     }
 }

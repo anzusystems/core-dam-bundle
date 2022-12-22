@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetHasFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetPropertiesRefresher extends AbstractManager
@@ -32,12 +32,12 @@ class AssetPropertiesRefresher extends AbstractManager
     private function refreshMainFile(Asset $asset): void
     {
         $manFileSlot = $this->getMainFileSlot($asset);
-        if ($manFileSlot instanceof AssetHasFile) {
+        if ($manFileSlot instanceof AssetSlot) {
             return;
         }
 
-        $newMainFileSlot = $this->getDefaultSlot($asset) ?? $asset->getFiles()->first();
-        if ($newMainFileSlot instanceof AssetHasFile) {
+        $newMainFileSlot = $this->getDefaultSlot($asset) ?? $asset->getSlots()->first();
+        if ($newMainFileSlot instanceof AssetSlot) {
             $asset->setMainFile($newMainFileSlot->getAssetFile());
 
             return;
@@ -46,13 +46,13 @@ class AssetPropertiesRefresher extends AbstractManager
         $asset->setMainFile(null);
     }
 
-    private function getMainFileSlot(Asset $asset): ?AssetHasFile
+    private function getMainFileSlot(Asset $asset): ?AssetSlot
     {
         if (null === $asset->getMainFile()) {
             return null;
         }
 
-        foreach ($asset->getFiles() as $slot) {
+        foreach ($asset->getSlots() as $slot) {
             if ($slot->getAssetFile() === $asset->getMainFile()) {
                 return $slot;
             }
@@ -61,9 +61,9 @@ class AssetPropertiesRefresher extends AbstractManager
         return null;
     }
 
-    private function getDefaultSlot(Asset $asset): ?AssetHasFile
+    private function getDefaultSlot(Asset $asset): ?AssetSlot
     {
-        foreach ($asset->getFiles() as $slot) {
+        foreach ($asset->getSlots() as $slot) {
             if ($slot->isDefault()) {
                 return $slot;
             }

@@ -53,9 +53,9 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $secondFile = $this->getFile(self::TEST_DATA_2_FILENAME);
         $assetId = $imageEntity->getAsset()->getId();
 
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
 
         $images = $this->entityManager->getRepository(ImageFile::class)->findBy([
             'asset' => $assetId

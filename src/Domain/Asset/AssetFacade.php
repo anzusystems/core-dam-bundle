@@ -81,8 +81,8 @@ class AssetFacade
             $deleteId = (string) $asset->getId();
             $deleteBy = $asset->getNotifyTo();
 
-            foreach ($asset->getFiles() as $assetHasFile) {
-                $assetFile = $assetHasFile->getAssetFile();
+            foreach ($asset->getSlots() as $slot) {
+                $assetFile = $slot->getAssetFile();
                 $assetFile->setAsset(new Asset());
                 $this->assetFileDeleteEventDispatcher->addEvent(
                     (string) $assetFile->getId(),

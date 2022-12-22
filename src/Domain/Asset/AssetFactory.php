@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -22,7 +22,7 @@ final readonly class AssetFactory
 {
     public function __construct(
         private AssetManager $assetManager,
-        private AssetHasFileFactory $assetHasFileFactory,
+        private AssetSlotFactory $assetSlotFactory,
         private AssetMetadataManager $assetMetadataManager,
     ) {
     }
@@ -48,7 +48,7 @@ final readonly class AssetFactory
     private function createForImageFile(ImageFile $imageFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Image, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $imageFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $imageFile, flush: false);
 
         return $asset;
     }
@@ -56,7 +56,7 @@ final readonly class AssetFactory
     private function createForAudioFile(AudioFile $audioFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Audio, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $audioFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $audioFile, flush: false);
 
         return $asset;
     }
@@ -64,7 +64,7 @@ final readonly class AssetFactory
     private function createForVideoFile(VideoFile $videoFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Video, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $videoFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $videoFile, flush: false);
 
         return $asset;
     }
@@ -72,7 +72,7 @@ final readonly class AssetFactory
     private function createForDocumentFile(DocumentFile $documentFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Document, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $documentFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $documentFile, flush: false);
 
         return $asset;
     }

@@ -48,18 +48,6 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
             ->getOneOrNullResult();
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function getByAssetAndFileVersionName(string $assetId, string $version): ?AssetFile
-    {
-        return $this->getByAssetIdQb($assetId)
-            ->andWhere('assetHasFile.versionTitle = :version')
-            ->setParameter('version', $version)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
     public function getByAssetIdQb(string $assetId): QueryBuilder
     {
         return $this->createQueryBuilder('entity')

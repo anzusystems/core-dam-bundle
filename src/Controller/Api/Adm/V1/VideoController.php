@@ -20,7 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -96,19 +96,19 @@ final class VideoController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('video', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, VideoAdmCreateDto $video, string $position): JsonResponse
+    public function createToAsset(Asset $asset, VideoAdmCreateDto $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $asset);
 
         return $this->createdResponse(
-            VideoFileAdmDetailDto::getInstance($this->videoFacade->addAssetFileToAsset($asset, $video, $position))
+            VideoFileAdmDetailDto::getInstance($this->videoFacade->addAssetFileToAsset($asset, $video, $slotName))
         );
     }
 

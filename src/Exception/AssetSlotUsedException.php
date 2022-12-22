@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Exception;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use Exception;
 
-class AssetFileVersionUsedException extends Exception
+class AssetSlotUsedException extends Exception
 {
-    private const ERROR_MESSAGE = 'asset_contains_file_version';
+    private const ERROR_MESSAGE = 'asset_slot_used';
 
     public function __construct(
         private readonly AssetFile $assetFile,

@@ -21,7 +21,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -99,20 +99,20 @@ final class ImageController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
      * @throws NonUniqueResultException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, ImageAdmCreateDto $image, string $position): JsonResponse
+    public function createToAsset(Asset $asset, ImageAdmCreateDto $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $asset);
 
         return $this->createdResponse(
-            ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $position))
+            ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $slotName))
         );
     }
 
@@ -122,19 +122,19 @@ final class ImageController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/{image}/asset/{asset}/position/{position}', name: 'set_to_position', methods: [Request::METHOD_PATCH])]
+    #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_position', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function setToPosition(Asset $asset, ImageFile $image, string $position): JsonResponse
+    public function setToPosition(Asset $asset, ImageFile $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $asset);
 
         return $this->okResponse(
-            ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $position))
+            ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $slotName))
         );
     }
 

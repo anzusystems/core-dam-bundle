@@ -8,14 +8,14 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
@@ -24,7 +24,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDtoInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\AssetHasFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -42,17 +42,17 @@ abstract class AssetFileFacade
     protected AssetFileStatusManager $assetStatusManager;
     protected MessageBusInterface $messageBus;
     protected ExtSystemConfigurationProvider $extSystemConfigurationProvider;
-    protected AssetHasFileFactory $assetHasFileFactory;
+    protected AssetSlotFactory $assetSlotFactory;
     protected IndexManager $indexManager;
     protected FileStash $fileDeleteStash;
     protected AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher;
     protected AssetExternalProviderContainer $assetExternalProviderContainer;
-    protected AssetHasFileRepository $assetHasFileRepository;
+    protected AssetSlotRepository $assetSlotRepository;
 
     #[Required]
-    public function setAssetHasFileRepository(AssetHasFileRepository $assetHasFileRepository): void
+    public function setAssetSlotRepository(AssetSlotRepository $assetSlotRepository): void
     {
-        $this->assetHasFileRepository = $assetHasFileRepository;
+        $this->assetSlotRepository = $assetSlotRepository;
     }
 
     #[Required]
@@ -74,9 +74,9 @@ abstract class AssetFileFacade
     }
 
     #[Required]
-    public function setAssetHasFileFactory(AssetHasFileFactory $assetHasFileFactory): void
+    public function setAssetSlotFactory(AssetSlotFactory $assetSlotFactory): void
     {
-        $this->assetHasFileFactory = $assetHasFileFactory;
+        $this->assetSlotFactory = $assetSlotFactory;
     }
 
     #[Required]
@@ -189,20 +189,20 @@ abstract class AssetFileFacade
     /**
      * @return T
      *
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws NonUniqueResultException
      * @throws ValidationException
      */
-    public function addAssetFileToAsset(Asset $asset, AssetFileAdmCreateDto $createDto, string $version): AssetFile
+    public function addAssetFileToAsset(Asset $asset, AssetFileAdmCreateDto $createDto, string $slotName): AssetFile
     {
         $this->validateAssetType($asset, $createDto);
-        $this->validateFileVersion($asset, $version);
+        $this->validateSlotTitle($asset, $slotName);
         $this->entityValidator->validateDto($createDto);
 
-        $slot = $this->assetHasFileRepository->findSlotByAssetAndTitle($asset->getId(), $version);
+        $slot = $this->assetSlotRepository->findSlotByAssetAndTitle($asset->getId(), $slotName);
 
         if ($slot) {
-            throw new AssetFileVersionUsedException($slot->getAssetFile(), $version);
+            throw new AssetSlotUsedException($slot->getAssetFile(), $slotName);
         }
 
         $assetFile = $this->getFactory()->createFromAdmDto($asset->getLicence(), $createDto);
@@ -210,7 +210,7 @@ abstract class AssetFileFacade
         try {
             $this->getManager()->beginTransaction();
             $this->getManager()->create($assetFile);
-            $this->assetHasFileFactory->createRelation($asset, $assetFile, $version);
+            $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName);
 
             $this->indexManager->index($assetFile->getAsset());
             $this->getManager()->commit();
@@ -221,16 +221,6 @@ abstract class AssetFileFacade
 
             throw new RuntimeException('image_create_failed', 0, $exception);
         }
-    }
-
-    public function setToPosition(Asset $asset, AssetFile $assetFile, string $version): AssetFile
-    {
-        // validation
-        // todo special lock
-        // todo validate same licence
-        //
-
-        return $assetFile;
     }
 
     public function delete(AssetFile $assetFile): void
@@ -247,7 +237,7 @@ abstract class AssetFileFacade
 
             $this->getManager()->delete($assetFile);
 
-            if ($asset->getFiles()->isEmpty()) {
+            if ($asset->getSlots()->isEmpty()) {
                 $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::Draft);
             }
 
@@ -301,18 +291,18 @@ abstract class AssetFileFacade
     /**
      * @throws ForbiddenOperationException
      */
-    protected function validateFileVersion(Asset $asset, string $version): void
+    protected function validateSlotTitle(Asset $asset, string $slotName): void
     {
         $assetTypeConfiguration = $this->extSystemConfigurationProvider->getAssetConfiguration(
             $asset->getLicence()->getExtSystem()->getSlug(),
             $asset->getAttributes()->getAssetType()
         );
 
-        if (in_array($version, $assetTypeConfiguration->getFileVersions()->getVersions(), true)) {
+        if (in_array($slotName, $assetTypeConfiguration->getSlots()->getSlots(), true)) {
             return;
         }
 
-        throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_FILE_VERSION);
+        throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT);
     }
 
     abstract protected function getManager(): AssetFileManager;

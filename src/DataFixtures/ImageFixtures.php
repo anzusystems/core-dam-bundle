@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -33,7 +33,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         private readonly AssetLicenceRepository $licenceRepository,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
-        private readonly AssetHasFileFactory $assetHasFileFactory,
+        private readonly AssetSlotFactory $assetSlotFactory,
     ) {
     }
 
@@ -81,7 +81,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
 
         $file = $this->getFile($fileSystem, 'solid_image_200_100.jpeg');
         $secondImage = $this->imageFactory->createBlankAssetFile($file, $licence, self::IMAGE_ID_1_2);
-        $this->assetHasFileFactory->createRelation($image->getAsset(), $secondImage, 'extra');
+        $this->assetSlotFactory->createRelation($image->getAsset(), $secondImage, 'extra');
         $secondImage->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($secondImage, $file);
 

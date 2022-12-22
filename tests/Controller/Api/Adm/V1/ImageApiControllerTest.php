@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -102,7 +101,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
         $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
 
-        $response = $this->addToPosition(
+        $response = $this->addToSlot(
             apiClient: $client,
             assetUrl: new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID),
             file: $this->getFile(self::TEST_DATA_FILENAME),
@@ -154,7 +153,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
             [
                 ImageFixtures::IMAGE_ID_2,
                 'new',
-                ForbiddenOperationException::DETAIL_INVALID_FILE_VERSION
+                ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT
             ]
         ];
     }

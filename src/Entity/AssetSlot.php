@@ -7,24 +7,24 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Repository\AssetHasFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: AssetHasFileRepository::class)]
-#[ORM\Index(fields: ['versionTitle'], name: 'IDX_version_title')]
+#[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
+#[ORM\Index(fields: ['name'], name: 'IDX_name')]
 #[ORM\Index(fields: ['default'], name: 'IDX_default')]
-class AssetHasFile implements UuidIdentifiableInterface
+class AssetSlot implements UuidIdentifiableInterface
 {
     use UuidIdentityTrait;
 
     #[ORM\Column(type: Types::STRING)]
-    private string $versionTitle;
+    private string $name;
 
     #[ORM\Column(name: 'is_default', type: Types::BOOLEAN)]
     private bool $default;
 
-    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'files')]
+    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'slots')]
     private Asset $asset;
 
     #[ORM\ManyToOne(targetEntity: ImageFile::class, inversedBy: 'slots')]
@@ -41,7 +41,7 @@ class AssetHasFile implements UuidIdentifiableInterface
 
     public function __construct()
     {
-        $this->setVersionTitle('');
+        $this->setName('');
         $this->setDefault(false);
         $this->setImage(null);
         $this->setAudio(null);
@@ -49,14 +49,14 @@ class AssetHasFile implements UuidIdentifiableInterface
         $this->setDocument(null);
     }
 
-    public function getVersionTitle(): string
+    public function getName(): string
     {
-        return $this->versionTitle;
+        return $this->name;
     }
 
-    public function setVersionTitle(string $versionTitle): self
+    public function setName(string $name): self
     {
-        $this->versionTitle = $versionTitle;
+        $this->name = $name;
 
         return $this;
     }

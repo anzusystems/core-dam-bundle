@@ -20,7 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -32,6 +32,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -97,19 +98,20 @@ final class DocumentController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
+     * @throws NonUniqueResultException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('document', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, DocumentAdmCreateDto $document, string $position): JsonResponse
+    public function createToAsset(Asset $asset, DocumentAdmCreateDto $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $asset);
 
         return $this->createdResponse(
-            DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $position))
+            DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $slotName))
         );
     }
 

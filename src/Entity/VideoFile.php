@@ -22,7 +22,7 @@ class VideoFile extends AssetFile
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'video', targetEntity: AssetHasFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(mappedBy: 'video', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()

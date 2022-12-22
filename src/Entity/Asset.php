@@ -76,8 +76,8 @@ class Asset implements
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private AssetLicence $licence;
 
-    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: AssetHasFile::class)]
-    private Collection $files;
+    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: AssetSlot::class)]
+    private Collection $slots;
 
     #[ORM\ManyToOne(targetEntity: DistributionCategory::class)]
     private ?DistributionCategory $distributionCategory;
@@ -90,7 +90,7 @@ class Asset implements
         $this->setTexts(new AssetTexts());
         $this->setAssetFlags(new AssetFlags());
         $this->setDates(new AssetDates());
-        $this->setFiles(new ArrayCollection());
+        $this->setSlots(new ArrayCollection());
         $this->setAuthors(new ArrayCollection());
         $this->setKeywords(new ArrayCollection());
         $this->setDistributionCategory(null);
@@ -171,16 +171,16 @@ class Asset implements
     }
 
     /**
-     * @return Collection<int, AssetHasFile>
+     * @return Collection<int, AssetSlot>
      */
-    public function getFiles(): Collection
+    public function getSlots(): Collection
     {
-        return $this->files;
+        return $this->slots;
     }
 
-    public function setFiles(Collection $files): self
+    public function setSlots(Collection $slots): self
     {
-        $this->files = $files;
+        $this->slots = $slots;
 
         return $this;
     }

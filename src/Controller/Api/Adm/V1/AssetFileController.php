@@ -10,9 +10,9 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetHasFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata\AssetHasFileAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata\AssetSlotAdmListDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -35,12 +35,12 @@ final class AssetFileController extends AbstractApiController
         return $this->okResponse(
             (new ApiResponseList())
                 ->setData(
-                    $asset->getFiles()->map(
-                        fn (AssetHasFile $assetHasFile): AssetHasFileAdmListDto => AssetHasFileAdmListDto::getInstance($assetHasFile)
+                    $asset->getSlots()->map(
+                        fn (AssetSlot $assetSlot): AssetSlotAdmListDto => AssetSlotAdmListDto::getInstance($assetSlot)
                     )->toArray()
                 )
                 ->setTotalCount(
-                    $asset->getFiles()->count()
+                    $asset->getSlots()->count()
                 )
         );
     }

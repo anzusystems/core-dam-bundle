@@ -22,7 +22,7 @@ class DocumentFile extends AssetFile
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'document', targetEntity: AssetHasFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(mappedBy: 'document', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()

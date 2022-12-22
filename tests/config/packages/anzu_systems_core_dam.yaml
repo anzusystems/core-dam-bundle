@@ -143,25 +143,25 @@ anzu_systems_core_dam:
         size_limit: 104857600 # 100MB
         roi_width: 16
         roi_height: 9
-        file_versions:
+        file_slots:
           default: default
-          versions: [ default, free, extra ]
+          slots: [ default, free, extra ]
       audio:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.audio'
         chunk_storage_name: 'cms.audio'
         size_limit: 104857600 # 100MB
-        file_versions:
+        file_slots:
           default: free
-          versions: [ free, paid ]
+          slots: [ free, paid ]
       video:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.video'
         chunk_storage_name: 'cms.video'
         size_limit: 5242880000  # 5GB
-        file_versions: ~
+        file_slots: ~
         distribution:
           distribution_services: [ youtube_cms_main ]
           distribution_requirements:
@@ -181,7 +181,7 @@ anzu_systems_core_dam:
         storage_name: 'cms.document'
         chunk_storage_name: 'cms.document'
         size_limit: 1048576000 # 1GB
-        file_versions: ~
+        file_slots: ~
   domains:
     admin:
       domain: '%env(resolve:string:DOMAIN_ADMIN_WEB)%'
