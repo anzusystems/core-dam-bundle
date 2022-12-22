@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFacade;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -46,6 +47,7 @@ final class VideoController extends AbstractApiController
         private readonly VideoStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly VideoPositionFacade $videoPositionFacade,
     ) {
     }
 
@@ -109,6 +111,38 @@ final class VideoController extends AbstractApiController
 
         return $this->createdResponse(
             VideoFileAdmDetailDto::getInstance($this->videoFacade->addAssetFileToAsset($asset, $video, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{video}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('video'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
+    public function setToPosition(Asset $asset, VideoFile $video, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+
+        return $this->okResponse(
+            VideoFileAdmDetailDto::getInstance($this->videoPositionFacade->setToSlot($asset, $video, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{video}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('video'), OAParameterPath('asset'), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, VideoFile $video): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+
+        return $this->okResponse(
+            VideoFileAdmDetailDto::getInstance($this->videoPositionFacade->setMainFile($asset, $video))
         );
     }
 

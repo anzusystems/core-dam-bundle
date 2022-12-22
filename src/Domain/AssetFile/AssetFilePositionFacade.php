@@ -11,13 +11,18 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;
+use Throwable;
 
 /**
  * @template-covariant T of AssetFile
  */
-final class AssetFilePositionFacade
+abstract class AssetFilePositionFacade
 {
+    use IndexManagerAwareTrait;
+
     private AssetSlotFactory $assetSlotFactory;
     private AssetSlotManager $assetSlotManager;
     private AssetManager $assetManager;
@@ -47,24 +52,61 @@ final class AssetFilePositionFacade
         $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
     }
 
-    public function setToPosition(Asset $asset, AssetFile $assetFile, string $slotName): AssetFile
+    /**
+     * @return T
+     */
+    public function setMainFile(Asset $asset, AssetFile $assetFile): AssetFile
+    {
+        if (false === ($assetFile->getAsset() === $asset)) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
+
+        try {
+            $this->assetManager->beginTransaction();
+            $asset->setMainFile($assetFile);
+            $this->assetManager->updateExisting($asset);
+            $this->indexManager->index($asset);
+            $this->assetManager->commit();
+
+            return $assetFile;
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
+
+            throw new RuntimeException('set_main_position_failed', 0, $exception);
+        }
+    }
+
+    /**
+     * @return T
+     */
+    public function setToSlot(Asset $asset, AssetFile $assetFile, string $slotName): AssetFile
     {
         $this->validateSlot($asset, $slotName);
         $this->validate($asset, $assetFile);
 
-        $originAsset = $assetFile->getAsset();
+        try {
+            $this->assetManager->beginTransaction();
+            $originAsset = $assetFile->getAsset();
 
-        $this->removeOtherAssetSlots($asset, $assetFile);
-        $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName, false);
-        $assetFile->setAsset($asset);
+            $this->removeOtherAssetSlots($asset, $assetFile);
+            $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName, false);
+            $assetFile->setAsset($asset);
 
-        if (false === ($asset === $originAsset)) {
-            $this->assetManager->updateExisting($originAsset, false);
+            if (false === ($asset === $originAsset)) {
+                $this->assetManager->updateExisting($originAsset, false);
+            }
+            $this->assetManager->updateExisting($asset);
+            $this->indexManager->index($asset);
+            if (false === ($asset === $originAsset)) {
+                $this->indexManager->index($originAsset);
+            }
+
+            return $assetFile;
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
+
+            throw new RuntimeException('add_to_slot_failed', 0, $exception);
         }
-
-        $this->assetManager->updateExisting($asset);
-
-        return $assetFile;
     }
 
     private function removeOtherAssetSlots(Asset $asset, AssetFile $assetFile): void
@@ -90,11 +132,6 @@ final class AssetFilePositionFacade
 
         if (false === ($asset->getLicence() === $assetFile->getLicence())) {
             throw new ForbiddenOperationException(ForbiddenOperationException::LICENCE_MISMATCH);
-        }
-
-        // todo fix same file on multiple positions
-        if (1 === $assetFile->getAsset()->getSlots()->count()) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::LAST_FILE);
         }
     }
 

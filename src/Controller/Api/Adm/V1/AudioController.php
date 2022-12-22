@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFacade;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -28,8 +29,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExt
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
@@ -48,6 +47,7 @@ final class AudioController extends AbstractApiController
         private readonly AudioStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly AudioPositionFacade $audioPositionFacade,
     ) {
     }
 
@@ -103,7 +103,7 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('audio', converter: SerializerParamConverter::class)]
-    #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    #[OAParameterPath('assetLicence'), OARequest(AudioAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
     public function createToAsset(Asset $asset, AudioAdmCreateDto $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
@@ -111,6 +111,38 @@ final class AudioController extends AbstractApiController
 
         return $this->createdResponse(
             AudioFileAdmDetailDto::getInstance($this->audioFacade->addAssetFileToAsset($asset, $audio, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{audio}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    public function setToPosition(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        return $this->okResponse(
+            AudioFileAdmDetailDto::getInstance($this->audioPositionFacade->setToSlot($asset, $audio, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{audio}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('audio'), OAParameterPath('asset'), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, AudioFile $audio): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        return $this->okResponse(
+            AudioFileAdmDetailDto::getInstance($this->audioPositionFacade->setMainFile($asset, $audio))
         );
     }
 

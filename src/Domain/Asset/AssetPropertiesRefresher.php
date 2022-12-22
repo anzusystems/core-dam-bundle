@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetPropertiesRefresher extends AbstractManager
@@ -25,8 +27,22 @@ class AssetPropertiesRefresher extends AbstractManager
     {
         $this->assetTextsProcessor->updateAssetDisplayTitle($asset);
         $this->refreshMainFile($asset);
+        $this->refreshStatus($asset);
 
         return $asset;
+    }
+
+    private function refreshStatus(Asset $asset): void
+    {
+        foreach ($asset->getSlots() as $slot) {
+            if ($slot->getAssetFile()->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
+                $asset->getAttributes()->setStatus(AssetStatus::WithFile);
+
+                return;
+            }
+        }
+
+        $asset->getAttributes()->setStatus(AssetStatus::Draft);
     }
 
     private function refreshMainFile(Asset $asset): void

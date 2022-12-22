@@ -13,9 +13,9 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -48,7 +48,7 @@ final class ImageController extends AbstractApiController
         private readonly ImageStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
-        private readonly AssetFilePositionFacade $assetFilePositionFacade,
+        private readonly ImagePositionFacade $imagePositionFacade,
     ) {
     }
 
@@ -117,24 +117,34 @@ final class ImageController extends AbstractApiController
     }
 
     /**
-     * Create image for asset and assign to specific position.
-     *
-     * @throws ValidationException
-     * @throws ForbiddenOperationException
-     * @throws InvalidExtSystemConfigurationException
-     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_position', methods: [Request::METHOD_PATCH])]
-    #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
     public function setToPosition(Asset $asset, ImageFile $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
 
         return $this->okResponse(
-            ImageFileAdmDetailDto::getInstance($this->assetFilePositionFacade->setToPosition($asset, $image, $slotName))
+            ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setToSlot($asset, $image, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{image}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('image'), OAParameterPath('asset'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, ImageFile $image): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setMainFile($asset, $image))
         );
     }
 

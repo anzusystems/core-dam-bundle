@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
+use Doctrine\ORM\NonUniqueResultException;
 
 class AssetManager extends AbstractManager
 {
@@ -24,6 +25,9 @@ class AssetManager extends AbstractManager
         return $asset;
     }
 
+    /**
+     * @throws NonUniqueResultException
+     */
     public function updateExisting(Asset $asset, bool $flush = true): Asset
     {
         $this->trackModification($asset);
@@ -42,6 +46,9 @@ class AssetManager extends AbstractManager
         return true;
     }
 
+    /**
+     * @throws NonUniqueResultException
+     */
     public function updateFromMetadataBulkDto(
         Asset $asset,
         FormProvidableMetadataBulkUpdateDto $dto,

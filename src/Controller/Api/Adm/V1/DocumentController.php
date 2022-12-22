@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentFacade;
+use AnzuSystems\CoreDamBundle\Domain\Document\DocumentPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -48,6 +49,7 @@ final class DocumentController extends AbstractApiController
         private readonly DocumentStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly DocumentPositionFacade $documentPositionFacade,
     ) {
     }
 
@@ -112,6 +114,38 @@ final class DocumentController extends AbstractApiController
 
         return $this->createdResponse(
             DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
+    public function setToPosition(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        return $this->okResponse(
+            DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setToSlot($asset, $document, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{document}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('document'), OAParameterPath('asset'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, DocumentFile $document): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        return $this->okResponse(
+            DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setMainFile($asset, $document))
         );
     }
 
