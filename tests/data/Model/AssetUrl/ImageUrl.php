@@ -38,6 +38,11 @@ final class ImageUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/image/{$imageId}/asset/{$assetId}/slot-name/{$position}";
     }
 
+    public function setMainFilePath(string $assetId, string $imageId): string
+    {
+        return "/api/adm/v{$this->version}/image/{$imageId}/asset/{$assetId}/main";
+    }
+
     public function getSerializeClassString(): string
     {
         return ImageFileAdmDetailDto::class;

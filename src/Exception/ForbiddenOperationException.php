@@ -18,7 +18,6 @@ class ForbiddenOperationException extends DomainException
     public const ASSET_NOT_FULLY_UPLOADED = 'asset_not_fully_uploaded';
     public const NOT_ALLOWED_DOWNLOAD = 'not_allowed_download';
     public const LICENCE_MISMATCH = 'licence_mismatch';
-    public const LAST_FILE = 'last_file';
 
     public function __construct(
         private readonly string $detail

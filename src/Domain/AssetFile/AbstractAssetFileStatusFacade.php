@@ -23,7 +23,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
@@ -227,12 +226,11 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
         $this->processAssetFile($assetFile, $file);
 
-        $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::WithFile);
         if (false === $assetFile->getFlags()->isProcessedMetadata()) {
             $this->metadataProcessor->process($assetFile, $file);
         }
         $this->assetStatusManager->toProcessed($assetFile, false);
-        $this->assetManager->updateExisting($assetFile->getAsset(), false);
+        $this->assetManager->updateExisting($assetFile->getAsset());
         $this->indexManager->index($assetFile->getAsset());
 
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);

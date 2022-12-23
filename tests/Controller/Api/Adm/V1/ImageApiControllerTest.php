@@ -8,6 +8,7 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
@@ -110,17 +111,25 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
             expectedStatusCode: Response::HTTP_CREATED
         );
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
-        $imageAtPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+        $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
 
         $response = $client->patch(
             (new ImageUrl(1))
                 ->setToPositionPath($asset->getId(), ImageFixtures::IMAGE_ID_1_1, 'free'),
-            ['type' => 'image']
         );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $imageAtSecondPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
 
-        // todo test choose main file of another asset (integrity problem)
+        $response = $client->patch(
+            (new ImageUrl(1))
+                ->setMainFilePath($asset->getId(), $imageAtSecondPosition->getId()),
+        );
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+
+        $assetEntity = $this->entityManager->find(Asset::class, $asset->getId());
+
+        $this->assertCount(2, $assetEntity->getSlots());
+        $this->assertEquals(ImageFixtures::IMAGE_ID_1_1, $assetEntity->getMainFile()?->getId());
     }
 
     /**
@@ -145,11 +154,6 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
     public function createToAssetFailedDataProvider(): array
     {
         return [
-            [
-                ImageFixtures::IMAGE_ID_2,
-                'free',
-                ForbiddenOperationException::LAST_FILE
-            ],
             [
                 ImageFixtures::IMAGE_ID_2,
                 'new',
