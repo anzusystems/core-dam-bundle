@@ -7,11 +7,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Traits\ExtSystemConfigurationProviderAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -22,11 +22,11 @@ use Throwable;
 abstract class AssetFilePositionFacade
 {
     use IndexManagerAwareTrait;
+    use ExtSystemConfigurationProviderAwareTrait;
 
     private AssetSlotFactory $assetSlotFactory;
     private AssetSlotManager $assetSlotManager;
     private AssetManager $assetManager;
-    private ExtSystemConfigurationProvider $extSystemConfigurationProvider;
 
     #[Required]
     public function setAssetSlotFactory(AssetSlotFactory $assetSlotFactory): void
@@ -44,12 +44,6 @@ abstract class AssetFilePositionFacade
     public function setAssetManager(AssetManager $assetManager): void
     {
         $this->assetManager = $assetManager;
-    }
-
-    #[Required]
-    public function setExtSystemConfigurationProvider(ExtSystemConfigurationProvider $extSystemConfigurationProvider): void
-    {
-        $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
     }
 
     /**

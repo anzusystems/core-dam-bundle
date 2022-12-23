@@ -134,6 +134,24 @@ class AssetSlot implements UuidIdentifiableInterface
         return $this;
     }
 
+    public function setAssetFile(AssetFile $assetFile): self
+    {
+        if ($assetFile instanceof ImageFile) {
+            $this->setImage($assetFile);
+        }
+        if ($assetFile instanceof AudioFile) {
+            $this->setAudio($assetFile);
+        }
+        if ($assetFile instanceof VideoFile) {
+            $this->setVideo($assetFile);
+        }
+        if ($assetFile instanceof DocumentFile) {
+            $this->setDocument($assetFile);
+        }
+
+        return $this;
+    }
+
     public function getAssetFile(): AssetFile
     {
         if ($this->image) {

@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
@@ -28,7 +27,6 @@ final class AssetMetadataBulkFacade
         private readonly AssetManager $assetManager,
         private readonly IndexManager $indexManager,
         private readonly AccessDenier $accessDenier,
-        private readonly AssetTextsProcessor $displayTitleProcessor,
     ) {
     }
 

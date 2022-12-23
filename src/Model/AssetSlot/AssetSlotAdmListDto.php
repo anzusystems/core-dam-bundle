@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata;
+namespace AnzuSystems\CoreDamBundle\Model\AssetSlot;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;

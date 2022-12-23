@@ -13,9 +13,9 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Traits\EntityValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
@@ -23,10 +23,10 @@ class AssetFacade
 {
     use FileStashAwareTrait;
     use IndexManagerAwareTrait;
+    use EntityValidatorAwareTrait;
 
     public function __construct(
         private readonly AssetManager $assetManager,
-        private readonly EntityValidator $entityValidator,
         private readonly AssetFactory $assetFactory,
         private readonly MessageBusInterface $messageBus,
         private readonly AssetStatusManager $assetStatusManager,
