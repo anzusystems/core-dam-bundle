@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\ArrayStringHandler;
+use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class AssetAdmSearchDto extends AbstractSearchDto
@@ -116,6 +117,12 @@ final class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize]
     private ?int $bitrateUntil = null;
+
+    #[Serialize]
+    private ?DateTimeImmutable $createdAtFrom = null;
+
+    #[Serialize]
+    private ?DateTimeImmutable $createdAtUntil = null;
 
     public function getIndexName(): string
     {
@@ -454,6 +461,30 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setBitrateUntil(?int $bitrateUntil): self
     {
         $this->bitrateUntil = $bitrateUntil;
+
+        return $this;
+    }
+
+    public function getCreatedAtFrom(): ?DateTimeImmutable
+    {
+        return $this->createdAtFrom;
+    }
+
+    public function setCreatedAtFrom(?DateTimeImmutable $createdAtFrom): self
+    {
+        $this->createdAtFrom = $createdAtFrom;
+
+        return $this;
+    }
+
+    public function getCreatedAtUntil(): ?DateTimeImmutable
+    {
+        return $this->createdAtUntil;
+    }
+
+    public function setCreatedAtUntil(?DateTimeImmutable $createdAtUntil): self
+    {
+        $this->createdAtUntil = $createdAtUntil;
 
         return $this;
     }

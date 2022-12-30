@@ -6,23 +6,34 @@ namespace AnzuSystems\CoreDamBundle\Domain;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager as BaseAbstractManager;
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
-use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
+use AnzuSystems\CoreDamBundle\Event\UserTrackingEvent;
 use ArrayIterator;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Exception;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractManager extends BaseAbstractManager
 {
     private CurrentAnzuUserProvider $currentUser;
+    private EventDispatcherInterface $eventDispatcher;
 
     #[Required]
     public function setCurrentUser(CurrentAnzuUserProvider $currentUser): self
     {
         $this->currentUser = $currentUser;
+
+        return $this;
+    }
+
+    #[Required]
+    public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): self
+    {
+        $this->eventDispatcher = $eventDispatcher;
 
         return $this;
     }
@@ -52,8 +63,26 @@ abstract class AbstractManager extends BaseAbstractManager
     public function setNotifyTo(NotifiableInterface $object): void
     {
         $currentUser = $this->currentUser->getCurrentUser();
-        if ($currentUser instanceof DamUser) {
-            $object->setNotifyTo($currentUser);
+        $object->setNotifyTo($currentUser);
+    }
+
+    public function trackCreation(object $object): void
+    {
+        parent::trackCreation($object);
+        if ($object instanceof UserTrackingInterface) {
+            $event = new UserTrackingEvent($object->getCreatedBy(), $object);
+            $this->eventDispatcher->dispatch($event);
+            $object->setModifiedBy($event->getUser());
+        }
+    }
+
+    public function trackModification(object $object): void
+    {
+        parent::trackModification($object);
+        if ($object instanceof UserTrackingInterface) {
+            $event = new UserTrackingEvent($object->getModifiedBy(), $object);
+            $this->eventDispatcher->dispatch($event);
+            $object->setModifiedBy($event->getUser());
         }
     }
 }

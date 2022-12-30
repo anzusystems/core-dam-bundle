@@ -44,6 +44,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),
             'visible' => $entity->getAssetFlags()->isVisible(),
+            'modifiedAt' => $entity->getModifiedAt()->getTimestamp(),
             'createdAt' => $entity->getCreatedAt()->getTimestamp(),
             'licence' => $entity->getLicence()->getId(),
             ...$this->assetMetadataCustomData->buildFromEntity($entity),

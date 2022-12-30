@@ -34,6 +34,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'createdAt' => [
                     'type' => 'date',
                 ],
+                'modifiedAt' => [
+                    'type' => 'date',
+                ],
                 'title' => [
                     'type' => 'text',
                     'analyzer' => 'exact_stop',

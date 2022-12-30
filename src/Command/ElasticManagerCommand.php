@@ -64,12 +64,15 @@ final class ElasticManagerCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $idFrom = $input->getArgument(self::ARG_ID_FROM);
+        $idUntil = $input->getArgument(self::ARG_ID_UNTIL);
+
         $this->indexBuilder->rebuildIndex(
             (string) $input->getArgument(self::ARG_INDEX_NAME),
             (bool) $input->getOption(self::OPT_NO_DROP),
             (int) $input->getOption(self::OPT_BATCH),
-            (int) $input->getArgument(self::ARG_ID_FROM),
-            (int) $input->getArgument(self::ARG_ID_UNTIL),
+            is_numeric($idFrom) ? (int) $idFrom : (string) $idFrom,
+            is_numeric($idUntil) ? (int) $idUntil : (string) $idUntil,
         );
 
         return Command::SUCCESS;

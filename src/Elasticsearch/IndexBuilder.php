@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
-use AnzuSystems\CommonBundle\Repository\AbstractAnzuRepository;
+use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
+use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Elasticsearch\Client;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -35,8 +36,8 @@ final class IndexBuilder
         string $indexName,
         bool $noDrop = false,
         int $batch = 500,
-        int $idFrom = 0,
-        int $idUntil = 0,
+        int|string $idFrom = 0,
+        int|string $idUntil = 0,
     ): void {
         if (false === in_array($indexName, $this->getAvailableIndexes(), true)) {
             $this->writeln(sprintf('ERROR: Index with name "%s" does not exist, skipping.', $indexName));
@@ -65,35 +66,37 @@ final class IndexBuilder
         }
     }
 
-    private function buildIndex(string $indexName, int $batch, int $idFrom, int $idUntil): void
+    private function buildIndex(string $indexName, int $batch, int|string $idFrom, int|string $idUntil): void
     {
         $this->writeln('Indexing <info>' . $indexName . '</info>...');
 
-        /** @var AbstractAnzuRepository $repo */
+        /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repo */
         $repo = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($indexName));
 
         $progressBar = $this->outputUtil->createProgressBar();
         $this->configureProgressBar($progressBar);
 
-        $payload = ['body' => []];
+        $maxId = $idUntil ?: $repo->getMaxId();
+        do {
+            $payload = ['body' => []];
+            foreach ($repo->getAll($idFrom, $idUntil, $batch) as $item) {
+                $payload['body'][] = [
+                    'index' => [
+                        '_index' => $this->indexSettings->getFullIndexNameByEntity($item),
+                        '_id' => $item->getId(),
+                    ],
+                ];
+                $payload['body'][] = $this->indexFactoryProvider->getIndexFactory($this->indexSettings->getEntityClassName($indexName))->buildFromEntity($item);
 
-        foreach ($repo->findAll() as $item) {
-            $payload['body'][] = [
-                'index' => [
-                    '_index' => $this->indexSettings->getFullIndexNameByEntity($item),
-                    '_id' => $item->getId(),
-                ],
-            ];
-            $payload['body'][] = $this->indexFactoryProvider->getIndexFactory($this->indexSettings->getEntityClassName($indexName))->buildFromEntity($item);
+                $progressBar->advance();
+                $idFrom = $item->getId();
+            }
+            if (false === empty($payload['body'])) {
+                $this->client->bulk($payload);
+            }
+            $this->entityManager->clear();
+        } while ($idFrom < $maxId);
 
-            $progressBar->advance();
-        }
-
-        $this->entityManager->clear();
-
-        if (false === empty($payload['body'])) {
-            $this->client->bulk($payload);
-        }
         $progressBar->finish();
     }
 
