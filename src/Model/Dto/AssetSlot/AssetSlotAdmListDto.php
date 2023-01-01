@@ -2,22 +2,23 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Model\AssetSlot;
+namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-class AssetSlotAdmListDto
+class AssetSlotAdmListDto extends AbstractEntityDto
 {
     protected string $resourceName = AssetSlot::class;
     protected AssetSlot $assetSlot;
 
     public static function getInstance(AssetSlot $assetSlot): static
     {
-        return (new self())
+        return self::getBaseInstance($assetSlot)
             ->setAssetSlot($assetSlot);
     }
 
@@ -48,13 +49,12 @@ class AssetSlotAdmListDto
     #[Serialize]
     public function isDefault(): bool
     {
-        return $this->assetSlot->isDefault();
+        return $this->assetSlot->getFlags()->isDefault();
     }
 
     #[Serialize]
     public function isMain(): bool
     {
-        // todo implement main
-        return $this->assetSlot->isDefault();
+        return $this->assetSlot->getFlags()->isMain();
     }
 }

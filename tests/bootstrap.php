@@ -26,6 +26,8 @@ $kernel = new AnzuTestKernel(
 );
 $kernel->boot();
 
+//return;
+
 $app = new Application($kernel);
 $app->setAutoExit(false);
 

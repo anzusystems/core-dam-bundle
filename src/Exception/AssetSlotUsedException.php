@@ -31,9 +31,10 @@ class AssetSlotUsedException extends Exception
     public function getDetail(): string
     {
         return sprintf(
-            'Position (%s) is already user for asset id (%s)',
+            'There is already file (%s) in asset (%s) at position (%s)',
             $this->getAssetFile()->getId(),
-            $this->position
+            $this->getAssetFile()->getAsset()->getId(),
+            $this->position,
         );
     }
 }

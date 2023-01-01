@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
+use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
+use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetSlotFlags;
+use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
@@ -13,17 +18,19 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
 #[ORM\Index(fields: ['name'], name: 'IDX_name')]
-#[ORM\Index(fields: ['default'], name: 'IDX_default')]
+#[ORM\Index(fields: ['flags.default'], name: 'IDX_default')]
 #[ORM\UniqueConstraint(name: 'UNIQ_asset_file_asset_name', fields: ['asset', 'name', 'image', 'audio', 'video', 'image'])]
-class AssetSlot implements UuidIdentifiableInterface
+class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;
+    use UserTrackingTrait;
+    use TimeTrackingTrait;
 
     #[ORM\Column(type: Types::STRING)]
     private string $name;
 
-    #[ORM\Column(name: 'is_default', type: Types::BOOLEAN)]
-    private bool $default;
+    #[ORM\Embedded(class: AssetSlotFlags::class)]
+    private AssetSlotFlags $flags;
 
     #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'slots')]
     private Asset $asset;
@@ -43,11 +50,23 @@ class AssetSlot implements UuidIdentifiableInterface
     public function __construct()
     {
         $this->setName('');
-        $this->setDefault(false);
+        $this->setFlags(new AssetSlotFlags());
         $this->setImage(null);
         $this->setAudio(null);
         $this->setVideo(null);
         $this->setDocument(null);
+    }
+
+    public function getFlags(): AssetSlotFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(AssetSlotFlags $flags): self
+    {
+        $this->flags = $flags;
+
+        return $this;
     }
 
     public function getName(): string

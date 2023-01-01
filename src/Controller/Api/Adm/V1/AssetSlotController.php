@@ -11,8 +11,8 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Model\AssetSlot\AssetSlotAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\AssetSlot\AssetSlotMinimalAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\CollectionParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -49,7 +49,7 @@ final class AssetSlotController extends AbstractApiController
      * @throws NonUniqueResultException
      * @throws ValidationException
      */
-    #[Route(path: '/asset/{asset}', name: 'list_by_asset', methods: [Request::METHOD_PATCH])]
+    #[Route(path: '/asset/{asset}', name: 'update', methods: [Request::METHOD_PATCH])]
     #[ParamConverter('list', class: AssetSlotMinimalAdmDto::class, converter: CollectionParamConverter::class)]
     #[OARequest([AssetSlotMinimalAdmDto::class]), OAResponse([AssetSlotAdmListDto::class]), OAResponseValidation]
     public function update(Asset $asset, Collection $list): JsonResponse

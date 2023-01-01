@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Model\AssetSlot;
+namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;

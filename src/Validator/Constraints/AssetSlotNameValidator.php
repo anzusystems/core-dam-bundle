@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Model\AssetSlot\AssetSlotMinimalAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use AnzuSystems\CoreDamBundle\Traits\ExtSystemConfigurationProviderAwareTrait;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;

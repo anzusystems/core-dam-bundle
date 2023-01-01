@@ -231,7 +231,6 @@ abstract class AssetFileFacade
             $asset = $assetFile->getAsset();
 
             if ($assetFile === $asset->getMainFile()) {
-                // todo refactor
                 $asset->setMainFile(null);
             }
 
@@ -241,6 +240,7 @@ abstract class AssetFileFacade
                 $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::Draft);
             }
 
+            $this->assetManager->updateExisting($asset);
             $this->indexManager->index($asset);
             $this->fileDeleteStash->emptyAll();
             $this->getManager()->commit();

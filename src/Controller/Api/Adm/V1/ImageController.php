@@ -121,7 +121,7 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function setToPosition(Asset $asset, ImageFile $image, string $slotName): JsonResponse
+    public function setToSlot(Asset $asset, ImageFile $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);

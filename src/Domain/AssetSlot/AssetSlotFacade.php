@@ -11,8 +11,8 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
-use AnzuSystems\CoreDamBundle\Model\AssetSlot\AssetSlotAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\AssetSlot\AssetSlotMinimalAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use AnzuSystems\CoreDamBundle\Traits\EntityValidatorAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -50,9 +50,6 @@ class AssetSlotFacade
      */
     public function update(Asset $asset, Collection $list): ApiResponseList
     {
-        // todo update main file
-        // todo modified at
-
         $this->entityValidator->validateDto($list);
         $this->validateOwnership($asset, $list);
 

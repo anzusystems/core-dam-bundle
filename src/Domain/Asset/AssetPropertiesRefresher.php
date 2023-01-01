@@ -26,10 +26,24 @@ class AssetPropertiesRefresher extends AbstractManager
     public function refreshProperties(Asset $asset): Asset
     {
         $this->assetTextsProcessor->updateAssetDisplayTitle($asset);
+
+        $this->syncMainFile($asset);
         $this->refreshMainFile($asset);
         $this->refreshStatus($asset);
 
         return $asset;
+    }
+
+    /**
+     * Updates slot flags based on asset main file
+     */
+    private function syncMainFile(Asset $asset)
+    {
+        $asset->getSlots()->map(
+            fn (AssetSlot $slot) => $slot->getFlags()->setMain(
+                $slot->getAssetFile() === $asset->getMainFile()
+            )
+        );
     }
 
     private function refreshStatus(Asset $asset): void
@@ -49,15 +63,18 @@ class AssetPropertiesRefresher extends AbstractManager
         $asset->getAttributes()->setStatus(AssetStatus::Draft);
     }
 
+    /**
+     * If there is no main file, try to set new main file
+     */
     private function refreshMainFile(Asset $asset): void
     {
-        $manFileSlot = $this->getMainFileSlot($asset);
-        if ($manFileSlot instanceof AssetSlot) {
+        if ($asset->getMainFile()) {
             return;
         }
 
         $newMainFileSlot = $this->getDefaultSlot($asset) ?? $asset->getSlots()->first();
         if ($newMainFileSlot instanceof AssetSlot) {
+            $newMainFileSlot->getFlags()->setMain(true);
             $asset->setMainFile($newMainFileSlot->getAssetFile());
 
             return;
@@ -66,25 +83,10 @@ class AssetPropertiesRefresher extends AbstractManager
         $asset->setMainFile(null);
     }
 
-    private function getMainFileSlot(Asset $asset): ?AssetSlot
-    {
-        if (null === $asset->getMainFile()) {
-            return null;
-        }
-
-        foreach ($asset->getSlots() as $slot) {
-            if ($slot->getAssetFile() === $asset->getMainFile()) {
-                return $slot;
-            }
-        }
-
-        return null;
-    }
-
     private function getDefaultSlot(Asset $asset): ?AssetSlot
     {
         foreach ($asset->getSlots() as $slot) {
-            if ($slot->isDefault()) {
+            if ($slot->getFlags()->isDefault()) {
                 return $slot;
             }
         }

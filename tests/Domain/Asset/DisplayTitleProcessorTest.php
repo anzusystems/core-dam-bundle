@@ -59,7 +59,9 @@ final class DisplayTitleProcessorTest extends AnzuKernelTestCase
 
         $assetSlot = (new AssetSlot())
             ->setAsset($asset)
-            ->setImage($image)
+            ->setImage($image);
+        $assetSlot
+            ->getFlags()
             ->setDefault(true);
         $asset->setSlots(new ArrayCollection([$assetSlot]));
 

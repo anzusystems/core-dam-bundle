@@ -18,22 +18,24 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguratio
 class AssetSlotFactory
 {
     public function __construct(
-        private AssetSlotManager $manager,
-        private ExtSystemConfigurationProvider $configurationProvider,
+        private readonly AssetSlotManager $manager,
+        private readonly ExtSystemConfigurationProvider $configurationProvider,
     ) {
     }
 
     public function createRelation(Asset $asset, AssetFile $assetFile, ?string $slotName = null, bool $flush = true): AssetSlot
     {
-        if ($asset->getSlots()->isEmpty()) {
-            $asset->setMainFile($assetFile);
-        }
+        $isMainSlot = $asset->getSlots()->isEmpty();
 
         $assetSlot = $this->initRelationEntity($asset, $slotName);
         $assetSlot->setAsset($asset);
         $asset->getSlots()->add($assetSlot);
-
         $assetFile->setAsset($asset);
+
+        if ($isMainSlot) {
+            $assetSlot->getFlags()->setMain(true);
+            $asset->setMainFile($assetFile);
+        }
 
         match ($assetFile::class) {
             ImageFile::class => $assetSlot->setImage($assetFile),
@@ -53,7 +55,7 @@ class AssetSlotFactory
         $actualSlotName = $this->getSlotName($configuration, $slotName);
 
         $assetSlot->setName($actualSlotName);
-        $assetSlot->setDefault($configuration->getSlots()->getDefault() === $actualSlotName);
+        $assetSlot->getFlags()->setDefault($configuration->getSlots()->getDefault() === $actualSlotName);
 
         return $assetSlot;
     }
