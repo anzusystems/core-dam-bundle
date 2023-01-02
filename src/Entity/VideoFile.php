@@ -19,7 +19,7 @@ class VideoFile extends AssetFile
     private VideoAttributes $attributes;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
-    private Asset $previewImage;
+    private ?Asset $previewImage;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
@@ -32,15 +32,16 @@ class VideoFile extends AssetFile
     {
         $this->setAttributes(new VideoAttributes());
         $this->setSlots(new ArrayCollection());
+        $this->setPreviewImage(null);
         parent::__construct();
     }
 
-    public function getPreviewImage(): Asset
+    public function getPreviewImage(): ?Asset
     {
         return $this->previewImage;
     }
 
-    public function setPreviewImage(Asset $previewImage): self
+    public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
         return $this;

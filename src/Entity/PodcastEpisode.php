@@ -47,7 +47,7 @@ class PodcastEpisode implements
     private ?Asset $asset;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
-    private Asset $previewImage;
+    private ?Asset $previewImage;
 
     #[Serialize]
     #[ORM\Embedded(class: PodcastEpisodeDates::class)]
@@ -70,14 +70,15 @@ class PodcastEpisode implements
         $this->setAttributes(new PodcastEpisodeAttributes());
         $this->setTexts(new PodcastEpisodeTexts());
         $this->setAsset(null);
+        $this->setPreviewImage(null);
     }
 
-    public function getPreviewImage(): Asset
+    public function getPreviewImage(): ?Asset
     {
         return $this->previewImage;
     }
 
-    public function setPreviewImage(Asset $previewImage): self
+    public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
         return $this;
