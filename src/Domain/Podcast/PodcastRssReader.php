@@ -67,14 +67,17 @@ final class PodcastRssReader
         ;
 
         $itunesXml = $channelXml->children(self::ITUNES_KEY_KEY, true);
+
         if ($itunesXml) {
             $channelItunes = (new ChannelItunes())
-                ->setImage((string) $itunesXml->image->image->attributes()?->href)
+                ->setImage((string) $itunesXml->image->attributes()?->href)
                 ->setExplicit((string) $itunesXml->explicit);
 
             foreach ($itunesXml->category as $category) {
                 $channelItunes->addCategory((string) $category->attributes()?->text);
             }
+
+            $channel->setItunes($channelItunes);
         }
 
         return $channel;
