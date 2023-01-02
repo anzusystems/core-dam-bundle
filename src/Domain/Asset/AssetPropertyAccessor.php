@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileVersionProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -15,11 +14,6 @@ final class AssetPropertyAccessor
     private const TARGET_ASSET = 'asset';
     private const TARGET_ASSET_FILE = 'assetFile';
     private const TARGET_ASSET_TEXTS = 'assetTexts';
-
-    public function __construct(
-        private readonly AssetFileVersionProvider $assetFileDefaultProvider,
-    ) {
-    }
 
     /**
      * @param array<int, string> $configs
@@ -74,10 +68,13 @@ final class AssetPropertyAccessor
      */
     private function getFromFileAttributes(Asset $asset, string $key): string
     {
-        $assetFile = $this->assetFileDefaultProvider->getDefaultFile($asset);
+        if (null === $asset->getMainFile()) {
+            return '';
+        }
+
         $getter = 'get' . ucfirst($key);
-        if ($assetFile && method_exists($assetFile->getAssetAttributes(), $getter)) {
-            return (string) $assetFile->getAssetAttributes()->{$getter}();
+        if (method_exists($asset->getMainFile()->getAssetAttributes(), $getter)) {
+            return (string) $asset->getMainFile()->getAssetAttributes()->{$getter}();
         }
 
         return '';
@@ -88,9 +85,12 @@ final class AssetPropertyAccessor
      */
     private function getFromAssetFile(Asset $asset, string $key): string
     {
-        $assetFile = $this->assetFileDefaultProvider->getDefaultFile($asset);
+        if (null === $asset->getMainFile()) {
+            return '';
+        }
+
         $getter = 'get' . ucfirst($key);
-        if ($assetFile && method_exists($assetFile, $getter)) {
+        if (method_exists($asset->getMainFile(), $getter)) {
             return (string) $assetFile->{$getter}();
         }
 

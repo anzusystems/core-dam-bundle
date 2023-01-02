@@ -46,7 +46,7 @@ abstract class AbstractAssetFileApiControllerTest extends AbstractApiControllerT
         return new UploadedFile($file->getRealPath(), $file->getFilename());
     }
 
-    public function addToPosition(
+    public function addToSlot(
         ApiClient $apiClient,
         AssetUrlInterface $assetUrl,
         UploadedFile $file,
@@ -57,7 +57,7 @@ abstract class AbstractAssetFileApiControllerTest extends AbstractApiControllerT
     ): Response {
         $checksum = FileHelper::checksumFromPath((string)$file->getRealPath());
         $response = $apiClient->post(
-            $assetUrl->getAddToPositionPath($assetId, $position),
+            $assetUrl->getAddToSlotPath($assetId, $position),
             $body ?: [
                 'mimeType' => $file->getMimeType(),
                 'checksum' => $checksum,

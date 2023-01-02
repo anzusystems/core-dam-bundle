@@ -37,7 +37,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             metadata: $metadata
         );
 
-        $originAsset = $assetFile->getAsset()->getAsset();
+        $originAsset = $assetFile->getAsset();
         $suggestions = [];
         $iteration = 0;
         foreach ($tags as $tag) {
@@ -56,8 +56,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
     {
         $authorSettings = $this->getConfiguration($assetFile);
 
-        return $assetFile->getAsset()->isDefault()
-            && false === $assetFile->getAsset()->getAsset()->getAssetFlags()->isDescribed()
+        return false === $assetFile->getAsset()->getAssetFlags()->isDescribed()
             && $authorSettings->isEnabled()
             && false === empty($authorSettings->getAutocompleteFromMetadataTags());
     }

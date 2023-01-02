@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
-final class ExtSystemAssetTypeFileVersionsConfiguration
+final class ExtSystemAssetTypeSlotsConfiguration
 {
     public const DEFAULT_KEY = 'default';
-    public const VERSIONS_KEY = 'versions';
+    public const SLOTS_KEY = 'slots';
 
     public function __construct(
         private readonly string $default,
-        private readonly array $versions,
+        private readonly array $slots,
     ) {
     }
 
@@ -19,7 +19,7 @@ final class ExtSystemAssetTypeFileVersionsConfiguration
     {
         return new self(
             $config[self::DEFAULT_KEY] ?? '',
-            $config[self::VERSIONS_KEY] ?? [],
+            $config[self::SLOTS_KEY] ?? [],
         );
     }
 
@@ -28,8 +28,8 @@ final class ExtSystemAssetTypeFileVersionsConfiguration
         return $this->default;
     }
 
-    public function getVersions(): array
+    public function getSlots(): array
     {
-        return $this->versions;
+        return $this->slots;
     }
 }

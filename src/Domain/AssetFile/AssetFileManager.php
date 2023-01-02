@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
@@ -15,13 +15,13 @@ class AssetFileManager extends AbstractManager
 {
     use FileStashAwareTrait;
 
-    protected AssetHasFileManager $assetHasFileManager;
+    protected AssetSlotManager $assetSlotManager;
     protected ChunkManager $chunkManager;
 
     #[Required]
-    public function setAssetHasFileManager(AssetHasFileManager $assetHasFileManager): void
+    public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
     {
-        $this->assetHasFileManager = $assetHasFileManager;
+        $this->assetSlotManager = $assetSlotManager;
     }
 
     #[Required]
@@ -49,7 +49,10 @@ class AssetFileManager extends AbstractManager
 
     public function delete(AssetFile $assetFile, bool $flush = true): bool
     {
-        $this->assetHasFileManager->delete($assetFile->getAsset(), false);
+        foreach ($assetFile->getSlots() as $slot) {
+            $this->assetSlotManager->delete($slot, false);
+        }
+
         $this->chunkManager->deleteByAsset($assetFile);
         $this->deleteAssetFileRelations($assetFile);
         if (false === empty($assetFile->getAssetAttributes()->getFilePath())) {

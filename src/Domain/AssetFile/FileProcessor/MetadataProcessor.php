@@ -31,7 +31,7 @@ final class MetadataProcessor
      */
     public function process(AssetFile $assetFile, BaseFile $file = null): AssetFile
     {
-        $asset = $assetFile->getAsset()->getAsset();
+        $asset = $assetFile->getAsset();
         $this->assetMetadataProvider->provideMetaData($assetFile, $file);
 
         if ($asset->getAssetFlags()->isNotDescribed() && $asset->getAssetFlags()->isNotAutocompletedMetadata()) {

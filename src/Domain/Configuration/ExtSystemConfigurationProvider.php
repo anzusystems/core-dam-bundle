@@ -28,7 +28,7 @@ final class ExtSystemConfigurationProvider
 
     public function getExtSystemConfigurationByAssetFile(AssetFile $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration
     {
-        return $this->getExtSystemConfigurationByAsset($asset->getAsset()->getAsset());
+        return $this->getExtSystemConfigurationByAsset($asset->getAsset());
     }
 
     public function getDistributionRequirements(

@@ -28,9 +28,9 @@ final class DocumentUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/document/{$assetId}";
     }
 
-    public function getAddToPositionPath(string $assetId, string $position): string
+    public function getAddToSlotPath(string $assetId, string $slotName): string
     {
-        return "/api/adm/v{$this->version}/document/asset/{$assetId}/position/$position";
+        return "/api/adm/v{$this->version}/document/asset/{$assetId}/slot-name/$slotName";
     }
 
     public function getSerializeClassString(): string

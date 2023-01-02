@@ -56,13 +56,13 @@ final class AssetFileStatusManager extends AssetFileManager
         return $this->updateExisting($assetFile);
     }
 
-    public function toProcessed(AssetFile $assetFile): AssetFile
+    public function toProcessed(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->validateTransition($assetFile, AssetFileProcessStatus::Processed);
         $assetFile->getAssetAttributes()
             ->setStatus(AssetFileProcessStatus::Processed);
 
-        return $this->updateExisting($assetFile);
+        return $this->updateExisting($assetFile, $flush);
     }
 
     public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType): AssetFile

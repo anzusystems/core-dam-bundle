@@ -8,9 +8,14 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
@@ -88,6 +93,73 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         );
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
         $this->assertEquals(0, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
+    }
+
+    public function testCreateToAsset(): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $response = $client->post(AssetUrl::createPath(), ['type' => 'image']);
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
+
+        $response = $this->addToSlot(
+            apiClient: $client,
+            assetUrl: new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID),
+            file: $this->getFile(self::TEST_DATA_FILENAME),
+            assetId: $asset->getId(),
+            position: 'default',
+            expectedStatusCode: Response::HTTP_CREATED
+        );
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+
+        // todo finish tests
+//        $response = $client->patch(
+//            (new ImageUrl(1))
+//                ->setToPositionPath($asset->getId(), ImageFixtures::IMAGE_ID_1_1, 'free'),
+//        );
+//        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+//        $imageAtSecondPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+//        $response = $client->patch(
+//            (new ImageUrl(1))
+//                ->setMainFilePath($asset->getId(), $imageAtSecondPosition->getId()),
+//        );
+//        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+//
+//        $assetEntity = $this->entityManager->find(Asset::class, $asset->getId());
+//
+//        $this->assertCount(2, $assetEntity->getSlots());
+//        $this->assertEquals(ImageFixtures::IMAGE_ID_1_1, $assetEntity->getMainFile()?->getId());
+    }
+
+    /**
+     * @dataProvider createToAssetFailedDataProvider
+     */
+    public function testCreateToAssetFailed(string $imageId, string $slot, string $error): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $response = $client->post(AssetUrl::createPath(), ['type' => 'image']);
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
+
+        $response = $client->patch(
+            (new ImageUrl(1))
+                ->setToPositionPath($asset->getId(), $imageId, $slot),
+            ['type' => 'image']
+        );
+        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        $this->assertForbiddenOperationError($response->getContent(), $error);
+    }
+
+    public function createToAssetFailedDataProvider(): array
+    {
+        return [
+            [
+                ImageFixtures::IMAGE_ID_2,
+                'new',
+                ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT
+            ]
+        ];
     }
 
     public function testCreateImageFailed(): void

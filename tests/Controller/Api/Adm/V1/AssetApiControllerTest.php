@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -49,19 +51,42 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $originImagePath = $this->nameGenerator->getPath($imageEntity->getAssetAttributes()->getFilePath());
 
         $secondFile = $this->getFile(self::TEST_DATA_2_FILENAME);
-        $assetId = $imageEntity->getAsset()->getAsset()->getId();
+        $assetId = $imageEntity->getAsset()->getId();
 
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->addToPosition($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'default', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
+
+        $images = $this->entityManager->getRepository(ImageFile::class)->findBy([
+            'asset' => $assetId
+        ]);
+        $asset = $this->entityManager->find(Asset::class, $assetId);
 
         $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
-        $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getAsset()->getId());
+        $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getId());
         $this->assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
 
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
         $this->assertEquals(0, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
+    }
+
+    /**
+     * @dataProvider getData
+     */
+    public function testCreate(string $type): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $response = $client->post('/api/adm/v1/asset/licence/'.AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
+
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+    }
+
+    private function getData(): array
+    {
+        return [
+            ['image'],
+        ];
     }
 }

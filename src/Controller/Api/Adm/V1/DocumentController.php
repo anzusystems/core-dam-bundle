@@ -15,12 +15,13 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentFacade;
+use AnzuSystems\CoreDamBundle\Domain\Document\DocumentPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -32,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -47,6 +49,7 @@ final class DocumentController extends AbstractApiController
         private readonly DocumentStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly DocumentPositionFacade $documentPositionFacade,
     ) {
     }
 
@@ -97,19 +100,52 @@ final class DocumentController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
+     * @throws NonUniqueResultException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('document', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, DocumentAdmCreateDto $document, string $position): JsonResponse
+    public function createToAsset(Asset $asset, DocumentAdmCreateDto $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $asset);
 
         return $this->createdResponse(
-            DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $position))
+            DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
+    public function setToPosition(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        return $this->okResponse(
+            DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setToSlot($asset, $document, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{document}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('document'), OAParameterPath('asset'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, DocumentFile $document): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        return $this->okResponse(
+            DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setMainFile($asset, $document))
         );
     }
 

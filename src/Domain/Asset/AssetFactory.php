@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -13,27 +13,23 @@ use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetAttributes;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetTexts;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
-final class AssetFactory
+final readonly class AssetFactory
 {
     public function __construct(
-        private readonly AssetManager $assetManager,
-        private readonly AssetHasFileFactory $assetHasFileFactory,
-        private readonly AssetMetadataManager $assetMetadataManager,
+        private AssetManager $assetManager,
+        private AssetSlotFactory $assetSlotFactory,
+        private AssetMetadataManager $assetMetadataManager,
     ) {
     }
 
     public function createFromAdmDto(AssetAdmCreateDto $createDto, AssetLicence $assetLicence): Asset
     {
-        return $this->initAsset($createDto->getType(), $assetLicence)
-            ->setTexts(
-                (new AssetTexts())
-            );
+        return $this->initAsset($createDto->getType(), $assetLicence);
     }
 
     public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence): Asset
@@ -52,7 +48,7 @@ final class AssetFactory
     private function createForImageFile(ImageFile $imageFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Image, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $imageFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $imageFile, flush: false);
 
         return $asset;
     }
@@ -60,7 +56,7 @@ final class AssetFactory
     private function createForAudioFile(AudioFile $audioFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Audio, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $audioFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $audioFile, flush: false);
 
         return $asset;
     }
@@ -68,7 +64,7 @@ final class AssetFactory
     private function createForVideoFile(VideoFile $videoFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Video, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $videoFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $videoFile, flush: false);
 
         return $asset;
     }
@@ -76,7 +72,7 @@ final class AssetFactory
     private function createForDocumentFile(DocumentFile $documentFile, AssetLicence $assetLicence): Asset
     {
         $asset = $this->initAsset(AssetType::Document, $assetLicence);
-        $this->assetHasFileFactory->createRelation(asset: $asset, assetFile: $documentFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $documentFile, flush: false);
 
         return $asset;
     }

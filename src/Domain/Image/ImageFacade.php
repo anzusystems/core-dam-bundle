@@ -40,7 +40,7 @@ final class ImageFacade extends AssetFileFacade
 
             $this->imageRotator->rotateImage($image, $angle);
             $this->imageManager->updateExisting($image);
-            $this->indexManager->index($image->getAsset()->getAsset());
+            $this->indexManager->index($image->getAsset());
             $this->fileStash->emptyAll();
             $this->cropCache->removeCache($image);
 

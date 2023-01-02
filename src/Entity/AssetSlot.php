@@ -4,59 +4,79 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
+use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
+use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetSlotFlags;
+use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Repository\AssetHasFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: AssetHasFileRepository::class)]
-#[ORM\Index(fields: ['versionTitle'], name: 'IDX_version_title')]
-#[ORM\Index(fields: ['default'], name: 'IDX_default')]
-class AssetHasFile implements UuidIdentifiableInterface
+#[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
+#[ORM\Index(fields: ['name'], name: 'IDX_name')]
+#[ORM\Index(fields: ['flags.default'], name: 'IDX_default')]
+#[ORM\UniqueConstraint(name: 'UNIQ_asset_file_asset_name', fields: ['asset', 'name', 'image', 'audio', 'video', 'image'])]
+class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;
+    use UserTrackingTrait;
+    use TimeTrackingTrait;
 
     #[ORM\Column(type: Types::STRING)]
-    private string $versionTitle;
+    private string $name;
 
-    #[ORM\Column(name: 'is_default', type: Types::BOOLEAN)]
-    private bool $default;
+    #[ORM\Embedded(class: AssetSlotFlags::class)]
+    private AssetSlotFlags $flags;
 
-    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'files')]
+    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'slots')]
     private Asset $asset;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: ImageFile::class)]
+    #[ORM\ManyToOne(targetEntity: ImageFile::class, inversedBy: 'slots')]
     private ?ImageFile $image;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: AudioFile::class)]
+    #[ORM\ManyToOne(targetEntity: AudioFile::class, inversedBy: 'slots')]
     private ?AudioFile $audio;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: VideoFile::class)]
+    #[ORM\ManyToOne(targetEntity: VideoFile::class, inversedBy: 'slots')]
     private ?VideoFile $video;
 
-    #[ORM\OneToOne(inversedBy: 'asset', targetEntity: DocumentFile::class)]
+    #[ORM\ManyToOne(targetEntity: DocumentFile::class, inversedBy: 'slots')]
     private ?DocumentFile $document;
 
     public function __construct()
     {
-        $this->setVersionTitle('');
-        $this->setDefault(false);
+        $this->setName('');
+        $this->setFlags(new AssetSlotFlags());
         $this->setImage(null);
         $this->setAudio(null);
         $this->setVideo(null);
         $this->setDocument(null);
     }
 
-    public function getVersionTitle(): string
+    public function getFlags(): AssetSlotFlags
     {
-        return $this->versionTitle;
+        return $this->flags;
     }
 
-    public function setVersionTitle(string $versionTitle): self
+    public function setFlags(AssetSlotFlags $flags): self
     {
-        $this->versionTitle = $versionTitle;
+        $this->flags = $flags;
+
+        return $this;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
 
         return $this;
     }
@@ -129,6 +149,24 @@ class AssetHasFile implements UuidIdentifiableInterface
     public function setDocument(?DocumentFile $document): self
     {
         $this->document = $document;
+
+        return $this;
+    }
+
+    public function setAssetFile(AssetFile $assetFile): self
+    {
+        if ($assetFile instanceof ImageFile) {
+            $this->setImage($assetFile);
+        }
+        if ($assetFile instanceof AudioFile) {
+            $this->setAudio($assetFile);
+        }
+        if ($assetFile instanceof VideoFile) {
+            $this->setVideo($assetFile);
+        }
+        if ($assetFile instanceof DocumentFile) {
+            $this->setDocument($assetFile);
+        }
 
         return $this;
     }

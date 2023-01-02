@@ -39,7 +39,7 @@ abstract class AbstractPublicController extends BaseController
     {
         $response->headers->set(self::X_KEY_HEADER, implode(' ', [
             self::getSystemXkey(),
-            self::getSystemXkey() . '-' . $asset->getAsset()->getAsset()->getAttributes()->getAssetType()->toString(),
+            self::getSystemXkey() . '-' . $asset->getAsset()->getAttributes()->getAssetType()->toString(),
             $asset->getId(),
         ]));
     }

@@ -62,7 +62,7 @@ final class FixtureImageProvider
                     continue;
                 }
 
-                $assetFile->getAsset()->getAsset()->setLicence($assetLicence);
+                $assetFile->getAsset()->setLicence($assetLicence);
                 $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile, $file);
 
                 $progress->advance();

@@ -42,7 +42,7 @@ final class DistributionFacade
      */
     public function distribute(AssetFile $assetFile, Distribution $distribution): Distribution
     {
-        $distribution->setAssetId((string) $assetFile->getAsset()->getAsset()->getId());
+        $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
         $this->entityValidator->validate($distribution);
 

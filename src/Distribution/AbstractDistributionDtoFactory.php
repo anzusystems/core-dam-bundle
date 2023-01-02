@@ -22,7 +22,7 @@ abstract class AbstractDistributionDtoFactory
 
     public function getSelectedOption(AssetFile $assetFile, Distribution $distribution): ?DistributionCategoryOption
     {
-        $asset = $assetFile->getAsset()->getAsset();
+        $asset = $assetFile->getAsset();
 
         $select = $this->categorySelectRepository->findOneForExtSystemService(
             $distribution->getDistributionService(),

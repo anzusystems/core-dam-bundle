@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Exception;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use Exception;
 
-class AssetFileVersionUsedException extends Exception
+class AssetSlotUsedException extends Exception
 {
-    private const ERROR_MESSAGE = 'asset_contains_file_version';
+    private const ERROR_MESSAGE = 'asset_slot_used';
 
     public function __construct(
         private readonly AssetFile $assetFile,
@@ -31,9 +31,10 @@ class AssetFileVersionUsedException extends Exception
     public function getDetail(): string
     {
         return sprintf(
-            'Position (%s) is already user for asset id (%s)',
+            'There is already file (%s) in asset (%s) at position (%s)',
             $this->getAssetFile()->getId(),
-            $this->position
+            $this->getAssetFile()->getAsset()->getId(),
+            $this->position,
         );
     }
 }

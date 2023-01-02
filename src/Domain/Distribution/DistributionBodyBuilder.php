@@ -32,14 +32,14 @@ final class DistributionBodyBuilder extends DistributionManager
 
     public function getKeywords(AssetFile $assetFile): array
     {
-        return $assetFile->getAsset()->getAsset()->getKeywords()->map(
+        return $assetFile->getAsset()->getKeywords()->map(
             fn (Keyword $keyword): string => $keyword->getName()
         )->getValues();
     }
 
     public function getFirstAuthor(AssetFile $assetFile): string
     {
-        $author = $assetFile->getAsset()->getAsset()->getAuthors()->first();
+        $author = $assetFile->getAsset()->getAuthors()->first();
 
         if ($author instanceof Author) {
             return $author->getName();
@@ -60,7 +60,7 @@ final class DistributionBodyBuilder extends DistributionManager
 
         foreach ($requirements->getMetadataMap() as $property => $configs) {
             $value = $this->accessor->getPropertyValue(
-                $assetFile->getAsset()->getAsset(),
+                $assetFile->getAsset(),
                 $configs
             );
             $setter = 'set' . ucfirst($property);

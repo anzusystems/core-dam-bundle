@@ -22,6 +22,8 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -44,6 +46,10 @@ class Asset implements
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable]
     private Collection $authors;
+
+    #[ORM\OneToOne(targetEntity: AssetFile::class)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?AssetFile $mainFile;
 
     #[ORM\ManyToMany(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable]
@@ -70,8 +76,8 @@ class Asset implements
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private AssetLicence $licence;
 
-    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: AssetHasFile::class)]
-    private Collection $files;
+    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: AssetSlot::class)]
+    private Collection $slots;
 
     #[ORM\ManyToOne(targetEntity: DistributionCategory::class)]
     private ?DistributionCategory $distributionCategory;
@@ -84,11 +90,24 @@ class Asset implements
         $this->setTexts(new AssetTexts());
         $this->setAssetFlags(new AssetFlags());
         $this->setDates(new AssetDates());
-        $this->setFiles(new ArrayCollection());
+        $this->setSlots(new ArrayCollection());
         $this->setAuthors(new ArrayCollection());
         $this->setKeywords(new ArrayCollection());
         $this->setDistributionCategory(null);
         $this->setEpisodes(new ArrayCollection());
+        $this->setMainFile(null);
+    }
+
+    public function getMainFile(): ?AssetFile
+    {
+        return $this->mainFile;
+    }
+
+    public function setMainFile(?AssetFile $mainFile): self
+    {
+        $this->mainFile = $mainFile;
+
+        return $this;
     }
 
     public function getTexts(): AssetTexts
@@ -152,16 +171,16 @@ class Asset implements
     }
 
     /**
-     * @return Collection<int, AssetHasFile>
+     * @return Collection<int, AssetSlot>
      */
-    public function getFiles(): Collection
+    public function getSlots(): Collection
     {
-        return $this->files;
+        return $this->slots;
     }
 
-    public function setFiles(Collection $files): self
+    public function setSlots(Collection $slots): self
     {
-        $this->files = $files;
+        $this->slots = $slots;
 
         return $this;
     }

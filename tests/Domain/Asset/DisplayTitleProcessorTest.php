@@ -9,7 +9,7 @@ use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetHasFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -57,13 +57,13 @@ final class DisplayTitleProcessorTest extends AnzuKernelTestCase
                     ->setOriginFileName('filename.jpg')
             );
 
-        $assetHasFile = (new AssetHasFile())
+        $assetSlot = (new AssetSlot())
             ->setAsset($asset)
-            ->setImage($image)
+            ->setImage($image);
+        $assetSlot
+            ->getFlags()
             ->setDefault(true);
-        $asset->setFiles(new ArrayCollection([
-            $assetHasFile
-        ]));
+        $asset->setSlots(new ArrayCollection([$assetSlot]));
 
         $this->configurationProvider->setDisplayTitleConfiguration(
             (new DisplayTitleConfiguration($imageDisplayTitleConfiguration, [], [], []))

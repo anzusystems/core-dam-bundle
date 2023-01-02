@@ -15,12 +15,13 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -31,6 +32,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -46,6 +48,7 @@ final class ImageController extends AbstractApiController
         private readonly ImageStatusFacade $statusFacade,
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
+        private readonly ImagePositionFacade $imagePositionFacade,
     ) {
     }
 
@@ -96,19 +99,52 @@ final class ImageController extends AbstractApiController
      * @throws ValidationException
      * @throws ForbiddenOperationException
      * @throws InvalidExtSystemConfigurationException
-     * @throws AssetFileVersionUsedException
+     * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
+     * @throws NonUniqueResultException
      */
-    #[Route(path: '/asset/{asset}/position/{position}', name: 'add_to_asset', methods: [Request::METHOD_POST])]
+    #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function addToAsset(Asset $asset, ImageAdmCreateDto $image, string $position): JsonResponse
+    public function createToAsset(Asset $asset, ImageAdmCreateDto $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $asset);
 
         return $this->createdResponse(
-            ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $position))
+            ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function setToSlot(Asset $asset, ImageFile $image, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setToSlot($asset, $image, $slotName))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{image}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('image'), OAParameterPath('asset'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function setMain(Asset $asset, ImageFile $image): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setMainFile($asset, $image))
         );
     }
 
