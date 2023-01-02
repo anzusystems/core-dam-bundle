@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 
 final class FileFactory
@@ -23,7 +23,7 @@ final class FileFactory
     /**
      * @throws FilesystemException
      */
-    public function createFromChunks(AssetFile $assetFile): File
+    public function createFromChunks(AssetFile $assetFile): AdapterFile
     {
         $path = $this->nameGenerator->generatePath();
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
@@ -41,7 +41,7 @@ final class FileFactory
             );
         }
 
-        return new File(
+        return new AdapterFile(
             path: $fileSystem->extendPath($path->getRelativePath()),
             adapterPath: $path->getRelativePath(),
             filesystem: $fileSystem

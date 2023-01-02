@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use Faker\Factory;
 use Faker\Generator;
 use League\Flysystem\FileAttributes;
@@ -50,7 +50,7 @@ final class FixtureImageProvider
         /** @var FileAttributes $item */
         foreach ($directoryListing as $item) {
             if (StorageAttributes::TYPE_FILE === $item->type()) {
-                $file = new File(
+                $file = new AdapterFile(
                     path: $fixturesFileSystem->extendPath($item->path()),
                     adapterPath: $item->path(),
                     filesystem: $fixturesFileSystem

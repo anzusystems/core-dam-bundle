@@ -6,11 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Helper\FileHelper;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 
 final class FileAttributesProcessor
 {
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $checksum = FileHelper::checksumFromPath($file->getRealPath());
 

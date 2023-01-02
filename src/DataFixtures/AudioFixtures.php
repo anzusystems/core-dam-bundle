@@ -53,6 +53,7 @@ final class AudioFixtures extends AbstractAssetFileFixtures
 
             $this->addToRegistry($audio, (string) $audio->getId());
         }
+        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator

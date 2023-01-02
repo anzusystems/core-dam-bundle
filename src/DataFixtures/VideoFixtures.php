@@ -60,6 +60,7 @@ final class VideoFixtures extends AbstractAssetFileFixtures
 
             $this->addToRegistry($video, (int) $video->getId());
         }
+        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator

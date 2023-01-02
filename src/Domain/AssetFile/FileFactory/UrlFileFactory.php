@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +24,7 @@ final class UrlFileFactory
      * @throws FilesystemException
      * @throws TransportExceptionInterface
      */
-    public function downloadFile(string $url): File
+    public function downloadFile(string $url): AdapterFile
     {
         $response = $this->client->request(
             Request::METHOD_GET,
@@ -34,6 +34,6 @@ final class UrlFileFactory
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
         $baseFile = $fileSystem->writeTmpFileFromStream(StreamWrapper::createResource($response));
 
-        return File::createFromBaseFile($baseFile, $fileSystem);
+        return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
     }
 }

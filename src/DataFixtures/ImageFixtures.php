@@ -56,6 +56,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
 
             $this->addToRegistry($image, (int) $image->getId());
         }
+        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator

@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 
 /**
@@ -29,7 +29,7 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
         return AudioFile::class;
     }
 
-    protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile
+    protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $this->attributesProcessor->process($assetFile, $file);
 

@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\DefaultRegionOfInterestFac
 use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 
 final class DefaultRoiProcessor
 {
@@ -21,7 +21,7 @@ final class DefaultRoiProcessor
     /**
      * @param ImageFile $assetFile
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $roi = $this->defaultRegionOfInterestFactory->prepareDefaultRoi($assetFile);
         $assetFile->getRegionsOfInterest()->add($roi);

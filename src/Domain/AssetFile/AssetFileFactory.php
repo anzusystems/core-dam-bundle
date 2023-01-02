@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -19,7 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\AssetExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -28,7 +29,10 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
+use League\Flysystem\FilesystemException;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 abstract class AssetFileFactory
 {
@@ -39,13 +43,32 @@ abstract class AssetFileFactory
         private readonly AssetFileMetadataManager $assetFileMetadataManager,
         private readonly AssetTextsWriter $textsWriter,
         private readonly ExtSystemConfigurationProvider $configurationProvider,
+        private readonly ImageStatusFacade $imageStatusFacade,
     ) {
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws TransportExceptionInterface
+     * @throws FilesystemException
+     * @throws NonUniqueResultException
+     */
+    public function createAndProcessFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
+    {
+        $imageFile = $this->createFromFile(
+            file: $file,
+            assetLicence: $assetLicence,
+        );
+        $imageFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->imageStatusFacade->storeAndProcess($imageFile, $file);
+
+        return $imageFile;
     }
 
     /**
      * @throws DomainException
      */
-    public function createFromFile(File $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
+    public function createFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
     {
         $assetFile = $this->createBlankAssetFile($file, $assetLicence, $id);
         $this->assetFactory->createForAssetFile($assetFile, $assetLicence);
@@ -53,7 +76,7 @@ abstract class AssetFileFactory
         return $assetFile;
     }
 
-    public function createBlankAssetFile(File $file, AssetLicence $licence, ?string $id = null): AssetFile
+    public function createBlankAssetFile(AdapterFile $file, AssetLicence $licence, ?string $id = null): AssetFile
     {
         $assetFile = null;
         if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {

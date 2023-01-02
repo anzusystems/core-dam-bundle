@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use League\Flysystem\FilesystemException;
 
@@ -39,7 +39,7 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
      * @throws ImageManipulatorException
      * @throws FilesystemException
      */
-    protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile
+    protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $this->imageAttributesProcessor->process($assetFile, $file);
         $this->optimalCropsProcessor->process($assetFile, $file);

@@ -83,8 +83,8 @@ final class AssetFileStatusManager extends AssetFileManager
         $allowedStatuses = match ($assetFile->getAssetAttributes()->getStatus()) {
             AssetFileProcessStatus::Uploading => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Uploaded],
             AssetFileProcessStatus::Uploaded => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Storing],
-            AssetFileProcessStatus::Storing => [AssetFileProcessStatus::Stored],
-            AssetFileProcessStatus::Stored => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Duplicate, AssetFileProcessStatus::Processing],
+            AssetFileProcessStatus::Storing => [AssetFileProcessStatus::Stored, AssetFileProcessStatus::Duplicate],
+            AssetFileProcessStatus::Stored => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Processing],
             AssetFileProcessStatus::Duplicate => [AssetFileProcessStatus::Failed],
             AssetFileProcessStatus::Processing => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Stored, AssetFileProcessStatus::Processed],
             AssetFileProcessStatus::Processed => [AssetFileProcessStatus::Failed],

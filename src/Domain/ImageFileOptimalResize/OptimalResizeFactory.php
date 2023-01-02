@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 
 final class OptimalResizeFactory extends AbstractManager
@@ -37,7 +37,7 @@ final class OptimalResizeFactory extends AbstractManager
      * @throws ImageManipulatorException
      * @throws FilesystemExceptionAlias
      */
-    public function createMainCrop(ImageFile $asset, File $file): void
+    public function createMainCrop(ImageFile $asset, AdapterFile $file): void
     {
         $resize = $this->createCrop(
             $asset,
@@ -51,7 +51,7 @@ final class OptimalResizeFactory extends AbstractManager
      * @throws ImageManipulatorException
      * @throws FilesystemExceptionAlias
      */
-    public function createCrop(ImageFile $imageFile, File $file, int $size): ImageFileOptimalResize
+    public function createCrop(ImageFile $imageFile, AdapterFile $file, int $size): ImageFileOptimalResize
     {
         $optimalResize = new ImageFileOptimalResize();
 

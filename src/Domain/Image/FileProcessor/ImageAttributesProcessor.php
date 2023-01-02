@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 
 final class ImageAttributesProcessor
 {
@@ -23,7 +23,7 @@ final class ImageAttributesProcessor
      *
      * @throws ImageManipulatorException
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         [$width, $height] = getimagesize($file->getRealPath());
         $this->setSizeAttributes($assetFile, $width, $height);

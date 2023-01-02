@@ -34,6 +34,9 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
     #[Serialize(handler: EntityIdHandler::class)]
     protected AssetLicence $licence;
 
+    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    private Asset $previewImage;
+
     #[ORM\Embedded(class: PodcastTexts::class)]
     #[Serialize]
     #[Assert\Valid]
@@ -52,6 +55,17 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
         $this->setTexts(new PodcastTexts());
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
+    }
+
+    public function getPreviewImage(): Asset
+    {
+        return $this->previewImage;
+    }
+
+    public function setPreviewImage(Asset $previewImage): self
+    {
+        $this->previewImage = $previewImage;
+        return $this;
     }
 
     public function getLicence(): AssetLicence

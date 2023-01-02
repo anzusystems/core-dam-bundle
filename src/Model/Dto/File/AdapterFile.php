@@ -7,12 +7,12 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\File;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
-final class File extends BaseFile
+final class AdapterFile extends BaseFile
 {
     private readonly string $adapterPath;
     private readonly LocalFilesystem $localFilesystem;
 
-    // remove $path and generate it from filesystem immediate
+    // todo  remove $path and generate it from filesystem immediate
     public function __construct(string $path, string $adapterPath, LocalFilesystem $filesystem, bool $checkPath = true)
     {
         $this->adapterPath = $adapterPath;

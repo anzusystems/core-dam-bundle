@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\OptimalResizeFactory
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 
 final class OptimalCropsProcessor
@@ -26,7 +26,7 @@ final class OptimalCropsProcessor
      * @throws ImageManipulatorException
      * @throws FilesystemExceptionAlias
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         foreach ($this->configurationProvider->getImageOptimalResizes() as $imageOptimalResize) {
             if ($this->shouldCreateCrop($assetFile, $imageOptimalResize)) {

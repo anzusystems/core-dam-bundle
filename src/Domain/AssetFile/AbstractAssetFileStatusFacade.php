@@ -19,7 +19,7 @@ use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -164,7 +164,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws SerializerException
      * @throws TransportExceptionInterface
      */
-    public function storeAndProcess(AssetFile $assetFile, ?File $file = null): AssetFile
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null): AssetFile
     {
         try {
             $file = $this->store($assetFile, $file);
@@ -195,7 +195,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws AssetFileProcessFailed
      * @throws TransportExceptionInterface
      */
-    public function store(AssetFile $assetFile, ?File $file = null): File
+    public function store(AssetFile $assetFile, ?AdapterFile $file = null): AdapterFile
     {
         $this->assetStatusManager->toStoring($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
@@ -219,7 +219,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws NonUniqueResultException
      * @throws SerializerException
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $this->assetStatusManager->toProcessing($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
@@ -238,7 +238,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         return $assetFile;
     }
 
-    protected function supportsMimeType(AssetFile $assetFile, File $file): bool
+    protected function supportsMimeType(AssetFile $assetFile, AdapterFile $file): bool
     {
         $mimeType = (string) $file->getMimeType();
 
@@ -253,7 +253,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * Concrete AssetFile processing (Image, Audio, ...)
      */
-    abstract protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile;
+    abstract protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile;
 
     /**
      * @throws DuplicateAssetFileException
@@ -279,7 +279,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws FilesystemException
      * @throws TransportExceptionInterface
      */
-    private function createFile(AssetFile $assetFile): File
+    private function createFile(AssetFile $assetFile): AdapterFile
     {
         return match ($assetFile->getAssetAttributes()->getCreateStrategy()) {
             AssetFileCreateStrategy::Chunk => $this->fileFactory->createFromChunks($assetFile),
