@@ -103,7 +103,7 @@ final class FileSystemProvider
             $storable->getAssetType(),
         );
 
-        return Chunk::class === ClassUtils::getRealClass(Chunk::class)
+        return Chunk::class === ClassUtils::getRealClass($storable::class)
             ? $extSystemConfig->getChunkStorageName()
             : $extSystemConfig->getStorageName();
     }
