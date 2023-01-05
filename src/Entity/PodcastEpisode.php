@@ -81,6 +81,7 @@ class PodcastEpisode implements
     public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
+
         return $this;
     }
 

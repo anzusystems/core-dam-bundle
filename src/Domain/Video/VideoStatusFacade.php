@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\FileProcessor\VideoAttributesProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -15,7 +14,6 @@ use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 
 /**
@@ -65,8 +63,6 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }
     }
-
-
 
     private function getThumbnailPosition(VideoFile $file): int
     {

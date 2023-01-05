@@ -44,6 +44,7 @@ class VideoFile extends AssetFile
     public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
+
         return $this;
     }
 

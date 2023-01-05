@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\GCloudFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
+use AnzuSystems\CoreDamBundle\FileSystem\StorageProviderContainer;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileMetadataProcessMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
@@ -479,6 +480,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             ;
             $assetExternalProviders[$providerName] = new Reference($provider['provider']);
         }
+
         $assetExternalProviderContainer = $container->findDefinition(AssetExternalProviderContainer::class);
         $assetExternalProviderContainer->setArgument(
             '$providersContainer',
@@ -488,15 +490,31 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
 
     private function configureStorages(ContainerBuilder $container): void
     {
+        $storages = [];
         foreach ($this->processedConfig['storages'] as $storageName => $storageConfig) {
             $filesystem = $this->configureFilesystem($storageConfig);
 
             if ($filesystem) {
                 $definitionName = self::STORAGE_DEFINITION_NAME_PREFIX . $storageName;
+
+                $filesystem->addMethodCall('setFallbackEnabled', [$storageConfig['fallback_enabled']]);
+                if ($storageConfig['fallback_enabled'] && false === empty($storageConfig['fallback_storage'])) {
+                    $filesystem->addMethodCall('setFallbackStorage', [new Reference(
+                        self::STORAGE_DEFINITION_NAME_PREFIX . $storageConfig['fallback_storage']
+                    )]);
+                }
+
                 $filesystem->addTag(AnzuSystemsCoreDamBundle::TAG_FILESYSTEM, ['key' => $storageName]);
+                $storages[$storageName] = new Reference($definitionName);
                 $container->setDefinition($definitionName, $filesystem);
             }
         }
+
+        $storageProviderContainer = $container->findDefinition(StorageProviderContainer::class);
+        $storageProviderContainer->setArgument(
+            '$storagesContainer',
+            ServiceLocatorTagPass::register($container, $storages)
+        );
     }
 
     private function configureFilesystem(array $storageConfig): ?Definition

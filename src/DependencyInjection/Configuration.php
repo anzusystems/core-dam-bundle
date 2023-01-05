@@ -255,6 +255,8 @@ class Configuration implements ConfigurationInterface
                 ->performNoDeepMerging()
                 ->children()
                     ->scalarNode('adapter')->isRequired()->end()
+                    ->booleanNode('fallback_enabled')->defaultFalse()->end()
+                    ->scalarNode('fallback_storage')->defaultValue('')->end()
                     ->arrayNode('options')
                         ->variablePrototype()
                         ->end()
