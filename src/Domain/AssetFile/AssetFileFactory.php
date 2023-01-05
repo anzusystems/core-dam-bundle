@@ -37,13 +37,13 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 abstract class AssetFileFactory
 {
     public function __construct(
-        private readonly AssetFactory $assetFactory,
-        private readonly AssetManager $assetManager,
-        private readonly AssetFileManager $assetFileManager,
-        private readonly AssetFileMetadataManager $assetFileMetadataManager,
-        private readonly AssetTextsWriter $textsWriter,
-        private readonly ExtSystemConfigurationProvider $configurationProvider,
-        private readonly ImageStatusFacade $imageStatusFacade,
+        protected readonly AssetFactory $assetFactory,
+        protected readonly AssetManager $assetManager,
+        protected readonly AssetFileManager $assetFileManager,
+        protected readonly AssetFileMetadataManager $assetFileMetadataManager,
+        protected readonly AssetTextsWriter $textsWriter,
+        protected readonly ExtSystemConfigurationProvider $configurationProvider,
+        protected readonly ImageStatusFacade $imageStatusFacade,
     ) {
     }
 

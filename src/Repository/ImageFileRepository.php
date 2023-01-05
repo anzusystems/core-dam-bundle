@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 
 /**
@@ -16,6 +17,14 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
  */
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
+    public function findOneByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
+    {
+        return $this->findOneBy([
+            'assetAttributes.originUrl' => $url,
+            'licence' => $licence,
+        ]);
+    }
+
     protected function getEntityClass(): string
     {
         return ImageFile::class;

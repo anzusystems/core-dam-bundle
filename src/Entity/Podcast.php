@@ -14,7 +14,9 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -35,6 +37,7 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
     protected AssetLicence $licence;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $previewImage;
 
     #[ORM\Embedded(class: PodcastTexts::class)]
@@ -66,6 +69,7 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
     public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
+
         return $this;
     }
 
@@ -120,5 +124,11 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
     public function getExtSystem(): ExtSystem
     {
         return $this->licence->getExtSystem();
+    }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    public function getLinks(): ?AssetFile
+    {
+        return $this->previewImage?->getMainFile();
     }
 }

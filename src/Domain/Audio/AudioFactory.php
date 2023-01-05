@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
 final class AudioFactory extends AssetFileFactory
@@ -29,11 +28,11 @@ final class AudioFactory extends AssetFileFactory
             );
     }
 
-    public function createFromRssItem(AssetLicence $licence, Item $item): AudioFile
+    public function createFromUrl(AssetLicence $licence, string $url): AudioFile
     {
         $audioFile = $this->createBlankAudio($licence);
         $audioFile->getAssetAttributes()
-            ->setOriginUrl($item->getEnclosure()->getUrl())
+            ->setOriginUrl($url)
             ->setCreateStrategy(AssetFileCreateStrategy::Download);
 
         return $audioFile;
