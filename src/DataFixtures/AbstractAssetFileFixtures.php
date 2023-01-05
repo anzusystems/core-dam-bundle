@@ -16,17 +16,6 @@ abstract class AbstractAssetFileFixtures extends AbstractFixtures
     private AbstractIdGenerator $idGenerator;
     private int $generatorType;
 
-    protected function getFile(LocalFilesystem $fileSystem, string $fileName): AdapterFile
-    {
-        $path = self::DATA_PATH . $fileName;
-
-        return new AdapterFile(
-            path: $path,
-            adapterPath: $fileName,
-            filesystem: $fileSystem
-        );
-    }
-
     public function configureAssignedGenerator(): void
     {
         $metadata = $this->entityManager->getClassMetadata(static::getIndexKey());
@@ -41,5 +30,16 @@ abstract class AbstractAssetFileFixtures extends AbstractFixtures
         $metadata = $this->entityManager->getClassMetadata(static::getIndexKey());
         $metadata->setIdGenerator($this->idGenerator);
         $metadata->setIdGeneratorType($this->generatorType);
+    }
+
+    protected function getFile(LocalFilesystem $fileSystem, string $fileName): AdapterFile
+    {
+        $path = self::DATA_PATH . $fileName;
+
+        return new AdapterFile(
+            path: $path,
+            adapterPath: $fileName,
+            filesystem: $fileSystem
+        );
     }
 }

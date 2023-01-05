@@ -19,20 +19,15 @@ final class FileSystemProvider
     public const TMP_STORAGE_SETTINGS = 'tmp_dir_path';
     public const FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
 
-    /**
-     * @var iterable<integer, AbstractFilesystem>
-     */
-    private iterable $fileSystems;
     private ?LocalFilesystem $tmpFilesystem = null;
     private ?LocalFilesystem $fixturesFileSystem = null;
 
     public function __construct(
-        iterable $fileSystems,
         private readonly array $fileOperations,
         private readonly NameGenerator $nameGenerator,
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private readonly StorageProviderContainer $storageProviderContainer,
     ) {
-        $this->fileSystems = $fileSystems;
     }
 
     public function createLocalFilesystem(string $path): LocalFilesystem
@@ -115,10 +110,8 @@ final class FileSystemProvider
 
     public function getFileSystemByStorageName(string $storageName): ?AbstractFilesystem
     {
-        $filesystems = iterator_to_array($this->fileSystems);
-
-        if (isset($filesystems[$storageName])) {
-            return $filesystems[$storageName];
+        if ($this->storageProviderContainer->has($storageName)) {
+            return $this->storageProviderContainer->get($storageName);
         }
 
         return null;

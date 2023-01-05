@@ -66,6 +66,7 @@ class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
     public function setPreviewImage(?Asset $previewImage): self
     {
         $this->previewImage = $previewImage;
+
         return $this;
     }
 

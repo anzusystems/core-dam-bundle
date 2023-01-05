@@ -11,15 +11,15 @@ use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use FFMpeg\Coordinate\TimeCode;
 use FFMpeg\Exception\RuntimeException;
 use FFMpeg\FFMpeg;
 use FFMpeg\FFProbe;
 use FFMpeg\FFProbe\DataMapping\Stream;
+use FFMpeg\Media\Frame;
 use FFMpeg\Media\Video as FFMpegVideo;
 use Symfony\Component\HttpFoundation\File\File;
 use Throwable;
-use FFMpeg\Media\Frame;
-use FFMpeg\Coordinate\TimeCode;
 
 final class FfmpegService
 {
@@ -113,8 +113,7 @@ final class FfmpegService
             );
         } catch (FfmpegException $exception) {
             throw $exception;
-        }
-        catch (Throwable $exception) {
+        } catch (Throwable $exception) {
             throw new FfmpegException(previous: $exception);
         }
     }
