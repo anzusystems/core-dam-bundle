@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\AssetAdmRepositoryDecorator;
@@ -157,6 +158,25 @@ final class AssetController extends AbstractApiController
 
         return $this->okResponse(
             $this->assetMetadataBulkFacade->bulkUpdate($list)
+        );
+    }
+
+    /**
+     * Update item.
+     *
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{asset}', name: 'update', methods: [Request::METHOD_PUT])]
+    #[ParamConverter('newAssetDto', converter: SerializerParamConverter::class)]
+    #[OAParameterPath('author'), OARequest(AssetAdmUpdateDto::class), OAResponse(AssetAdmUpdateDto::class), OAResponseValidation]
+    public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+
+        return $this->okResponse(
+            AssetAdmUpdateDto::getInstance($this->assetFacade->update($asset, $newAssetDto))
         );
     }
 

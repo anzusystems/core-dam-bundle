@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -20,6 +21,17 @@ class AssetManager extends AbstractManager
     {
         $this->trackCreation($asset);
         $this->entityManager->persist($asset);
+        $this->flush($flush);
+
+        return $asset;
+    }
+
+    public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto, bool $flush = true): Asset
+    {
+        $this->trackModification($asset);
+        $asset
+            ->setDistributionCategory($newAssetDto->getDistributionCategory())
+        ;
         $this->flush($flush);
 
         return $asset;

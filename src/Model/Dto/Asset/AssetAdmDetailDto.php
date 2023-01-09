@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\DistributionCategory;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFlagsAdmDto;
@@ -122,6 +123,12 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         $this->authors = $authors;
 
         return $this;
+    }
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getDistributionCategory(): ?DistributionCategory
+    {
+        return $this->asset->getDistributionCategory();
     }
 
     #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::DETAIL)]

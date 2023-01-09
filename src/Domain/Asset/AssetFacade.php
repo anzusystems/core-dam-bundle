@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Traits\EntityValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
@@ -34,6 +35,27 @@ class AssetFacade
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
     ) {
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto): Asset
+    {
+        $this->entityValidator->validateDto($newAssetDto);
+
+        try {
+            $this->assetManager->beginTransaction();
+            $this->assetManager->update($asset, $newAssetDto);
+            $this->indexManager->index($asset);
+            $this->assetManager->commit();
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
+
+            throw new RuntimeException('asset_update_failed', 0, $exception);
+        }
+
+        return $asset;
     }
 
     /**
