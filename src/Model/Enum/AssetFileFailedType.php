@@ -12,6 +12,7 @@ enum AssetFileFailedType: string implements EnumInterface
     case None = 'none';
     case InvalidChecksum = 'invalid_checksum';
     case InvalidMimeType = 'invalid_mime_type';
+    case DownloadFailed = 'download_failed';
     case InvalidSize = 'invalid_size';
 
     public const Default = self::None;

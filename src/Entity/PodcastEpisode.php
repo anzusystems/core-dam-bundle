@@ -16,7 +16,9 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\ORM\Mapping as ORM;
@@ -47,6 +49,7 @@ class PodcastEpisode implements
     private ?Asset $asset;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $previewImage;
 
     #[Serialize]
@@ -148,5 +151,11 @@ class PodcastEpisode implements
     public function getExtSystem(): ExtSystem
     {
         return $this->getPodcast()->getLicence()->getExtSystem();
+    }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    public function getLinks(): ?AssetFile
+    {
+        return $this->previewImage?->getMainFile();
     }
 }

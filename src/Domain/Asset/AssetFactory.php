@@ -32,6 +32,7 @@ final readonly class AssetFactory
         return $this->initAsset($createDto->getType(), $assetLicence);
     }
 
+    // todo remove licence
     public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence): Asset
     {
         $asset = match ($assetFile::class) {

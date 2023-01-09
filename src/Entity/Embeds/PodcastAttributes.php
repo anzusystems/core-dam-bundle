@@ -23,7 +23,7 @@ class PodcastAttributes
 
     #[ORM\Column(type: Types::STRING, length: 128, nullable: true)]
     #[Assert\Length(max: 128, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    private string $filePosition;
+    private string $fileSlot;
 
     #[ORM\Column(enumType: PodcastLastImportStatus::class)]
     private PodcastLastImportStatus $lastImportStatus;
@@ -35,7 +35,7 @@ class PodcastAttributes
     public function __construct()
     {
         $this->setRssUrl('');
-        $this->setFilePosition('');
+        $this->setFileSlot('');
         $this->setLastImportStatus(PodcastLastImportStatus::Default);
         $this->setMode(PodcastImportMode::Default);
     }
@@ -77,14 +77,14 @@ class PodcastAttributes
         return $this;
     }
 
-    public function getFilePosition(): string
+    public function getFileSlot(): string
     {
-        return $this->filePosition;
+        return $this->fileSlot;
     }
 
-    public function setFilePosition(string $filePosition): self
+    public function setFileSlot(string $fileSlot): self
     {
-        $this->filePosition = $filePosition;
+        $this->fileSlot = $fileSlot;
 
         return $this;
     }

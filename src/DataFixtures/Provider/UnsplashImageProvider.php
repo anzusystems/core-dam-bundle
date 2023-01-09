@@ -6,12 +6,12 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures\Provider;
 
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\RequestedUnsplashImage;
 use League\Flysystem\FilesystemException;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 final class UnsplashImageProvider
 {
@@ -26,8 +26,8 @@ final class UnsplashImageProvider
     }
 
     /**
+     * @throws AssetFileProcessFailed
      * @throws FilesystemException
-     * @throws TransportExceptionInterface
      */
     public function downloadImage(RequestedUnsplashImage $image): void
     {
@@ -49,6 +49,10 @@ final class UnsplashImageProvider
             );
     }
 
+    /**
+     * @throws FilesystemException
+     * @throws AssetFileProcessFailed
+     */
     public function downloadImages(int $count, array $keyWords = [], array $sizeList = []): void
     {
         $progress = $this->outputUtil->createProgressBar($count);

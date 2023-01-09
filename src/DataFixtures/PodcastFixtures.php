@@ -43,7 +43,7 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
 
     private function getData(): Generator
     {
-        $licence = $this->entityManager->find(AssetLicence::class, 1);
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         yield (new Podcast())
             ->setId(self::PODCAST_1)

@@ -36,6 +36,9 @@ final class ImageLinksHandler extends AbstractHandler
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
     {
+        if (null === $value) {
+            return null;
+        }
         $type = ImageCropTag::tryFrom((string) $metadata->customType);
         if (null === $type) {
             throw new SerializerException(
