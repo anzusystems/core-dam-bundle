@@ -17,22 +17,22 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class RegionOfInterestAdmDetailDto extends RegionOfInterestAdmListDto
 {
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\GreaterThanOrEqual(value: 0, message: ValidationException::ERROR_FIELD_LENGTH_MIN)]
     private int $pointX;
 
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\GreaterThanOrEqual(value: 0, message: ValidationException::ERROR_FIELD_LENGTH_MIN)]
     private int $pointY;
 
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\GreaterThan(value: 0, message: ValidationException::ERROR_FIELD_LENGTH_MIN)]
     private float $percentageWidth;
 
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\GreaterThan(value: 0, message: ValidationException::ERROR_FIELD_LENGTH_MIN)]
     private float $percentageHeight;
 

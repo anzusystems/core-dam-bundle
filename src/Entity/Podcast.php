@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -26,7 +27,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PodcastRepository::class)]
 #[ORM\Index(fields: ['attributes.mode'], name: 'IDX_name')]
-class Podcast implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
+class Podcast implements
+    UuidIdentifiableInterface,
+    UserTrackingInterface,
+    TimeTrackingInterface,
+    ExtSystemInterface,
+    AssetLicenceInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;

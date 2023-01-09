@@ -41,6 +41,7 @@ final class PodcastEpisodeManager extends AbstractManager
         ;
         $podcastEpisode
             ->setAsset($newPodcastEpisode->getAsset())
+            ->setPreviewImage($newPodcastEpisode->getPreviewImage())
         ;
         $this->flush($flush);
 

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
@@ -57,7 +56,7 @@ final class ImageLinksHandler extends AbstractHandler
             );
         }
 
-        throw new SerializerException(sprintf('Value should be instance of (%s)', Asset::class));
+        throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
     }
 
     /**

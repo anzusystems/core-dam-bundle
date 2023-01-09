@@ -23,12 +23,13 @@ class EntityValidator
     /**
      * @throws ValidationException
      */
-    public function validateDto(object $dto): void
+    public function validateDto(object $dto, ?BaseIdentifiableInterface $oldEntity = null): void
     {
         $this->violationList = new ConstraintViolationList();
         $this->violationList->addAll(
             $this->validator->validate($dto)
         );
+        $this->validateDtoIdentity($dto, $oldEntity);
 
         if ($this->violationList->count() > 0) {
             throw new ValidationException($this->violationList);
@@ -49,6 +50,20 @@ class EntityValidator
         }
     }
 
+    public function addIdMismatchException(object $identifiable, mixed $id): void
+    {
+        $this->violationList->add(
+            new ConstraintViolation(
+                ValidationException::ERROR_ID_MISMATCH,
+                ValidationException::ERROR_ID_MISMATCH,
+                [],
+                $identifiable::class,
+                'id',
+                $id,
+            )
+        );
+    }
+
     private function validateConstraints(BaseIdentifiableInterface $entity): void
     {
         $this->violationList->addAll(
@@ -64,15 +79,21 @@ class EntityValidator
             return;
         }
 
-        $this->violationList->add(
-            new ConstraintViolation(
-                ValidationException::ERROR_ID_MISMATCH,
-                ValidationException::ERROR_ID_MISMATCH,
-                [],
-                $newEntity::class,
-                'id',
-                $newEntity->getId(),
-            )
-        );
+        $this->addIdMismatchException($newEntity, $newEntity->getId());
+    }
+
+    private function validateDtoIdentity(
+        object $dto,
+        BaseIdentifiableInterface $oldEntity
+    ): void {
+        if (false === method_exists($dto, 'getId')) {
+            return;
+        }
+
+        if ($dto->getId() === $oldEntity->getId()) {
+            return;
+        }
+
+        $this->addIdMismatchException($dto, $dto->getId());
     }
 }

@@ -15,7 +15,7 @@ abstract class AssetFileAdmCreateDto implements AssetFileAdmCreateDtoInterface
     protected string $checksum = '';
 
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     protected string $mimeType = '';
 
     #[Serialize]

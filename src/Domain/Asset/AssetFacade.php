@@ -42,7 +42,7 @@ class AssetFacade
      */
     public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto): Asset
     {
-        $this->entityValidator->validateDto($newAssetDto);
+        $this->entityValidator->validateDto($newAssetDto, $asset);
 
         try {
             $this->assetManager->beginTransaction();

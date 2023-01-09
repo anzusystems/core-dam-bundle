@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -11,14 +12,17 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\ORM\Mapping as ORM;
@@ -33,7 +37,8 @@ class PodcastEpisode implements
     UserTrackingInterface,
     TimeTrackingInterface,
     PositionableInterface,
-    ExtSystemInterface
+    ExtSystemInterface,
+    AssetLicenceInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -42,14 +47,20 @@ class PodcastEpisode implements
 
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[Assert\NotNull(message: ValidationException::ERROR_FIELD_EMPTY)]
+    #[AppAssert\EqualLicence]
     private Podcast $podcast;
 
     #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\AssetProperties(assetType: AssetType::Audio)]
+    #[AppAssert\EqualLicence]
     private ?Asset $asset;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\AssetProperties(assetType: AssetType::Image)]
+    #[AppAssert\EqualLicence]
     private ?Asset $previewImage;
 
     #[Serialize]
@@ -146,6 +157,11 @@ class PodcastEpisode implements
         $this->texts = $texts;
 
         return $this;
+    }
+
+    public function getLicence(): AssetLicence
+    {
+        return $this->getPodcast()->getLicence();
     }
 
     public function getExtSystem(): ExtSystem
