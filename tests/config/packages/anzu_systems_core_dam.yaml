@@ -6,7 +6,7 @@ anzu_systems_core_dam:
     elastic_index_prefix: '%env(resolve:string:ELASTIC_INDEX_PREFIX)%'
     distribution_auth_redirect_url: '%env(resolve:string:DISTRIBUTION_AUTH_REDIRECT_URL)%'
     default_ext_system_id: 1
-    default_asset_licence_id: 1
+    default_asset_licence_id: 100000
     allow_select_ext_system: false
     allow_select_licence: false
     admin_allow_list_name: 'admin'

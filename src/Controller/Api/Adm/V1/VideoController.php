@@ -28,6 +28,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -89,6 +90,26 @@ final class VideoController extends AbstractApiController
 
         return $this->createdResponse(
             VideoFileAdmDetailDto::getInstance($this->videoFacade->createAssetFile($dto, $assetLicence))
+        );
+    }
+
+    /**
+     * Create an VideoFile with specific licence
+     *
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{video}', name: 'update', methods: [Request::METHOD_PUT])]
+    #[ParamConverter('newVideo', converter: SerializerParamConverter::class)]
+    #[OAParameterPath('video'), OARequest(VideoAdmUpdateDto::class), OAResponse(VideoAdmUpdateDto::class), OAResponseValidation]
+    public function update(VideoFile $video, VideoAdmUpdateDto $newVideo): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        $newVideo->setVideoFile($video);
+
+        return $this->okResponse(
+            VideoAdmUpdateDto::getInstance($this->videoFacade->update($video, $newVideo))
         );
     }
 

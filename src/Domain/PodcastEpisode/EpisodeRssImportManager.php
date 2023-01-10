@@ -10,9 +10,10 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
-use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -28,12 +29,15 @@ final class EpisodeRssImportManager
         private readonly PodcastEpisodeFactory $podcastEpisodeFactory,
         private readonly AssetTextsWriter $textsWriter,
         private readonly ExtSystemConfigurationProvider $configurationProvider,
+        private readonly PodcastEpisodeManager $episodeManager,
+        private readonly ImageDownloadFacade $imageDownloadFacade,
     ) {
     }
 
     public function createAsset(Podcast $podcast, Item $item): void
     {
-        $audioFile = $this->audioFactory->createFromRssItem($podcast->getLicence(), $item);
+        // @todo downloader
+        $audioFile = $this->audioFactory->createFromUrl($podcast->getLicence(), $item->getEnclosure()->getUrl());
         $asset = $this->assetFactory->createForAssetFile($audioFile, $podcast->getLicence());
         $this->audioManager->create($audioFile, false);
 
@@ -48,6 +52,16 @@ final class EpisodeRssImportManager
 
         $this->assetFileStatusManager->toUploaded($audioFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($audioFile);
-        $this->messageBus->dispatch(new VideoFileChangeStateMessage($audioFile));
+        $this->messageBus->dispatch(new AudioFileChangeStateMessage($audioFile));
+
+        if (false === empty($item->getItunes()->getImage())) {
+            $episode->setPreviewImage(
+                $this->imageDownloadFacade->download(
+                    assetLicence: $podcast->getLicence(),
+                    url: $item->getItunes()->getImage()
+                )
+            );
+            $this->episodeManager->flush();
+        }
     }
 }

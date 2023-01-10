@@ -40,7 +40,7 @@ final class AssetSlotController extends AbstractApiController
     public function list(Asset $asset): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
-        // todo permissions based on type
+        // @todo permissions based on type
 
         return $this->okResponse($this->assetSlotFacade->decorateAssetSlots($asset));
     }

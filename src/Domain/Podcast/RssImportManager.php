@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -14,6 +15,7 @@ use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
+use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
@@ -35,6 +37,7 @@ final class RssImportManager
         private readonly DamLogger $damLogger,
         private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
         private readonly PodcastRssReader $reader,
+        private readonly ImageDownloadFacade $imageDownloadFacade,
     ) {
     }
 
@@ -43,24 +46,17 @@ final class RssImportManager
      */
     public function readAllPodcastRss(): void
     {
-        $progressBar = $this->outputUtil->createProgressBar();
-        $progressBar->start();
-
         foreach ($this->podcastRepository->findAllToImport() as $podcast) {
             try {
                 $this->syncPodcast($podcast);
             } catch (Throwable $exception) {
                 $this->damLogger->error(
                     DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
-                    sprintf('Rss import failed (%s)', $exception->getMessage())
+                    sprintf('Podcast import failed (%s)', $exception->getMessage())
                 );
                 $this->podcastStatusManager->toImportFailed($podcast);
             }
-            $progressBar->advance();
         }
-
-        $progressBar->finish();
-        $this->outputUtil->writeln('');
     }
 
     /**
@@ -70,23 +66,68 @@ final class RssImportManager
     public function syncPodcast(Podcast $podcast): void
     {
         $this->reader->initReader($this->client->readPodcastRss($podcast));
-        if ($podcast->getAttributes()->getLastImportStatus()->isNot(PodcastLastImportStatus::notImported)) {
+
+        $this->outputUtil->writeln(sprintf('Importing podcast (%s)', $podcast->getTexts()->getTitle()));
+        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::notImported)) {
+            $this->outputUtil->writeln('Updating podcast metadata');
             $this->updatePodcast($podcast, $this->reader->readChannel());
         }
 
-        foreach ($this->reader->readItems() as $podcastItem) {
-            $episodes = $this->podcastEpisodeRepository->findByTitleAndLicence($podcastItem->getTitle(), $podcast->getLicence());
+        $progressBar = $this->outputUtil->createProgressBar();
+        $progressBar->start();
 
-            if ($episodes->isEmpty()) {
-                $this->episodeRssImportManager->createAsset($podcast, $podcastItem);
+        $createdItems = 0;
+        foreach ($this->reader->readItems() as $podcastItem) {
+            if ($this->importEpisode($podcast, $podcastItem)) {
+                $createdItems++;
             }
+            $progressBar->advance();
         }
 
         $this->podcastStatusManager->toImported($podcast);
+
+        $progressBar->finish();
+        $this->outputUtil->writeln(sprintf('Created items (%d)', $createdItems));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    private function importEpisode(Podcast $podcast, Item $podcastItem): bool
+    {
+        $episodes = $this->podcastEpisodeRepository->findByTitleAndLicence($podcastItem->getTitle(), $podcast->getLicence());
+
+        if ($episodes->isEmpty()) {
+            try {
+                $this->episodeRssImportManager->createAsset($podcast, $podcastItem);
+
+                return true;
+            } catch (Throwable $exception) {
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                    sprintf(
+                        'Podcast episode (%s) import failed (%s)',
+                        $podcastItem->getTitle(),
+                        $exception->getMessage()
+                    )
+                );
+            }
+        }
+
+        return false;
     }
 
     private function updatePodcast(Podcast $podcast, Channel $channel): void
     {
+        if (false === empty($channel->getItunes()->getImage())) {
+            $podcast->setPreviewImage(
+                $this->imageDownloadFacade->download(
+                    assetLicence: $podcast->getLicence(),
+                    url: $channel->getItunes()->getImage()
+                )
+            );
+        }
+
         if (empty($podcast->getTexts()->getTitle())) {
             $podcast->getTexts()->setTitle(
                 StringHelper::normalize(

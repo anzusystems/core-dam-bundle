@@ -179,7 +179,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
             $this->assetStatusManager->toFailed(
-                $assetFileProcessFailed->getAssetFile(),
+                $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType()
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
@@ -202,7 +202,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $file = $file ?: $this->createFile($assetFile);
 
         if (false === $this->supportsMimeType($assetFile, $file)) {
-            throw new AssetFileProcessFailed($assetFile, AssetFileFailedType::InvalidMimeType);
+            throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
         }
 
         $this->fileAttributesPostProcessor->process($assetFile, $file);

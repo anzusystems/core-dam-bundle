@@ -18,12 +18,12 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
-final readonly class AssetFactory
+final class AssetFactory
 {
     public function __construct(
-        private AssetManager $assetManager,
-        private AssetSlotFactory $assetSlotFactory,
-        private AssetMetadataManager $assetMetadataManager,
+        private readonly AssetManager $assetManager,
+        private readonly AssetSlotFactory $assetSlotFactory,
+        private readonly AssetMetadataManager $assetMetadataManager,
     ) {
     }
 
@@ -32,6 +32,7 @@ final readonly class AssetFactory
         return $this->initAsset($createDto->getType(), $assetLicence);
     }
 
+    // @todo remove licence
     public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence): Asset
     {
         $asset = match ($assetFile::class) {

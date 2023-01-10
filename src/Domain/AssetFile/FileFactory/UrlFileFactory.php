@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use League\Flysystem\FilesystemException;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Throwable;
 
 final class UrlFileFactory
 {
@@ -21,19 +22,22 @@ final class UrlFileFactory
     }
 
     /**
-     * @throws FilesystemException
-     * @throws TransportExceptionInterface
+     * @throws AssetFileProcessFailed
      */
     public function downloadFile(string $url): AdapterFile
     {
-        $response = $this->client->request(
-            Request::METHOD_GET,
-            $url,
-        );
+        try {
+            $response = $this->client->request(
+                Request::METHOD_GET,
+                $url,
+            );
 
-        $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
-        $baseFile = $fileSystem->writeTmpFileFromStream(StreamWrapper::createResource($response));
+            $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
+            $baseFile = $fileSystem->writeTmpFileFromStream(StreamWrapper::createResource($response));
 
-        return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
+            return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
+        } catch (Throwable) {
+            throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+        }
     }
 }

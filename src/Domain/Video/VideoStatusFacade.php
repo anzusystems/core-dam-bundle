@@ -50,7 +50,6 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
             assetLicence: $assetFile->getLicence()
         );
 
-        // todo consired previewImage relation (asset vs assetfile)
         $assetFile->setPreviewImage($imageFile->getAsset());
 
         return $assetFile;

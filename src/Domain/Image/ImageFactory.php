@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
 final class ImageFactory extends AssetFileFactory
 {
@@ -25,5 +26,15 @@ final class ImageFactory extends AssetFileFactory
                     ->setChecksum($createDto->getChecksum())
                     ->setMimeType($createDto->getMimeType())
             );
+    }
+
+    public function createFromUrl(AssetLicence $licence, string $url): ImageFile
+    {
+        $imageFile = $this->createBlankImage($licence);
+        $imageFile->getAssetAttributes()
+            ->setOriginUrl($url)
+            ->setCreateStrategy(AssetFileCreateStrategy::Download);
+
+        return $imageFile;
     }
 }

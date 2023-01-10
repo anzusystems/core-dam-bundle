@@ -10,7 +10,7 @@ final class DocumentUrl extends AbstractAssetFileUrl
 {
     public function getCreatePath(): string
     {
-        return "/api/adm/v{$this->version}/document/licence/1";
+        return "/api/adm/v{$this->version}/document/licence/{$this->licenceId}";
     }
 
     public function getCreateChunkPath(string $assetId): string

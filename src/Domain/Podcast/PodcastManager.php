@@ -36,6 +36,7 @@ class PodcastManager extends AbstractManager
         $podcast->getAttributes()
             ->setRssUrl($newPodcast->getAttributes()->getRssUrl())
         ;
+        $podcast->setPreviewImage($newPodcast->getPreviewImage());
         $this->flush($flush);
 
         return $podcast;
