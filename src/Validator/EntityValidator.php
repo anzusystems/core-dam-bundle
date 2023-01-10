@@ -84,9 +84,9 @@ class EntityValidator
 
     private function validateDtoIdentity(
         object $dto,
-        BaseIdentifiableInterface $oldEntity
+        ?BaseIdentifiableInterface $oldEntity = null
     ): void {
-        if (false === method_exists($dto, 'getId')) {
+        if (null === $oldEntity || false === method_exists($dto, 'getId')) {
             return;
         }
 

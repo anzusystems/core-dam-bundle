@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -37,18 +36,5 @@ final class ImageFactory extends AssetFileFactory
             ->setCreateStrategy(AssetFileCreateStrategy::Download);
 
         return $imageFile;
-    }
-
-    // todo dispatch/flush
-    public function createUploadedImage(ImageFile $imageFile): Asset
-    {
-        $asset = $this->assetFactory->createForAssetFile($imageFile, $imageFile->getLicence());
-        $this->assetFileManager->create($imageFile, false);
-
-        $this->assetFileStatusManager->toUploaded($imageFile);
-        $this->assetFileEventDispatcher->dispatchAssetFileChanged($imageFile);
-        $this->messageDispatcher->dispatchAssetFileChangeState($imageFile);
-
-        return $asset;
     }
 }

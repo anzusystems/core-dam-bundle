@@ -12,7 +12,7 @@ final class AdapterFile extends BaseFile
     private readonly string $adapterPath;
     private readonly LocalFilesystem $localFilesystem;
 
-    // todo  remove $path and generate it from filesystem immediate
+    // @todo  remove $path and generate it from filesystem immediate
     public function __construct(string $path, string $adapterPath, LocalFilesystem $filesystem, bool $checkPath = true)
     {
         $this->adapterPath = $adapterPath;

@@ -108,7 +108,7 @@ final class VideoController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
         $newVideo->setVideoFile($video);
 
-        return $this->createdResponse(
+        return $this->okResponse(
             VideoAdmUpdateDto::getInstance($this->videoFacade->update($video, $newVideo))
         );
     }
