@@ -10,7 +10,7 @@ final class VideoUrl extends AbstractAssetFileUrl
 {
     public function getCreatePath(): string
     {
-        return "/api/adm/v{$this->version}/video/licence/1";
+        return "/api/adm/v{$this->version}/video/licence/{$this->licenceId}";
     }
 
     public function getCreateChunkPath(string $assetId): string

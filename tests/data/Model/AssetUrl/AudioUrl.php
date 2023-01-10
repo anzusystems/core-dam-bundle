@@ -10,7 +10,7 @@ final class AudioUrl extends AbstractAssetFileUrl
 {
     public function getCreatePath(): string
     {
-        return "/api/adm/v{$this->version}/audio/licence/1";
+        return "/api/adm/v{$this->version}/audio/licence/{$this->licenceId}";
     }
 
     public function getCreateChunkPath(string $assetId): string

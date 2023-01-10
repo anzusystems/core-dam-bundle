@@ -10,7 +10,7 @@ final class ImageUrl extends AbstractAssetFileUrl
 {
     public function getCreatePath(): string
     {
-        return "/api/adm/v{$this->version}/image/licence/1";
+        return "/api/adm/v{$this->version}/image/licence/{$this->licenceId}";
     }
 
     public function getCreateChunkPath(string $assetId): string
