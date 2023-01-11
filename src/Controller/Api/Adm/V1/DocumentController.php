@@ -122,7 +122,7 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function setToPosition(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    public function setToSlot(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
@@ -131,6 +131,22 @@ final class DocumentController extends AbstractApiController
         return $this->okResponse(
             DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setToSlot($asset, $document, $slotName))
         );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName')]
+    public function removeFromSlot(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        $this->documentPositionFacade->removeFromSlot($asset, $document, $slotName);
+
+        return $this->noContentResponse();
     }
 
     /**
