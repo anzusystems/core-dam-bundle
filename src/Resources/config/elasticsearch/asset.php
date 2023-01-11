@@ -28,6 +28,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'visible' => [
                     'type' => 'boolean',
                 ],
+                'generatedBySystem' => [
+                    'type' => 'boolean',
+                ],
                 'inPodcast' => [
                     'type' => 'boolean',
                 ],
