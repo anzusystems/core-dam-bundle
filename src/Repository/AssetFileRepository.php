@@ -33,6 +33,24 @@ final class AssetFileRepository extends AbstractAssetFileRepository
             ->getOneOrNullResult();
     }
 
+    /**
+     * @param int $maxFilesCount - is required as a regular count on mysql could walk through all file related rows,
+     *                             this way we count only rows int the limit
+     */
+    public function getLimitedCountByAssetLicence(AssetLicence $licence, int $maxFilesCount): int
+    {
+        $results = $this->createQueryBuilder('entity')
+            ->select('entity.id')
+            ->where('IDENTITY(entity.licence) = :licenceId')
+            ->setParameter('licenceId', $licence->getId())
+            ->setMaxResults($maxFilesCount)
+            ->getQuery()
+            ->getSingleColumnResult()
+        ;
+
+        return count($results);
+    }
+
     protected function getEntityClass(): string
     {
         return AssetFile::class;

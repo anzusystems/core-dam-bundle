@@ -227,6 +227,11 @@ class Configuration implements ConfigurationInterface
                     ->values(UserAuthType::values())
                     ->defaultValue(UserAuthType::Default->toString())
                 ->end()
+                ->integerNode(SettingsConfiguration::LIMITED_ASSET_LICENCE_FILES_COUNT)
+                    ->info('Number of allowed files for an asset licence with enabled limitation.')
+                    ->defaultValue(100)
+                    ->isRequired()
+                ->end()
                 ->append($this->addChunkConfiguration())
             ->end();
     }
