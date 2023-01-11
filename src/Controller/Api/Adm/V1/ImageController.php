@@ -135,6 +135,22 @@ final class ImageController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      */
+    #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function removeFromSLot(Asset $asset, ImageFile $image, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        $this->imagePositionFacade->removeFromSlot($asset, $image, $slotName);
+
+        return $this->noContentResponse();
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
     #[Route(path: '/{image}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OAParameterPath('asset'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
     public function setMain(Asset $asset, ImageFile $image): JsonResponse

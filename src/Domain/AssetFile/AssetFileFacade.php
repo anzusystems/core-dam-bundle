@@ -26,7 +26,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
-use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -190,7 +189,6 @@ abstract class AssetFileFacade
      * @return T
      *
      * @throws AssetSlotUsedException
-     * @throws NonUniqueResultException
      * @throws ValidationException
      */
     public function addAssetFileToAsset(Asset $asset, AssetFileAdmCreateDto $createDto, string $slotName): AssetFile

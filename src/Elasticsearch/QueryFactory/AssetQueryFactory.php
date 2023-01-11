@@ -63,6 +63,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
         }
+        if (false === (null === $searchDto->isGeneratedBySystem())) {
+            $filter[] = ['terms' => ['generatedBySystem' => [$searchDto->isGeneratedBySystem()]]];
+        }
         if (false === (null === $searchDto->isInPodcast())) {
             $filter[] = ['terms' => ['inPodcast' => [$searchDto->isInPodcast()]]];
         }

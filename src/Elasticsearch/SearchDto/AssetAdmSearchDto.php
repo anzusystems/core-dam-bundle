@@ -61,6 +61,9 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     protected ?bool $visible = null;
 
     #[Serialize]
+    protected ?bool $generatedBySystem = null;
+
+    #[Serialize]
     protected ?bool $inPodcast = null;
 
     /**
@@ -485,6 +488,18 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setCreatedAtUntil(?DateTimeImmutable $createdAtUntil): self
     {
         $this->createdAtUntil = $createdAtUntil;
+
+        return $this;
+    }
+
+    public function isGeneratedBySystem(): ?bool
+    {
+        return $this->generatedBySystem;
+    }
+
+    public function setGeneratedBySystem(?bool $generatedBySystem): self
+    {
+        $this->generatedBySystem = $generatedBySystem;
 
         return $this;
     }
