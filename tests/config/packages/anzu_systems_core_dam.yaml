@@ -14,6 +14,7 @@ anzu_systems_core_dam:
     app_redis: TestRedis
     cache_redis: TestRedis
     user_auth_type: json_credentials
+    limited_asset_licence_files_count: 100
     image_chunk_config:
       min_size: 5000
       max_size: 70000
