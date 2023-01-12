@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
+use AnzuSystems\CoreDamBundle\Domain\CustomDistribution\CustomDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
-use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use Doctrine\ORM\NonUniqueResultException;
@@ -24,6 +28,7 @@ final class CustomDistributionController extends AbstractApiController
 {
     public function __construct(
         private readonly DistributionFacade $distributionFacade,
+        private readonly CustomDistributionFacade $customDistributionFacade,
     ) {
     }
 
@@ -33,12 +38,27 @@ final class CustomDistributionController extends AbstractApiController
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute_custom', methods: [Request::METHOD_POST])]
     #[ParamConverter('customDistribution', converter: SerializerParamConverter::class)]
-    public function distributeCustom(VideoFile $assetFile, CustomDistribution $customDistribution): JsonResponse
+    public function distributeCustom(AssetFile $assetFile, CustomDistribution $customDistribution): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $customDistribution->getDistributionService());
 
         return $this->okResponse(
             $this->distributionFacade->distribute($assetFile, $customDistribution)
+        );
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
+    #[Route('/asset-file/{assetFile}/prepare-payload/{distributionService}', name: 'prepare_payload', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('assetFile'), OAParameterPath('distributionService'), OAResponse(YoutubeDistribution::class)]
+    public function preparePayload(AssetFile $assetFile, string $distributionService): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
+
+        return $this->okResponse(
+            $this->customDistributionFacade->preparePayload($assetFile, $distributionService)
         );
     }
 }

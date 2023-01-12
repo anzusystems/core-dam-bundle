@@ -6,7 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertyAccessor;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
@@ -19,6 +21,7 @@ final class DistributionBodyBuilder extends DistributionManager
         private readonly CurrentAnzuUserProvider $userProvider,
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly AssetPropertyAccessor $accessor,
+        private readonly AssetTextsWriter $textsWriter,
     ) {
     }
 
@@ -46,6 +49,20 @@ final class DistributionBodyBuilder extends DistributionManager
         }
 
         return '';
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function setWriterProperties(string $distributionService, Asset $assetFile, object $object): void
+    {
+        $requirements = $this->extSystemConfigurationProvider->getDistributionRequirements(
+            $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($assetFile),
+            $distributionService
+        );
+
+        // todo
+        $this->textsWriter->writeValues($assetFile, $object, $requirements->getMetadataMap());
     }
 
     /**

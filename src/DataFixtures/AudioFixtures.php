@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -28,6 +29,8 @@ final class AudioFixtures extends AbstractAssetFileFixtures
         private readonly AssetLicenceRepository $licenceRepository,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
+        private readonly KeywordFixtures $keywordFixtures,
+        private readonly AuthorFixtures $authorFixtures,
     ) {
     }
 
@@ -36,6 +39,8 @@ final class AudioFixtures extends AbstractAssetFileFixtures
         return [
             AssetLicenceFixtures::class,
             CustomFormElementFixtures::class,
+            KeywordFixtures::class,
+            AuthorFixtures::class,
         ];
     }
 
@@ -75,6 +80,17 @@ final class AudioFixtures extends AbstractAssetFileFixtures
             'headline' => 'Custom headline title',
             'description' => 'Custom audio description',
         ]);
+        $asset->setKeywords(new ArrayCollection([
+            $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_1),
+            $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_2),
+            $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_3),
+        ]));
+
+        $asset->setAuthors(new ArrayCollection([
+            $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_1),
+            $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_2),
+            $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_3),
+        ]));
         $this->facadeProvider->getStatusFacade($audio)->storeAndProcess($audio, $file);
 
         yield $audio;

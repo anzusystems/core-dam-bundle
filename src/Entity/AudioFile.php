@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AudioAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AudioPublicLink;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -18,6 +19,9 @@ class AudioFile extends AssetFile
     #[ORM\Embedded(class: AudioAttributes::class)]
     private AudioAttributes $attributes;
 
+    #[ORM\Embedded(class: AudioPublicLink::class)]
+    private AudioPublicLink $audioPublicLink;
+
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
@@ -29,7 +33,20 @@ class AudioFile extends AssetFile
     {
         $this->setAttributes(new AudioAttributes());
         $this->setSlots(new ArrayCollection());
+        $this->setAudioPublicLink(new AudioPublicLink());
         parent::__construct();
+    }
+
+    public function getAudioPublicLink(): AudioPublicLink
+    {
+        return $this->audioPublicLink;
+    }
+
+    public function setAudioPublicLink(AudioPublicLink $audioPublicLink): self
+    {
+        $this->audioPublicLink = $audioPublicLink;
+
+        return $this;
     }
 
     public function getAttributes(): AudioAttributes
