@@ -202,6 +202,16 @@ class Asset implements
         return $this->authors;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    public function getAuthorsAsStringArray(): array
+    {
+        return $this->getAuthors()->map(
+            fn (Author $author): string => $author->getName()
+        )->getValues();
+    }
+
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;
@@ -212,6 +222,16 @@ class Asset implements
     public function getKeywords(): Collection
     {
         return $this->keywords;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getKeywordsAsStringArray(): array
+    {
+        return $this->getKeywords()->map(
+            fn (Keyword $keyword): string => $keyword->getName()
+        )->getValues();
     }
 
     public function setKeywords(Collection $keywords): self

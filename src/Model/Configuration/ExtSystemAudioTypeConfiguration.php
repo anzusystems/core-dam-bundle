@@ -10,13 +10,16 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
 {
     public const PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
     public const PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
+    public const AUDIO_PUBLIC_STORAGE = 'public_storage';
 
     private array $podcastEpisodeRssMap;
     private array $podcastEpisodeEntityMap;
+    private string $publicStorage;
 
     public static function getFromArrayConfiguration(array $config): static
     {
         return parent::getFromArrayConfiguration($config)
+            ->setPublicStorage($config[self::AUDIO_PUBLIC_STORAGE] ?? '')
             ->setPodcastEpisodeRssMap(
                 array_map(
                     fn (array $episodeMapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($episodeMapConfig),
@@ -30,6 +33,18 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
                 )
             )
         ;
+    }
+
+    public function getPublicStorage(): string
+    {
+        return $this->publicStorage;
+    }
+
+    public function setPublicStorage(string $publicStorage): self
+    {
+        $this->publicStorage = $publicStorage;
+
+        return $this;
     }
 
     /**
