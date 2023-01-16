@@ -152,6 +152,8 @@ anzu_systems_core_dam:
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.audio'
         chunk_storage_name: 'cms.audio'
+        public_storage: 'cms.audio'
+        public_domain_name: 'localhost'
         size_limit: 104857600 # 100MB
         file_slots:
           default: free
@@ -171,8 +173,12 @@ anzu_systems_core_dam:
               blocked_by: [ ]
               strategy: none
               distribution_metadata_map:
-                title: [ 'customData:title', 'customData:headline' ]
-                description: [ 'customData:description' ]
+                title:
+                  source_property_path: 'metadata.customData[title]'
+                  destination_property_path: 'customData[title]'
+                description:
+                  source_property_path: 'metadata.customData[description]'
+                  destination_property_path: 'customData[description]'
               category_select:
                 enabled: true
                 required: false

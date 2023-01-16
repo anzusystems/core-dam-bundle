@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\FileSystem;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
@@ -76,6 +77,21 @@ final class FileSystemProvider
 
         if (null === $filesystem) {
             throw new InvalidArgumentException("Unknown storage name ({$extSystemConfig->getStorageName()})");
+        }
+
+        return $filesystem;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function getPublicFilesystem(AudioFile $audioFile): AbstractFilesystem
+    {
+        $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($audioFile->getAsset());
+        $filesystem = $this->getFileSystemByStorageName($extSystemConfig->getPublicStorage());
+
+        if (null === $filesystem) {
+            throw new InvalidArgumentException('Undefined public storage');
         }
 
         return $filesystem;

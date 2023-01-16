@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPositionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPublicFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -28,6 +29,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
@@ -49,6 +51,7 @@ final class AudioController extends AbstractApiController
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly AudioPositionFacade $audioPositionFacade,
+        private readonly AudioPublicFacade $audioPublicFacade,
     ) {
     }
 
@@ -239,6 +242,40 @@ final class AudioController extends AbstractApiController
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($audio)
+        );
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    #[ParamConverter('dto', converter: SerializerParamConverter::class)]
+    #[Route(
+        path: '/{audio}/make-public',
+        name: 'make_public',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('audio'), OARequest(AudioPublicationAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    public function makePublic(AudioFile $audio, AudioPublicationAdmDto $dto): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE);
+
+        return $this->okResponse(
+            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePublic($audio, $dto)),
+        );
+    }
+
+    #[Route(
+        path: '/{audio}/make-private',
+        name: 'make_private',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
+    public function makePrivate(AudioFile $audio): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE);
+
+        return $this->okResponse(
+            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePrivate($audio)),
         );
     }
 }

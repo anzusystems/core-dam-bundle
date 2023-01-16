@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\JwDistribution;
+namespace AnzuSystems\CoreDamBundle\Domain\CustomDistribution;
 
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
 use Doctrine\ORM\NonUniqueResultException;
 
-class JwDistributionFacade
+class CustomDistributionFacade
 {
     public function __construct(
         private readonly DistributionBodyBuilder $distributionBodyBuilder,
@@ -19,11 +19,12 @@ class JwDistributionFacade
     /**
      * @throws NonUniqueResultException
      */
-    public function preparePayload(AssetFile $assetFile, string $distributionService): JwDistribution
+    public function preparePayload(AssetFile $assetFile, string $distributionService): CustomDistribution
     {
-        $distribution = new JwDistribution();
-        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
+        $distribution = new CustomDistribution();
+        $distribution->setDistributionService($distributionService);
 
+        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
         $this->distributionBodyBuilder->setWriterProperties(
             $distributionService,
             $assetFile->getAsset(),

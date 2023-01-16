@@ -26,7 +26,7 @@ final class ExtSystemConfigurationProvider
     ) {
     }
 
-    public function getExtSystemConfigurationByAssetFile(AssetFile $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration
+    public function getExtSystemConfigurationByAssetFile(AssetFile $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration
     {
         return $this->getExtSystemConfigurationByAsset($asset->getAsset());
     }

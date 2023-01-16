@@ -48,6 +48,9 @@ final class AllowListConfiguration
         throw new DomainException("Domain ({$schemeAndHost}) not supported");
     }
 
+    /**
+     * @return array<string, CropAllowItem>
+     */
     public function getTaggedList(string $allowListName, string $tag): array
     {
         $key = $this->getKey($allowListName, $tag);

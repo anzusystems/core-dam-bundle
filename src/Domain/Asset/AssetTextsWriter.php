@@ -29,7 +29,7 @@ final class AssetTextsWriter
         }
     }
 
-    private function getValue(object $from, TextsWriterConfiguration $configuration): string
+    private function getValue(object $from, TextsWriterConfiguration $configuration): mixed
     {
         $value = $this->propertyAccessor->getValue(
             objectOrArray: $from,
@@ -40,6 +40,6 @@ final class AssetTextsWriter
             $value = $this->textStringNormalizer->normalizeAll($value, $configuration->getNormalizers());
         }
 
-        return (string) $value;
+        return $value;
     }
 }

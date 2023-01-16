@@ -326,13 +326,14 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue(DistributionStrategy::NONE)
                                 ->isRequired()
                             ->end()
-                            ->arrayNode(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP)
-                                ->useAttributeAsKey('name')
-                                ->arrayPrototype()
-                                    ->useAttributeAsKey('name')->scalarPrototype()->end()
-                                    ->defaultValue([])
-                                ->end()
-                            ->end()
+                            ->append($this->addTextMapperConfiguration(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP))
+//                            ->arrayNode(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP)
+//                                ->useAttributeAsKey('name')
+//                                ->arrayPrototype()
+//                                    ->useAttributeAsKey('name')->scalarPrototype()->end()
+//                                    ->defaultValue([])
+//                                ->end()
+//                            ->end()
                         ->end()
                     ->end()
                 ->end()
@@ -399,6 +400,14 @@ class Configuration implements ConfigurationInterface
         $config->append($this->addExtSystemExifMetadataSection(ExtSystemAssetTypeConfiguration::AUTHORS_KEY));
 
         if ($type->is(AssetType::Audio)) {
+            $config
+                ->scalarNode(ExtSystemAudioTypeConfiguration::AUDIO_PUBLIC_STORAGE)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(ExtSystemAudioTypeConfiguration::PUBLIC_DOMAIN_NAME)
+                    ->isRequired()
+                ->end()
+            ;
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }

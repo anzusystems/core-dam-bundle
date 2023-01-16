@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
@@ -19,13 +18,14 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
 use Doctrine\ORM\NonUniqueResultException;
 
-final class ImageLinksHandler extends AbstractHandler
+class ImageLinksHandler extends AbstractHandler
 {
+    private const LINKS_TYPE = 'image';
+
     public function __construct(
-        private readonly CropFactory $cropFactory,
-        private readonly RegionOfInterestRepository $roiRepository,
-        private readonly ImageUrlFactory $imageUrlFactory,
-        private readonly ConfigurationProvider $configurationProvider,
+        protected readonly RegionOfInterestRepository $roiRepository,
+        protected readonly ImageUrlFactory $imageUrlFactory,
+        protected readonly ConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -45,18 +45,30 @@ final class ImageLinksHandler extends AbstractHandler
             );
         }
 
-        if ($value instanceof ImageFile) {
-            if ($value->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
-                return [];
-            }
-
-            return array_map(
-                fn (CropAllowItem $allowItem): array => $this->serializeCropAllowItem($value, $allowItem),
-                $this->configurationProvider->getImageAdminSizeList($type)
-            );
+        if (false === ($value instanceof ImageFile)) {
+            throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
         }
 
-        throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
+        return $this->getImageLinkUrl($value, $type);
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
+    {
+        if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            return [];
+        }
+
+        $sizeList = $this->configurationProvider->getImageAdminSizeList($cropTag);
+        if (empty($sizeList)) {
+            return [];
+        }
+
+        return [
+            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[0]),
+        ];
     }
 
     /**
@@ -67,10 +79,15 @@ final class ImageLinksHandler extends AbstractHandler
         throw new SerializerException('deserialize_not_supported');
     }
 
+    protected function getKey(ImageCropTag $cropTag): string
+    {
+        return self::LINKS_TYPE . '_' . $cropTag->toString();
+    }
+
     /**
      * @throws NonUniqueResultException
      */
-    private function serializeCropAllowItem(ImageFile $imageFile, CropAllowItem $item): array
+    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
         $reqCrop = (new RequestedCropDto())
             ->setRequestWidth($item->getWidth())
@@ -82,21 +99,18 @@ final class ImageLinksHandler extends AbstractHandler
             return [];
         }
 
-        $cropDto = $this->cropFactory->prepareImageCrop($roi, $reqCrop, $imageFile);
-
         return [
+            'type' => self::LINKS_TYPE,
             'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
                 imageId: $imageFile->getId(),
                 width: $reqCrop->getRequestWidth(),
                 height: $reqCrop->getRequestHeight(),
                 roiPosition: $roi->getPosition()
             ),
-            'width' => $cropDto->getRequestWidth(),
-            'height' => $cropDto->getRequestHeight(),
             'requestedWidth' => $reqCrop->getRequestWidth(),
             'requestedHeight' => $reqCrop->getRequestHeight(),
             'title' => empty($item->getTitle())
-                ? "{$cropDto->getRequestWidth()}x{$cropDto->getRequestHeight()}"
+                ? "{$reqCrop->getRequestWidth()}x{$reqCrop->getRequestHeight()}"
                 : $item->getTitle(),
         ];
     }

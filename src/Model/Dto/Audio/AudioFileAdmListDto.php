@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AudioLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
@@ -54,5 +55,11 @@ class AudioFileAdmListDto extends AbstractEntityDto
     public function getAsset(): Asset
     {
         return $this->audio->getAsset();
+    }
+
+    #[Serialize(handler: AudioLinksHandler::class)]
+    public function getLinks(): AudioFile
+    {
+        return $this->audio;
     }
 }
