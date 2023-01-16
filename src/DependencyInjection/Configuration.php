@@ -398,7 +398,11 @@ class Configuration implements ConfigurationInterface
             $config
                 ->scalarNode(ExtSystemAudioTypeConfiguration::AUDIO_PUBLIC_STORAGE)
                     ->isRequired()
-                ->end();
+                ->end()
+                ->scalarNode(ExtSystemAudioTypeConfiguration::PUBLIC_DOMAIN_NAME)
+                    ->isRequired()
+                ->end()
+            ;
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
             $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }

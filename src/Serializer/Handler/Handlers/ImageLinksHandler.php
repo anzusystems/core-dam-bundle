@@ -21,6 +21,8 @@ use Doctrine\ORM\NonUniqueResultException;
 
 final class ImageLinksHandler extends AbstractHandler
 {
+    private const LINKS_TYPE = 'image';
+
     public function __construct(
         private readonly CropFactory $cropFactory,
         private readonly RegionOfInterestRepository $roiRepository,
@@ -45,18 +47,33 @@ final class ImageLinksHandler extends AbstractHandler
             );
         }
 
-        if ($value instanceof ImageFile) {
-            if ($value->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
-                return [];
-            }
-
-            return array_map(
-                fn (CropAllowItem $allowItem): array => $this->serializeCropAllowItem($value, $allowItem),
-                $this->configurationProvider->getImageAdminSizeList($type)
-            );
+        if (false === ($value instanceof ImageFile)) {
+            throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
         }
 
-        throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
+        return $this->getImageLinkUrl($value, [$type]);
+    }
+
+    /**
+     * @param array<int, ImageCropTag> $tags
+     *
+     * @throws NonUniqueResultException
+     */
+    public function getImageLinkUrl(ImageFile $imageFile, array $tags): array
+    {
+        if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            return [];
+        }
+
+        $links = [];
+        foreach ($tags as $tag) {
+            $serializedTag = $this->getFirstTag($imageFile, $tag);
+            if ($serializedTag) {
+                $links[self::LINKS_TYPE . '_' . $tag->toString()] = $serializedTag;
+            }
+        }
+
+        return $links;
     }
 
     /**
@@ -65,6 +82,18 @@ final class ImageLinksHandler extends AbstractHandler
     public function deserialize(mixed $value, Metadata $metadata): mixed
     {
         throw new SerializerException('deserialize_not_supported');
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
+    private function getFirstTag(ImageFile $imageFile, ImageCropTag $cropTag): ?array
+    {
+        foreach ($this->configurationProvider->getImageAdminSizeList($cropTag) as $allowItem) {
+            return $this->serializeCropAllowItem($imageFile, $allowItem);
+        }
+
+        return null;
     }
 
     /**
@@ -82,21 +111,18 @@ final class ImageLinksHandler extends AbstractHandler
             return [];
         }
 
-        $cropDto = $this->cropFactory->prepareImageCrop($roi, $reqCrop, $imageFile);
-
         return [
+            'type' => self::LINKS_TYPE,
             'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
                 imageId: $imageFile->getId(),
                 width: $reqCrop->getRequestWidth(),
                 height: $reqCrop->getRequestHeight(),
                 roiPosition: $roi->getPosition()
             ),
-            'width' => $cropDto->getRequestWidth(),
-            'height' => $cropDto->getRequestHeight(),
             'requestedWidth' => $reqCrop->getRequestWidth(),
             'requestedHeight' => $reqCrop->getRequestHeight(),
             'title' => empty($item->getTitle())
-                ? "{$cropDto->getRequestWidth()}x{$cropDto->getRequestHeight()}"
+                ? "{$reqCrop->getRequestWidth()}x{$reqCrop->getRequestHeight()}"
                 : $item->getTitle(),
         ];
     }

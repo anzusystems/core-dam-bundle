@@ -11,10 +11,12 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public const PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
     public const PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
     public const AUDIO_PUBLIC_STORAGE = 'public_storage';
+    public const PUBLIC_DOMAIN_NAME = 'public_domain_name';
 
     private array $podcastEpisodeRssMap;
     private array $podcastEpisodeEntityMap;
     private string $publicStorage;
+    private string $publicDomainName;
 
     public static function getFromArrayConfiguration(array $config): static
     {
@@ -32,7 +34,21 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
                     $config[self::PODCAST_EPISODE_ENTITY_MAP_KEY] ?? []
                 )
             )
+            ->setPublicDomainName(
+                $config[self::PUBLIC_DOMAIN_NAME] ?? ''
+            )
         ;
+    }
+
+    public function getPublicDomainName(): string
+    {
+        return $this->publicDomainName;
+    }
+
+    public function setPublicDomainName(string $publicDomainName): self
+    {
+        $this->publicDomainName = $publicDomainName;
+        return $this;
     }
 
     public function getPublicStorage(): string
