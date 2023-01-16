@@ -49,6 +49,7 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
             file: $this->ffmpegService->getFileThumbnail($file, self::getThumbnailPosition($assetFile)),
             assetLicence: $assetFile->getLicence()
         );
+        $imageFile->getAsset()->getAssetFlags()->setGeneratedBySystem(true);
 
         $assetFile->setPreviewImage($imageFile->getAsset());
 

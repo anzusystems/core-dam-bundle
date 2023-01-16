@@ -9,10 +9,13 @@ use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use AnzuSystems\CoreDamBundle\Traits\ExtSystemConfigurationProviderAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
@@ -27,6 +30,13 @@ abstract class AssetFilePositionFacade
     private AssetSlotFactory $assetSlotFactory;
     private AssetSlotManager $assetSlotManager;
     private AssetManager $assetManager;
+    private AssetSlotRepository $assetSlotRepository;
+
+    #[Required]
+    public function setAssetSlotRepository(AssetSlotRepository $assetSlotRepository): void
+    {
+        $this->assetSlotRepository = $assetSlotRepository;
+    }
 
     #[Required]
     public function setAssetSlotFactory(AssetSlotFactory $assetSlotFactory): void
@@ -68,6 +78,34 @@ abstract class AssetFilePositionFacade
 
             throw new RuntimeException('set_main_position_failed', 0, $exception);
         }
+    }
+
+    public function removeFromSlot(Asset $asset, AssetFile $assetFile, string $slotName): Asset
+    {
+        $assetSlot = $this->assetSlotRepository->findSlotByAssetAndTitle((string) $asset->getId(), $slotName);
+
+        if (null === $assetSlot || false === ($assetSlot->getAssetFile() === $assetFile)) {
+            throw new NotFoundHttpException(sprintf('(%s) slot not found', AssetSlot::class));
+        }
+
+        if (1 === $assetSlot->getAssetFile()->getSlots()->count()) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
+
+        try {
+            $this->assetManager->beginTransaction();
+            $this->assetSlotManager->delete($assetSlot);
+            $this->assetManager->updateExisting($asset);
+            $this->indexManager->index($asset);
+
+            $this->assetManager->commit();
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
+
+            throw new RuntimeException('add_to_slot_failed', 0, $exception);
+        }
+
+        return $asset;
     }
 
     /**

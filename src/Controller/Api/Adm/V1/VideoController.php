@@ -140,7 +140,7 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function setToPosition(Asset $asset, VideoFile $video, string $slotName): JsonResponse
+    public function setToSlot(Asset $asset, VideoFile $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
@@ -149,6 +149,22 @@ final class VideoController extends AbstractApiController
         return $this->okResponse(
             VideoFileAdmDetailDto::getInstance($this->videoPositionFacade->setToSlot($asset, $video, $slotName))
         );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{video}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('video'), OAParameterPath('asset'), OAParameterPath('slotName')]
+    public function removeFromSlot(Asset $asset, VideoFile $video, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+
+        $this->videoPositionFacade->removeFromSlot($asset, $video, $slotName);
+
+        return $this->noContentResponse();
     }
 
     /**

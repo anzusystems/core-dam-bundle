@@ -29,6 +29,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExt
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
@@ -118,8 +119,8 @@ final class AudioController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{audio}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
-    #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function setToPosition(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
+    #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName')]
+    public function setToSlot(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
@@ -128,6 +129,22 @@ final class AudioController extends AbstractApiController
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($this->audioPositionFacade->setToSlot($asset, $audio, $slotName))
         );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{audio}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function removeFromSlot(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        $this->audioPositionFacade->removeFromSlot($asset, $audio, $slotName);
+
+        return $this->noContentResponse();
     }
 
     /**
