@@ -38,7 +38,10 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->audioFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->audioFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }

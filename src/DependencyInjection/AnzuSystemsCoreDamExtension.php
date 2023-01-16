@@ -137,6 +137,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $imageFileChangeStateTopic,
                                     ],
+                                    'ack_deadline_seconds' => '60s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -165,6 +166,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $documentFileChangeStateTopic,
                                     ],
+                                    'ack_deadline_seconds' => '120s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -193,6 +195,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $audioFileChangeStateTopic,
                                     ],
+                                    'ack_deadline_seconds' => '300s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -221,6 +224,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $videoFileChangeStateTopic,
                                     ],
+                                    'ack_deadline_seconds' => '500s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',

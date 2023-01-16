@@ -62,6 +62,10 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private string $extId;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $limitedFiles;
+
     /**
      * List of users who belongs to licence.
      */
@@ -74,6 +78,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setExtSystem(new ExtSystem());
         $this->setExtId('');
         $this->setUsers(new ArrayCollection());
+        $this->setLimitedFiles(false);
     }
 
     public function getName(): string
@@ -113,6 +118,23 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setExtId(string $extId): self
     {
         $this->extId = $extId;
+
+        return $this;
+    }
+
+    public function isLimitedFiles(): bool
+    {
+        return $this->limitedFiles;
+    }
+
+    public function isNotLimitedFiles(): bool
+    {
+        return false === $this->isLimitedFiles();
+    }
+
+    public function setLimitedFiles(bool $limitedFiles): self
+    {
+        $this->limitedFiles = $limitedFiles;
 
         return $this;
     }

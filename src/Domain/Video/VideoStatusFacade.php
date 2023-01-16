@@ -58,7 +58,10 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->videoFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->videoFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }

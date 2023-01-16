@@ -44,12 +44,11 @@ final class ChunkFacade
                 $assetFile->getAssetAttributes()->getUploadedSize() + $createDto->getSize()
             );
             $this->chunkManager->create($chunk);
+            $this->chunkManager->commit();
 
             if ($chunk->isFirstChunk()) {
                 $this->messageBus->dispatch(new AssetFileMetadataProcessMessage($assetFile, $chunk));
             }
-
-            $this->chunkManager->commit();
 
             return $chunk;
         } catch (Throwable $exception) {

@@ -41,8 +41,11 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
      */
     protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing attributes', (string) $assetFile->getId()));
         $this->imageAttributesProcessor->process($assetFile, $file);
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing crops', (string) $assetFile->getId()));
         $this->optimalCropsProcessor->process($assetFile, $file);
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing default rois', (string) $assetFile->getId()));
         $this->defaultRoiProcessor->process($assetFile, $file);
 
         return $assetFile;
@@ -50,7 +53,10 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->imageFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->imageFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }

@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContain
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -24,6 +25,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDtoInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -47,6 +49,8 @@ abstract class AssetFileFacade
     protected AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher;
     protected AssetExternalProviderContainer $assetExternalProviderContainer;
     protected AssetSlotRepository $assetSlotRepository;
+    protected AssetFileRepository $assetFileRepository;
+    protected ConfigurationProvider $configurationProvider;
 
     #[Required]
     public function setAssetSlotRepository(AssetSlotRepository $assetSlotRepository): void
@@ -120,6 +124,18 @@ abstract class AssetFileFacade
         $this->assetExternalProviderContainer = $providerContainer;
     }
 
+    #[Required]
+    public function setAssetFileRepository(AssetFileRepository $assetFileRepository): void
+    {
+        $this->assetFileRepository = $assetFileRepository;
+    }
+
+    #[Required]
+    public function setConfigurationProvider(ConfigurationProvider $configurationProvider): void
+    {
+        $this->configurationProvider = $configurationProvider;
+    }
+
     /**
      * @return T
      *
@@ -131,6 +147,7 @@ abstract class AssetFileFacade
     ): AssetFile {
         $uploadDto->setAssetLicence($assetLicence);
         $this->entityValidator->validateDto($uploadDto);
+        $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $imageDto = $this->assetExternalProviderContainer
             ->get($uploadDto->getExternalProvider())
             ->getById($uploadDto->getId())
@@ -167,6 +184,7 @@ abstract class AssetFileFacade
     {
         $this->entityValidator->validateDto($createDto);
         $this->validateAssetSize($createDto, $assetLicence);
+        $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $assetFile = $this->getFactory()->createFromAdmDto($assetLicence, $createDto);
 
         $this->assetFactory->createForAssetFile($assetFile, $assetLicence);
@@ -196,6 +214,7 @@ abstract class AssetFileFacade
         $this->validateAssetType($asset, $createDto);
         $this->validateSlotTitle($asset, $slotName);
         $this->entityValidator->validateDto($createDto);
+        $this->validateLimitedAssetLicenceFileCount($asset->getLicence());
 
         $slot = $this->assetSlotRepository->findSlotByAssetAndTitle($asset->getId(), $slotName);
 
@@ -301,6 +320,27 @@ abstract class AssetFileFacade
         }
 
         throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT);
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
+    protected function validateLimitedAssetLicenceFileCount(AssetLicence $licence): void
+    {
+        $settings = $this->configurationProvider->getSettings();
+        if ($licence->isNotLimitedFiles()) {
+            return;
+        }
+        $maxFilesCount = $settings->getLimitedAssetLicenceFilesCount();
+        $uploadedCount = $this->assetFileRepository->getLimitedCountByAssetLicence(
+            licence: $licence,
+            maxFilesCount: $maxFilesCount,
+        );
+        if ($uploadedCount < $maxFilesCount) {
+            return;
+        }
+
+        throw new ForbiddenOperationException(ForbiddenOperationException::FILE_UPLOAD_TOO_MANY_FILES);
     }
 
     abstract protected function getManager(): AssetFileManager;

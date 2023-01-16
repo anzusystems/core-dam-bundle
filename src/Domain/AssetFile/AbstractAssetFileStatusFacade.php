@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -52,6 +53,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected ExternalProviderFileFactory $externalProviderFileFactory;
     protected UrlFileFactory $urlFileFactory;
     protected AssetManager $assetManager;
+    protected DamLogger $damLogger;
 
     #[Required]
     public function setUrlFileFactory(UrlFileFactory $urlFileFactory): void
@@ -143,6 +145,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->assetManager = $assetManager;
     }
 
+    #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
+    }
+
     /**
      * @throws ValidationException
      */
@@ -152,6 +160,9 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->entityValidator->validateDto($assetFinishDto);
         $this->assetStatusManager->setNotifyTo($assetFile);
         $this->assetStatusManager->toUploaded($assetFile);
+
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) to uploaded', (string) $assetFile->getId()));
+
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         $this->assetFileMessageDispatcher->dispatchAssetFileChangeState($assetFile);
 
@@ -172,17 +183,22 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $this->process($assetFile, $file);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
+            $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) is duplicate', (string) $assetFile->getId()));
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
+            $this->damLogger->error('AssetFileProcess', sprintf('Asset file (%s) failed', (string) $assetFile->getId()), $assetFileProcessFailed);
+
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType()
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+        } catch (\Throwable $exception) {
+            $this->damLogger->error('AssetFileProcess', sprintf('Asset file (%s) failed (not handled)', (string) $assetFile->getId()), $exception);
         }
 
         return $assetFile;
@@ -197,6 +213,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function store(AssetFile $assetFile, ?AdapterFile $file = null): AdapterFile
     {
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) to storing', (string) $assetFile->getId()));
         $this->assetStatusManager->toStoring($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         $file = $file ?: $this->createFile($assetFile);
@@ -205,10 +222,14 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
         }
 
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing attributes', (string) $assetFile->getId()));
         $this->fileAttributesPostProcessor->process($assetFile, $file);
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) checking duplicate', (string) $assetFile->getId()));
         $this->checkDuplicate($assetFile);
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) saving to bucket', (string) $assetFile->getId()));
         $this->assetFileStorageOperator->save($assetFile, $file);
 
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) to stored', (string) $assetFile->getId()));
         $this->assetStatusManager->toStored($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
@@ -221,14 +242,17 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) to processing', (string) $assetFile->getId()));
         $this->assetStatusManager->toProcessing($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing asset file', (string) $assetFile->getId()));
         $this->processAssetFile($assetFile, $file);
 
         if (false === $assetFile->getFlags()->isProcessedMetadata()) {
             $this->metadataProcessor->process($assetFile, $file);
         }
+        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) to processed', (string) $assetFile->getId()));
         $this->assetStatusManager->toProcessed($assetFile, false);
         $this->assetManager->updateExisting($assetFile->getAsset());
         $this->indexManager->index($assetFile->getAsset());
