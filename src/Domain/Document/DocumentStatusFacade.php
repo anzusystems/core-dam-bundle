@@ -34,7 +34,10 @@ final class DocumentStatusFacade extends AbstractAssetFileStatusFacade
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->documentFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->documentFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }
