@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
@@ -19,15 +18,14 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
 use Doctrine\ORM\NonUniqueResultException;
 
-final class ImageLinksHandler extends AbstractHandler
+class ImageLinksHandler extends AbstractHandler
 {
     private const LINKS_TYPE = 'image';
 
     public function __construct(
-        private readonly CropFactory $cropFactory,
-        private readonly RegionOfInterestRepository $roiRepository,
-        private readonly ImageUrlFactory $imageUrlFactory,
-        private readonly ConfigurationProvider $configurationProvider,
+        protected readonly RegionOfInterestRepository $roiRepository,
+        protected readonly ImageUrlFactory $imageUrlFactory,
+        protected readonly ConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -51,29 +49,26 @@ final class ImageLinksHandler extends AbstractHandler
             throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
         }
 
-        return $this->getImageLinkUrl($value, [$type]);
+        return $this->getImageLinkUrl($value, $type);
     }
 
     /**
-     * @param array<int, ImageCropTag> $tags
-     *
      * @throws NonUniqueResultException
      */
-    public function getImageLinkUrl(ImageFile $imageFile, array $tags): array
+    public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return [];
         }
 
-        $links = [];
-        foreach ($tags as $tag) {
-            $serializedTag = $this->getFirstTag($imageFile, $tag);
-            if ($serializedTag) {
-                $links[self::LINKS_TYPE . '_' . $tag->toString()] = $serializedTag;
-            }
+        $sizeList = $this->configurationProvider->getImageAdminSizeList($cropTag);
+        if (empty($sizeList)) {
+            return [];
         }
 
-        return $links;
+        return [
+            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[0]),
+        ];
     }
 
     /**
@@ -84,22 +79,15 @@ final class ImageLinksHandler extends AbstractHandler
         throw new SerializerException('deserialize_not_supported');
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
-    private function getFirstTag(ImageFile $imageFile, ImageCropTag $cropTag): ?array
+    protected function getKey(ImageCropTag $cropTag): string
     {
-        foreach ($this->configurationProvider->getImageAdminSizeList($cropTag) as $allowItem) {
-            return $this->serializeCropAllowItem($imageFile, $allowItem);
-        }
-
-        return null;
+        return self::LINKS_TYPE . '_' . $cropTag->toString();
     }
 
     /**
      * @throws NonUniqueResultException
      */
-    private function serializeCropAllowItem(ImageFile $imageFile, CropAllowItem $item): array
+    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
         $reqCrop = (new RequestedCropDto())
             ->setRequestWidth($item->getWidth())

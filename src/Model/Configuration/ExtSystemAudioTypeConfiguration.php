@@ -48,6 +48,7 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setPublicDomainName(string $publicDomainName): self
     {
         $this->publicDomainName = $publicDomainName;
+
         return $this;
     }
 

@@ -40,20 +40,21 @@ final class AudioLinksHandler extends AbstractHandler
         }
 
         $links = [];
-        $type = ImageCropTag::tryFrom((string) $metadata->customType);
 
         $imageFile = $this->getImagePreview($value);
         if ($imageFile) {
-            $links = array_merge($links, $this->imageLinksHandler->getImageLinkUrl($imageFile, [$type]));
+            $links = $this->imageLinksHandler->getImageLinkUrl($imageFile, ImageCropTag::List);
         }
         if ($value->getAudioPublicLink()->isPublic()) {
-            $links[self::LINKS_TYPE] = [
-                'type' => self::LINKS_TYPE,
-                'url' => $this->audioRouteGenerator->getFullUrl($value)
-            ];
+            $links[self::LINKS_TYPE] = $this->serializeImagePublicLink($value);
         }
 
         return $links;
+    }
+
+    public function deserialize(mixed $value, Metadata $metadata): mixed
+    {
+        throw new SerializerException('deserialize_not_supported');
     }
 
     private function getImagePreview(AssetFile $assetFile): ?ImageFile
@@ -67,8 +68,11 @@ final class AudioLinksHandler extends AbstractHandler
         return null;
     }
 
-    public function deserialize(mixed $value, Metadata $metadata): mixed
+    private function serializeImagePublicLink(AudioFile $audioFile): array
     {
-        throw new SerializerException('deserialize_not_supported');
+        return [
+            'type' => self::LINKS_TYPE,
+            'url' => $this->audioRouteGenerator->getFullUrl($audioFile),
+        ];
     }
 }
