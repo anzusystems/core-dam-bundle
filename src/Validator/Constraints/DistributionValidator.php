@@ -42,7 +42,6 @@ final class DistributionValidator extends ConstraintValidator
      */
     public function validate($value, Constraint $constraint): void
     {
-        return;
         // validate if distribution entity is supported by distribution service (jw, custom, yt)
         if (false === ($value instanceof DistributionEntity)) {
             throw new UnexpectedTypeException($constraint, DistributionEntity::class);
