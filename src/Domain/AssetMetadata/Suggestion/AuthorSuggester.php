@@ -33,7 +33,7 @@ final class AuthorSuggester extends AbstractSuggester
         $asset->getMetadata()->setAuthorSuggestions($suggestions);
         foreach ($suggestions as $ids) {
             // No duplicate suggestions, add it to the asset entity.
-            if (1 === count($ids)) {
+            if (1 === count($ids) && false === $asset->getAuthors()->containsKey($ids[0])) {
                 /** @var Author $author */
                 $author = $this->entityManager->getReference(Author::class, $ids[0]);
                 $asset->getAuthors()->add($author);
@@ -58,7 +58,6 @@ final class AuthorSuggester extends AbstractSuggester
 
         // 2. Entity doesn't exist, create it.
         $author = $this->authorFactory->create($name, $extSystem);
-        $asset->getAuthors()->add($author);
         $this->authorFacade->create($author);
 
         return $ids;
