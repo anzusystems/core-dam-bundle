@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\NonUniqueResultException;
@@ -36,13 +37,15 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
     /**
      * @throws NonUniqueResultException
      */
-    public function findProcessedByChecksum(string $checksum): ?AssetFile
+    public function findProcessedByChecksumAndLicence(string $checksum, AssetLicence $licence): ?AssetFile
     {
         return $this->createQueryBuilder('entity')
             ->where('entity.assetAttributes.checksum = :checksum')
             ->andWhere('entity.assetAttributes.status = :status')
+            ->andWhere('IDENTITY(entity.licence) = :licenceId')
             ->setParameter('checksum', $checksum, Types::STRING)
             ->setParameter('status', AssetFileProcessStatus::Processed)
+            ->setParameter('licenceId', $licence->getId())
             ->getQuery()
             ->setMaxResults(1)
             ->getOneOrNullResult();

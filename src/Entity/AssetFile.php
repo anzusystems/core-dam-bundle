@@ -27,7 +27,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AssetFileRepository::class)]
 #[ORM\Index(fields: ['licence', 'assetAttributes.originExternalProvider'], name: 'IDX_licence_attributes_external_provider')]
 #[ORM\Index(fields: ['assetAttributes.status'], name: 'IDX_attributes_status')]
-#[ORM\Index(fields: ['assetAttributes.status', 'assetAttributes.checksum'], name: 'IDX_attributes_status_checksum')]
+#[ORM\Index(fields: ['licence', 'assetAttributes.status', 'assetAttributes.checksum'], name: 'IDX_licence_attributes_status_checksum')]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,
