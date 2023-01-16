@@ -33,7 +33,7 @@ final class KeywordSuggester extends AbstractSuggester
         $asset->getMetadata()->setKeywordSuggestions($suggestions);
         foreach ($suggestions as $ids) {
             // No duplicate suggestions, add it to the asset entity.
-            if (1 === count($ids)) {
+            if (1 === count($ids) && false === $asset->getKeywords()->containsKey($ids[0])) {
                 /** @var Keyword $keyword */
                 $keyword = $this->entityManager->getReference(Keyword::class, $ids[0]);
                 $asset->getKeywords()->add($keyword);
@@ -58,7 +58,6 @@ final class KeywordSuggester extends AbstractSuggester
 
         // 2. Entity doesn't exist, create it.
         $keyword = $this->keywordFactory->create($name, $extSystem);
-        $asset->getKeywords()->add($keyword);
         $this->keywordFacade->create($keyword);
 
         return $ids;
