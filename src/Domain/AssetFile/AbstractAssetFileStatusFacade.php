@@ -183,17 +183,22 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $this->process($assetFile, $file);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
+            $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) is duplicate', (string) $assetFile->getId()));
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
+            $this->damLogger->error('AssetFileProcess', sprintf('Asset file (%s) failed', (string) $assetFile->getId()), $assetFileProcessFailed);
+
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType()
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+        } catch (\Throwable $exception) {
+            $this->damLogger->error('AssetFileProcess', sprintf('Asset file (%s) failed (not handled)', (string) $assetFile->getId()), $exception);
         }
 
         return $assetFile;
