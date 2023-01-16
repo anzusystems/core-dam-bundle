@@ -6,11 +6,21 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use Symfony\Contracts\Service\Attribute\Required;
 
 final class AssetFileStatusManager extends AssetFileManager
 {
+    private DamLogger $damLogger;
+
+    #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
+    }
+
     public function toUploaded(AssetFile $assetFile): AssetFile
     {
         $this->validateTransition($assetFile, AssetFileProcessStatus::Uploaded);
@@ -94,6 +104,16 @@ final class AssetFileStatusManager extends AssetFileManager
         if (in_array($status, $allowedStatuses, true)) {
             return;
         }
+
+        $this->damLogger->error(
+            'AssetFileProcess',
+            sprintf(
+                'Asset file (%s) failed transition from (%s) to (%s)',
+                (string) $assetFile->getId(),
+                $assetFile->getAssetAttributes()->getStatus()->toString(),
+                $status->toString(),
+            )
+        );
 
         throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
     }
