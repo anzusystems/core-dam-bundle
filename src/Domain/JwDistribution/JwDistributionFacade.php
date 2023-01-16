@@ -23,9 +23,12 @@ class JwDistributionFacade
     {
         $distribution = new JwDistribution();
         $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
-        $this->distributionBodyBuilder->setProperties($distributionService, $assetFile, $distribution->getTexts());
-        $distribution->getTexts()->setKeywords($this->distributionBodyBuilder->getKeywords($assetFile));
-        $distribution->getTexts()->setAuthor($this->distributionBodyBuilder->getFirstAuthor($assetFile));
+
+        $this->distributionBodyBuilder->setWriterProperties(
+            $distributionService,
+            $assetFile->getAsset(),
+            $distribution
+        );
 
         return $distribution;
     }

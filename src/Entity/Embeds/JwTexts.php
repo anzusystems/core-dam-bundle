@@ -40,6 +40,7 @@ class JwTexts
         $this->setDescription('');
         $this->setTitle('');
         $this->setKeywords([]);
+        $this->setAuthor('');
     }
 
     public function getTitle(): string
@@ -62,6 +63,13 @@ class JwTexts
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function setNullAuthor(?string $author): self
+    {
+        $this->author = (string) $author;
 
         return $this;
     }

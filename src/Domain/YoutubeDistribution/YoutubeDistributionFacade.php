@@ -24,7 +24,7 @@ class YoutubeDistributionFacade
         private readonly YoutubeApiClient $youtubeApiClient,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
         private readonly DistributionConfigurationProvider $distributionConfigurationProvider,
-        private readonly DistributionBodyBuilder $distributionBodyFactory,
+        private readonly DistributionBodyBuilder $distributionBodyBuilder,
     ) {
     }
 
@@ -34,9 +34,12 @@ class YoutubeDistributionFacade
     public function preparePayload(AssetFile $assetFile, string $distributionService): YoutubeDistribution
     {
         $distribution = new YoutubeDistribution();
-        $this->distributionBodyFactory->setBaseFields($distributionService, $distribution);
-        $this->distributionBodyFactory->setProperties($distributionService, $assetFile, $distribution->getTexts());
-        $distribution->getTexts()->setKeywords($this->distributionBodyFactory->getKeywords($assetFile));
+        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
+        $this->distributionBodyBuilder->setWriterProperties(
+            $distributionService,
+            $assetFile->getAsset(),
+            $distribution
+        );
 
         return $distribution;
     }
