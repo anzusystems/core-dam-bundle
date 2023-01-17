@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -40,6 +41,7 @@ class Podcast implements
 
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     protected AssetLicence $licence;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
