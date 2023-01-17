@@ -120,6 +120,7 @@ class AssetFacade
             $this->assetManager->delete($asset);
             $this->indexManager->delete($asset, $deleteId);
             $this->fileStash->emptyAll();
+
             $this->assetManager->commit();
 
             $this->assetFileDeleteEventDispatcher->dispatchAll();

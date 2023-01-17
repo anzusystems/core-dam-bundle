@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Throwable;
 
@@ -38,6 +39,7 @@ final class RssImportManager
         private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
         private readonly PodcastRssReader $reader,
         private readonly ImageDownloadFacade $imageDownloadFacade,
+        private readonly EntityManagerInterface $manager,
     ) {
     }
 
@@ -46,7 +48,10 @@ final class RssImportManager
      */
     public function readAllPodcastRss(): void
     {
-        foreach ($this->podcastRepository->findAllToImport() as $podcast) {
+        $podcast = $this->podcastRepository->findOneToImport();
+        while ($podcast) {
+            $lastId = $podcast->getId();
+
             try {
                 $this->syncPodcast($podcast);
             } catch (Throwable $exception) {
@@ -56,6 +61,9 @@ final class RssImportManager
                 );
                 $this->podcastStatusManager->toImportFailed($podcast);
             }
+
+            $this->manager->clear();
+            $podcast = $this->podcastRepository->findOneToImport($lastId);
         }
     }
 

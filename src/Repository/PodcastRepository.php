@@ -6,8 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 
 /**
  * @extends AbstractAnzuRepository<Podcast>
@@ -17,18 +16,24 @@ use Doctrine\Common\Collections\Collection;
  */
 final class PodcastRepository extends AbstractAnzuRepository
 {
-    public function findAllToImport(): Collection
+    public function findOneToImport(?string $idFrom = null): ?Podcast
     {
-        return new ArrayCollection(
-            $this->findBy(
-                [
-                    'attributes.mode' => array_map(
-                        fn (PodcastImportMode $mode): string => $mode->toString(),
-                        PodcastImportMode::getAllImportModes()
-                    ),
-                ]
-            )
-        );
+        $qb = $this->createQueryBuilder('entity')
+            ->where('entity.attributes.mode IN (:modes)')
+            ->setParameter('modes', array_map(
+                fn (PodcastImportMode $mode): string => $mode->toString(),
+                PodcastImportMode::getAllImportModes()
+            ))
+            ->setMaxResults(1)
+            ->orderBy('entity.id', Criteria::ASC);
+
+        if ($idFrom) {
+            $qb->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom)
+            ;
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     protected function getEntityClass(): string
