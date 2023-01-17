@@ -22,6 +22,7 @@ final class DamLogger
     public const NAMESPACE_ASSET_EXTERNAL_PROVIDER = 'AssetExternalProvider';
     public const NAMESPACE_PODCAST_RSS_IMPORT = 'PodcastRssImport';
     public const NAMESPACE_VISP = 'Visp';
+    public const NAMESPACE_ASSET_FILE_PROCESS = 'AssetFileProcess';
 
     public function __construct(
         private readonly LoggerInterface $appLogger,
@@ -54,5 +55,17 @@ final class DamLogger
         $context->setParams($params);
 
         $this->appLogger->info("[{$namespace}] {$message}", $this->serializer->toArray($context));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function warning(string $namespace, string $message = '', string $content = '', array $params = []): void
+    {
+        $context = $this->contextFactory->buildBaseContext();
+        $context->setContent($content);
+        $context->setParams($params);
+
+        $this->appLogger->warning("[{$namespace}] {$message}", $this->serializer->toArray($context));
     }
 }
