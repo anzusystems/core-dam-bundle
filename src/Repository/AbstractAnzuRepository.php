@@ -32,6 +32,15 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
         );
     }
 
+    public function getAllCount(int|string $idFrom = 0, int|string $idUntil = 0): int
+    {
+        return $this
+            ->getAllQuery($idFrom, $idUntil)
+            ->select('COUNT(entity)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * @throws NonUniqueResultException
      * @throws NoResultException

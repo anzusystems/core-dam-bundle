@@ -73,7 +73,8 @@ final class IndexBuilder
         /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repo */
         $repo = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($indexName));
 
-        $progressBar = $this->outputUtil->createProgressBar();
+        $count = $repo->getAllCount($idFrom, $idUntil);
+        $progressBar = $this->outputUtil->createProgressBar($count);
         $this->configureProgressBar($progressBar);
 
         $maxId = $idUntil ?: $repo->getMaxId();
