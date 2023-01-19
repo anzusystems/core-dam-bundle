@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 final class TextsWriterConfiguration
 {
     public const SOURCE_PROPERTY_PATH_KEY = 'source_property_path';
-    //    public const SOURCE_PROPERTY_PATH_KEY = 'source_property_path';
     public const DESTINATION_PROPERTY_PATH_KEY = 'destination_property_path';
     public const NORMALIZERS_KEY = 'normalizers';
 
