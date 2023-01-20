@@ -55,6 +55,10 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
 
         $maxPixels = 0;
         foreach ($video->getSnippet()->getThumbnails() as $item) {
+            if (null === $item) {
+                continue;
+            }
+
             $pixels = $item->getWidth() * $item->getWidth();
             if ($pixels > $maxPixels) {
                 $youtubeVideoDto->setThumbnailUrl($item->getUrl());
