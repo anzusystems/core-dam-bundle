@@ -10,7 +10,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
@@ -20,10 +19,9 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionCategoryAdmRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -56,7 +54,6 @@ final class DistributionCategoryController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/ext-system/{extSystem}', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAParameterPath('extSystem'), OAParameterPath('type'), OAResponse([DistributionCategory::class])]
     public function getList(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
@@ -77,9 +74,8 @@ final class DistributionCategoryController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('distributionCategory', converter: SerializerParamConverter::class)]
     #[OARequest(DistributionCategory::class), OAResponseCreated(DistributionCategory::class), OAResponseValidation]
-    public function create(DistributionCategory $distributionCategory): JsonResponse
+    public function create(#[SerializeParam] DistributionCategory $distributionCategory): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_CREATE, $distributionCategory);
@@ -96,11 +92,10 @@ final class DistributionCategoryController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/{distributionCategory}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newDistributionCategory', converter: SerializerParamConverter::class)]
     #[OAParameterPath('distributionCategory'), OARequest(DistributionCategory::class), OAResponse(DistributionCategory::class), OAResponseValidation]
     public function update(
         DistributionCategory $distributionCategory,
-        DistributionCategory $newDistributionCategory,
+        #[SerializeParam] DistributionCategory $newDistributionCategory,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_UPDATE, $distributionCategory);

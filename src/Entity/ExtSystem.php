@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -59,7 +60,7 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     private Collection $licences;
 
     #[ORM\ManyToMany(targetEntity: DamUser::class, mappedBy: 'adminToExtSystems', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
-    #[Serialize(handler: EntityIdHandler::class, type: DamUser::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $adminUsers;
 
     public function __construct()

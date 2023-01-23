@@ -10,7 +10,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\PodcastApiParams;
 use AnzuSystems\CoreDamBundle\App;
@@ -23,10 +22,9 @@ use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\PodcastFilter;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -55,9 +53,8 @@ final class PodcastController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('podcast', converter: SerializerParamConverter::class)]
     #[OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function create(Podcast $podcast): JsonResponse
+    public function create(#[SerializeParam] Podcast $podcast): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_CREATE, $podcast);
@@ -72,9 +69,8 @@ final class PodcastController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/{podcast}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newPodcast', converter: SerializerParamConverter::class)]
     #[OAParameterPath('podcast'), OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function update(Podcast $podcast, Podcast $newPodcast): JsonResponse
+    public function update(Podcast $podcast, #[SerializeParam] Podcast $newPodcast): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_UPDATE, $podcast);
@@ -88,7 +84,6 @@ final class PodcastController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAResponse([Podcast::class])]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
@@ -104,7 +99,6 @@ final class PodcastController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/licence/{assetLicence}', name: 'get_list_by_asset_licence', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAResponse([Podcast::class])]
     public function getList(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {

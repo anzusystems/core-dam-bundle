@@ -8,13 +8,14 @@ use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
 
 trait UserTrackingDtoTrait
 {
     protected DamUser $createdBy;
     protected DamUser $modifiedBy;
 
-    #[Serialize(handler: EntityIdHandler::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     public function getCreatedBy(): DamUser
     {
         return $this->createdBy;
@@ -27,7 +28,7 @@ trait UserTrackingDtoTrait
         return $this;
     }
 
-    #[Serialize(handler: EntityIdHandler::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     public function getModifiedBy(): DamUser
     {
         return $this->modifiedBy;

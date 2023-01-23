@@ -7,11 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Controller;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeCodeDto;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use Google\Exception;
 use Psr\Cache\InvalidArgumentException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,8 +31,7 @@ final class YoutubeController extends AbstractPublicController
      * @throws SerializerException
      */
     #[Route(path: '/code', name: '_code', methods: [Request::METHOD_GET])]
-    #[ParamConverter('codeDto', converter: SerializerParamConverter::class)]
-    public function exchangeCodeForAccessToken(YoutubeCodeDto $codeDto): Response
+    public function exchangeCodeForAccessToken(#[SerializeParam] YoutubeCodeDto $codeDto): Response
     {
         return new RedirectResponse(
             $this->distributionConfigurationProvider->getAuthorizedRedirectUrl(

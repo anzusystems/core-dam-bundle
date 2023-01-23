@@ -22,13 +22,12 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeLanguageDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use Doctrine\ORM\NonUniqueResultException;
 use Google\Exception;
 use OpenApi\Attributes as OA;
 use Psr\Cache\InvalidArgumentException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -121,9 +120,8 @@ final class YoutubeDistributionController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute', methods: [Request::METHOD_POST])]
-    #[ParamConverter('youtubeDistribution', converter: SerializerParamConverter::class)]
     #[OARequest(YoutubeDistribution::class), OAParameterPath('assetFile'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function distribute(AssetFile $assetFile, YoutubeDistribution $youtubeDistribution): JsonResponse
+    public function distribute(AssetFile $assetFile, #[SerializeParam] YoutubeDistribution $youtubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);

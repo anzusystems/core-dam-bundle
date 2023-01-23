@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\AnzuSystemsCoreDamBundle;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\SerializerBundle\AnzuSystemsSerializerBundle;
 use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
-use Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\MonologBundle\MonologBundle;
 use Symfony\Bundle\SecurityBundle\SecurityBundle;
@@ -29,7 +28,6 @@ final class AnzuTestKernel extends AnzuKernel
         yield new SecurityBundle();
         yield new DoctrineBundle();
         yield new MonologBundle();
-        yield new SensioFrameworkExtraBundle();
         yield new AnzuSystemsCommonBundle();
         yield new AnzuSystemsSerializerBundle();
         yield new AnzuSystemsCoreDamBundle();

@@ -1,0 +1,3 @@
+anzu_systems_serializer:
+  parameter_bag:
+    AnzuSystems\CoreDamBundle\Entity\DamUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User

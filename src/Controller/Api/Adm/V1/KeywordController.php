@@ -20,10 +20,9 @@ use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -54,9 +53,8 @@ final class KeywordController extends AbstractApiController
      * @throws SerializerException
      */
     #[Route('/ext-system/{extSystem}/search', name: 'search_by_ext_system', methods: [Request::METHOD_GET])]
-    #[ParamConverter('searchDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('search', description: 'Searched.'), OAResponse([Keyword::class])]
-    public function searchByExtSystem(ExtSystem $extSystem, KeywordAdmSearchDto $searchDto): JsonResponse
+    public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] KeywordAdmSearchDto $searchDto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_VIEW, $extSystem);
 
@@ -70,9 +68,8 @@ final class KeywordController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('keyword', converter: SerializerParamConverter::class)]
     #[OARequest(Keyword::class), OAResponse(Author::class), OAResponseValidation]
-    public function create(Keyword $keyword): JsonResponse
+    public function create(#[SerializeParam] Keyword $keyword): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_CREATE, $keyword);
@@ -89,9 +86,8 @@ final class KeywordController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/{keyword}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newKeyword', converter: SerializerParamConverter::class)]
     #[OAParameterPath('keyword'), OARequest(Keyword::class), OAResponse(Keyword::class), OAResponseValidation]
-    public function update(Keyword $keyword, Keyword $newKeyword): JsonResponse
+    public function update(Keyword $keyword, #[SerializeParam] Keyword $newKeyword): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_UPDATE, $keyword);

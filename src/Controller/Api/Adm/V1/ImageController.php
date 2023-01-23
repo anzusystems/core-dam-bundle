@@ -29,12 +29,10 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExt
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
-use Doctrine\ORM\NonUniqueResultException;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -59,10 +57,11 @@ final class ImageController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
-    #[ParamConverter('uploadDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function uploadFromExternalProvider(UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
-    {
+    public function uploadFromExternalProvider(
+        #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto,
+        AssetLicence $assetLicence,
+    ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $assetLicence);
@@ -81,9 +80,8 @@ final class ImageController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function create(ImageAdmCreateDto $image, AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] ImageAdmCreateDto $image, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $assetLicence);
@@ -101,12 +99,10 @@ final class ImageController extends AbstractApiController
      * @throws InvalidExtSystemConfigurationException
      * @throws AssetSlotUsedException
      * @throws AppReadOnlyModeException
-     * @throws NonUniqueResultException
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
-    #[ParamConverter('image', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, ImageAdmCreateDto $image, string $slotName): JsonResponse
+    public function createToAsset(Asset $asset, #[SerializeParam] ImageAdmCreateDto $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $asset);
@@ -171,7 +167,6 @@ final class ImageController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{image}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
-    #[ParamConverter('chunk', converter: ChunkParamConverter::class)]
     #[OAParameterPath('image'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
     public function addChunk(ImageFile $image, ChunkAdmCreateDto $chunk): JsonResponse
     {
@@ -200,11 +195,11 @@ final class ImageController extends AbstractApiController
      *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
+     * @throws SerializerException
      */
     #[Route(path: '/{image}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('assetFinishDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('image'), OARequest(AssetAdmFinishDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(AssetAdmFinishDto $assetFinishDto, ImageFile $image): JsonResponse
+    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, ImageFile $image): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $image);

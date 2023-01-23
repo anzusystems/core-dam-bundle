@@ -32,11 +32,10 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -62,10 +61,11 @@ final class AudioController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
-    #[ParamConverter('uploadDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function uploadFromExternalProvider(UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
-    {
+    public function uploadFromExternalProvider(
+        #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto,
+        AssetLicence $assetLicence,
+    ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $assetLicence);
@@ -84,9 +84,8 @@ final class AudioController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('dto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(AudioAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function create(AudioAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] AudioAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $assetLicence);
@@ -106,9 +105,8 @@ final class AudioController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
-    #[ParamConverter('audio', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(AudioAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, AudioAdmCreateDto $audio, string $slotName): JsonResponse
+    public function createToAsset(Asset $asset, #[SerializeParam] AudioAdmCreateDto $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $asset);
@@ -173,7 +171,6 @@ final class AudioController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{audio}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
-    #[ParamConverter('chunk', converter: ChunkParamConverter::class)]
     #[OAParameterPath('audio'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
     public function addChunk(AudioFile $audio, ChunkAdmCreateDto $chunk): JsonResponse
     {
@@ -202,11 +199,11 @@ final class AudioController extends AbstractApiController
      *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
+     * @throws SerializerException
      */
     #[Route(path: '/{audio}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('assetFinishDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('audio'), OARequest(AssetAdmFinishDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(AssetAdmFinishDto $assetFinishDto, AudioFile $audio): JsonResponse
+    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, AudioFile $audio): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $audio);
@@ -248,14 +245,13 @@ final class AudioController extends AbstractApiController
     /**
      * @throws ValidationException
      */
-    #[ParamConverter('dto', converter: SerializerParamConverter::class)]
     #[Route(
         path: '/{audio}/make-public',
         name: 'make_public',
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('audio'), OARequest(AudioPublicationAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function makePublic(AudioFile $audio, AudioPublicationAdmDto $dto): JsonResponse
+    public function makePublic(AudioFile $audio, #[SerializeParam] AudioPublicationAdmDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE);
 
