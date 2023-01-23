@@ -33,9 +33,6 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::BIGINT)]
     private int $size;
 
-    #[ORM\Column(type: Types::BIGINT)]
-    private int $uploadedSize;
-
     #[ORM\Column(type: Types::STRING, length: 2_048, nullable: true)]
     private ?string $originUrl;
 
@@ -62,7 +59,6 @@ class AssetFileAttributes
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setSize(0);
-        $this->setUploadedSize(0);
         $this->setFailReason(AssetFileFailedType::None);
         $this->setCreateStrategy(AssetFileCreateStrategy::Default);
     }
@@ -171,18 +167,6 @@ class AssetFileAttributes
     public function setFailReason(AssetFileFailedType $failReason): self
     {
         $this->failReason = $failReason;
-
-        return $this;
-    }
-
-    public function getUploadedSize(): int
-    {
-        return $this->uploadedSize;
-    }
-
-    public function setUploadedSize(int $uploadedSize): self
-    {
-        $this->uploadedSize = $uploadedSize;
 
         return $this;
     }

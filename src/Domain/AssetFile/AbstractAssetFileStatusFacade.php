@@ -35,6 +35,7 @@ use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -56,6 +57,13 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected UrlFileFactory $urlFileFactory;
     protected AssetManager $assetManager;
     protected DamLogger $damLogger;
+    protected AssetFileCounter $assetFileCounter;
+
+    #[Required]
+    public function setAssetFileCounter(AssetFileCounter $assetFileCounter): void
+    {
+        $this->assetFileCounter = $assetFileCounter;
+    }
 
     #[Required]
     public function setUrlFileFactory(UrlFileFactory $urlFileFactory): void
@@ -300,11 +308,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
     /**
      * @throws ForbiddenOperationException
+     * @throws InvalidArgumentException
      */
     private function validateFullyUploaded(AssetFile $assetFile): void
     {
         if (
-            $assetFile->getAssetAttributes()->getUploadedSize() === $assetFile->getAssetAttributes()->getSize()
+            $this->assetFileCounter->getUploadedSize($assetFile) === $assetFile->getAssetAttributes()->getSize()
         ) {
             return;
         }
