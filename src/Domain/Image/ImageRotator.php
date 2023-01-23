@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Controller\AbstractImageController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
-use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\ImageAttributesProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\OptimalResizeFactory;
 use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\DefaultRegionOfInterestFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -30,7 +30,7 @@ final class ImageRotator
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly OptimalResizeFactory $optimalResizeFactory,
         private readonly FileStash $fileStash,
-        private readonly ImageAttributesProcessor $attributesProcessor,
+        private readonly OptimalCropsProcessor $optimalCropsProcessor,
     ) {
     }
 
@@ -44,7 +44,7 @@ final class ImageRotator
         $image->getImageAttributes()->setRotation($newFileAngle);
 
         $resize = $this->rotateResizes($image, $angle);
-        $this->attributesProcessor->setSizeAttributes($image, $resize->getWidth(), $resize->getHeight());
+        $this->optimalCropsProcessor->setSizeAttributes($image, $resize->getWidth(), $resize->getHeight());
 
         foreach ($image->getRegionsOfInterest() as $roi) {
             $this->regionOfInterestFactory->recalculateRoi($image, $roi);

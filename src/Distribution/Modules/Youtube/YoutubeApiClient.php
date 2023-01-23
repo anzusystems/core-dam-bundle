@@ -28,6 +28,7 @@ use Google_Service_YouTube_ResourceId;
 use Google_Service_YouTube_Video;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\File;
+use Throwable;
 
 final class YoutubeApiClient
 {
@@ -150,6 +151,7 @@ final class YoutubeApiClient
         $youtubeService = new Google_Service_YouTube($client);
 
         try {
+            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT asset for asset id (%s)', $assetFile->getId()));
             $insertRequest = $youtubeService->videos->insert(
                 part: 'status,snippet',
                 postBody: $video,
@@ -170,11 +172,14 @@ final class YoutubeApiClient
 
             $handle = fopen($file->getRealPath(), 'rb');
 
+            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT chunks for asset id (%s)', $assetFile->getId()));
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, self::CHUNK_SIZE);
                 $status = $media->nextChunk($chunk);
 
                 if ($status instanceof Google_Service_YouTube_Video) {
+                    $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT last chunk inserted for asset id (%s), creating DTO video', $assetFile->getId()));
+
                     return $this->videoFactory->createYoutubeVideoDto($status);
                 }
             }
@@ -194,7 +199,14 @@ final class YoutubeApiClient
             }
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage())
+            );
         }
+
+        return null;
     }
 
     /**

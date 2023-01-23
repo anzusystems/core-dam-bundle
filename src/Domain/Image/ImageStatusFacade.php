@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\DefaultRoiProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\ImageAttributesProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\MostDominantColorProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 
 /**
@@ -23,7 +24,7 @@ use League\Flysystem\FilesystemException;
 final class ImageStatusFacade extends AbstractAssetFileStatusFacade
 {
     public function __construct(
-        private readonly ImageAttributesProcessor $imageAttributesProcessor,
+        private readonly MostDominantColorProcessor $mostDominantColorProcessor,
         private readonly OptimalCropsProcessor $optimalCropsProcessor,
         private readonly DefaultRoiProcessor $defaultRoiProcessor,
         private readonly ImageFileRepository $imageFileRepository
@@ -38,14 +39,12 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
     /**
      * @throws ImageManipulatorException
      * @throws FilesystemException
+     * @throws SerializerException
      */
     protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing attributes', (string) $assetFile->getId()));
-        $this->imageAttributesProcessor->process($assetFile, $file);
-        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing crops', (string) $assetFile->getId()));
+        $this->mostDominantColorProcessor->process($assetFile, $file);
         $this->optimalCropsProcessor->process($assetFile, $file);
-        $this->damLogger->info('AssetFileProcess', sprintf('Asset file (%s) processing default rois', (string) $assetFile->getId()));
         $this->defaultRoiProcessor->process($assetFile, $file);
 
         return $assetFile;

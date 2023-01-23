@@ -36,8 +36,8 @@ final class AssetTextsWriter
             propertyPath: $configuration->getSourcePropertyPath()
         );
 
-        if (is_string($value) && false === empty($configuration->getNormalizers())) {
-            $value = $this->textStringNormalizer->normalizeAll($value, $configuration->getNormalizers());
+        if ((null === $value || is_string($value)) && false === empty($configuration->getNormalizers())) {
+            $value = $this->textStringNormalizer->normalizeAll((string) $value, $configuration->getNormalizers());
         }
 
         return $value;

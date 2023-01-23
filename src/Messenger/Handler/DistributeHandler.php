@@ -37,17 +37,30 @@ final class DistributeHandler
 
         match ($distribution->getStatus()) {
             DistributionProcessStatus::Waiting => $this->distributionBroker->toDistributing($distribution),
-            DistributionProcessStatus::Distributing,
+            DistributionProcessStatus::Distributing => $this->distributeAgain($distribution),
             DistributionProcessStatus::Distributed,
             DistributionProcessStatus::RemoteProcessing,
             DistributionProcessStatus::Failed => $this->invalidStatusToHandle($distribution),
         };
     }
 
+    private function distributeAgain(Distribution $distribution): void
+    {
+        $this->damLogger->warning(
+            DamLogger::NAMESPACE_DISTRIBUTION,
+            sprintf(
+                'Redistributing! (%s)',
+                $distribution->getId(),
+            )
+        );
+
+        $this->distributionBroker->toDistributing($distribution);
+    }
+
     /**
      * @throws SerializerException
      */
-    private function invalidStatusToHandle(Distribution $distribution)
+    private function invalidStatusToHandle(Distribution $distribution): void
     {
         $this->damLogger->info(
             DamLogger::NAMESPACE_DISTRIBUTION,

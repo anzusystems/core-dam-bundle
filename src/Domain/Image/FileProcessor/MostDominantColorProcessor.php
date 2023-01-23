@@ -7,14 +7,14 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
-use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
-final class ImageAttributesProcessor
+final class MostDominantColorProcessor
 {
     public function __construct(
-        private readonly VispImageManipulator $imageManipulator
+        private readonly VispImageManipulator $imageManipulator,
     ) {
     }
 
@@ -22,29 +22,14 @@ final class ImageAttributesProcessor
      * @param ImageFile $assetFile
      *
      * @throws ImageManipulatorException
+     * @throws SerializerException
      */
     public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        [$width, $height] = getimagesize($file->getRealPath());
-        $this->setSizeAttributes($assetFile, $width, $height);
-
         $this->imageManipulator->loadFile($file->getRealPath());
         $assetFile->getImageAttributes()->setMostDominantColor(
             $this->imageManipulator->getMostDominantColor()
         );
-
-        return $assetFile;
-    }
-
-    public function setSizeAttributes(ImageFile $assetFile, int $width, int $height): ImageFile
-    {
-        $gcd = Math::getGreatestCommonDivisor($width, $height);
-
-        $assetFile->getImageAttributes()
-            ->setRatioWidth((int) ($width / $gcd))
-            ->setRatioHeight((int) ($height / $gcd))
-            ->setWidth($width)
-            ->setHeight($height);
 
         return $assetFile;
     }

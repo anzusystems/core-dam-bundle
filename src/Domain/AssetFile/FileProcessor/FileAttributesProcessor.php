@@ -20,7 +20,9 @@ final class FileAttributesProcessor
     {
         $checksum = FileHelper::checksumFromPath($file->getRealPath());
 
-        if (false === ($checksum === $assetFile->getAssetAttributes()->getChecksum())) {
+        if (false === (empty($assetFile->getAssetAttributes()->getChecksum())) &&
+            false === ($checksum === $assetFile->getAssetAttributes()->getChecksum())
+        ) {
             // todo throw exception invalid checksum
             $this->damLogger->warning(
                 DamLogger::NAMESPACE_ASSET_CHANGE_STATE,

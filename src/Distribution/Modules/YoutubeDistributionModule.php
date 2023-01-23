@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -26,6 +27,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     public function __construct(
         private readonly YoutubeApiClient $client,
         private readonly YoutubeAuthenticator $authenticator,
+        private readonly DamLogger $logger,
     ) {
     }
 
@@ -52,6 +54,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             return;
         }
 
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Prepare YT distribution for asset id (%s)', $assetFile->getId()));
+
         $video = $this->client->distribute(
             assetFile: $assetFile,
             distribution: $distribution,
@@ -64,6 +68,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         if ($video) {
             $distribution->setExtId($video->getId());
             if (false === empty($distribution->getPlaylist())) {
+                $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT setting playlist for asset id (%s)', $assetFile->getId()));
+
                 $this->client->setPlaylist(
                     distributionService: $distribution->getDistributionService(),
                     videoId: $distribution->getExtId(),
