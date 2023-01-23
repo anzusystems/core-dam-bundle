@@ -10,10 +10,8 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ImageCropConverter;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -33,7 +31,6 @@ final class ImageController extends AbstractImageController
      * @throws ImageManipulatorException
      * @throws InvalidCropException
      */
-    #[ParamConverter('cropPayload', converter: ImageCropConverter::class)]
     #[Route(
         path: '/{requestWidth}{requestHeight}{regionOfInterestId}{quality}/{imageId}.jpg',
         name: 'get_one_file_name',

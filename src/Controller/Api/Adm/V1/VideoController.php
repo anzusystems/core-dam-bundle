@@ -30,11 +30,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -59,10 +57,11 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
-    #[ParamConverter('uploadDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function uploadFromExternalProvider(UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
-    {
+    public function uploadFromExternalProvider(
+        #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto,
+        AssetLicence $assetLicence,
+    ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_CREATE, $assetLicence);
@@ -81,9 +80,8 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('dto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function create(VideoAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] VideoAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_CREATE, $assetLicence);
@@ -100,9 +98,8 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{video}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newVideo', converter: SerializerParamConverter::class)]
     #[OAParameterPath('video'), OARequest(VideoAdmUpdateDto::class), OAResponse(VideoAdmUpdateDto::class), OAResponseValidation]
-    public function update(VideoFile $video, VideoAdmUpdateDto $newVideo): JsonResponse
+    public function update(VideoFile $video, #[SerializeParam] VideoAdmUpdateDto $newVideo): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
@@ -123,9 +120,8 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
-    #[ParamConverter('video', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, VideoAdmCreateDto $video, string $slotName): JsonResponse
+    public function createToAsset(Asset $asset, #[SerializeParam] VideoAdmCreateDto $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $asset);
@@ -190,7 +186,6 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{video}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
-    #[ParamConverter('chunk', converter: ChunkParamConverter::class)]
     #[OAParameterPath('video'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
     public function addChunk(VideoFile $video, ChunkAdmCreateDto $chunk): JsonResponse
     {
@@ -221,9 +216,8 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{video}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('assetFinishDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('video'), OARequest(AssetAdmFinishDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(AssetAdmFinishDto $assetFinishDto, VideoFile $video): JsonResponse
+    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, VideoFile $video): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);

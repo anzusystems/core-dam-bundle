@@ -1,18 +1,18 @@
 #!/bin/bash
-# Script used to clear all cache on local environment
+# Script used to clear cache in the application docker container
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 ARGS="$*"
 AUTOLOAD=true
 
-# Initialize default variables and functions
+# Initialize default variables and functions and export all environment variables from application environment files
 cd "${PROJECT_ROOT}" || exit 1
 # shellcheck disable=SC1091
-. ./bin/docker-libfunctions
+. ./bin/docker-libvariables
 
 function help() {
     echo -en "$(printf %q "${BASH_SOURCE[0]}") [OPERATION] [OPTIONS]
-    \nBash script used to run the cache clear in docker.
+    \nScript used to clear cache in the application docker container
 
     Options:
         --no-autoload Do not run dump-autoload, only clear cache folder and redis
@@ -42,16 +42,24 @@ while [ "$#" -gt 0 ]; do
 done
 
 if [ -f /.dockerenv ]; then
+    for env_file in ${ENV_APPLICATION_FILE_DIST} ${ENV_APPLICATION_FILE}; do
+        if [ -f "$env_file" ]; then
+            ENV_DOCKER_VARS=()
+            while read -r line; do [[ ! ${line?} =~ ^($|#) ]] && [[ ${line?} =~ REDIS ]] && ENV_DOCKER_VARS+=("export ${line?}"); done 2>/dev/null <"$env_file"
+            for var in "${ENV_DOCKER_VARS[@]}"; do eval "$var"; done
+        fi
+    done
+
     echo "[INFO] Cache clear"
+    redis-cli -h "${REDIS_HOST}" -p "${REDIS_PORT}" -n "${REDIS_DB}" flushdb
     rm -rf var/cache/*
 
     if ${AUTOLOAD}; then
-        echo "[INFO] Dump autoload and cache clear command"
+        echo "[INFO] Dump autoload command"
         composer dump-autoload
-        bin/console cache:clear --env=dev
         bin/console cache:clear --env=test
     fi
     exit
 fi
 
-bin/docker-compose run --rm core-dam-bundle bash -c \'bin/cc "${ARGS}"\'
+bin/docker-compose run --rm app bash -c \'bin/cc "${ARGS}"\'

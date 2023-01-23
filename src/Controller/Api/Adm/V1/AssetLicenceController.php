@@ -10,7 +10,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
@@ -19,10 +18,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -55,7 +53,6 @@ final class AssetLicenceController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAResponse([AssetLicence::class])]
     public function getList(ApiParams $apiParams): JsonResponse
     {
@@ -73,9 +70,8 @@ final class AssetLicenceController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('assetLicence', converter: SerializerParamConverter::class)]
     #[OARequest(AssetLicence::class), OAResponseCreated(AssetLicence::class), OAResponseValidation]
-    public function create(AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_CREATE);
@@ -92,9 +88,8 @@ final class AssetLicenceController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/{assetLicence}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newAssetLicence', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(AssetLicence::class), OAResponse(AssetLicence::class), OAResponseValidation]
-    public function update(AssetLicence $assetLicence, AssetLicence $newAssetLicence): JsonResponse
+    public function update(AssetLicence $assetLicence, #[SerializeParam] AssetLicence $newAssetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_UPDATE, $assetLicence);

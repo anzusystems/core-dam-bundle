@@ -8,9 +8,9 @@
 #######################################################################################################################
 
 # Dist/Example environment file for application run
-export ENV_APPLICATION_FILE_DIST=".env"
+export ENV_APPLICATION_FILE_DIST=".env.test"
 # Environment file used for application run
-export ENV_APPLICATION_FILE=".env.local"
+export ENV_APPLICATION_FILE=".env.test.local"
 # Environment file used for test run
 export ENV_TEST_FILE=".env.test"
 # Dist/Example environment file used for docker setup

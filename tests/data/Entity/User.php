@@ -16,6 +16,7 @@ class User extends DamUser
 
     public function __construct()
     {
+        parent::__construct();
         $this->setEnabled(false);
     }
 

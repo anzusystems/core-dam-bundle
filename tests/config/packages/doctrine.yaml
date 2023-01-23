@@ -7,6 +7,7 @@ doctrine:
         auto_mapping: false
         resolve_target_entities:
             AnzuSystems\CoreDamBundle\Entity\DamUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User
+            AnzuSystems\Contracts\Entity\AnzuUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User
         mappings:
             App:
                 dir: '%kernel.project_dir%/src/Entity'

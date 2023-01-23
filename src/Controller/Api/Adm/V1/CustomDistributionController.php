@@ -14,10 +14,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -37,8 +36,7 @@ final class CustomDistributionController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute_custom', methods: [Request::METHOD_POST])]
-    #[ParamConverter('customDistribution', converter: SerializerParamConverter::class)]
-    public function distributeCustom(AssetFile $assetFile, CustomDistribution $customDistribution): JsonResponse
+    public function distributeCustom(AssetFile $assetFile, #[SerializeParam] CustomDistribution $customDistribution): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $customDistribution->getDistributionService());
 
