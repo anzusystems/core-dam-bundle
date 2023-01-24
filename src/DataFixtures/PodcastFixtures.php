@@ -31,9 +31,13 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
         return Podcast::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var Podcast $podcast */
         foreach ($progressBar->iterate($this->getData()) as $podcast) {
             $podcast = $this->podcastManager->create($podcast);

@@ -30,13 +30,16 @@ final class AuthorFixtures extends AbstractAssetFileFixtures
         return Author::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var Author $author */
         foreach ($progressBar->iterate($this->getData()) as $author) {
             $author = $this->manager->create($author);
-
             $this->addToRegistry($author, (string) $author->getId());
         }
     }
