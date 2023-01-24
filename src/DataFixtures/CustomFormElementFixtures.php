@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\CustomFormElementType;
 use AnzuSystems\CoreDamBundle\Repository\AssetCustomFormRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
+use Exception;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -39,6 +40,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
 
     /**
      * @throws NonUniqueResultException
+     * @throws Exception
      */
     public function load(ProgressBar $progressBar): void
     {

@@ -28,9 +28,13 @@ final class AssetLicenceFixtures extends AbstractFixtures
         return AssetLicence::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var AssetLicence $assetLicence */
         foreach ($progressBar->iterate($this->getData()) as $assetLicence) {
             $assetLicence = $this->assetLicenceManager->create($assetLicence);

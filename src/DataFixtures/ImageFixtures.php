@@ -47,16 +47,18 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         return ImageFile::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var ImageFile $image */
         foreach ($progressBar->iterate($this->getData()) as $image) {
             $image = $this->imageManager->create($image);
-
             $this->addToRegistry($image, (int) $image->getId());
         }
-        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator
