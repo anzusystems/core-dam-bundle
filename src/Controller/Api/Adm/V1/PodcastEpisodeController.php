@@ -10,7 +10,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\PodcastEpisodeApiParams;
 use AnzuSystems\CoreDamBundle\App;
@@ -24,10 +23,9 @@ use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\PodcastEpisodeFilter;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -66,7 +64,6 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/podcast/{podcast}', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAResponse([PodcastEpisode::class])]
     public function getList(Podcast $podcast, ApiParams $apiParams): JsonResponse
     {
@@ -82,7 +79,6 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAResponse([PodcastEpisode::class])]
     public function getListByAsset(Asset $asset, ApiParams $apiParams): JsonResponse
     {
@@ -99,9 +95,8 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('podcastEpisode', converter: SerializerParamConverter::class)]
     #[OARequest(PodcastEpisode::class), OAResponse(PodcastEpisode::class), OAResponseValidation]
-    public function create(PodcastEpisode $podcastEpisode): JsonResponse
+    public function create(#[SerializeParam] PodcastEpisode $podcastEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_CREATE, $podcastEpisode);
@@ -119,9 +114,8 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/{podcastEpisode}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newPodcastEpisode', converter: SerializerParamConverter::class)]
     #[OAParameterPath('podcastEpisode'), OARequest(PodcastEpisode::class), OAResponse(PodcastEpisode::class), OAResponseValidation]
-    public function update(PodcastEpisode $podcastEpisode, PodcastEpisode $newPodcastEpisode): JsonResponse
+    public function update(PodcastEpisode $podcastEpisode, #[SerializeParam] PodcastEpisode $newPodcastEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_UPDATE, $podcastEpisode);

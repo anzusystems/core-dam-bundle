@@ -19,10 +19,9 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AuthorAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -53,9 +52,8 @@ final class AuthorController extends AbstractApiController
      * @throws SerializerException
      */
     #[Route('/ext-system/{extSystem}/search', name: 'search_by_ext_system', methods: [Request::METHOD_GET])]
-    #[ParamConverter('searchDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('search', description: 'Searched.'), OAResponse([Author::class])]
-    public function searchByExtSystem(ExtSystem $extSystem, AuthorAdmSearchDto $searchDto): JsonResponse
+    public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] AuthorAdmSearchDto $searchDto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_VIEW, $extSystem);
 
@@ -69,9 +67,8 @@ final class AuthorController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('author', converter: SerializerParamConverter::class)]
     #[OARequest(Author::class), OAResponse(Author::class), OAResponseValidation]
-    public function create(Author $author): JsonResponse
+    public function create(#[SerializeParam] Author $author): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CREATE, $author);
@@ -88,9 +85,8 @@ final class AuthorController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/{author}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newAuthor', converter: SerializerParamConverter::class)]
     #[OAParameterPath('author'), OARequest(Author::class), OAResponse(Author::class), OAResponseValidation]
-    public function update(Author $author, Author $newAuthor): JsonResponse
+    public function update(Author $author, #[SerializeParam] Author $newAuthor): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_UPDATE, $author);

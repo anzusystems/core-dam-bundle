@@ -11,7 +11,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
@@ -22,10 +21,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\RegionOfInterest\RegionOfInterestAdmDeta
 use AnzuSystems\CoreDamBundle\Model\Dto\RegionOfInterest\RegionOfInterestAdmListDto;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\RegionOfInterestRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -49,14 +47,13 @@ final class RegionOfInterestController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/image/{image}/roi', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('regionOfInterest', converter: SerializerParamConverter::class)]
     #[
         OAParameterPath('image'),
         OARequest(RegionOfInterestAdmDetailDto::class),
         OAResponse(RegionOfInterestAdmDetailDto::class),
         OAResponseValidation
     ]
-    public function create(ImageFile $image, RegionOfInterestAdmDetailDto $regionOfInterest): JsonResponse
+    public function create(ImageFile $image, #[SerializeParam] RegionOfInterestAdmDetailDto $regionOfInterest): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_CREATE, $image);
@@ -77,7 +74,6 @@ final class RegionOfInterestController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/image/{image}/roi', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAParameterPath('image'), OAResponse([RegionOfInterestAdmListDto::class])]
     public function getList(ImageFile $image, ApiParams $apiParams): JsonResponse
     {
@@ -107,14 +103,13 @@ final class RegionOfInterestController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/roi/{regionOfInterest}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('roiDto', class: RegionOfInterestAdmDetailDto::class, converter: SerializerParamConverter::class)]
     #[
         OAParameterPath('regionOfInterest'),
         OARequest(RegionOfInterestAdmDetailDto::class),
         OAResponse(RegionOfInterestAdmDetailDto::class),
         OAResponseValidation
     ]
-    public function update(RegionOfInterest $regionOfInterest, RegionOfInterestAdmDetailDto $roiDto): JsonResponse
+    public function update(RegionOfInterest $regionOfInterest, #[SerializeParam] RegionOfInterestAdmDetailDto $roiDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_UPDATE, $regionOfInterest);

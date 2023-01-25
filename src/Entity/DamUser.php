@@ -127,9 +127,4 @@ abstract class DamUser extends AnzuUser
 
         return $this;
     }
-
-    /**
-     * @return array<string, int>
-     */
-    abstract public function getResolvedPermissions(): array;
 }

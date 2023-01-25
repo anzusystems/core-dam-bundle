@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Request\ParamConverter;
+namespace AnzuSystems\CoreDamBundle\Request\ValueResolver;
 
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Request\ParamConverter\ParamConverterInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
+use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 
-final class ImageCropConverter implements ParamConverterInterface
+final class ImageCropValueResolver implements ValueResolverInterface
 {
     public const WIDTH_ATTR_NAME = 'requestWidth';
     public const HEIGHT_ATTR_NAME = 'requestHeight';
@@ -22,7 +22,16 @@ final class ImageCropConverter implements ParamConverterInterface
     public const ROI_ARG_SYMBOL = '-c';
     public const QUALITY_ARG_SYMBOL = '-q';
 
-    public function apply(Request $request, ParamConverter $configuration): bool
+    public function resolve(Request $request, ArgumentMetadata $argument): iterable
+    {
+        if (RequestedCropDto::class === $argument->getType()) {
+            return $this->resolveFromCrop($request);
+        }
+
+        return [];
+    }
+
+    private function resolveFromCrop(Request $request): iterable
     {
         $cropPayload = new RequestedCropDto();
         $cropPayload
@@ -32,15 +41,7 @@ final class ImageCropConverter implements ParamConverterInterface
             ->setQuality($this->getQuality($request))
         ;
 
-        $name = $configuration->getName();
-        $request->attributes->set($name, $cropPayload);
-
-        return true;
-    }
-
-    public function supports(ParamConverter $configuration): bool
-    {
-        return (bool) $configuration->getClass();
+        return [$cropPayload];
     }
 
     private function getWidth(Request $request): int

@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGeneratorInterface;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileMetadataProcessHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\AssetExternalProviderApiParamConverter;
 use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
 
@@ -77,9 +76,5 @@ return static function (ContainerConfigurator $configurator): void {
     $services
         ->set(IndexBuilder::class)
         ->arg('$indexMappings', param('elastic_index_settings'))
-    ;
-
-    $services->set(AssetExternalProviderApiParamConverter::class)
-        ->tag('request.param_converter', ['priority' => false, 'converter' => AssetExternalProviderApiParamConverter::class])
     ;
 };

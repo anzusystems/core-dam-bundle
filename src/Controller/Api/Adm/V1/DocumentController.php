@@ -30,12 +30,11 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ChunkParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -60,9 +59,8 @@ final class DocumentController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
-    #[ParamConverter('uploadDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function uploadFromExternalProvider(UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
+    public function uploadFromExternalProvider(#[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
@@ -82,9 +80,8 @@ final class DocumentController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('dto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function create(DocumentAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] DocumentAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_CREATE, $assetLicence);
@@ -105,9 +102,8 @@ final class DocumentController extends AbstractApiController
      * @throws NonUniqueResultException
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
-    #[ParamConverter('document', converter: SerializerParamConverter::class)]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, DocumentAdmCreateDto $document, string $slotName): JsonResponse
+    public function createToAsset(Asset $asset, #[SerializeParam] DocumentAdmCreateDto $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $asset);
@@ -172,7 +168,6 @@ final class DocumentController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/{document}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
-    #[ParamConverter('chunk', converter: ChunkParamConverter::class)]
     #[OAParameterPath('document'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
     public function addChunk(DocumentFile $document, ChunkAdmCreateDto $chunk): JsonResponse
     {
@@ -201,11 +196,11 @@ final class DocumentController extends AbstractApiController
      *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
+     * @throws SerializerException
      */
     #[Route(path: '/{document}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('assetFinishDto', converter: SerializerParamConverter::class)]
     #[OAParameterPath('document'), OARequest(AssetAdmFinishDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(AssetAdmFinishDto $assetFinishDto, DocumentFile $document): JsonResponse
+    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, DocumentFile $document): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);

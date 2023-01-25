@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionPermissionFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -18,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorat
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -49,7 +47,6 @@ final class DistributionController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/asset-file/{assetFile}', name: 'asset_file_distribution_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
     public function getAssetFileDistributionList(AssetFile $assetFile, ApiParams $apiParams): JsonResponse
     {
@@ -75,7 +72,6 @@ final class DistributionController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/asset/{asset}', name: 'asset_distribution_list', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
     #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
     public function getAssetDistributionList(Asset $asset, ApiParams $apiParams): JsonResponse
     {

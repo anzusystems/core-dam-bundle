@@ -30,13 +30,16 @@ final class KeywordFixtures extends AbstractAssetFileFixtures
         return Keyword::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var Keyword $keyword */
         foreach ($progressBar->iterate($this->getData()) as $keyword) {
             $keyword = $this->manager->create($keyword);
-
             $this->addToRegistry($keyword, (string) $keyword->getId());
         }
     }

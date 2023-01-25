@@ -51,16 +51,19 @@ final class VideoFixtures extends AbstractAssetFileFixtures
         return VideoFile::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var VideoFile $video */
         foreach ($progressBar->iterate($this->getData()) as $video) {
             $video = $this->videoManager->create($video);
 
             $this->addToRegistry($video, (int) $video->getId());
         }
-        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator

@@ -49,16 +49,18 @@ final class AudioFixtures extends AbstractAssetFileFixtures
         return AudioFile::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var AudioFile $audio */
         foreach ($progressBar->iterate($this->getData()) as $audio) {
             $audio = $this->audioManager->create($audio);
-
             $this->addToRegistry($audio, (string) $audio->getId());
         }
-        $this->disableAssignedGenerator();
     }
 
     private function getData(): Generator

@@ -17,10 +17,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -42,9 +41,8 @@ final class JwDistributionController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute', methods: [Request::METHOD_POST])]
-    #[ParamConverter('jwDistribution', converter: SerializerParamConverter::class)]
     #[OARequest(JwDistribution::class), OAParameterPath('assetFile'), OAResponse(JwDistribution::class), OAResponseValidation]
-    public function distribute(AssetFile $assetFile, JwDistribution $jwDistribution): JsonResponse
+    public function distribute(AssetFile $assetFile, #[SerializeParam] JwDistribution $jwDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $jwDistribution->getDistributionService());
