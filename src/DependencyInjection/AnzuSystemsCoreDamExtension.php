@@ -356,6 +356,11 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
                                 'default_lifetime' => 'PT3M',
                             ],
+                            'core_dam_bundle.counter_cache' => [
+                                'adapter' => 'cache.adapter.redis',
+                                'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
+                                'default_lifetime' => 'P1D',
+                            ],
                             'core_dam_bundle.youtube_cache' => [
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
