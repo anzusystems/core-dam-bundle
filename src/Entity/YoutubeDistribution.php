@@ -50,7 +50,7 @@ class YoutubeDistribution extends Distribution
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]
-    private string $language;
+    private int $language;
 
     public function __construct()
     {
@@ -61,7 +61,7 @@ class YoutubeDistribution extends Distribution
         $this->setTexts(new YoutubeTexts());
         $this->setFlags(new YoutubeFlags());
         $this->setPlaylist('');
-        $this->setLanguage('');
+        $this->setLanguage(0);
     }
 
     public function getPublishAt(): ?DateTimeImmutable
@@ -137,12 +137,12 @@ class YoutubeDistribution extends Distribution
         return $this;
     }
 
-    public function getLanguage(): string
+    public function getLanguage(): int
     {
         return $this->language;
     }
 
-    public function setLanguage(string $language): self
+    public function setLanguage(int $language): self
     {
         $this->language = $language;
 

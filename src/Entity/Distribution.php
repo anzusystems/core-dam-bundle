@@ -48,7 +48,7 @@ class Distribution implements
     #[ORM\Column(type: Types::STRING, length: 36)]
     protected string $assetId;
 
-    #[ORM\Column(type: Types::STRING, length: 128)]
+    #[ORM\Column(type: Types::STRING, length: 512)]
     protected string $extId;
 
     #[ORM\Column(type: Types::STRING, length: 128)]

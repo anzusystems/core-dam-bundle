@@ -29,9 +29,9 @@ final class JwVideoDtoFactory extends AbstractDistributionDtoFactory
         return $jwVideoDto;
     }
 
-    public function createThumbnailUrl(JwDistribution $jwDistribution, ?int $width = null): string
+    public function createThumbnailUrl(string $id, ?int $width = null): string
     {
-        $url = "https://cdn.jwplayer.com/v2/media/{$jwDistribution->getExtId()}/poster.jpg";
+        $url = "https://cdn.jwplayer.com/v2/media/{$id}/poster.jpg";
         if ($width) {
             $url .= "?width={$width}";
         }
