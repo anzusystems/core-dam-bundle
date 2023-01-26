@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -40,6 +41,7 @@ final class RssImportManager
         private readonly PodcastRssReader $reader,
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly EntityManagerInterface $manager,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
     ) {
     }
 
@@ -128,10 +130,13 @@ final class RssImportManager
     private function updatePodcast(Podcast $podcast, Channel $channel): void
     {
         if (false === empty($channel->getItunes()->getImage())) {
-            $podcast->setPreviewImage(
-                $this->imageDownloadFacade->download(
-                    assetLicence: $podcast->getLicence(),
-                    url: $channel->getItunes()->getImage()
+            $podcast->setImagePreview(
+                $this->imagePreviewFactory->createFromImageFile(
+                    imageFile: $this->imageDownloadFacade->download(
+                        assetLicence: $podcast->getLicence(),
+                        url: $channel->getItunes()->getImage()
+                    ),
+                    flush: false
                 )
             );
         }

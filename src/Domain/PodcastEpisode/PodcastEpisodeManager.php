@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 
@@ -12,6 +13,7 @@ final class PodcastEpisodeManager extends AbstractManager
 {
     public function __construct(
         private readonly PodcastEpisodeRepository $repository,
+        private readonly ImagePreviewManager $imagePreviewManager
     ) {
     }
 
@@ -28,6 +30,7 @@ final class PodcastEpisodeManager extends AbstractManager
     public function update(PodcastEpisode $podcastEpisode, PodcastEpisode $newPodcastEpisode, bool $flush = true): PodcastEpisode
     {
         $this->trackModification($podcastEpisode);
+        $this->imagePreviewManager->setImagePreviewRelation($podcastEpisode, $newPodcastEpisode);
         $podcastEpisode->getAttributes()
             ->setSeasonNumber($newPodcastEpisode->getAttributes()->getSeasonNumber())
             ->setEpisodeNumber($newPodcastEpisode->getAttributes()->getEpisodeNumber())
@@ -41,7 +44,6 @@ final class PodcastEpisodeManager extends AbstractManager
         ;
         $podcastEpisode
             ->setAsset($newPodcastEpisode->getAsset())
-            ->setPreviewImage($newPodcastEpisode->getPreviewImage())
         ;
         $this->flush($flush);
 

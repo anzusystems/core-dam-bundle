@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
@@ -31,6 +32,7 @@ final class EpisodeRssImportManager
         private readonly ExtSystemConfigurationProvider $configurationProvider,
         private readonly PodcastEpisodeManager $episodeManager,
         private readonly ImageDownloadFacade $imageDownloadFacade,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
     ) {
     }
 
@@ -55,10 +57,13 @@ final class EpisodeRssImportManager
         $this->messageBus->dispatch(new AudioFileChangeStateMessage($audioFile));
 
         if (false === empty($item->getItunes()->getImage())) {
-            $episode->setPreviewImage(
-                $this->imageDownloadFacade->download(
-                    assetLicence: $podcast->getLicence(),
-                    url: $item->getItunes()->getImage()
+            $episode->setImagePreview(
+                $this->imagePreviewFactory->createFromImageFile(
+                    imageFile: $this->imageDownloadFacade->download(
+                        assetLicence: $podcast->getLicence(),
+                        url: $item->getItunes()->getImage()
+                    ),
+                    flush: false
                 )
             );
             $this->episodeManager->flush();

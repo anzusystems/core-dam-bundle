@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Video;
 
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\Embeds\VideoAttributesAdmDto;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
 final class VideoFileAdmDetailDto extends VideoFileAdmListDto
 {
@@ -31,12 +29,6 @@ final class VideoFileAdmDetailDto extends VideoFileAdmListDto
         $this->videoAttributes = $videoAttributes;
 
         return $this;
-    }
-
-    #[Serialize(handler: EntityIdHandler::class)]
-    public function getPreviewImage(): ?Asset
-    {
-        return $this->video->getPreviewImage();
     }
 
     #[Serialize]

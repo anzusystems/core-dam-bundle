@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
@@ -33,7 +34,8 @@ class Podcast implements
     UserTrackingInterface,
     TimeTrackingInterface,
     ExtSystemInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    ImagePreviewableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -44,9 +46,10 @@ class Podcast implements
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     protected AssetLicence $licence;
 
-    #[ORM\ManyToOne(targetEntity: Asset::class)]
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?Asset $previewImage;
+    #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    protected ?ImagePreview $imagePreview;
 
     #[ORM\Embedded(class: PodcastTexts::class)]
     #[Serialize]
@@ -66,17 +69,17 @@ class Podcast implements
         $this->setTexts(new PodcastTexts());
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
-        $this->setPreviewImage(null);
+        $this->setImagePreview(null);
     }
 
-    public function getPreviewImage(): ?Asset
+    public function getImagePreview(): ?ImagePreview
     {
-        return $this->previewImage;
+        return $this->imagePreview;
     }
 
-    public function setPreviewImage(?Asset $previewImage): self
+    public function setImagePreview(?ImagePreview $imagePreview): self
     {
-        $this->previewImage = $previewImage;
+        $this->imagePreview = $imagePreview;
 
         return $this;
     }
@@ -137,6 +140,6 @@ class Podcast implements
     #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
     public function getLinks(): ?AssetFile
     {
-        return $this->previewImage?->getMainFile();
+        return $this->getImagePreview()?->getImageFile();
     }
 }

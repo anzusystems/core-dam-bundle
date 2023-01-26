@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Video;
 
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
-final class VideoAdmUpdateDto extends AbstractEntityDto implements AssetLicenceInterface
+final class VideoAdmUpdateDto extends AbstractEntityDto implements AssetLicenceInterface, ImagePreviewableInterface
 {
     protected string $resourceName = VideoFile::class;
 
-    #[Serialize(handler: EntityIdHandler::class)]
-    #[AppAssert\AssetProperties(assetType: AssetType::Image)]
-    #[AppAssert\EqualLicence]
-    private ?Asset $previewImage;
+    // todo validations
+    #[Serialize]
+    //    #[AppAssert\AssetProperties(assetType: AssetType::Image)]
+    //    #[AppAssert\EqualLicence]
+    private ?ImagePreview $imagePreview;
     private VideoFile $videoFile;
 
     public static function getInstance(VideoFile $videoFile): static
     {
         return parent::getBaseInstance($videoFile)
             ->setVideoFile($videoFile)
-            ->setPreviewImage($videoFile->getPreviewImage())
+            ->setImagePreview($videoFile->getImagePreview())
         ;
     }
 
@@ -44,20 +43,20 @@ final class VideoAdmUpdateDto extends AbstractEntityDto implements AssetLicenceI
         return $this;
     }
 
-    public function getPreviewImage(): ?Asset
-    {
-        return $this->previewImage;
-    }
-
-    public function setPreviewImage(?Asset $previewImage): self
-    {
-        $this->previewImage = $previewImage;
-
-        return $this;
-    }
-
     public function getLicence(): AssetLicence
     {
         return $this->getVideoFile()->getLicence();
+    }
+
+    public function getImagePreview(): ?ImagePreview
+    {
+        return $this->imagePreview;
+    }
+
+    public function setImagePreview(?ImagePreview $imagePreview): self
+    {
+        $this->imagePreview = $imagePreview;
+
+        return $this;
     }
 }

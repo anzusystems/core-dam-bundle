@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
@@ -38,12 +39,17 @@ class PodcastEpisode implements
     TimeTrackingInterface,
     PositionableInterface,
     ExtSystemInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    ImagePreviewableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
     use PositionTrait;
+
+    #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[Serialize]
+    protected ?ImagePreview $imagePreview;
 
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
@@ -56,12 +62,6 @@ class PodcastEpisode implements
     #[AppAssert\AssetProperties(assetType: AssetType::Audio)]
     #[AppAssert\EqualLicence]
     private ?Asset $asset;
-
-    #[ORM\ManyToOne(targetEntity: Asset::class)]
-    #[Serialize(handler: EntityIdHandler::class)]
-    #[AppAssert\AssetProperties(assetType: AssetType::Image)]
-    #[AppAssert\EqualLicence]
-    private ?Asset $previewImage;
 
     #[Serialize]
     #[ORM\Embedded(class: PodcastEpisodeDates::class)]
@@ -84,17 +84,17 @@ class PodcastEpisode implements
         $this->setAttributes(new PodcastEpisodeAttributes());
         $this->setTexts(new PodcastEpisodeTexts());
         $this->setAsset(null);
-        $this->setPreviewImage(null);
+        $this->setImagePreview(null);
     }
 
-    public function getPreviewImage(): ?Asset
+    public function getImagePreview(): ?ImagePreview
     {
-        return $this->previewImage;
+        return $this->imagePreview;
     }
 
-    public function setPreviewImage(?Asset $previewImage): self
+    public function setImagePreview(?ImagePreview $imagePreview): self
     {
-        $this->previewImage = $previewImage;
+        $this->imagePreview = $imagePreview;
 
         return $this;
     }
@@ -172,6 +172,6 @@ class PodcastEpisode implements
     #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
     public function getLinks(): ?AssetFile
     {
-        return $this->previewImage?->getMainFile();
+        return $this->getImagePreview()?->getImageFile();
     }
 }

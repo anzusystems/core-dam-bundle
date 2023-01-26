@@ -5,13 +5,22 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 
 class PodcastManager extends AbstractManager
 {
+    public function __construct(
+        private readonly ImagePreviewManager $imagePreviewManager
+    ) {
+    }
+
     public function create(Podcast $podcast, bool $flush = true): Podcast
     {
         $this->trackCreation($podcast);
+        if ($podcast->getImagePreview()) {
+            $this->imagePreviewManager->create($podcast->getImagePreview(), false);
+        }
         $this->entityManager->persist($podcast);
         $this->flush($flush);
 
@@ -29,6 +38,8 @@ class PodcastManager extends AbstractManager
     public function update(Podcast $podcast, Podcast $newPodcast, bool $flush = true): Podcast
     {
         $this->trackModification($podcast);
+        $this->imagePreviewManager->setImagePreviewRelation($podcast, $newPodcast);
+
         $podcast->getTexts()
             ->setTitle($newPodcast->getTexts()->getTitle())
             ->setDescription($newPodcast->getTexts()->getDescription())
@@ -36,7 +47,6 @@ class PodcastManager extends AbstractManager
         $podcast->getAttributes()
             ->setRssUrl($newPodcast->getAttributes()->getRssUrl())
         ;
-        $podcast->setPreviewImage($newPodcast->getPreviewImage());
         $this->flush($flush);
 
         return $podcast;
