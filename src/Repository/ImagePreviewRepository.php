@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 
 /**
- * @extends AbstractAnzuRepository<ImageFile>
+ * @extends AbstractAnzuRepository<ImagePreview>
  *
- * @method ImageFile|null find($id, $lockMode = null, $lockVersion = null)
- * @method ImageFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
- * @method ImageFile|null findProcessedById(string $id)
- * @method ImageFile|null findProcessedByIdAndFilename(string $id, string $slug)
+ * @method ImagePreview|null find($id, $lockMode = null, $lockVersion = null)
+ * @method ImagePreview|null findOneBy($id, $lockMode = null, $lockVersion = null)
+ * @method ImagePreview|null findProcessedById(string $id)
+ * @method ImagePreview|null findProcessedByIdAndFilename(string $id, string $slug)
  */
 final class ImagePreviewRepository extends AbstractAssetFileRepository
 {
     protected function getEntityClass(): string
     {
-        return ImageFile::class;
+        return ImagePreview::class;
     }
 }
