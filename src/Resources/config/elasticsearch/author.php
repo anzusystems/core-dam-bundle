@@ -25,6 +25,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'type' => [
                     'type' => 'keyword',
                 ],
+                'createdAt' => [
+                    'type' => 'date',
+                ],
             ]
         );
 };

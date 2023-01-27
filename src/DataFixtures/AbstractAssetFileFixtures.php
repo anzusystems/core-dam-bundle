@@ -34,7 +34,7 @@ abstract class AbstractAssetFileFixtures extends AbstractFixtures
 
     protected function getFile(LocalFilesystem $fileSystem, string $fileName): AdapterFile
     {
-        $path = self::DATA_PATH . $fileName;
+        $path = static::DATA_PATH . $fileName;
 
         return new AdapterFile(
             path: $path,

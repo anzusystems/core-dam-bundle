@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * @extends AbstractAnzuRepository<ImageFile>
@@ -17,6 +18,21 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
  */
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
+    /**
+     * @return ArrayCollection<int, AssetLicence>
+     */
+    public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): ArrayCollection
+    {
+        return new ArrayCollection(
+            $this->findBy(
+                [
+                    'licence' => $assetLicence,
+                    'id' => $ids,
+                ]
+            )
+        );
+    }
+
     public function findOneByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
     {
         return $this->findOneBy([

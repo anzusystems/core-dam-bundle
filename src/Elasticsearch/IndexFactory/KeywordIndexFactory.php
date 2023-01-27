@@ -23,6 +23,7 @@ final class KeywordIndexFactory implements IndexFactoryInterface
             'id' => $entity->getId(),
             'reviewed' => $entity->getFlags()->isReviewed(),
             'name' => $entity->getName(),
+            'createdAt' => $entity->getCreatedAt()->getTimestamp(),
         ];
     }
 }
