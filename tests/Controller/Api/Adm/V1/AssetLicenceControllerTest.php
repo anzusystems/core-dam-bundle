@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetLicenceUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Uid\Uuid;
 
 final class AssetLicenceControllerTest extends AbstractApiControllerTest
 {
@@ -96,7 +97,7 @@ final class AssetLicenceControllerTest extends AbstractApiControllerTest
                 'requestJson' => [
                     'name' => 'test',
                     'extSystem' => ExtSystemFixtures::ID_CMS,
-                    'extId' => uuid_create(),
+                    'extId' => (string) Uuid::v7(),
                 ],
                 'expectedResponseStatusCode' => Response::HTTP_CREATED,
             ],

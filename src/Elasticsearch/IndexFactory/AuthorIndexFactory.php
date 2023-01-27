@@ -25,6 +25,7 @@ final class AuthorIndexFactory implements IndexFactoryInterface
             'reviewed' => $entity->getFlags()->isReviewed(),
             'name' => $entity->getName(),
             'type' => $entity->getType()->toString(),
+            'createdAt' => $entity->getCreatedAt()->getTimestamp(),
         ];
     }
 }
