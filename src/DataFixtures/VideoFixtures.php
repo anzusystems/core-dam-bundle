@@ -79,6 +79,7 @@ final class VideoFixtures extends AbstractAssetFileFixtures
         );
 
         $asset = $video->getAsset();
+        $asset->getAssetFlags()->setDescribed(true);
         $asset->getMetadata()->setCustomData([
             'title' => 'Video title',
             'headline' => 'Custom headline title',

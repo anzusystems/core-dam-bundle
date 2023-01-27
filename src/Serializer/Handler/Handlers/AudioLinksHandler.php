@@ -40,7 +40,6 @@ final class AudioLinksHandler extends AbstractHandler
         }
 
         $links = [];
-
         $imageFile = $this->getImagePreview($value);
         if ($imageFile) {
             $links = $this->imageLinksHandler->getImageLinkUrl($imageFile, ImageCropTag::List);
@@ -62,7 +61,7 @@ final class AudioLinksHandler extends AbstractHandler
         $firstEpisode = $assetFile->getAsset()->getEpisodes()->first();
 
         if ($firstEpisode instanceof PodcastEpisode) {
-            return $firstEpisode->getPreviewImage()?->getMainFile() ?? $firstEpisode->getPodcast()->getPreviewImage()?->getMainFile();
+            return $firstEpisode->getImagePreview()?->getImageFile() ?? $firstEpisode->getPodcast()->getImagePreview()?->getImageFile();
         }
 
         return null;

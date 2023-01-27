@@ -79,6 +79,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         ]);
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
+        $image->getAsset()->getAssetFlags()->setDescribed(true);
 
         yield $image;
 
@@ -87,6 +88,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $this->assetSlotFactory->createRelation($image->getAsset(), $secondImage, 'extra');
         $secondImage->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($secondImage, $file);
+        $image->getAsset()->getAssetFlags()->setDescribed(true);
 
         yield $image;
 
@@ -98,6 +100,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         );
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
+        $image->getAsset()->getAssetFlags()->setDescribed(true);
 
         yield $image;
 

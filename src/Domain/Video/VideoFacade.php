@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
-use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
+use RuntimeException;
 use Throwable;
 
 /**

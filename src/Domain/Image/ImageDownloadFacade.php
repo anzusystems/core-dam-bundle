@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileMessageDispatcher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use RuntimeException;
@@ -29,7 +29,7 @@ final class ImageDownloadFacade
     /**
      * @throws RuntimeException
      */
-    public function download(AssetLicence $assetLicence, string $url): Asset
+    public function download(AssetLicence $assetLicence, string $url): ImageFile
     {
         $imageFile = $this->imageFileRepository->findOneByUrlAndLicence(
             url: $url,
@@ -37,7 +37,7 @@ final class ImageDownloadFacade
         );
 
         if ($imageFile) {
-            return $imageFile->getAsset();
+            return $imageFile;
         }
 
         $imageFile = $this->imageFactory->createFromUrl($assetLicence, $url);
@@ -48,6 +48,6 @@ final class ImageDownloadFacade
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($imageFile);
         $this->messageDispatcher->dispatchAssetFileChangeState($imageFile);
 
-        return $asset;
+        return $imageFile;
     }
 }
