@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 use AnzuSystems\Contracts\Exception\AnzuException;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use Doctrine\Common\Collections\ArrayCollection;
 
 final class ExtSystemConfiguration
 {
@@ -14,7 +15,8 @@ final class ExtSystemConfiguration
 
     public function __construct(
         private readonly int $id,
-        private readonly array $assetExternalProviders,
+        /** @var ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration> */
+        private readonly ArrayCollection $assetExternalProviders,
         private readonly ExtSystemAudioTypeConfiguration $audio,
         private readonly ExtSystemAssetTypeConfiguration $video,
         private readonly ExtSystemImageTypeConfiguration $image,
@@ -24,12 +26,15 @@ final class ExtSystemConfiguration
 
     public static function getFromArrayConfiguration(array $config): self
     {
+        $assetExternalProviders = new ArrayCollection();
+        foreach ($config[self::ASSET_EXTERNAL_PROVIDERS_KEY] ?? [] as $providerConfig) {
+            $provider = ExtSystemAssetExternalProviderConfiguration::getFromArrayConfiguration($providerConfig);
+            $assetExternalProviders->set($provider->getProviderName(), $provider);
+        }
+
         return new self(
             $config[self::ID_KEY] ?? 0,
-            array_map(
-                static fn (array $config) => ExtSystemAssetExternalProviderConfiguration::getFromArrayConfiguration($config),
-                $config[self::ASSET_EXTERNAL_PROVIDERS_KEY] ?? [],
-            ),
+            $assetExternalProviders,
             ExtSystemAudioTypeConfiguration::getFromArrayConfiguration($config[AssetType::Audio->toString()] ?? []),
             ExtSystemAssetTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
             ExtSystemImageTypeConfiguration::getFromArrayConfiguration($config[AssetType::Image->toString()] ?? []),
@@ -43,9 +48,9 @@ final class ExtSystemConfiguration
     }
 
     /**
-     * @return list<ExtSystemAssetExternalProviderConfiguration>
+     * @return ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration>
      */
-    public function getAssetExternalProviders(): array
+    public function getAssetExternalProviders(): ArrayCollection
     {
         return $this->assetExternalProviders;
     }

@@ -294,6 +294,7 @@ class Configuration implements ConfigurationInterface
             ->arrayPrototype()
                 ->children()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::TITLE_KEY)->end()
+                    ->scalarNode(ExtSystemAssetExternalProviderConfiguration::IMPORT_AUTHOR_ID)->end()
                 ->end()
             ->end();
     }
