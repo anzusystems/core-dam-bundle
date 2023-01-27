@@ -107,7 +107,7 @@ final class AssetController extends AbstractApiController
     #[Route('/licence/{assetLicence}/ids/{ids}', name: 'get_by_licence_and_ids', methods: [Request::METHOD_GET])]
     public function getByLicenceAndIds(
         AssetLicence $assetLicence,
-        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT, itemNormalizer: 'intval')] array $ids,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)] array $ids,
     ): JsonResponse {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
 
