@@ -9,6 +9,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
@@ -19,13 +20,16 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: ImagePreviewRepository::class)]
-class ImagePreview implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
+class ImagePreview implements
+    UuidIdentifiableInterface,
+    TimeTrackingInterface,
+    UserTrackingInterface,
+    AssetLicenceInterface
 {
     use TimeTrackingTrait;
     use UuidIdentityTrait;
     use UserTrackingTrait;
 
-    // todo validate licence
     #[ORM\ManyToOne(targetEntity: ImageFile::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Serialize(handler: EntityIdHandler::class)]
@@ -64,5 +68,10 @@ class ImagePreview implements UuidIdentifiableInterface, TimeTrackingInterface, 
         $this->position = $position;
 
         return $this;
+    }
+
+    public function getLicence(): AssetLicence
+    {
+        return $this->getImageFile()->getLicence();
     }
 }

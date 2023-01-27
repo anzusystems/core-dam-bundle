@@ -10,17 +10,18 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use Symfony\Component\Validator\Constraints as Assert;
 
 final class VideoAdmUpdateDto extends AbstractEntityDto implements AssetLicenceInterface, ImagePreviewableInterface
 {
     protected string $resourceName = VideoFile::class;
 
-    // todo validations
     #[Serialize]
-    //    #[AppAssert\AssetProperties(assetType: AssetType::Image)]
-    //    #[AppAssert\EqualLicence]
-    private ?ImagePreview $imagePreview;
+    #[Assert\Valid]
+    #[AppAssert\EqualLicence]
+    private ?ImagePreview $imagePreview = null;
     private VideoFile $videoFile;
 
     public static function getInstance(VideoFile $videoFile): static

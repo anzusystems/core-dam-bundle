@@ -54,9 +54,14 @@ final class ImagePreviewManager extends AbstractManager
         }
 
         if ($imagePreviewable->getImagePreview() && null === $newImagePreviewable->getImagePreview()) {
-            $this->delete($imagePreviewable->getImagePreview());
+            $imagePreview = $imagePreviewable->getImagePreview();
             $imagePreviewable->setImagePreview(null);
+            $this->delete($imagePreview);
 
+            return;
+        }
+
+        if (null === $newImagePreviewable->getImagePreview()) {
             return;
         }
 

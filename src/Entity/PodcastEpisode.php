@@ -49,6 +49,8 @@ class PodcastEpisode implements
 
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
     #[Serialize]
+    #[Assert\Valid]
+    #[AppAssert\EqualLicence]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]

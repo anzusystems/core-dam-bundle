@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use RuntimeException;
+use Throwable;
 
 /**
  * @template-extends AssetFileFacade<VideoFile>
@@ -38,7 +39,7 @@ final class VideoFacade extends AssetFileFacade
             $this->videoManager->update($video, $newVideo);
             $this->indexManager->index($video->getAsset());
             $this->videoManager->commit();
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             $this->assetManager->rollback();
 
             throw new RuntimeException('video_update_failed', 0, $exception);

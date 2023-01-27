@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -49,6 +50,7 @@ class Podcast implements
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
     #[Serialize]
     #[Assert\Valid]
+    #[AppAssert\EqualLicence]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\Embedded(class: PodcastTexts::class)]
