@@ -9,10 +9,9 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomDistribution\CustomDistributionFacade;
-use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
+use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
@@ -26,7 +25,6 @@ use Symfony\Component\Routing\Annotation\Route;
 final class CustomDistributionController extends AbstractApiController
 {
     public function __construct(
-        private readonly DistributionFacade $distributionFacade,
         private readonly CustomDistributionFacade $customDistributionFacade,
     ) {
     }
@@ -36,12 +34,12 @@ final class CustomDistributionController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute_custom', methods: [Request::METHOD_POST])]
-    public function distributeCustom(AssetFile $assetFile, #[SerializeParam] CustomDistribution $customDistribution): JsonResponse
+    public function distributeCustom(AssetFile $assetFile, #[SerializeParam] CustomDistributionAdmDto $customDistribution): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $customDistribution->getDistributionService());
 
         return $this->okResponse(
-            $this->distributionFacade->distribute($assetFile, $customDistribution)
+            CustomDistributionAdmDto::getFromDistribution($this->customDistributionFacade->distribute($assetFile, $customDistribution))
         );
     }
 

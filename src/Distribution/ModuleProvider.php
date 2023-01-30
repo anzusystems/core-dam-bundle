@@ -25,6 +25,21 @@ final class ModuleProvider
         $this->distributionModules = $distributionModules;
     }
 
+    public function provideCustomDistributionModule(string $distributionService): CustomDistributionInterface
+    {
+        $module = $this->provideModule($distributionService);
+        if ($module instanceof CustomDistributionInterface) {
+            return $module;
+        }
+
+        throw new RuntimeException(
+            sprintf(
+                'Module does not support custom distribution (%s)',
+                $distributionService,
+            ),
+        );
+    }
+
     public function provideModule(string $distributionService, bool $allowToProvideMock = false): DistributionModuleInterface
     {
         $serviceConfig = $this->configurationProvider->getDistributionService($distributionService);

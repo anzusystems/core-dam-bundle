@@ -61,18 +61,18 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
             )
             ->setLicence($licence)
         ;
-
-        yield (new Podcast())
-            ->setId(self::PODCAST_2)
-            ->setTexts(
-                (new PodcastTexts())
-                    ->setTitle('Vedator')
-            )
-            ->setAttributes(
-                (new PodcastAttributes())
-                    ->setRssUrl('https://feed.podbean.com/vedatorskypodcast/feed.xml')
-            )
-            ->setLicence($licence)
-        ;
+        //
+        //        yield (new Podcast())
+        //            ->setId(self::PODCAST_2)
+        //            ->setTexts(
+        //                (new PodcastTexts())
+        //                    ->setTitle('Vedator')
+        //            )
+        //            ->setAttributes(
+        //                (new PodcastAttributes())
+        //                    ->setRssUrl('https://feed.podbean.com/vedatorskypodcast/feed.xml')
+        //            )
+        //            ->setLicence($licence)
+        //        ;
     }
 }

@@ -263,6 +263,9 @@ class Asset implements
         return $this->getAttributes()->getAssetType();
     }
 
+    /**
+     * @return Collection<int, PodcastEpisode>
+     */
     public function getEpisodes(): Collection
     {
         return $this->episodes;

@@ -12,11 +12,11 @@ use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Contracts\Service\Attribute\Required;
 
-final class DistributionFacade
+class DistributionFacade
 {
-    private readonly DistributionBroker $distributionBroker;
-    private readonly EntityValidator $entityValidator;
-    private readonly DistributionManager $distributionManager;
+    protected readonly DistributionBroker $distributionBroker;
+    protected readonly EntityValidator $entityValidator;
+    protected readonly DistributionManager $distributionManager;
 
     #[Required]
     public function setEntityValidator(EntityValidator $entityValidator): void

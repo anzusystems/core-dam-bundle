@@ -15,7 +15,7 @@ use Doctrine\ORM\Query\Expr;
  * @method Distribution|null find($id, $lockMode = null, $lockVersion = null)
  * @method Distribution|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class DistributionRepository extends AbstractAnzuRepository
+class DistributionRepository extends AbstractAnzuRepository
 {
     /**
      * @throws NonUniqueResultException

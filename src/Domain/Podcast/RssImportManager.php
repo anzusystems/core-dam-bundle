@@ -19,7 +19,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,7 +36,6 @@ final class RssImportManager
         private readonly PodcastStatusManager $podcastStatusManager,
         private readonly EpisodeRssImportManager $episodeRssImportManager,
         private readonly DamLogger $damLogger,
-        private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
         private readonly PodcastRssReader $reader,
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly EntityManagerInterface $manager,
@@ -105,23 +103,19 @@ final class RssImportManager
      */
     private function importEpisode(Podcast $podcast, Item $podcastItem): bool
     {
-        $episodes = $this->podcastEpisodeRepository->findByTitleAndLicence($podcastItem->getTitle(), $podcast->getLicence());
+        try {
+            $this->episodeRssImportManager->importEpisode($podcast, $podcastItem);
 
-        if ($episodes->isEmpty()) {
-            try {
-                $this->episodeRssImportManager->createAsset($podcast, $podcastItem);
-
-                return true;
-            } catch (Throwable $exception) {
-                $this->damLogger->error(
-                    DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
-                    sprintf(
-                        'Podcast episode (%s) import failed (%s)',
-                        $podcastItem->getTitle(),
-                        $exception->getMessage()
-                    )
-                );
-            }
+            return true;
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                sprintf(
+                    'Podcast episode (%s) import failed (%s)',
+                    $podcastItem->getTitle(),
+                    $exception->getMessage()
+                )
+            );
         }
 
         return false;

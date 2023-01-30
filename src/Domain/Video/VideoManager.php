@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 
@@ -23,5 +24,12 @@ final class VideoManager extends AssetFileManager
         $this->flush($flush);
 
         return $video;
+    }
+
+    /**
+     * @param VideoFile $assetFile
+     */
+    protected function deleteAssetFileRelations(AssetFile $assetFile): void
+    {
     }
 }
