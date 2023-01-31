@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Video;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
@@ -27,6 +28,12 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return parent::getBaseInstance($videoFile)
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($videoFile->getAssetAttributes()))
             ->setVideo($videoFile);
+    }
+
+    #[Serialize]
+    public function getImagePreview(): ImagePreview
+    {
+        return $this->video->getImagePreview();
     }
 
     public function getFileAttributes(): AssetFileAttributesAdmDto

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
+use AnzuSystems\Contracts\Exception\AnzuException;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetAuthorForExternalProviderAssigner;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
@@ -44,6 +46,7 @@ abstract class AssetFileFactory
         protected readonly AssetTextsWriter $textsWriter,
         protected readonly ExtSystemConfigurationProvider $configurationProvider,
         protected readonly ImageStatusFacade $imageStatusFacade,
+        protected readonly AssetAuthorForExternalProviderAssigner $authorForExternalProviderAssigner,
     ) {
     }
 
@@ -101,6 +104,7 @@ abstract class AssetFileFactory
 
     /**
      * @throws NonUniqueResultException
+     * @throws AnzuException
      */
     public function createFromExternalProvider(
         string $providerName,
@@ -114,6 +118,7 @@ abstract class AssetFileFactory
             to: $asset,
             config: $this->configurationProvider->getExtSystemConfigurationByAsset($asset)->getAssetExternalProvidersMap()
         );
+        $this->authorForExternalProviderAssigner->assign($asset, $providerName);
         $this->assetManager->updateExisting($asset, false);
 
         return $this->assetFileManager->create($assetFile, false);

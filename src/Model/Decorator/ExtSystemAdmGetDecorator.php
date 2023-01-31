@@ -30,7 +30,7 @@ final class ExtSystemAdmGetDecorator
             ->setAssetExternalProviders(
                 array_map(
                     static fn (ExtSystemAssetExternalProviderConfiguration $config) => ExtSystemAssetExternalProviderAdmGetDecorator::getInstance($config),
-                    $configuration->getAssetExternalProviders()
+                    $configuration->getAssetExternalProviders()->toArray()
                 )
             );
     }
