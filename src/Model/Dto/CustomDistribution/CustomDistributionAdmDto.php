@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionFailReason;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -21,13 +22,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[AppAssert\CustomData]
 final class CustomDistributionAdmDto extends AbstractEntityDto implements ResourceCustomFormProvidableInterface, CustomDataInterface
 {
+    protected string $resourceName = Distribution::class;
     protected string $assetFileId;
     protected string $assetId;
     protected string $extId;
     protected DistributionProcessStatus $status;
     protected DistributionFailReason $failReason;
     protected array $distributionData;
-    protected Collection $blocks;
     protected Collection $blockedBy;
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
@@ -46,7 +47,6 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         $this->setStatus(DistributionProcessStatus::Default);
         $this->setFailReason(DistributionFailReason::None);
         $this->setDistributionData([]);
-        $this->setBlocks(new ArrayCollection());
         $this->setBlockedBy(new ArrayCollection());
     }
 
@@ -59,23 +59,12 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
             ->setStatus($distribution->getStatus())
             ->setFailReason($distribution->getFailReason())
             ->setDistributionData($distribution->getDistributionData())
-            ->setBlocks($distribution->getBlocks())
             ->setBlockedBy($distribution->getBlockedBy())
+            ->setDistributionService($distribution->getDistributionService())
         ;
     }
 
-    public function getBlocks(): Collection
-    {
-        return $this->blocks;
-    }
-
-    public function setBlocks(Collection $blocks): self
-    {
-        $this->blocks = $blocks;
-
-        return $this;
-    }
-
+    #[Serialize(handler: EntityIdHandler::class, type: Distribution::class)]
     public function getBlockedBy(): Collection
     {
         return $this->blockedBy;
@@ -88,6 +77,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getAssetFileId(): string
     {
         return $this->assetFileId;
@@ -100,6 +90,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getAssetId(): string
     {
         return $this->assetId;
@@ -112,6 +103,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getExtId(): string
     {
         return $this->extId;
@@ -124,6 +116,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getStatus(): DistributionProcessStatus
     {
         return $this->status;
@@ -136,6 +129,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getFailReason(): DistributionFailReason
     {
         return $this->failReason;
@@ -148,6 +142,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
+    #[Serialize]
     public function getDistributionData(): array
     {
         return $this->distributionData;

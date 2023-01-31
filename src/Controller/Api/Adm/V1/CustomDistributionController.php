@@ -10,8 +10,8 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomDistribution\CustomDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
+use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
@@ -26,6 +26,7 @@ final class CustomDistributionController extends AbstractApiController
 {
     public function __construct(
         private readonly CustomDistributionFacade $customDistributionFacade,
+        private readonly DistributionRepositoryDecorator $distributionRepository,
     ) {
     }
 
@@ -39,7 +40,13 @@ final class CustomDistributionController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $customDistribution->getDistributionService());
 
         return $this->okResponse(
-            CustomDistributionAdmDto::getFromDistribution($this->customDistributionFacade->distribute($assetFile, $customDistribution))
+            $this->distributionRepository->decorate(
+                $this->customDistributionFacade->distribute($assetFile, $customDistribution)
+            )
+        );
+
+        return $this->okResponse(
+            CustomDistributionAdmDto::getFromDistribution()
         );
     }
 
@@ -47,14 +54,16 @@ final class CustomDistributionController extends AbstractApiController
      * @throws NonUniqueResultException
      */
     #[Route('/asset-file/{assetFile}/prepare-payload/{distributionService}', name: 'prepare_payload', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('assetFile'), OAParameterPath('distributionService'), OAResponse(YoutubeDistribution::class)]
+    #[OAParameterPath('assetFile'), OAParameterPath('distributionService'), OAResponse(CustomDistributionAdmDto::class)]
     public function preparePayload(AssetFile $assetFile, string $distributionService): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
 
         return $this->okResponse(
-            $this->customDistributionFacade->preparePayload($assetFile, $distributionService)
+            $this->distributionRepository->decorate(
+                $this->customDistributionFacade->preparePayload($assetFile, $distributionService)
+            )
         );
     }
 }

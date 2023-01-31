@@ -54,7 +54,7 @@ class Configuration implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    private function addTextMapperConfiguration(string $name): NodeDefinition
+    public static function addTextMapperConfiguration(string $name): NodeDefinition
     {
         return (new TreeBuilder($name))->getRootNode()
             ->useAttributeAsKey('name')
@@ -327,14 +327,7 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue(DistributionStrategy::NONE)
                                 ->isRequired()
                             ->end()
-                            ->append($this->addTextMapperConfiguration(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP))
-//                            ->arrayNode(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP)
-//                                ->useAttributeAsKey('name')
-//                                ->arrayPrototype()
-//                                    ->useAttributeAsKey('name')->scalarPrototype()->end()
-//                                    ->defaultValue([])
-//                                ->end()
-//                            ->end()
+                            ->append($this::addTextMapperConfiguration(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP))
                         ->end()
                     ->end()
                 ->end()
@@ -409,11 +402,11 @@ class Configuration implements ConfigurationInterface
                     ->isRequired()
                 ->end()
             ;
-            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
-            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }
 
-        $config->append($this->addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));
+        $config->append($this::addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));
 
         if ($type->is(AssetType::Image)) {
             $config

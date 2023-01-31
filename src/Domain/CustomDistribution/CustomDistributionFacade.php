@@ -10,11 +10,11 @@ use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
 use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 final class CustomDistributionFacade
 {
@@ -30,13 +30,14 @@ final class CustomDistributionFacade
     /**
      * @throws NonUniqueResultException
      */
-    public function preparePayload(AssetFile $assetFile, string $distributionService): CustomDistribution
+    public function preparePayload(AssetFile $assetFile, string $distributionService): Distribution
     {
-        $module = $this->moduleProvider->provideCustomDistributionModule($distributionService);
+        $adapter = $this->moduleProvider->provideAdapter($distributionService);
+        if (null === $adapter) {
+            throw new BadRequestHttpException('Service not valid for custom distribution');
+        }
 
-        $distribution = new CustomDistribution();
-        $distribution->setDistributionService($distributionService);
-
+        $distribution = $adapter->preparePayload($assetFile, $distributionService);
         $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
         $this->distributionBodyBuilder->setWriterProperties(
             $distributionService,
@@ -44,7 +45,7 @@ final class CustomDistributionFacade
             $distribution
         );
 
-        return $module->addPayload($assetFile, $distribution);
+        return $distribution;
     }
 
     /**
@@ -53,19 +54,20 @@ final class CustomDistributionFacade
      */
     public function distribute(AssetFile $assetFile, CustomDistributionAdmDto $distributionDto): Distribution
     {
-        $module = $this->moduleProvider->provideCustomDistributionModule($distributionDto->getDistributionService());
-
         $this->entityValidator->validateDto($distributionDto);
-        $distribution = $module->createFromCustomDistributionDto($assetFile, $distributionDto);
+        $adapter = $this->moduleProvider->provideAdapter($distributionDto->getDistributionService());
 
+        if (null === $adapter) {
+            throw new BadRequestHttpException('Service not valid for custom distribution');
+        }
+
+        $distribution = $adapter->createDistributionEntity($assetFile, $distributionDto);
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
 
         $this->distributionManager->setNotifyTo($distribution);
         $this->distributionManager->create($distribution);
         $this->distributionBroker->startDistribution($distribution);
-
-        // todo write custom data from entity
 
         return $distribution;
     }
