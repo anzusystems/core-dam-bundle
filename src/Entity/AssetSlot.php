@@ -81,18 +81,6 @@ class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, Use
         return $this;
     }
 
-    public function isDefault(): bool
-    {
-        return $this->default;
-    }
-
-    public function setDefault(bool $default): self
-    {
-        $this->default = $default;
-
-        return $this;
-    }
-
     public function getAsset(): Asset
     {
         return $this->asset;

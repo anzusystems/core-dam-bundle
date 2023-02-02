@@ -7,10 +7,17 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
+use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomDistribution\CustomDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -26,7 +33,9 @@ final class CustomDistributionController extends AbstractApiController
 {
     public function __construct(
         private readonly CustomDistributionFacade $customDistributionFacade,
+        private readonly DistributionFacade $distributionFacade,
         private readonly DistributionRepositoryDecorator $distributionRepository,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
 
@@ -44,9 +53,23 @@ final class CustomDistributionController extends AbstractApiController
                 $this->customDistributionFacade->distribute($assetFile, $customDistribution)
             )
         );
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
+    public function redistribute(Distribution $distribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(
-            CustomDistributionAdmDto::getFromDistribution()
+            $this->distributionFacade->redistribute($distribution)
         );
     }
 

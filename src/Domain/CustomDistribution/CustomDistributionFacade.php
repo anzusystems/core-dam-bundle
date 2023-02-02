@@ -64,6 +64,7 @@ final class CustomDistributionFacade
         $distribution = $adapter->createDistributionEntity($assetFile, $distributionDto);
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
+        $this->entityValidator->validate($distribution);
 
         $this->distributionManager->setNotifyTo($distribution);
         $this->distributionManager->create($distribution);

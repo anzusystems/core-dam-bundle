@@ -11,8 +11,10 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGeneratorInterface;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileMetadataProcessHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
+use AnzuSystems\CoreDamBundle\Util\Slugger;
 use Elasticsearch\Client;
 use Elasticsearch\ClientBuilder;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services();
@@ -62,6 +64,7 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(FileNameGeneratorInterface::class . ' $fileNameGenerator', FileNameGenerator::class);
     $services->set(DirectoryNamGeneratorInterface::class . ' $directoryNameGenerator', DirectoryNameGenerator::class);
+    $services->set(SluggerInterface::class . ' $slugger', Slugger::class);
 
     $services->set(AssetFileMetadataProcessHandler::class)
         ->tag('messenger.message_handler', ['handler' => DistributionRemoteProcessingCheckMessage::class])

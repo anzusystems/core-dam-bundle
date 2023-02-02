@@ -20,7 +20,7 @@ class AssetSlotManager extends AbstractManager
 
     public function delete(AssetSlot $assetSlot, bool $flush = true): bool
     {
-        $assetSlot->getAsset()->getSlots()->removeElement($assetSlot);
+        $assetSlot->getAsset()->removeSlot($assetSlot);
         $assetSlot->getAssetFile()->getSlots()->removeElement($assetSlot);
         $this->entityManager->remove($assetSlot);
         $this->flush($flush);

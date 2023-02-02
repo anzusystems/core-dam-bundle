@@ -15,7 +15,9 @@ use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
@@ -31,6 +33,7 @@ final class JwDistributionController extends AbstractApiController
     public function __construct(
         private readonly DistributionFacade $distributionFacade,
         private readonly JwDistributionFacade $jwDistributionFacade,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
 
@@ -52,6 +55,23 @@ final class JwDistributionController extends AbstractApiController
         );
     }
 
+    /**
+     * @throws NonUniqueResultException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
+    public function redistribute(JwDistribution $distribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+
+        return $this->okResponse(
+            $this->distributionFacade->redistribute($distribution)
+        );
+    }
 
     /**
      * @throws NonUniqueResultException

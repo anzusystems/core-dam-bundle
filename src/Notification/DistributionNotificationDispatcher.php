@@ -22,6 +22,10 @@ final class DistributionNotificationDispatcher extends AbstractNotificationDispa
      */
     public function notifyStatusChange(DistributionStatusEvent $event): void
     {
+        if (null === $event->getDistribution()->getNotifyTo()) {
+            return;
+        }
+
         $this->notify(
             [$event->getDistribution()->getNotifyTo()->getId()],
             self::EVENT_NAME_PREFIX . $event->getDistribution()->getStatus()->toString(),

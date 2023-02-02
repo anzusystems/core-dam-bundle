@@ -13,6 +13,7 @@ enum DistributionFailReason: string implements EnumInterface
     case None = 'none';
     case QuotaReached = 'quota_reached';
     case RemoteProcessFailed = 'remote_process_failed';
+    case ValidationFailed = 'validation_failed';
 
     public const Default = self::None;
 }

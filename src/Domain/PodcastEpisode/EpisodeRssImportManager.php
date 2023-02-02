@@ -104,8 +104,7 @@ final class EpisodeRssImportManager
         );
 
         $this->updatePodcastEpisode($podcastEpisode, $item);
-        $podcastEpisode->setAsset($assetFile->getAsset());
-        $assetFile->getAsset()->getEpisodes()->add($podcastEpisode);
+        $assetFile->getAsset()->addEpisode($podcastEpisode);
         $this->toUploaded($assetFile);
 
         return $podcastEpisode;

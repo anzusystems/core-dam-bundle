@@ -28,8 +28,8 @@ class AssetSlotFactory
         $isMainSlot = $asset->getSlots()->isEmpty();
 
         $assetSlot = $this->initRelationEntity($asset, $slotName);
-        $assetSlot->setAsset($asset);
-        $asset->getSlots()->add($assetSlot);
+        $asset->addSlot($assetSlot);
+        $assetFile->addSlot($assetSlot);
         $assetFile->setAsset($asset);
 
         if ($isMainSlot) {
