@@ -29,6 +29,8 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
     protected DistributionProcessStatus $status;
     protected DistributionFailReason $failReason;
     protected array $distributionData;
+
+    #[Serialize(handler: EntityIdHandler::class, type: Distribution::class)]
     protected Collection $blockedBy;
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
@@ -64,7 +66,6 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         ;
     }
 
-    #[Serialize(handler: EntityIdHandler::class, type: Distribution::class)]
     public function getBlockedBy(): Collection
     {
         return $this->blockedBy;

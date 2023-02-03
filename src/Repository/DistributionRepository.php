@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\Query\Expr;
 
@@ -42,6 +44,15 @@ class DistributionRepository extends AbstractAnzuRepository
             'assetFileId' => $assetFileId,
             'distributionService' => $distributionService,
         ]);
+    }
+
+    public function findByAssetFile(string $assetFileId): Collection
+    {
+        return new ArrayCollection(
+            $this->findBy([
+                'assetFileId' => $assetFileId,
+            ])
+        );
     }
 
     protected function getEntityClass(): string

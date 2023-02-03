@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DisplayTitleConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 
 final class ConfigurationProvider
@@ -85,11 +84,11 @@ final class ConfigurationProvider
     /**
      * @return array<string, CropAllowItem>
      */
-    public function getImageAdminSizeList(ImageCropTag $apiViewType): array
+    public function getImageAdminSizeList(string $type): array
     {
         return $this->allowListConfiguration->getTaggedList(
             $this->getAdminAllowListName(),
-            $apiViewType->toString()
+            $type
         );
     }
 
