@@ -39,6 +39,7 @@ class ImageFile extends AssetFile
         $this->setRegionsOfInterest(new ArrayCollection());
         $this->setResizes(new ArrayCollection());
         $this->setSlots(new ArrayCollection());
+        $this->setLicence(new AssetLicence());
         parent::__construct();
     }
 

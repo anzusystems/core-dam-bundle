@@ -44,6 +44,7 @@ class ImagePreview implements
     public function __construct()
     {
         $this->setPosition(0);
+        $this->setImageFile(new ImageFile());
     }
 
     public function getImageFile(): ImageFile
