@@ -19,9 +19,4 @@ class User extends DamUser
         parent::__construct();
         $this->setEnabled(false);
     }
-
-    public function getResolvedPermissions(): array
-    {
-        return [];
-    }
 }

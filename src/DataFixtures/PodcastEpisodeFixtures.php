@@ -15,7 +15,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 /**
  * @extends AbstractFixtures<PodcastEpisode>
  */
-final class PodcastEpisodeFixtures extends AbstractAssetFileFixtures
+final class PodcastEpisodeFixtures extends AbstractFixtures
 {
     public function __construct(
         private readonly PodcastEpisodeManager $podcastManager

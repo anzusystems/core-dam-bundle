@@ -34,10 +34,13 @@ final class ExtSystemFixtures extends AbstractFixtures
         return AssetLicenceFixtures::getPriority() + 1;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
-
         /** @var ExtSystem $extSystem */
         foreach ($progressBar->iterate($this->getData()) as $extSystem) {
             $this->extSystemManager->create($extSystem, false);

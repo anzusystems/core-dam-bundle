@@ -1,3 +1,5 @@
 anzu_systems_serializer:
   parameter_bag:
     AnzuSystems\CoreDamBundle\Entity\DamUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User
+    AnzuSystems\Contracts\Entity\AnzuUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User
+    AnzuSystems\Contracts\Entity\AnzuPermissionGroup: AnzuSystems\CoreDamBundle\Entity\PermissionGroup

@@ -8,6 +8,10 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 
+/**
+ * @template T of object
+ * @extends AbstractFixtures<T>
+ */
 abstract class AbstractAssetFileFixtures extends AbstractFixtures
 {
     public const DATA_PATH = __DIR__ . '/../Resources/fixtures/';
