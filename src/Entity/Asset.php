@@ -170,6 +170,21 @@ class Asset implements
         return $this;
     }
 
+    public function addSlot(AssetSlot $slot): self
+    {
+        $this->slots->add($slot);
+        $slot->setAsset($this);
+
+        return $this;
+    }
+
+    public function removeSlot(AssetSlot $slot): self
+    {
+        $this->slots->removeElement($slot);
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, AssetSlot>
      */
@@ -263,6 +278,17 @@ class Asset implements
         return $this->getAttributes()->getAssetType();
     }
 
+    public function addEpisode(PodcastEpisode $episode): self
+    {
+        $this->episodes->add($episode);
+        $episode->setAsset($this);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, PodcastEpisode>
+     */
     public function getEpisodes(): Collection
     {
         return $this->episodes;

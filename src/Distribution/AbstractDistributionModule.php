@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\CustomDistribution;
+use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use League\Flysystem\FilesystemException;
@@ -49,7 +49,7 @@ abstract class AbstractDistributionModule implements DistributionModuleInterface
 
     public static function supportsDistributionResourceName(): string
     {
-        return CustomDistribution::getResourceName();
+        return Distribution::getResourceName();
     }
 
     /**

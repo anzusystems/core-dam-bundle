@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\Query\Expr;
 
@@ -15,7 +17,7 @@ use Doctrine\ORM\Query\Expr;
  * @method Distribution|null find($id, $lockMode = null, $lockVersion = null)
  * @method Distribution|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class DistributionRepository extends AbstractAnzuRepository
+class DistributionRepository extends AbstractAnzuRepository
 {
     /**
      * @throws NonUniqueResultException
@@ -42,6 +44,15 @@ final class DistributionRepository extends AbstractAnzuRepository
             'assetFileId' => $assetFileId,
             'distributionService' => $distributionService,
         ]);
+    }
+
+    public function findByAssetFile(string $assetFileId): Collection
+    {
+        return new ArrayCollection(
+            $this->findBy([
+                'assetFileId' => $assetFileId,
+            ])
+        );
     }
 
     protected function getEntityClass(): string

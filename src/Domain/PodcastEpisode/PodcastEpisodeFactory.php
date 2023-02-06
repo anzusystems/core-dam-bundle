@@ -16,12 +16,10 @@ final class PodcastEpisodeFactory extends AbstractManager
     ) {
     }
 
-    public function assignAssetToPodcast(Asset $asset, Podcast $podcast, bool $flush = true): PodcastEpisode
+    public function createEpisodeWithAsset(Asset $asset, Podcast $podcast, bool $flush = true): PodcastEpisode
     {
-        $podcastEpisode = (new PodcastEpisode())
-            ->setAsset($asset)
-            ->setPodcast($podcast)
-        ;
+        $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
+        $asset->addEpisode($podcastEpisode);
 
         return $this->manager->create($podcastEpisode, $flush);
     }

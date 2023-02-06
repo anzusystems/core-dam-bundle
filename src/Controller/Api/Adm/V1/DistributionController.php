@@ -40,7 +40,21 @@ final class DistributionController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution);
 
-        return $this->okResponse($distribution);
+        return $this->okResponse($this->distributionRepository->decorate($distribution));
+    }
+
+    /**
+     * @throws ORMException
+     */
+    #[Route('/asset/{asset}', name: 'asset_distribution_list', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
+    public function getAssetDistributionList(Asset $asset, ApiParams $apiParams): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+
+        return $this->okResponse(
+            $this->distributionRepository->findByApiParamsByAsset($apiParams, $asset)
+        );
     }
 
     /**
@@ -65,20 +79,6 @@ final class DistributionController extends AbstractApiController
 
         return $this->okResponse(
             $this->distributionPermissionFacade->isDistributionServiceAuthorized($distributionService)
-        );
-    }
-
-    /**
-     * @throws ORMException
-     */
-    #[Route('/asset/{asset}', name: 'asset_distribution_list', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
-    public function getAssetDistributionList(Asset $asset, ApiParams $apiParams): JsonResponse
-    {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
-
-        return $this->okResponse(
-            $this->distributionRepository->findByApiParamsByAsset($apiParams, $asset)
         );
     }
 }

@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -76,6 +77,10 @@ class Distribution implements
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $distributionData;
 
+    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    #[Serialize]
+    private ?DateTimeImmutable $publishAt;
+
     public function __construct()
     {
         $this->setAssetId('');
@@ -87,6 +92,19 @@ class Distribution implements
         $this->setExtId('');
         $this->setDistributionData([]);
         $this->setFailReason(DistributionFailReason::None);
+        $this->setPublishAt(null);
+    }
+
+    public function getPublishAt(): ?DateTimeImmutable
+    {
+        return $this->publishAt;
+    }
+
+    public function setPublishAt(?DateTimeImmutable $publishAt): self
+    {
+        $this->publishAt = $publishAt;
+
+        return $this;
     }
 
     /**

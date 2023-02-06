@@ -25,8 +25,10 @@ class RssDistribution extends Distribution
         return $this->rssUrl;
     }
 
-    public function setRssUrl(string $rssUrl): void
+    public function setRssUrl(string $rssUrl): self
     {
         $this->rssUrl = $rssUrl;
+
+        return $this;
     }
 }

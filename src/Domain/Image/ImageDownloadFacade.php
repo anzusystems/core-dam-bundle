@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use RuntimeException;
 
 final class ImageDownloadFacade
@@ -28,6 +29,7 @@ final class ImageDownloadFacade
 
     /**
      * @throws RuntimeException
+     * @throws SerializerException
      */
     public function download(AssetLicence $assetLicence, string $url): ImageFile
     {
@@ -41,7 +43,7 @@ final class ImageDownloadFacade
         }
 
         $imageFile = $this->imageFactory->createFromUrl($assetLicence, $url);
-        $asset = $this->assetFactory->createForAssetFile($imageFile, $imageFile->getLicence());
+        $this->assetFactory->createForAssetFile($imageFile, $imageFile->getLicence());
         $this->imageManager->create($imageFile, false);
 
         $this->assetFileStatusManager->toUploaded($imageFile);

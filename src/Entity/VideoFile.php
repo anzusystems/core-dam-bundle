@@ -91,4 +91,12 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
 
         return $this;
     }
+
+    public function addSlot(AssetSlot $slot): static
+    {
+        $this->slots->add($slot);
+        $slot->setAssetFile($this);
+
+        return $this;
+    }
 }

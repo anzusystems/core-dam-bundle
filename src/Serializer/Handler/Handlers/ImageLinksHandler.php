@@ -61,7 +61,7 @@ class ImageLinksHandler extends AbstractHandler
             return [];
         }
 
-        $sizeList = $this->configurationProvider->getImageAdminSizeList($cropTag);
+        $sizeList = $this->configurationProvider->getImageAdminSizeList($cropTag->toString());
         if (empty($sizeList)) {
             return [];
         }

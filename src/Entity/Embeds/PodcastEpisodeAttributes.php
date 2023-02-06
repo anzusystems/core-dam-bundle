@@ -13,8 +13,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastEpisodeAttributes
 {
+    #[ORM\Column(type: Types::STRING, length: 2_048)]
+    private string $rssUrl;
+
     #[ORM\Column(type: Types::STRING, length: 256)]
-    private string $extId;
+    private string $rssId;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true, options: ['unsigned' => true])]
     #[Assert\Range(maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX, max: 65_535)]
@@ -30,7 +33,8 @@ class PodcastEpisodeAttributes
     {
         $this->setEpisodeNumber(null);
         $this->setSeasonNumber(null);
-        $this->setExtId('');
+        $this->setRssId('');
+        $this->setRssUrl('');
     }
 
     public function getSeasonNumber(): ?int
@@ -57,15 +61,28 @@ class PodcastEpisodeAttributes
         return $this;
     }
 
-    #[Serialize]
-    public function getExtId(): string
+    public function setRssUrl(string $rssUrl): self
     {
-        return $this->extId;
+        $this->rssUrl = $rssUrl;
+
+        return $this;
     }
 
-    public function setExtId(string $extId): self
+    #[Serialize]
+    public function getRssUrl(): string
     {
-        $this->extId = $extId;
+        return $this->rssUrl;
+    }
+
+    #[Serialize]
+    public function getRssId(): string
+    {
+        return $this->rssId;
+    }
+
+    public function setRssId(string $rssId): self
+    {
+        $this->rssId = $rssId;
 
         return $this;
     }

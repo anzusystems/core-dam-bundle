@@ -49,6 +49,15 @@ final class DistributionBroker
     /**
      * @throws NonUniqueResultException
      */
+    public function redistribute(Distribution $distribution): void
+    {
+        $this->distributionStatusManager->toDistributing($distribution);
+        $this->startDistribution($distribution);
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
     public function toDistributing(Distribution $distribution): void
     {
         $this->distributionStatusManager->toDistributing($distribution);

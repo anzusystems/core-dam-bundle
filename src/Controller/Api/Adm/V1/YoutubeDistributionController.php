@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\AuthorizeUrlAdmGetDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeLanguageDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -41,6 +42,7 @@ final class YoutubeDistributionController extends AbstractApiController
         private readonly YoutubeDistributionFacade $youtubeDistributionFacade,
         private readonly DistributionFacade $distributionFacade,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
 
@@ -129,6 +131,24 @@ final class YoutubeDistributionController extends AbstractApiController
 
         return $this->okResponse(
             $this->distributionFacade->distribute($assetFile, $youtubeDistribution)
+        );
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
+    public function redistribute(YoutubeDistribution $distribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+
+        return $this->okResponse(
+            $this->distributionFacade->redistribute($distribution)
         );
     }
 }

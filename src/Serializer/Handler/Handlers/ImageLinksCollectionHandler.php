@@ -21,7 +21,7 @@ final class ImageLinksCollectionHandler extends ImageLinksHandler
         }
 
         $links = [];
-        foreach ($this->configurationProvider->getImageAdminSizeList($cropTag) as $allowItem) {
+        foreach ($this->configurationProvider->getImageAdminSizeList($cropTag->toString()) as $allowItem) {
             $links[] = $this->serializeImageCrop($imageFile, $allowItem);
         }
 

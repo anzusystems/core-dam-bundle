@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -22,8 +24,17 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
     public const PODCAST_2 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
 
     public function __construct(
-        private readonly PodcastManager $podcastManager
+        private readonly PodcastManager $podcastManager,
+        private readonly ImageFileRepository $imageFileRepository,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
     ) {
+    }
+
+    public static function getDependencies(): array
+    {
+        return [
+            ImageFixtures::class,
+        ];
     }
 
     public static function getIndexKey(): string
@@ -49,7 +60,7 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
     {
         $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
-        yield (new Podcast())
+        $podcast = (new Podcast())
             ->setId(self::PODCAST_1)
             ->setTexts(
                 (new PodcastTexts())
@@ -59,20 +70,15 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
                 (new PodcastAttributes())
                     ->setRssUrl('https://www.thisamericanlife.org/podcast/rss.xml')
             )
-            ->setLicence($licence)
-        ;
+            ->setLicence($licence);
 
-        yield (new Podcast())
-            ->setId(self::PODCAST_2)
-            ->setTexts(
-                (new PodcastTexts())
-                    ->setTitle('Vedator')
+        $podcast->setImagePreview(
+            $this->imagePreviewFactory->createFromImageFile(
+                imageFile: $this->imageFileRepository->find(ImageFixtures::IMAGE_ID_1_2),
+                flush: false
             )
-            ->setAttributes(
-                (new PodcastAttributes())
-                    ->setRssUrl('https://feed.podbean.com/vedatorskypodcast/feed.xml')
-            )
-            ->setLicence($licence)
-        ;
+        );
+
+        yield $podcast;
     }
 }

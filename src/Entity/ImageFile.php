@@ -39,6 +39,7 @@ class ImageFile extends AssetFile
         $this->setRegionsOfInterest(new ArrayCollection());
         $this->setResizes(new ArrayCollection());
         $this->setSlots(new ArrayCollection());
+        $this->setLicence(new AssetLicence());
         parent::__construct();
     }
 
@@ -109,6 +110,14 @@ class ImageFile extends AssetFile
     public function setSlots(Collection $slots): self
     {
         $this->slots = $slots;
+
+        return $this;
+    }
+
+    public function addSlot(AssetSlot $slot): static
+    {
+        $this->slots->add($slot);
+        $slot->setAssetFile($this);
 
         return $this;
     }
