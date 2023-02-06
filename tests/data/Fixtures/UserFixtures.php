@@ -44,11 +44,14 @@ final class UserFixtures extends AbstractFixtures
     {
         yield (new User())
             ->setId(User::ID_ADMIN)
+            ->setEmail('admin@anzusystems.sk')
             ->setRoles([User::ROLE_ADMIN])
         ;
         yield (new User())
+            ->setEmail('console@anzusystems.sk')
             ->setId(User::ID_CONSOLE);
         yield (new User())
+            ->setEmail('anonymous@anzusystems.sk')
             ->setId(User::ID_ANONYMOUS);
     }
 }

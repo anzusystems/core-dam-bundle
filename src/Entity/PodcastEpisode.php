@@ -32,7 +32,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PodcastEpisodeRepository::class)]
 #[ORM\Index(fields: ['podcast', 'position'], name: 'IDX_podcast_position')]
 #[ORM\Index(fields: ['position'], name: 'IDX_position')]
-#[ORM\Index(fields: ['texts.title', 'licenceId'], name: 'IDX_title_licence_id')]
 class PodcastEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,

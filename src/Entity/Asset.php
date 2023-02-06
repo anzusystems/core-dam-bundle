@@ -58,6 +58,9 @@ class Asset implements
     #[ORM\OneToMany(mappedBy: 'asset', targetEntity: PodcastEpisode::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $episodes;
 
+    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: VideoShowEpisode::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    private Collection $videoEpisodes;
+
     #[ORM\Embedded(class: AssetTexts::class)]
     private AssetTexts $texts;
 
@@ -95,6 +98,7 @@ class Asset implements
         $this->setKeywords(new ArrayCollection());
         $this->setDistributionCategory(null);
         $this->setEpisodes(new ArrayCollection());
+        $this->setVideoEpisodes(new ArrayCollection());
         $this->setMainFile(null);
     }
 
@@ -297,6 +301,29 @@ class Asset implements
     public function setEpisodes(Collection $episodes): self
     {
         $this->episodes = $episodes;
+
+        return $this;
+    }
+
+    public function addVideoEpisode(VideoShowEpisode $episode): self
+    {
+        $this->videoEpisodes->add($episode);
+        $episode->setAsset($this);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VideoShowEpisode>
+     */
+    public function getVideoEpisodes(): Collection
+    {
+        return $this->videoEpisodes;
+    }
+
+    public function setVideoEpisodes(Collection $videoEpisodes): self
+    {
+        $this->videoEpisodes = $videoEpisodes;
 
         return $this;
     }

@@ -36,7 +36,7 @@ final class ExtSystemConfiguration
             $config[self::ID_KEY] ?? 0,
             $assetExternalProviders,
             ExtSystemAudioTypeConfiguration::getFromArrayConfiguration($config[AssetType::Audio->toString()] ?? []),
-            ExtSystemAssetTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
+            ExtSystemVideoTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
             ExtSystemImageTypeConfiguration::getFromArrayConfiguration($config[AssetType::Image->toString()] ?? []),
             ExtSystemAssetTypeConfiguration::getFromArrayConfiguration($config[AssetType::Document->toString()] ?? []),
         );

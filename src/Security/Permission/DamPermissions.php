@@ -99,6 +99,18 @@ class DamPermissions
     public const DAM_ASSET_EXTERNAL_PROVIDER_ACCESS = 'dam_assetExternalProvider_access';
     public const DAM_DISTRIBUTION_ACCESS = 'dam_distribution_access';
 
+    // VideoShow
+    public const DAM_VIDEO_SHOW_CREATE = 'dam_videoShow_create';
+    public const DAM_VIDEO_SHOW_UPDATE = 'dam_videoShow_update';
+    public const DAM_VIDEO_SHOW_VIEW = 'dam_videoShow_view';
+    public const DAM_VIDEO_SHOW_DELETE = 'dam_videoShow_delete';
+
+    // VideoShowEpisode
+    public const DAM_VIDEO_SHOW_EPISODE_CREATE = 'dam_videoShowEpisode_create';
+    public const DAM_VIDEO_SHOW_EPISODE_UPDATE = 'dam_videoShowEpisode_update';
+    public const DAM_VIDEO_SHOW_EPISODE_VIEW = 'dam_videoShowEpisode_view';
+    public const DAM_VIDEO_SHOW_EPISODE_DELETE = 'dam_videoShowEpisode_delete';
+
     public const ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
