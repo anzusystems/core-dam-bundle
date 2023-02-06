@@ -31,7 +31,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
     }
 
     #[Serialize]
-    public function getImagePreview(): ImagePreview
+    public function getImagePreview(): ?ImagePreview
     {
         return $this->video->getImagePreview();
     }

@@ -31,9 +31,13 @@ final class UserFixtures extends AbstractFixtures
         return ExtSystemFixtures::getPriority() + 1;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var User $user */
         foreach ($progressBar->iterate($this->getData()) as $user) {
             $this->userManager->create($user);

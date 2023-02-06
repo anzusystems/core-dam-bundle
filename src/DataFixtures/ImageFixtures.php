@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
@@ -17,7 +16,7 @@ use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * @extends AbstractFixtures<ImageFile>
+ * @extends AbstractAssetFileFixtures<ImageFile>
  */
 final class ImageFixtures extends AbstractAssetFileFixtures
 {

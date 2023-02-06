@@ -14,7 +14,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 /**
  * @extends AbstractFixtures<Author>
  */
-final class AuthorFixtures extends AbstractAssetFileFixtures
+final class AuthorFixtures extends AbstractFixtures
 {
     public const AUTHOR_1 = '690fd785-84b1-4d3b-abdf-b986ed53c317';
     public const AUTHOR_2 = '19a0dba5-459b-422e-ac8e-a3c1cbd20d36';

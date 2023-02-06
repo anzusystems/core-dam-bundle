@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use Attribute;
 use Symfony\Component\Validator\Constraint;
 
-#[Attribute(Attribute::TARGET_CLASS)]
+#[Attribute(Attribute::TARGET_CLASS | Attribute::IS_REPEATABLE)]
 final class UniqueEntity extends Constraint
 {
     public string $message = ValidationException::ERROR_FIELD_UNIQUE;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
@@ -18,7 +17,7 @@ use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * @extends AbstractFixtures<VideoFile>
+ * @extends AbstractAssetFileFixtures<VideoFile>
  */
 final class VideoFixtures extends AbstractAssetFileFixtures
 {
