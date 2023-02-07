@@ -171,5 +171,13 @@ class DamPermissions
         self::DAM_PODCAST_EPISODE_UPDATE,
         self::DAM_PODCAST_EPISODE_VIEW,
         self::DAM_PODCAST_EPISODE_DELETE,
+        self::DAM_VIDEO_SHOW_CREATE,
+        self::DAM_VIDEO_SHOW_UPDATE,
+        self::DAM_VIDEO_SHOW_VIEW,
+        self::DAM_VIDEO_SHOW_DELETE,
+        self::DAM_VIDEO_SHOW_EPISODE_CREATE,
+        self::DAM_VIDEO_SHOW_EPISODE_UPDATE,
+        self::DAM_VIDEO_SHOW_EPISODE_VIEW,
+        self::DAM_VIDEO_SHOW_EPISODE_DELETE,
     ];
 }

@@ -11,7 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
-use AnzuSystems\CoreDamBundle\ApiFilter\PodcastApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\LicensedEntityApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastFacade;
@@ -19,7 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Repository\CustomFilter\PodcastFilter;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\LicensedEntityFilter;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -90,8 +90,8 @@ final class PodcastController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $extSystem);
 
         return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
-            apiParams: PodcastApiParams::applyCustomFilter($apiParams, $extSystem),
-            customFilters: [new PodcastFilter()]
+            apiParams: LicensedEntityApiParams::applyCustomFilter($apiParams, $extSystem),
+            customFilters: [new LicensedEntityFilter()]
         ));
     }
 
@@ -105,8 +105,8 @@ final class PodcastController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $assetLicence);
 
         return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
-            apiParams: PodcastApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),
-            customFilters: [new PodcastFilter()]
+            apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),
+            customFilters: [new LicensedEntityFilter()]
         ));
     }
 

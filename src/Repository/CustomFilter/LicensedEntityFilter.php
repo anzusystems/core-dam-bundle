@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\CustomFilter;
 use AnzuSystems\CommonBundle\ApiFilter\CustomFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 
-final class PodcastFilter implements CustomFilterInterface
+final class LicensedEntityFilter implements CustomFilterInterface
 {
     public const EXT_SYSTEM = 'extSystem';
     public const LICENCE = 'licence';
