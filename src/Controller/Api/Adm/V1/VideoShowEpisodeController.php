@@ -11,7 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
-use AnzuSystems\CoreDamBundle\ApiFilter\PodcastEpisodeApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\VideoShowEpisodeApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\VideoShowEpisode\VideoShowEpisodeBodyFacade;
@@ -71,7 +71,7 @@ final class VideoShowEpisodeController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShow);
 
         return $this->okResponse($this->videoShowEpisodeRepository->findByApiParamsWithInfiniteListing(
-            apiParams: PodcastEpisodeApiParams::applyCustomFilter($apiParams, $videoShow),
+            apiParams: VideoShowEpisodeApiParams::applyCustomFilter($apiParams, $videoShow),
             customFilters: [new VideoShowEpisodeFilter()],
         ));
     }
@@ -86,7 +86,7 @@ final class VideoShowEpisodeController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $asset);
 
         return $this->okResponse($this->videoShowEpisodeRepository->findByApiParamsWithInfiniteListing(
-            apiParams: PodcastEpisodeApiParams::applyCustomFilterByAsset($apiParams, $asset),
+            apiParams: VideoShowEpisodeApiParams::applyCustomFilterByAsset($apiParams, $asset),
             customFilters: [new VideoShowEpisodeFilter()],
         ));
     }
