@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
+use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
@@ -14,12 +15,14 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
+use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
@@ -27,11 +30,14 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Distribution\DistributionImagePreviewAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -47,6 +53,7 @@ final class VideoController extends AbstractApiController
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly VideoPositionFacade $videoPositionFacade,
+        private readonly VideoDistributionFacade $videoDistributionFacade,
     ) {
     }
 
@@ -107,6 +114,38 @@ final class VideoController extends AbstractApiController
 
         return $this->okResponse(
             VideoAdmUpdateDto::getInstance($this->videoFacade->update($video, $newVideo))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{video}/distribution-preview/{distribution}', name: 'set_distribution_preview', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('video'), OAParameterPath('distribution'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function setDistributionPreview(VideoFile $video, Distribution $distribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance(
+                $this->videoDistributionFacade->setDistributionPreview($video, $distribution)
+            )
+        );
+    }
+
+    /**
+     * @throws ORMException
+     */
+    #[Route('/{video}/distribution-preview', name: 'get_distribution_preview_list', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('video'), OAResponse([DistributionImagePreviewAdmDto::class])]
+    public function getDistributionImagePreviewList(VideoFile $video, ApiParams $apiParams): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_VIEW, $video);
+
+        return $this->okResponse(
+            $this->videoDistributionFacade->getPreview($apiParams, $video)
         );
     }
 

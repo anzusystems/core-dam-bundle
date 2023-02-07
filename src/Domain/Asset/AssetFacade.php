@@ -47,6 +47,7 @@ class AssetFacade
         try {
             $this->assetManager->beginTransaction();
             $this->assetManager->update($asset, $newAssetDto);
+            $this->assetManager->updateExisting($asset);
             $this->indexManager->index($asset);
             $this->assetManager->commit();
         } catch (Throwable $exception) {

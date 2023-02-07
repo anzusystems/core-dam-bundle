@@ -19,6 +19,14 @@ final class ImagePreviewManager extends AbstractManager
         return $imagePreview;
     }
 
+    public function updateExisting(ImagePreview $imagPreview, bool $flush = true): ImagePreview
+    {
+        $this->trackModification($imagPreview);
+        $this->flush($flush);
+
+        return $imagPreview;
+    }
+
     public function update(ImagePreview $imagPreview, ImagePreview $newImagePreview, bool $flush = true): ImagePreview
     {
         $this->trackModification($imagPreview);

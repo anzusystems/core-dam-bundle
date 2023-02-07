@@ -39,6 +39,7 @@ abstract class AbstractEntityDto
                 ->setCreatedBy($entity->getCreatedBy())
                 ->setModifiedBy($entity->getModifiedBy());
         }
+        $entityDto->resourceName = $entity::class;
 
         return $entityDto;
     }
