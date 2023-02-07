@@ -38,10 +38,7 @@ final class DistributionRepositoryDecorator
      */
     public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList
     {
-        $responseList = $this->distributionRepository->findByApiParams(
-            apiParams: DistributionApiParams::applyAssetFileCustomFilter($apiParams, $assetFile),
-            customFilters: [new CustomDistributionFilter()]
-        );
+        $responseList = $this->distributionRepository->findByApiParamsByAssetFile($apiParams, $assetFile);
 
         return $responseList->setData(
             $this->mapToDecorators($responseList->getData())

@@ -70,12 +70,12 @@ final class DistributionValidator extends ConstraintValidator
      */
     private function validateUniqueness(Distribution $distribution): void
     {
-        if (
-            null === $this->distributionRepository->findByAssetFileAndDistributionService(
-                $distribution->getAssetFileId(),
-                $distribution->getDistributionService()
-            )
-        ) {
+        $oldDistribution = $this->distributionRepository->findByAssetFileAndDistributionService(
+            $distribution->getAssetFileId(),
+            $distribution->getDistributionService()
+        );
+
+        if (null === $oldDistribution || $oldDistribution->getId() === $distribution->getId()) {
             return;
         }
 

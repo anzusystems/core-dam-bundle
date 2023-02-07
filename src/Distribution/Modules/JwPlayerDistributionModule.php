@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
+use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
@@ -13,11 +14,14 @@ use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\HttpClient\JwVideoClient;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 
-final class JwPlayerDistributionModule extends AbstractDistributionModule implements RemoteProcessingDistributionModuleInterface
+final class JwPlayerDistributionModule extends AbstractDistributionModule implements
+    RemoteProcessingDistributionModuleInterface,
+    PreviewProvidableModuleInterface
 {
     public function __construct(
         private readonly JwVideoClient $jwVideoClient,
@@ -85,5 +89,17 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
     public static function supportsDistributionResourceName(): string
     {
         return JwDistribution::getResourceName();
+    }
+
+    public function getPreviewLink(Distribution $distribution): ?string
+    {
+        if (
+            $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
+            isset($distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA])
+        ) {
+            return $distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA];
+        }
+
+        return null;
     }
 }

@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeApiClient;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
+use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
@@ -16,13 +17,16 @@ use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Exception;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
 use RedisException;
 
-final class YoutubeDistributionModule extends AbstractDistributionModule implements RemoteProcessingDistributionModuleInterface
+final class YoutubeDistributionModule extends AbstractDistributionModule implements
+    RemoteProcessingDistributionModuleInterface,
+    PreviewProvidableModuleInterface
 {
     public function __construct(
         private readonly YoutubeApiClient $client,
@@ -118,5 +122,17 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     public static function supportsDistributionResourceName(): string
     {
         return YoutubeDistribution::getResourceName();
+    }
+
+    public function getPreviewLink(Distribution $distribution): ?string
+    {
+        if (
+            $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
+            isset($distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA])
+        ) {
+            return $distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA];
+        }
+
+        return null;
     }
 }

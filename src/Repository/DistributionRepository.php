@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
+use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
+use AnzuSystems\CoreDamBundle\ApiFilter\DistributionApiParams;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomDistributionFilter;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\Query\Expr;
 
@@ -19,6 +25,17 @@ use Doctrine\ORM\Query\Expr;
  */
 class DistributionRepository extends AbstractAnzuRepository
 {
+    /**
+     * @throws ORMException
+     */
+    public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList
+    {
+        return $this->findByApiParams(
+            apiParams: DistributionApiParams::applyAssetFileCustomFilter($apiParams, $assetFile),
+            customFilters: [new CustomDistributionFilter()]
+        );
+    }
+
     /**
      * @throws NonUniqueResultException
      */

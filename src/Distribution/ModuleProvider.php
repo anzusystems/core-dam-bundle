@@ -40,6 +40,16 @@ final class ModuleProvider
         return null;
     }
 
+    public function providePreviewProvidableModule(string $distributionService): ?PreviewProvidableModuleInterface
+    {
+        $module = $this->provideModule($distributionService);
+        if ($module instanceof PreviewProvidableModuleInterface) {
+            return $module;
+        }
+
+        return null;
+    }
+
     public function provideAdapter(string $distributionService): ?DistributionAdapterInterface
     {
         if (false === isset($this->adapterCache[$distributionService])) {
