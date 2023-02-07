@@ -66,6 +66,14 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_PODCAST_EPISODE_DELETE,
             DamPermissions::DAM_PODCAST_EPISODE_UPDATE,
             DamPermissions::DAM_PODCAST_EPISODE_CREATE,
+            DamPermissions::DAM_VIDEO_SHOW_VIEW,
+            DamPermissions::DAM_VIDEO_SHOW_DELETE,
+            DamPermissions::DAM_VIDEO_SHOW_UPDATE,
+            DamPermissions::DAM_VIDEO_SHOW_CREATE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_DELETE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_UPDATE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_CREATE,
         ];
     }
 }

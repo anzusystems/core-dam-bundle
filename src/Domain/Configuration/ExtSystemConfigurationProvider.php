@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistribution
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
 final class ExtSystemConfigurationProvider
@@ -26,7 +27,7 @@ final class ExtSystemConfigurationProvider
     ) {
     }
 
-    public function getExtSystemConfigurationByAssetFile(AssetFile $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration
+    public function getExtSystemConfigurationByAssetFile(AssetFile $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration|ExtSystemVideoTypeConfiguration
     {
         return $this->getExtSystemConfigurationByAsset($asset->getAsset());
     }
@@ -42,7 +43,7 @@ final class ExtSystemConfigurationProvider
         throw new InvalidExtSystemConfigurationException(InvalidExtSystemConfigurationException::ERROR_MESSAGE);
     }
 
-    public function getExtSystemConfigurationByAsset(Asset $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration
+    public function getExtSystemConfigurationByAsset(Asset $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration|ExtSystemVideoTypeConfiguration
     {
         $configuration = $this->getExtSystemConfiguration(
             $asset->getLicence()->getExtSystem()->getSlug()

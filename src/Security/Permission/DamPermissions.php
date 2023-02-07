@@ -121,6 +121,18 @@ class DamPermissions
     // Log
     public const DAM_LOG_UI = 'dam_log_ui';
 
+    // VideoShow
+    public const DAM_VIDEO_SHOW_CREATE = 'dam_videoShow_create';
+    public const DAM_VIDEO_SHOW_UPDATE = 'dam_videoShow_update';
+    public const DAM_VIDEO_SHOW_VIEW = 'dam_videoShow_view';
+    public const DAM_VIDEO_SHOW_DELETE = 'dam_videoShow_delete';
+
+    // VideoShowEpisode
+    public const DAM_VIDEO_SHOW_EPISODE_CREATE = 'dam_videoShowEpisode_create';
+    public const DAM_VIDEO_SHOW_EPISODE_UPDATE = 'dam_videoShowEpisode_update';
+    public const DAM_VIDEO_SHOW_EPISODE_VIEW = 'dam_videoShowEpisode_view';
+    public const DAM_VIDEO_SHOW_EPISODE_DELETE = 'dam_videoShowEpisode_delete';
+
     public const ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
@@ -195,6 +207,14 @@ class DamPermissions
         self::DAM_PERMISSION_GROUP_DELETE,
         self::DAM_PERMISSION_GROUP_UI,
         self::DAM_LOG_UI,
+        self::DAM_VIDEO_SHOW_CREATE,
+        self::DAM_VIDEO_SHOW_UPDATE,
+        self::DAM_VIDEO_SHOW_VIEW,
+        self::DAM_VIDEO_SHOW_DELETE,
+        self::DAM_VIDEO_SHOW_EPISODE_CREATE,
+        self::DAM_VIDEO_SHOW_EPISODE_UPDATE,
+        self::DAM_VIDEO_SHOW_EPISODE_VIEW,
+        self::DAM_VIDEO_SHOW_EPISODE_DELETE,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

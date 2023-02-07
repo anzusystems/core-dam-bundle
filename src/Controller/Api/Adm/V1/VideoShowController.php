@@ -14,13 +14,13 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\LicensedEntityApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastFacade;
+use AnzuSystems\CoreDamBundle\Domain\VideoShow\VideoShowFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\LicensedEntityFilter;
-use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use AnzuSystems\CoreDamBundle\Repository\VideoShowRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
@@ -29,23 +29,23 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route(path: '/podcast', name: 'adm_podcast_v1_')]
-#[OA\Tag('Podcast')]
-final class PodcastController extends AbstractApiController
+#[Route(path: '/video-show', name: 'adm_video_show_v1_')]
+#[OA\Tag('VideoShow')]
+final class VideoShowController extends AbstractApiController
 {
     public function __construct(
-        private readonly PodcastFacade $podcastFacade,
-        private readonly PodcastRepository $podcastRepository,
+        private readonly VideoShowFacade $videoShowFacade,
+        private readonly VideoShowRepository $videoShowRepository,
     ) {
     }
 
-    #[Route('/{podcast}', name: 'get_one', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('podcast'), OAResponse(Podcast::class)]
-    public function getOne(Podcast $podcast): JsonResponse
+    #[Route('/{videoShow}', name: 'get_one', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('videoShow'), OAResponse(VideoShow::class)]
+    public function getOne(VideoShow $videoShow): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $videoShow);
 
-        return $this->okResponse($podcast);
+        return $this->okResponse($videoShow);
     }
 
     /**
@@ -53,14 +53,14 @@ final class PodcastController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
-    #[OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function create(#[SerializeParam] Podcast $podcast): JsonResponse
+    #[OARequest(VideoShow::class), OAResponse(VideoShow::class), OAResponseValidation]
+    public function create(#[SerializeParam] VideoShow $videoShow): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_CREATE, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_CREATE, $videoShow);
 
         return $this->createdResponse(
-            $this->podcastFacade->create($podcast)
+            $this->videoShowFacade->create($videoShow)
         );
     }
 
@@ -68,15 +68,15 @@ final class PodcastController extends AbstractApiController
      * @throws AppReadOnlyModeException
      * @throws ValidationException
      */
-    #[Route('/{podcast}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[OAParameterPath('podcast'), OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function update(Podcast $podcast, #[SerializeParam] Podcast $newPodcast): JsonResponse
+    #[Route('/{videoShow}', name: 'update', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('videoShow'), OARequest(VideoShow::class), OAResponse(VideoShow::class), OAResponseValidation]
+    public function update(VideoShow $videoShow, #[SerializeParam] VideoShow $newVideoShow): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_UPDATE, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_UPDATE, $videoShow);
 
         return $this->okResponse(
-            $this->podcastFacade->update($podcast, $newPodcast)
+            $this->videoShowFacade->update($videoShow, $newVideoShow)
         );
     }
 
@@ -84,12 +84,12 @@ final class PodcastController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
-    #[OAResponse([Podcast::class])]
+    #[OAResponse([VideoShow::class])]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $extSystem);
 
-        return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
+        return $this->okResponse($this->videoShowRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyCustomFilter($apiParams, $extSystem),
             customFilters: [new LicensedEntityFilter()]
         ));
@@ -99,12 +99,12 @@ final class PodcastController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/licence/{assetLicence}', name: 'get_list_by_asset_licence', methods: [Request::METHOD_GET])]
-    #[OAResponse([Podcast::class])]
-    public function getList(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
+    #[OAResponse([VideoShow::class])]
+    public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $assetLicence);
 
-        return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
+        return $this->okResponse($this->videoShowRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),
             customFilters: [new LicensedEntityFilter()]
         ));
@@ -113,14 +113,14 @@ final class PodcastController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/{podcast}', name: 'delete', methods: [Request::METHOD_DELETE])]
-    #[OAParameterPath('podcast'), OAResponseDeleted]
-    public function delete(Podcast $podcast): JsonResponse
+    #[Route(path: '/{videoShow}', name: 'delete', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('videoShow'), OAResponseDeleted]
+    public function delete(VideoShow $videoShow): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_DELETE, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_DELETE, $videoShow);
 
-        $this->podcastFacade->delete($podcast);
+        $this->videoShowFacade->delete($videoShow);
 
         return $this->noContentResponse();
     }

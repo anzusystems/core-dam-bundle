@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadata
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
@@ -419,6 +420,10 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(ExtSystemImageTypeConfiguration::CROP_STORAGE_NAME)
                     ->isRequired()
                 ->end();
+        }
+
+        if ($type->is(AssetType::Video)) {
+            $config->append($this::addTextMapperConfiguration(ExtSystemVideoTypeConfiguration::VIDEO_EPISODE_ENTITY_MAP_KEY));
         }
 
         return $config->end();

@@ -7,14 +7,14 @@ namespace AnzuSystems\CoreDamBundle\ApiFilter;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Repository\CustomFilter\PodcastFilter;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\LicensedEntityFilter;
 
-final class PodcastApiParams
+final class LicensedEntityApiParams
 {
     public static function applyCustomFilter(ApiParams $apiParams, ExtSystem $extSystem): ApiParams
     {
         $filter = $apiParams->getFilter();
-        $filter[ApiParams::FILTER_CUSTOM][PodcastFilter::EXT_SYSTEM] = $extSystem->getId();
+        $filter[ApiParams::FILTER_CUSTOM][LicensedEntityFilter::EXT_SYSTEM] = $extSystem->getId();
         $apiParams->setFilter($filter);
 
         return $apiParams;
@@ -23,7 +23,7 @@ final class PodcastApiParams
     public static function applyLicenceCustomFilter(ApiParams $apiParams, AssetLicence $assetLicence): ApiParams
     {
         $filter = $apiParams->getFilter();
-        $filter[ApiParams::FILTER_CUSTOM][PodcastFilter::LICENCE] = $assetLicence->getId();
+        $filter[ApiParams::FILTER_CUSTOM][LicensedEntityFilter::LICENCE] = $assetLicence->getId();
         $apiParams->setFilter($filter);
 
         return $apiParams;
