@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Security\Voter;
 
-use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use AnzuSystems\CommonBundle\Security\Voter\AbstractVoter;
+use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
@@ -13,8 +14,12 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
  */
 final class AssetLicenceAwareVoter extends AbstractVoter
 {
-    public function resolveAllow(string $attribute, mixed $subject, DamUser $user): bool
+    protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
     {
+        if (false === parent::permissionVote($attribute, $subject, $user)) {
+            return false;
+        }
+
         if (false === ($subject instanceof AssetLicenceInterface)) {
             return false;
         }

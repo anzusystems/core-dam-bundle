@@ -14,7 +14,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 /**
  * @extends AbstractFixtures<Keyword>
  */
-final class KeywordFixtures extends AbstractAssetFileFixtures
+final class KeywordFixtures extends AbstractFixtures
 {
     public const KEYWORD_1 = '85ab9277-44e1-4462-95f0-abe6367802f7';
     public const KEYWORD_2 = '566f9d87-1b30-4ce7-825f-2739cb1556bc';
