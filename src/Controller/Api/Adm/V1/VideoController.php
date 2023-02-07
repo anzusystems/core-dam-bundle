@@ -135,7 +135,6 @@ final class VideoController extends AbstractApiController
         );
     }
 
-
     /**
      * @throws ORMException
      */
@@ -149,7 +148,6 @@ final class VideoController extends AbstractApiController
             $this->videoDistributionFacade->getPreview($apiParams, $video)
         );
     }
-
 
     /**
      * Create video for asset and assign to specific position.
