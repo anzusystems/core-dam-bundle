@@ -46,7 +46,7 @@ class VideoShowEpisode implements
     #[AppAssert\EqualLicence]
     private VideoShow $videoShow;
 
-    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'episodes')]
+    #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'videoEpisodes')]
     #[Serialize(handler: EntityIdHandler::class)]
     #[AppAssert\AssetProperties(assetType: AssetType::Video)]
     #[AppAssert\EqualLicence]
