@@ -130,7 +130,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
             isset($distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA])
         ) {
-            return $distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA];
+            return $distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA] ?? null;
         }
 
         return null;

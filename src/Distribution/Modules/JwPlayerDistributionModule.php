@@ -97,7 +97,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
             $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
             isset($distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA])
         ) {
-            return $distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA];
+            return $distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA] ?? null;
         }
 
         return null;
