@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetLicence;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 
 final class AssetLicenceFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $entityValidator,
         private readonly AssetLicenceManager $assetLicenceManager,
     ) {
     }
@@ -21,7 +22,7 @@ final class AssetLicenceFacade
      */
     public function create(AssetLicence $assetLicence): AssetLicence
     {
-        $this->entityValidator->validate($assetLicence);
+        $this->validator->validate($assetLicence);
 
         return $this->assetLicenceManager->create($assetLicence);
     }
@@ -31,7 +32,7 @@ final class AssetLicenceFacade
      */
     public function update(AssetLicence $assetLicence, AssetLicence $newAssetLicence): AssetLicence
     {
-        $this->entityValidator->validate($newAssetLicence, $assetLicence);
+        $this->validator->validate($newAssetLicence, $assetLicence);
 
         return $this->assetLicenceManager->update($assetLicence, $newAssetLicence);
     }

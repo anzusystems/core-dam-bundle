@@ -133,6 +133,12 @@ class DamPermissions
     public const DAM_VIDEO_SHOW_EPISODE_VIEW = 'dam_videoShowEpisode_view';
     public const DAM_VIDEO_SHOW_EPISODE_DELETE = 'dam_videoShowEpisode_delete';
 
+    // Job
+    public const DAM_JOB_VIEW = 'dam_job_view';
+    public const DAM_JOB_CREATE = 'dam_job_create';
+    public const DAM_JOB_DELETE = 'dam_job_delete';
+    public const DAM_JOB_UI = 'dam_job_ui';
+
     public const ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
@@ -215,6 +221,10 @@ class DamPermissions
         self::DAM_VIDEO_SHOW_EPISODE_UPDATE,
         self::DAM_VIDEO_SHOW_EPISODE_VIEW,
         self::DAM_VIDEO_SHOW_EPISODE_DELETE,
+        self::DAM_JOB_VIEW,
+        self::DAM_JOB_CREATE,
+        self::DAM_JOB_DELETE,
+        self::DAM_JOB_UI,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

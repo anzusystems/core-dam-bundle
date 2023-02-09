@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\ExternalProviderFileFactory;
@@ -31,7 +32,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
@@ -42,6 +43,9 @@ use Throwable;
 
 abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 {
+    use ValidatorAwareTrait;
+    use IndexManagerAwareTrait;
+
     protected AssetFileStatusManager $assetStatusManager;
     protected AssetFileMessageDispatcher $assetFileMessageDispatcher;
     protected FileFactory $fileFactory;
@@ -49,9 +53,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected AssetFileEventDispatcher $assetFileEventDispatcher;
     protected FileAttributesProcessor $fileAttributesPostProcessor;
     protected AssetFileRepository $assetFileRepository;
-    protected IndexManager $indexManager;
     protected MetadataProcessor $metadataProcessor;
-    protected EntityValidator $entityValidator;
     protected AssetTextsProcessor $displayTitleProcessor;
     protected ExternalProviderFileFactory $externalProviderFileFactory;
     protected UrlFileFactory $urlFileFactory;
@@ -75,12 +77,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     public function setDisplayTitleProcessor(AssetTextsProcessor $displayTitleProcessor): void
     {
         $this->displayTitleProcessor = $displayTitleProcessor;
-    }
-
-    #[Required]
-    public function setEntityValidator(EntityValidator $entityValidator): void
-    {
-        $this->entityValidator = $entityValidator;
     }
 
     #[Required]
@@ -168,7 +164,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     public function finishUpload(AssetAdmFinishDto $assetFinishDto, AssetFile $assetFile): AssetFile
     {
         $this->validateFullyUploaded($assetFile);
-        $this->entityValidator->validateDto($assetFinishDto);
+        $this->validator->validate($assetFinishDto);
         $this->assetStatusManager->setNotifyTo($assetFile);
         $assetFile->getAssetAttributes()->setChecksum($assetFinishDto->getChecksum());
         $this->assetStatusManager->toUploaded($assetFile);

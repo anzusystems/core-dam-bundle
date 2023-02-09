@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\DistributionCategoryRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DistributionCategoryRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_type_extSystem_name', fields: ['type', 'extSystem', 'name'])]
-#[AppAssert\UniqueEntity(fields: ['type', 'extSystem', 'name'])]
+#[UniqueEntity(fields: ['type', 'extSystem', 'name'])]
 class DistributionCategory implements TimeTrackingInterface, UserTrackingInterface, UuidIdentifiableInterface, ExtSystemInterface
 {
     use UuidIdentityTrait;

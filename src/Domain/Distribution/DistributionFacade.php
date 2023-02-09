@@ -5,26 +5,21 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\DistributionBroker;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Contracts\Service\Attribute\Required;
 
 class DistributionFacade
 {
-    protected readonly DistributionBroker $distributionBroker;
-    protected readonly EntityValidator $entityValidator;
-    protected readonly DistributionManager $distributionManager;
+    use ValidatorAwareTrait;
 
-    #[Required]
-    public function setEntityValidator(EntityValidator $entityValidator): void
-    {
-        $this->entityValidator = $entityValidator;
-    }
+    protected readonly DistributionBroker $distributionBroker;
+    protected readonly DistributionManager $distributionManager;
 
     #[Required]
     public function setDistributionBroker(DistributionBroker $distributionBroker): void
@@ -46,7 +41,7 @@ class DistributionFacade
     {
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
-        $this->entityValidator->validate($distribution);
+        $this->validator->validate($distribution);
 
         $this->distributionManager->setNotifyTo($distribution);
         $this->distributionManager->create($distribution);
@@ -64,7 +59,7 @@ class DistributionFacade
         if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
             throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
         }
-        $this->entityValidator->validate($distribution);
+        $this->validator->validate($distribution);
 
         $this->distributionManager->setNotifyTo($distribution);
         $this->distributionManager->updateExisting($distribution);

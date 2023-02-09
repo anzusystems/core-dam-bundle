@@ -32,7 +32,7 @@ final class VideoFacade extends AssetFileFacade
      */
     public function update(VideoFile $video, VideoAdmUpdateDto $newVideo): VideoFile
     {
-        $this->entityValidator->validateDto($newVideo, $video);
+        $this->validator->validateDto($newVideo, $video);
 
         try {
             $this->videoManager->beginTransaction();

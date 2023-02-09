@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetSlot;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
@@ -13,14 +14,13 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
-use AnzuSystems\CoreDamBundle\Traits\EntityValidatorAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetSlotFacade
 {
-    use EntityValidatorAwareTrait;
+    use ValidatorAwareTrait;
 
     public function __construct(
         private readonly AssetSlotManager $assetSlotManager,
@@ -50,7 +50,7 @@ class AssetSlotFacade
      */
     public function update(Asset $asset, Collection $list): ApiResponseList
     {
-        $this->entityValidator->validateDto($list);
+        $this->validator->validate($list);
         $this->validateOwnership($asset, $list);
 
         $newSlots = new ArrayCollection();

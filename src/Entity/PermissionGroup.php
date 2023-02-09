@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CommonBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\Contracts\Entity\AnzuPermissionGroup;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Repository\PermissionGroupRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use AnzuSystems\SerializerBundle\Metadata\ContainerParam;

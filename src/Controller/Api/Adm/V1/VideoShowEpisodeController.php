@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\VideoShowEpisodeApiParams;
@@ -65,7 +66,7 @@ final class VideoShowEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/video-show/{videoShow}', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponse([VideoShowEpisode::class])]
+    #[OAResponseInfiniteList(VideoShowEpisode::class)]
     public function getList(VideoShow $videoShow, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShow);
@@ -80,7 +81,7 @@ final class VideoShowEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
-    #[OAResponse([VideoShowEpisode::class])]
+    #[OAResponseInfiniteList(VideoShowEpisode::class)]
     public function getListByAsset(Asset $asset, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $asset);

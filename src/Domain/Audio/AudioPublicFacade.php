@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Audio;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use RuntimeException;
 use Throwable;
 
 final class AudioPublicFacade
 {
+    use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
 
     public const SLUG_REGEX = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
     public function __construct(
-        private readonly EntityValidator $validator,
         private readonly AudioManager $audioManager,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AudioPublicManager $audioPublicManager,
@@ -36,7 +36,7 @@ final class AudioPublicFacade
     {
         $this->validateProcessState($audio);
         $this->validateTransition($audio, false);
-        $this->validator->validateDto($dto);
+        $this->validator->validate($dto);
 
         try {
             $this->audioManager->beginTransaction();
