@@ -76,6 +76,7 @@ final class AudioFixtures extends AbstractAssetFileFixtures
         $audio->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
 
         $asset = $audio->getAsset();
+        $asset->getAssetFlags()->setDescribed(true);
         $asset->getMetadata()->setCustomData([
             'title' => '783: Kids These Days',
             'headline' => 'Custom headline title',

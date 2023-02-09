@@ -11,9 +11,8 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
-use Doctrine\ORM\NonUniqueResultException;
 
-final class DistributionBodyBuilder extends DistributionManager
+final class DistributionBodyBuilder
 {
     public function __construct(
         private readonly CurrentAnzuUserProvider $userProvider,
@@ -37,9 +36,6 @@ final class DistributionBodyBuilder extends DistributionManager
         )->getValues();
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
     public function setWriterProperties(string $distributionService, Asset $assetFile, object $object): void
     {
         $requirements = $this->extSystemConfigurationProvider->getDistributionRequirements(

@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
@@ -95,6 +96,22 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode(DistributionServiceConfiguration::TYPE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::TITLE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::MODULE_KEY)->isRequired()->end()
+                        ->arrayNode(DistributionServiceConfiguration::ALLOWED_REDISTRIBUTE_STATUSES)
+                            ->defaultValue([DistributionProcessStatus::Failed->toString()])
+                            ->scalarPrototype()->end()
+                            ->validate()
+                            ->ifTrue(function (array $values): bool {
+                                foreach ($values as $value) {
+                                    if (false === in_array($value, DistributionProcessStatus::values(), true)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            })
+                            ->thenInvalid('Only values (' . implode(',', DistributionProcessStatus::values()) . ') allowed')
+                            ->end()
+                        ->end()
                         ->booleanNode(DistributionServiceConfiguration::REQUIRED_AUTH_KEY)
                             ->defaultValue(false)
                         ->end()

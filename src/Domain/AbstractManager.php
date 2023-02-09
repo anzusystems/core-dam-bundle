@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain;
 use AnzuSystems\CommonBundle\Domain\AbstractManager as BaseAbstractManager;
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
+use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Event\UserTrackingEvent;
@@ -15,12 +16,14 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractManager extends BaseAbstractManager
 {
     private CurrentAnzuUserProvider $currentUser;
     private EventDispatcherInterface $eventDispatcher;
+    private RequestStack $requestStack;
 
     #[Required]
     public function setCurrentUser(CurrentAnzuUserProvider $currentUser): self
@@ -34,6 +37,14 @@ abstract class AbstractManager extends BaseAbstractManager
     public function setEventDispatcher(EventDispatcherInterface $eventDispatcher): self
     {
         $this->eventDispatcher = $eventDispatcher;
+
+        return $this;
+    }
+
+    #[Required]
+    public function setRequestStack(RequestStack $requestStack): self
+    {
+        $this->requestStack = $requestStack;
 
         return $this;
     }
@@ -60,6 +71,9 @@ abstract class AbstractManager extends BaseAbstractManager
         return new ArrayCollection(iterator_to_array($iterator));
     }
 
+    /**
+     * @deprecated
+     */
     public function setNotifyTo(NotifiableInterface $object): void
     {
         $currentUser = $this->currentUser->getCurrentUser();
@@ -83,6 +97,12 @@ abstract class AbstractManager extends BaseAbstractManager
             $event = new UserTrackingEvent($object->getModifiedBy(), $object);
             $this->eventDispatcher->dispatch($event);
             $object->setModifiedBy($event->getUser());
+        }
+
+        if ($object instanceof NotifiableInterface && $this->requestStack->getCurrentRequest()) {
+            /** @var DamUser $currentUser */
+            $currentUser = $this->currentUser->getCurrentUser();
+            $object->setNotifyTo($currentUser);
         }
     }
 }

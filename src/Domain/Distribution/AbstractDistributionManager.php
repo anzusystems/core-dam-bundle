@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 
-class DistributionManager extends AbstractManager
+abstract class AbstractDistributionManager extends AbstractManager implements DistributionManagerInterface
 {
     public function create(Distribution $distribution, bool $flush = true): Distribution
     {

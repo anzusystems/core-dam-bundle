@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
-use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeAbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeLanguageDto;
@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 final class YoutubeValidator extends ConstraintValidator
 {
     public function __construct(
-        private readonly YoutubeDistributionFacade $playlistFacade,
+        private readonly YoutubeAbstractDistributionFacade $playlistFacade,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
     ) {
     }
