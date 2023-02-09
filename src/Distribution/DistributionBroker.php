@@ -51,8 +51,14 @@ final class DistributionBroker
      */
     public function redistribute(Distribution $distribution): void
     {
+        $this->resourceLocker->lock($this->getLockName($distribution));
         $this->distributionStatusManager->toDistributing($distribution);
-        $this->startDistribution($distribution);
+
+        if ($this->repository->isNotBlockByNotFinished($distribution)) {
+            $this->messageBus->dispatch(new DistributeMessage($distribution));
+        }
+
+        $this->resourceLocker->unLock($this->getLockName($distribution));
     }
 
     /**
@@ -65,8 +71,8 @@ final class DistributionBroker
 
         try {
             $module->distribute($distribution);
-        } catch (DistributionFailedException $e) {
-            $distribution->setFailReason($e->getFailReason());
+        } catch (DistributionFailedException $exception) {
+            $distribution->setFailReason($exception->getFailReason());
             $this->distributionStatusManager->toFailed($distribution);
 
             return;

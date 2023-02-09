@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\VideoShowEpisode\VideoShowEpisodeBodyFacade;
 use AnzuSystems\CoreDamBundle\Domain\VideoShowEpisode\VideoShowEpisodeFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
@@ -44,7 +43,7 @@ final class VideoShowEpisodeController extends AbstractApiController
     }
 
     #[Route('/{videoShowEpisode}', name: 'get_one', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('VideoShowEpisode'), OAResponse(Podcast::class)]
+    #[OAParameterPath('VideoShowEpisode'), OAResponse(VideoShowEpisode::class)]
     public function getOne(VideoShowEpisode $videoShowEpisode): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShowEpisode);

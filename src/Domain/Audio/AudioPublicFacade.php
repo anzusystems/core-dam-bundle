@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use RuntimeException;
+use Symfony\Component\String\Slugger\SluggerInterface;
 use Throwable;
 
 final class AudioPublicFacade
@@ -26,6 +27,7 @@ final class AudioPublicFacade
         private readonly AudioManager $audioManager,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AudioPublicManager $audioPublicManager,
+        private readonly SluggerInterface $slugger,
     ) {
     }
 
@@ -35,6 +37,7 @@ final class AudioPublicFacade
     public function makePublic(AudioFile $audio, AudioPublicationAdmDto $dto): AudioFile
     {
         $this->validateProcessState($audio);
+        $this->ensureSlug($audio, $dto);
         $this->validateTransition($audio, false);
         $this->validator->validate($dto);
 
@@ -42,7 +45,6 @@ final class AudioPublicFacade
             $this->audioManager->beginTransaction();
 
             $this->audioPublicManager->makePublic($audio, $dto);
-
             // todo purge cache
             // $this->cachePurgeManager->purgeAudioCache((string) $audio->getId(), $path);
 
@@ -82,6 +84,15 @@ final class AudioPublicFacade
         }
 
         return $audio;
+    }
+
+    private function ensureSlug(AudioFile $audio, AudioPublicationAdmDto $dto): void
+    {
+        if (empty($dto->getSlug())) {
+            $dto->setSlug(
+                $this->slugger->slug($audio->getAsset()->getTexts()->getDisplayTitle())->toString()
+            );
+        }
     }
 
     private function validateProcessState(AudioFile $audio): void

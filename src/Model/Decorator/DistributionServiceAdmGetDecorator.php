@@ -34,4 +34,10 @@ final class DistributionServiceAdmGetDecorator
     {
         return $this->configuration->getTitle();
     }
+
+    #[Serialize]
+    public function getAllowedRedistributeStatuses(): array
+    {
+        return $this->configuration->getAllowedRedistributeStatuses();
+    }
 }

@@ -7,19 +7,26 @@ namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\DistributionBroker;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
-use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Contracts\Service\Attribute\Required;
 
-class DistributionFacade
+abstract class AbstractDistributionFacade
 {
     use ValidatorAwareTrait;
 
     protected readonly DistributionBroker $distributionBroker;
-    protected readonly DistributionManager $distributionManager;
+    protected readonly DistributionConfigurationProvider $distributionConfigurationProvider;
+    protected readonly DistributionManagerProvider $distributionManagerProvider;
+
+    #[Required]
+    public function setDistributionConfigurationProvider(DistributionConfigurationProvider $distributionConfigurationProvider): void
+    {
+        $this->distributionConfigurationProvider = $distributionConfigurationProvider;
+    }
 
     #[Required]
     public function setDistributionBroker(DistributionBroker $distributionBroker): void
@@ -28,9 +35,9 @@ class DistributionFacade
     }
 
     #[Required]
-    public function setDistributionManager(DistributionManager $distributionManager): void
+    public function setDistributionManagerProvider(DistributionManagerProvider $distributionManagerProvider): void
     {
-        $this->distributionManager = $distributionManager;
+        $this->distributionManagerProvider = $distributionManagerProvider;
     }
 
     /**
@@ -42,9 +49,8 @@ class DistributionFacade
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
         $this->validator->validate($distribution);
+        $this->distributionManagerProvider->get($distribution::class)->create($distribution);
 
-        $this->distributionManager->setNotifyTo($distribution);
-        $this->distributionManager->create($distribution);
         $this->distributionBroker->startDistribution($distribution);
 
         return $distribution;
@@ -54,15 +60,17 @@ class DistributionFacade
      * @throws ValidationException
      * @throws NonUniqueResultException
      */
-    public function redistribute(Distribution $distribution): Distribution
+    public function redistribute(Distribution $distribution, Distribution $newDistribution): Distribution
     {
-        if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
+        $config = $this->distributionConfigurationProvider->getDistributionService($distribution->getDistributionService());
+
+        if (false === $distribution->getStatus()->in($config->getAllowedRedistributeStatuses())) {
             throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
         }
-        $this->validator->validate($distribution);
 
-        $this->distributionManager->setNotifyTo($distribution);
-        $this->distributionManager->updateExisting($distribution);
+        $this->validator->validate($distribution);
+        $this->distributionManagerProvider->get($distribution::class)->update($distribution, $newDistribution);
+
         $this->distributionBroker->redistribute($distribution);
 
         return $distribution;

@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeApiClient;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\AbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
@@ -17,13 +17,12 @@ use Google\Exception;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 
-class YoutubeDistributionFacade
+class YoutubeAbstractDistributionFacade extends AbstractDistributionFacade
 {
     public function __construct(
         private readonly YoutubeDataStorage $youtubeDataStorage,
         private readonly YoutubeApiClient $youtubeApiClient,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
-        private readonly DistributionConfigurationProvider $distributionConfigurationProvider,
         private readonly DistributionBodyBuilder $distributionBodyBuilder,
     ) {
     }

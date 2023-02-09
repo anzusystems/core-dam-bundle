@@ -12,7 +12,6 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomDistribution\CustomDistributionFacade;
-use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
@@ -33,7 +32,6 @@ final class CustomDistributionController extends AbstractApiController
 {
     public function __construct(
         private readonly CustomDistributionFacade $customDistributionFacade,
-        private readonly DistributionFacade $distributionFacade,
         private readonly DistributionRepositoryDecorator $distributionRepository,
         private readonly AssetRepository $assetRepository,
     ) {
@@ -60,16 +58,18 @@ final class CustomDistributionController extends AbstractApiController
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
-    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PATCH])]
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function redistribute(Distribution $distribution): JsonResponse
+    public function redistribute(Distribution $distribution, #[SerializeParam] CustomDistributionAdmDto $customDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(
-            $this->distributionFacade->redistribute($distribution)
+            $this->distributionRepository->decorate(
+                $this->customDistributionFacade->redistribute($distribution, $customDistribution)
+            )
         );
     }
 

@@ -12,8 +12,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
-use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
-use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeAbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
@@ -39,8 +38,7 @@ use Symfony\Component\Routing\Annotation\Route;
 final class YoutubeDistributionController extends AbstractApiController
 {
     public function __construct(
-        private readonly YoutubeDistributionFacade $youtubeDistributionFacade,
-        private readonly DistributionFacade $distributionFacade,
+        private readonly YoutubeAbstractDistributionFacade $youtubeDistributionFacade,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
         private readonly AssetRepository $assetRepository,
     ) {
@@ -130,7 +128,7 @@ final class YoutubeDistributionController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $youtubeDistribution->getDistributionService());
 
         return $this->okResponse(
-            $this->distributionFacade->distribute($assetFile, $youtubeDistribution)
+            $this->youtubeDistributionFacade->distribute($assetFile, $youtubeDistribution)
         );
     }
 
@@ -139,16 +137,16 @@ final class YoutubeDistributionController extends AbstractApiController
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
-    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PATCH])]
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function redistribute(YoutubeDistribution $distribution): JsonResponse
+    public function redistribute(YoutubeDistribution $distribution, #[SerializeParam] YoutubeDistribution $newYoutubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(
-            $this->distributionFacade->redistribute($distribution)
+            $this->youtubeDistributionFacade->redistribute($distribution, $newYoutubeDistribution)
         );
     }
 }

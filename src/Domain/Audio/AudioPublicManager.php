@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use League\Flysystem\FilesystemException;
-use Symfony\Component\String\Slugger\SluggerInterface;
 
 final class AudioPublicManager
 {
@@ -19,7 +18,6 @@ final class AudioPublicManager
     public function __construct(
         private readonly AudioManager $audioManager,
         private readonly FileSystemProvider $fileSystemProvider,
-        private readonly SluggerInterface $slugger,
     ) {
     }
 
@@ -80,19 +78,15 @@ final class AudioPublicManager
 
     private function makeEntityPublic(AudioFile $audio, AudioPublicationAdmDto $dto): void
     {
-        $slug = empty($dto->getSlug())
-            ? $this->slugger->slug($audio->getAsset()->getTexts()->getDisplayTitle())->toString()
-            : $dto->getSlug();
-
         $path = sprintf(
             '%s/%s.%s',
             $audio->getId(),
-            $slug,
+            $dto->getSlug(),
             FileHelper::guessExtension($audio->getAssetAttributes()->getMimeType())
         );
 
         $audio->getAudioPublicLink()
-            ->setSlug($slug)
+            ->setSlug($dto->getSlug())
             ->setPublic(true)
             ->setPath($path);
     }

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\JwDistribution;
 
+use AnzuSystems\CoreDamBundle\Domain\Distribution\AbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use Doctrine\ORM\NonUniqueResultException;
 
-class JwDistributionFacade
+class JwAbstractDistributionFacade extends AbstractDistributionFacade
 {
     public function __construct(
         private readonly DistributionBodyBuilder $distributionBodyBuilder,
