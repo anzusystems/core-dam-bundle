@@ -42,7 +42,7 @@ class RegionOfInterestFacade
         RegionOfInterest $regionOfInterest,
         RegionOfInterestAdmDetailDto $roiDto,
     ): RegionOfInterest {
-        $this->validator->validateDto($roiDto);
+        $this->validator->validate($roiDto);
         $this->regionOfInterestManager->update($regionOfInterest, $roiDto);
 
         return $regionOfInterest;
