@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\CustomForm;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\AssetCustomForm;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 
 /**
  * Complete CustomForm processing.
  */
 final class CustomFormFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $validator,
         private readonly CustomFormManager $manager,
     ) {
     }

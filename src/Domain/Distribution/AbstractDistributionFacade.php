@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\DistributionBroker;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDistributionFacade
 {
+    use ValidatorAwareTrait;
+
     protected readonly DistributionBroker $distributionBroker;
-    protected readonly EntityValidator $entityValidator;
     protected readonly DistributionConfigurationProvider $distributionConfigurationProvider;
     protected readonly DistributionManagerProvider $distributionManagerProvider;
 
@@ -25,12 +26,6 @@ abstract class AbstractDistributionFacade
     public function setDistributionConfigurationProvider(DistributionConfigurationProvider $distributionConfigurationProvider): void
     {
         $this->distributionConfigurationProvider = $distributionConfigurationProvider;
-    }
-
-    #[Required]
-    public function setEntityValidator(EntityValidator $entityValidator): void
-    {
-        $this->entityValidator = $entityValidator;
     }
 
     #[Required]
@@ -53,7 +48,7 @@ abstract class AbstractDistributionFacade
     {
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
-        $this->entityValidator->validate($distribution);
+        $this->validator->validate($distribution);
         $this->distributionManagerProvider->get($distribution::class)->create($distribution);
 
         $this->distributionBroker->startDistribution($distribution);
@@ -73,7 +68,7 @@ abstract class AbstractDistributionFacade
             throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
         }
 
-        $this->entityValidator->validate($distribution);
+        $this->validator->validate($distribution);
         $this->distributionManagerProvider->get($distribution::class)->update($distribution, $newDistribution);
 
         $this->distributionBroker->redistribute($distribution);

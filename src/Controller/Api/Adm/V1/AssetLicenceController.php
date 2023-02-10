@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
@@ -53,7 +54,7 @@ final class AssetLicenceController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponse([AssetLicence::class])]
+    #[OAResponseInfiniteList(AssetLicence::class)]
     public function getList(ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_LIST);

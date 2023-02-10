@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 
 final class PodcastEpisodeFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $validator,
         private readonly PodcastEpisodeManager $podcastManager,
     ) {
     }

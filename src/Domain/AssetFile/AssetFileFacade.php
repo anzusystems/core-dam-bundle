@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -27,7 +27,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -37,14 +37,15 @@ use Throwable;
  */
 abstract class AssetFileFacade
 {
+    use ValidatorAwareTrait;
+    use IndexManagerAwareTrait;
+
     protected AssetManager $assetManager;
     protected AssetFactory $assetFactory;
-    protected EntityValidator $entityValidator;
     protected AssetFileStatusManager $assetStatusManager;
     protected MessageBusInterface $messageBus;
     protected ExtSystemConfigurationProvider $extSystemConfigurationProvider;
     protected AssetSlotFactory $assetSlotFactory;
-    protected IndexManager $indexManager;
     protected FileStash $fileDeleteStash;
     protected AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher;
     protected AssetExternalProviderContainer $assetExternalProviderContainer;
@@ -71,12 +72,6 @@ abstract class AssetFileFacade
     }
 
     #[Required]
-    public function setIndexManager(IndexManager $indexManager): void
-    {
-        $this->indexManager = $indexManager;
-    }
-
-    #[Required]
     public function setAssetSlotFactory(AssetSlotFactory $assetSlotFactory): void
     {
         $this->assetSlotFactory = $assetSlotFactory;
@@ -86,12 +81,6 @@ abstract class AssetFileFacade
     public function setExtSystemConfigurationProvider(ExtSystemConfigurationProvider $extSystemConfigurationProvider): void
     {
         $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
-    }
-
-    #[Required]
-    public function setEntityValidator(EntityValidator $entityValidator): void
-    {
-        $this->entityValidator = $entityValidator;
     }
 
     #[Required]
@@ -146,7 +135,7 @@ abstract class AssetFileFacade
         AssetLicence $assetLicence,
     ): AssetFile {
         $uploadDto->setAssetLicence($assetLicence);
-        $this->entityValidator->validateDto($uploadDto);
+        $this->validator->validate($uploadDto);
         $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $imageDto = $this->assetExternalProviderContainer
             ->get($uploadDto->getExternalProvider())
@@ -182,7 +171,7 @@ abstract class AssetFileFacade
      */
     public function createAssetFile(AssetFileAdmCreateDto $createDto, AssetLicence $assetLicence): AssetFile
     {
-        $this->entityValidator->validateDto($createDto);
+        $this->validator->validate($createDto);
         $this->validateAssetSize($createDto, $assetLicence);
         $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $assetFile = $this->getFactory()->createFromAdmDto($assetLicence, $createDto);
@@ -213,7 +202,7 @@ abstract class AssetFileFacade
     {
         $this->validateAssetType($asset, $createDto);
         $this->validateSlotTitle($asset, $slotName);
-        $this->entityValidator->validateDto($createDto);
+        $this->validator->validate($createDto);
         $this->validateLimitedAssetLicenceFileCount($asset->getLicence());
 
         $slot = $this->assetSlotRepository->findSlotByAssetAndTitle($asset->getId(), $slotName);

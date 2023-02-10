@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\PodcastEpisodeApiParams;
@@ -64,7 +65,7 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/podcast/{podcast}', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponse([PodcastEpisode::class])]
+    #[OAResponseInfiniteList(PodcastEpisode::class)]
     public function getList(Podcast $podcast, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $podcast);
@@ -79,7 +80,7 @@ final class PodcastEpisodeController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
-    #[OAResponse([PodcastEpisode::class])]
+    #[OAResponseInfiniteList(PodcastEpisode::class)]
     public function getListByAsset(Asset $asset, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $asset);

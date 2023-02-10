@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
 
 final class AuthorFacade
 {
+    use ValidatorAwareTrait;
+    use IndexManagerAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $validator,
         private readonly AuthorManager $authorManager,
-        private readonly IndexManager $indexManager,
     ) {
     }
 

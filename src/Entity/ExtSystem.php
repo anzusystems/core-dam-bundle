@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
@@ -26,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ExtSystemRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_slug', columns: ['slug'])]
-#[AppAssert\UniqueEntity(fields: ['slug'])]
+#[UniqueEntity(fields: ['slug'])]
 class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
 {
     use IdentityTrait;

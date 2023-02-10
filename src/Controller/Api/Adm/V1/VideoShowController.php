@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\ApiFilter\LicensedEntityApiParams;
@@ -84,7 +85,7 @@ final class VideoShowController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
-    #[OAResponse([VideoShow::class])]
+    #[OAResponseInfiniteList(VideoShow::class)]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $extSystem);
@@ -99,7 +100,7 @@ final class VideoShowController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/licence/{assetLicence}', name: 'get_list_by_asset_licence', methods: [Request::METHOD_GET])]
-    #[OAResponse([VideoShow::class])]
+    #[OAResponseInfiniteList(VideoShow::class)]
     public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $assetLicence);

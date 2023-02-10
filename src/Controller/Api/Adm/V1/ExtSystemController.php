@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
@@ -52,7 +53,7 @@ final class ExtSystemController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponse([ExtSystem::class])]
+    #[OAResponseList(ExtSystem::class)]
     public function getList(ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_LIST);
