@@ -69,7 +69,7 @@ $app->run($input, $output);
 
 # Database fixtures
 $input = new ArrayInput([
-    'command' => 'anzu-dam:fixtures:generate',
+    'command' => 'anzusystems:fixtures:generate',
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
