@@ -106,6 +106,21 @@ return static function (ContainerConfigurator $configurator): void {
                 'codecName' => [
                     'type' => 'keyword',
                 ],
+                'distributed_in_services' => [
+                    'type' => 'keyword',
+                ],
+                'slot_names' => [
+                    'type' => 'keyword',
+                ],
+                'from_rss' => [
+                    'type' => 'boolean',
+                ],
+                'pixels' => [
+                    'type' => 'integer',
+                ],
+                'shortest_dimension' => [
+                    'type' => 'integer',
+                ],
             ]
         );
 };

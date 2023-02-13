@@ -66,15 +66,44 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     #[Serialize]
     protected ?bool $inPodcast = null;
 
+    #[Serialize]
+    protected ?bool $fromRss = null;
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $slotNames = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $distributedInServices = [];
+
     /**
      * @var array<int, AssetLicence>
      */
     protected array $licences = [];
 
     #[Serialize]
+    private ?int $pixelsFrom = null;
+
+    #[Serialize]
+    private ?int $pixelsUntil = null;
+
+    #[Serialize]
+    private ?int $shortestDimensionFrom = null;
+
+    #[Serialize]
+    private ?int $shortestDimensionUntil = null;
+
+    #[Serialize]
+    /**
+     * @deprecated
+     */
     private ?int $pixelSizeFrom = null;
 
     #[Serialize]
+    /**
+     * @deprecated
+     */
     private ?int $pixelSizeUntil = null;
 
     #[Serialize]
@@ -500,6 +529,90 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setGeneratedBySystem(?bool $generatedBySystem): self
     {
         $this->generatedBySystem = $generatedBySystem;
+
+        return $this;
+    }
+
+    public function isFromRss(): ?bool
+    {
+        return $this->fromRss;
+    }
+
+    public function setFromRss(?bool $fromRss): self
+    {
+        $this->fromRss = $fromRss;
+
+        return $this;
+    }
+
+    public function getPixelsFrom(): ?int
+    {
+        return $this->pixelsFrom;
+    }
+
+    public function setPixelsFrom(?int $pixelsFrom): self
+    {
+        $this->pixelsFrom = $pixelsFrom;
+
+        return $this;
+    }
+
+    public function getPixelsUntil(): ?int
+    {
+        return $this->pixelsUntil;
+    }
+
+    public function setPixelsUntil(?int $pixelsUntil): self
+    {
+        $this->pixelsUntil = $pixelsUntil;
+
+        return $this;
+    }
+
+    public function getShortestDimensionFrom(): ?int
+    {
+        return $this->shortestDimensionFrom;
+    }
+
+    public function setShortestDimensionFrom(?int $shortestDimensionFrom): self
+    {
+        $this->shortestDimensionFrom = $shortestDimensionFrom;
+
+        return $this;
+    }
+
+    public function getShortestDimensionUntil(): ?int
+    {
+        return $this->shortestDimensionUntil;
+    }
+
+    public function setShortestDimensionUntil(?int $shortestDimensionUntil): self
+    {
+        $this->shortestDimensionUntil = $shortestDimensionUntil;
+
+        return $this;
+    }
+
+    public function getSlotNames(): array
+    {
+        return $this->slotNames;
+    }
+
+    public function setSlotNames(array $slotNames): self
+    {
+        $this->slotNames = $slotNames;
+
+        return $this;
+    }
+
+    public function getDistributedInServices(): array
+    {
+        return $this->distributedInServices;
+    }
+
+    public function setDistributedInServices(array $distributedInServices): self
+    {
+        $this->distributedInServices = $distributedInServices;
 
         return $this;
     }
