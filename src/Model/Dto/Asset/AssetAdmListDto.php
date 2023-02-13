@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
@@ -17,18 +18,16 @@ class AssetAdmListDto extends AbstractEntityDto
 {
     protected string $resourceName = Asset::class;
     protected Asset $asset;
-
-    #[Serialize]
     protected AssetTextsAdmListDto $texts;
-
-    #[Serialize]
     protected AssetAttributesAdmDto $attributes;
+    protected AssetFilePropertiesAdmDto $assetFileProperties;
 
     public static function getInstance(Asset $asset): static
     {
         return parent::getBaseInstance($asset)
             ->setTexts(AssetTextsAdmListDto::getInstance($asset->getTexts()))
             ->setAttributes(AssetAttributesAdmDto::getInstance($asset->getAttributes()))
+            ->setAssetFileProperties(AssetFilePropertiesAdmDto::getInstance($asset->getAssetFileProperties()))
             ->setAsset($asset);
     }
 
@@ -50,6 +49,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->asset->getMainFile();
     }
 
+    #[Serialize]
     public function getAttributes(): AssetAttributesAdmDto
     {
         return $this->attributes;
@@ -62,6 +62,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this;
     }
 
+    #[Serialize]
     public function getTexts(): AssetTextsAdmListDto
     {
         return $this->texts;
@@ -70,6 +71,19 @@ class AssetAdmListDto extends AbstractEntityDto
     public function setTexts(AssetTextsAdmListDto $texts): self
     {
         $this->texts = $texts;
+
+        return $this;
+    }
+
+    #[Serialize]
+    public function getAssetFileProperties(): AssetFilePropertiesAdmDto
+    {
+        return $this->assetFileProperties;
+    }
+
+    public function setAssetFileProperties(AssetFilePropertiesAdmDto $assetFileProperties): self
+    {
+        $this->assetFileProperties = $assetFileProperties;
 
         return $this;
     }

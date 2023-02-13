@@ -61,6 +61,8 @@ final class EpisodeRssImportManager
 
     private function replaceAssetAtEpisode(PodcastEpisode $podcastEpisode, Item $item): PodcastEpisode
     {
+        // todo IMPLEMENT REPLACE
+
         return $podcastEpisode;
     }
 
@@ -114,8 +116,8 @@ final class EpisodeRssImportManager
     {
         $episode->getAttributes()
             ->setRssId($item->getGuid())
-            ->setRssUrl($item->getEnclosure()->getUrl())
-        ;
+            ->setRssUrl($item->getEnclosure()->getUrl());
+        $episode->getFlags()->setFromRss(true);
     }
 
     private function downloadAsset(AssetLicence $licence, Item $item): AudioFile

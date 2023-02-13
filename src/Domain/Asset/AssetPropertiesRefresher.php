@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetPropertiesRefresher extends AbstractManager
 {
     public function __construct(
-        private readonly AssetTextsProcessor $assetTextsProcessor
+        private readonly AssetTextsProcessor $assetTextsProcessor,
+        private readonly DistributionRepository $distributionRepository,
     ) {
     }
 
@@ -30,8 +37,78 @@ class AssetPropertiesRefresher extends AbstractManager
         $this->syncMainFile($asset);
         $this->refreshMainFile($asset);
         $this->refreshStatus($asset);
+        $this->refreshAssetFileProperties($asset);
 
         return $asset;
+    }
+
+    public function refreshAssetFileProperties(Asset $asset): void
+    {
+        $this->refreshDistributionServices($asset);
+        $this->refreshSlotNames($asset);
+        $this->refreshFromRss($asset);
+        $this->refreshDimensionFields($asset);
+    }
+
+    private function refreshDistributionServices(Asset $asset): void
+    {
+        $distributions = $this->distributionRepository->findByAsset((string) $asset->getId());
+        $asset->getAssetFileProperties()->setDistributesInServices(
+            array_unique(
+                $distributions->map(
+                    fn (Distribution $distribution): string => $distribution->getDistributionService(),
+                )->toArray()
+            )
+        );
+    }
+
+    private function refreshSlotNames(Asset $asset): void
+    {
+        $asset->getAssetFileProperties()->setSlotNames(
+            array_unique(
+                $asset->getSlots()->map(
+                    fn (AssetSlot $slot): string => $slot->getName(),
+                )->toArray()
+            )
+        );
+    }
+
+    private function refreshFromRss(Asset $asset): void
+    {
+        $asset->getAssetFileProperties()->setFromRss(
+            App::ZERO < $asset->getEpisodes()->filter(
+                fn (PodcastEpisode $episode): bool => $episode->getFlags()->isFromRss()
+            )->count()
+        );
+    }
+
+    private function refreshDimensionFields(Asset $asset): void
+    {
+        $mainFile = $asset->getMainFile();
+        if (null === $mainFile) {
+            return;
+        }
+
+        $pixels = 0;
+        $shortestDimension = 0;
+
+        if ($mainFile instanceof ImageFile) {
+            $pixels = $mainFile->getImageAttributes()->getWidth() * $mainFile->getImageAttributes()->getHeight();
+            $shortestDimension = min(
+                $mainFile->getImageAttributes()->getWidth(),
+                $mainFile->getImageAttributes()->getHeight()
+            );
+        }
+        if ($mainFile instanceof VideoFile) {
+            $pixels = $mainFile->getAttributes()->getWidth() * $mainFile->getAttributes()->getHeight();
+            $shortestDimension = min(
+                $mainFile->getAttributes()->getWidth(),
+                $mainFile->getAttributes()->getHeight()
+            );
+        }
+
+        $asset->getAssetFileProperties()->setPixels($pixels);
+        $asset->getAssetFileProperties()->setShortestDimension($shortestDimension);
     }
 
     /**

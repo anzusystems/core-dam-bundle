@@ -72,6 +72,15 @@ class DistributionRepository extends AbstractAnzuRepository
         );
     }
 
+    public function findByAsset(string $assetId): Collection
+    {
+        return new ArrayCollection(
+            $this->findBy([
+                'assetId' => $assetId,
+            ])
+        );
+    }
+
     protected function getEntityClass(): string
     {
         return Distribution::class;
