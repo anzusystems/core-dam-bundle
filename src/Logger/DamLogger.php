@@ -17,6 +17,7 @@ final class DamLogger
     public const NAMESPACE_ELASTICSEARCH = 'ElasticSearch';
     public const NAMESPACE_EXIFTOOL = 'Exiftool';
     public const NAMESPACE_ASSET_CHANGE_STATE = 'AssetChangeState';
+    public const NAMESPACE_ASSET_PROPERTY_REFRESHER = 'AssetPropertyRefresher';
     public const NAMESPACE_ASSET_FILE_CHANGE_STATE = 'AssetFileChangeState';
     public const NAMESPACE_DISTRIBUTION = 'Distribution';
     public const NAMESPACE_ASSET_EXTERNAL_PROVIDER = 'AssetExternalProvider';

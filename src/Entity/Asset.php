@@ -12,6 +12,7 @@ use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileProperties;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterface;
@@ -64,6 +65,9 @@ class Asset implements
     #[ORM\Embedded(class: AssetTexts::class)]
     private AssetTexts $texts;
 
+    #[ORM\Embedded(class: AssetFileProperties::class)]
+    private AssetFileProperties $assetFileProperties;
+
     #[ORM\Embedded(class: AssetDates::class)]
     private AssetDates $dates;
 
@@ -100,6 +104,7 @@ class Asset implements
         $this->setEpisodes(new ArrayCollection());
         $this->setVideoEpisodes(new ArrayCollection());
         $this->setMainFile(null);
+        $this->setAssetFileProperties(new AssetFileProperties());
     }
 
     public function getMainFile(): ?AssetFile
@@ -324,6 +329,18 @@ class Asset implements
     public function setVideoEpisodes(Collection $videoEpisodes): self
     {
         $this->videoEpisodes = $videoEpisodes;
+
+        return $this;
+    }
+
+    public function getAssetFileProperties(): AssetFileProperties
+    {
+        return $this->assetFileProperties;
+    }
+
+    public function setAssetFileProperties(AssetFileProperties $assetFileProperties): self
+    {
+        $this->assetFileProperties = $assetFileProperties;
 
         return $this;
     }

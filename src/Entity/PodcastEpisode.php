@@ -12,6 +12,7 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
@@ -74,6 +75,9 @@ class PodcastEpisode implements
     #[Assert\Valid]
     private PodcastEpisodeAttributes $attributes;
 
+    #[ORM\Embedded(class: PodcastEpisodeFlags::class)]
+    private PodcastEpisodeFlags $flags;
+
     #[Serialize]
     #[ORM\Embedded(class: PodcastEpisodeTexts::class)]
     #[Assert\Valid]
@@ -86,6 +90,7 @@ class PodcastEpisode implements
         $this->setTexts(new PodcastEpisodeTexts());
         $this->setAsset(null);
         $this->setImagePreview(null);
+        $this->setFlags(new PodcastEpisodeFlags());
     }
 
     public function getImagePreview(): ?ImagePreview
@@ -168,6 +173,19 @@ class PodcastEpisode implements
     public function getExtSystem(): ExtSystem
     {
         return $this->getPodcast()->getLicence()->getExtSystem();
+    }
+
+    #[Serialize]
+    public function getFlags(): PodcastEpisodeFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(PodcastEpisodeFlags $flags): self
+    {
+        $this->flags = $flags;
+
+        return $this;
     }
 
     #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]

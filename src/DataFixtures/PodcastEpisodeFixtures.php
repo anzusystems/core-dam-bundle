@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
@@ -61,6 +62,9 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
         yield (new PodcastEpisode())
             ->setId(self::EPISODE_1_ID)
             ->setAsset($audio->getAsset())
+            ->setFlags(
+                (new PodcastEpisodeFlags())->setFromRss(true)
+            )
             ->setAttributes(
                 (new PodcastEpisodeAttributes())
                     ->setRssUrl('http://core.dam.localhost/rssurl')

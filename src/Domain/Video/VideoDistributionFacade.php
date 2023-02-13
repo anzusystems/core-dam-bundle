@@ -15,9 +15,11 @@ use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Distribution\DistributionImagePreviewAdmDto;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Doctrine\ORM\Exception\ORMException;
 use RuntimeException;
 use Throwable;
@@ -25,6 +27,7 @@ use Throwable;
 final class VideoDistributionFacade
 {
     use IndexManagerAwareTrait;
+    use MessageBusAwareTrait;
 
     public function __construct(
         private readonly ModuleProvider $moduleProvider,
@@ -54,9 +57,9 @@ final class VideoDistributionFacade
             $this->videoManager->beginTransaction();
             $imageFile = $this->imageDownloadFacade->download($video->getLicence(), $link);
             $this->videoManager->setImagePreview($video, $imageFile);
-            $this->assetManager->updateExisting($video->getAsset());
-            $this->indexManager->index($video->getAsset());
             $this->videoManager->commit();
+
+            $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $video->getAsset()->getId()));
 
             return $imageFile;
         } catch (Throwable $e) {

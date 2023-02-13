@@ -46,6 +46,11 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'modifiedAt' => $entity->getModifiedAt()->getTimestamp(),
             'createdAt' => $entity->getCreatedAt()->getTimestamp(),
             'licence' => $entity->getLicence()->getId(),
+            'distributed_in_services' => $entity->getAssetFileProperties()->getDistributesInServices(),
+            'slot_names' => $entity->getAssetFileProperties()->getSlotNames(),
+            'from_rss' => $entity->getAssetFileProperties()->isFromRss(),
+            'pixels' => $entity->getAssetFileProperties()->getPixels(),
+            'shortest_dimension' => $entity->getAssetFileProperties()->getShortestDimension(),
             ...$this->assetMetadataCustomData->buildFromEntity($entity),
             ...$this->getSpecificAssetFields($entity),
         ];

@@ -63,6 +63,15 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
         }
+        if (false === (null === $searchDto->isFromRss())) {
+            $filter[] = ['terms' => ['from_rss' => [$searchDto->isFromRss()]]];
+        }
+        if (false === empty($searchDto->getDistributedInServices())) {
+            $filter[] = ['terms' => ['distributed_in_services' => $searchDto->getDistributedInServices()]];
+        }
+        if (false === empty($searchDto->getSlotNames())) {
+            $filter[] = ['terms' => ['slot_names' => $searchDto->getSlotNames()]];
+        }
         if (false === (null === $searchDto->isGeneratedBySystem())) {
             $filter[] = ['terms' => ['generatedBySystem' => [$searchDto->isGeneratedBySystem()]]];
         }
@@ -103,6 +112,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'duration', $searchDto->getDurationFrom(), $searchDto->getDurationUntil());
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
+        $this->applyRangeFilter($filter, 'pixels', $searchDto->getPixelsFrom(), $searchDto->getPixelsUntil());
+        $this->applyRangeFilter($filter, 'shortest_dimension', $searchDto->getShortestDimensionFrom(), $searchDto->getShortestDimensionUntil());
 
         if (false === empty($searchDto->getLicences())) {
             $filter[] = ['terms' => ['licence' => array_map(
