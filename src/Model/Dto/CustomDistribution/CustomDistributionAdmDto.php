@@ -63,6 +63,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
             ->setDistributionData($distribution->getDistributionData())
             ->setBlockedBy($distribution->getBlockedBy())
             ->setDistributionService($distribution->getDistributionService())
+            ->setResourceName(Distribution::class)
         ;
     }
 

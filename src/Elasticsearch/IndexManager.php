@@ -62,11 +62,11 @@ final class IndexManager
                 'query' => [
                     'bool' => [
                         'must' => [
-                            'terms' => ['id' => $deleteIds]
-                        ]
+                            'terms' => ['id' => $deleteIds],
+                        ],
                     ],
-                ]
-            ]
+                ],
+            ],
         ]);
 
         if (count($deleteIds) === $response['deleted'] || empty($response['failures'])) {

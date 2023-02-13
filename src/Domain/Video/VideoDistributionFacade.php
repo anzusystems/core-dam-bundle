@@ -80,10 +80,9 @@ final class VideoDistributionFacade
         /** @var Distribution $distribution */
         foreach ($responseList->getData() as $distribution) {
             $module = $this->moduleProvider->providePreviewProvidableModule($distribution->getDistributionService());
-            if ($module) {
-                $previewList[] = DistributionImagePreviewAdmDto::getFromDistribution($distribution)->setUrl(
-                    $module->getPreviewLink($distribution)
-                );
+            $link = $module?->getPreviewLink($distribution);
+            if ($link) {
+                $previewList[] = DistributionImagePreviewAdmDto::getFromDistribution($distribution)->setUrl($link);
             }
         }
 

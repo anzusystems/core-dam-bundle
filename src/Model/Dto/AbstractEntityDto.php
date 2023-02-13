@@ -44,6 +44,13 @@ abstract class AbstractEntityDto
         return $entityDto;
     }
 
+    public function setResourceName(string $resourceName): static
+    {
+        $this->resourceName = $resourceName;
+
+        return $this;
+    }
+
     #[Serialize(serializedName: '_resourceName')]
     public function getResourceName(): string
     {

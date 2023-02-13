@@ -34,11 +34,4 @@ final class AssetFileDownloadAdmGetDto extends AbstractEntityDto
 
         return $this;
     }
-
-    public function setResourceName(string $resourceName): static
-    {
-        $this->resourceName = $resourceName;
-
-        return $this;
-    }
 }
