@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 
 /**
  * @extends AbstractAnzuRepository<Asset>
@@ -41,6 +42,27 @@ final class AssetRepository extends AbstractAnzuRepository
                 ->andWhere('IDENTITY(licence.extSystem) = :extSystemId')
                 ->setParameter('extSystemId', $extSystem->getId())
                 ->setParameter('ids', $ids)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    public function geAllByLicenceIds(array $licenceIds, int $limit, ?string $idFrom = null): Collection
+    {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->where('IDENTITY(entity.licence) in (:licenceIds)')
+            ->setParameter('licenceIds', $licenceIds);
+
+        if (is_string($idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder
+                ->setMaxResults($limit)
+                ->orderBy('entity.id', Criteria::ASC)
                 ->getQuery()
                 ->getResult()
         );

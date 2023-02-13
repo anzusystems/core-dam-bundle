@@ -21,8 +21,8 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractManager extends BaseAbstractManager
 {
+    protected EventDispatcherInterface $eventDispatcher;
     private CurrentAnzuUserProvider $currentUser;
-    private EventDispatcherInterface $eventDispatcher;
     private RequestStack $requestStack;
 
     #[Required]

@@ -6,19 +6,15 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
-use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoShowEpisodeFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoShowFixtures;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\VideoShowEpisodeUrl;
-use AnzuSystems\CoreDamBundle\Tests\Data\Model\VideoShowUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 

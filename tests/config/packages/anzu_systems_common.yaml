@@ -9,7 +9,7 @@ anzu_systems_common:
             - Doctrine\Bundle\DoctrineBundle\Command\DropDatabaseDoctrineCommand
             - Doctrine\Bundle\DoctrineBundle\Command\CreateDatabaseDoctrineCommand
             - Doctrine\Bundle\DoctrineBundle\Command\Proxy\UpdateSchemaDoctrineCommand
-            - AnzuSystems\CoreDamBundle\Command\GenerateFixturesCommand
+            - AnzuSystems\CommonBundle\Command\GenerateFixturesCommand
     health_check:
         enabled: true
         mysql_table_name: _doctrine_migration_versions

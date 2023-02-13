@@ -56,7 +56,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         /** @var ImageFile $image */
         foreach ($progressBar->iterate($this->getData()) as $image) {
             $image = $this->imageManager->create($image);
-            $this->addToRegistry($image, (int) $image->getId());
+            $this->addToRegistry($image, (string) $image->getId());
         }
     }
 

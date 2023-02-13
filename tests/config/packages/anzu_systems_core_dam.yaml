@@ -140,7 +140,7 @@ anzu_systems_core_dam:
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'
-        chunk_storage_name: 'cms.image'
+        chunk_storage_name: 'cms.chunk'
         size_limit: 104857600 # 100MB
         roi_width: 16
         roi_height: 9
@@ -168,7 +168,7 @@ anzu_systems_core_dam:
       video:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
-        storage_name: 'cms.video'
+        storage_name: 'cms.chunk'
         chunk_storage_name: 'cms.video'
         size_limit: 5242880000  # 5GB
         file_slots: ~
@@ -197,9 +197,23 @@ anzu_systems_core_dam:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.document'
-        chunk_storage_name: 'cms.document'
+        chunk_storage_name: 'cms.chunk'
         size_limit: 1048576000 # 1GB
         file_slots: ~
+    blog:
+      id: 4
+      image:
+        title: ['customData:title']
+        custom_metadata_pinned_amount: 3
+        storage_name: 'blog.image'
+        crop_storage_name: 'blog.crop'
+        chunk_storage_name: 'blog.chunk'
+        size_limit: 20971520  # 20MB
+        roi_width: 16
+        roi_height: 9
+        file_slots:
+          default: default
+          slots: [ default, test ]
   domains:
     admin:
       domain: '%env(resolve:string:DOMAIN_ADMIN_WEB)%'
@@ -230,3 +244,16 @@ anzu_systems_core_dam:
       adapter: 'local'
       options:
         directory: '%kernel.project_dir%/var/mnt/data/crop'
+    blog.image:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/image-blog'
+    blog.chunk:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/chunk-blog'
+    blog.crop:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/crop-blog'
+

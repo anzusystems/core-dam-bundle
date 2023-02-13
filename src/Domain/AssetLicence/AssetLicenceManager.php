@@ -36,4 +36,10 @@ final class AssetLicenceManager extends AbstractManager
 
         return $assetLicence;
     }
+
+    public function delete(AssetLicence $assetLicence, bool $flush = true): void
+    {
+        $this->entityManager->remove($assetLicence);
+        $this->flush($flush);
+    }
 }

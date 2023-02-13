@@ -17,6 +17,8 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use Doctrine\Common\Collections\ReadableCollection;
+use League\Flysystem\FilesystemException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
@@ -101,35 +103,71 @@ class AssetFacade
     {
         try {
             $this->assetManager->beginTransaction();
+
             $deleteId = (string) $asset->getId();
-            $deleteBy = $asset->getNotifyTo();
 
-            foreach ($asset->getSlots() as $slot) {
-                $assetFile = $slot->getAssetFile();
-                $assetFile->setAsset(new Asset());
-                $this->assetFileDeleteEventDispatcher->addEvent(
-                    (string) $assetFile->getId(),
-                    $deleteId,
-                    $assetFile,
-                    $asset->getAttributes()->getAssetType(),
-                    $deleteBy,
-                );
-                $manager = $this->assetFileManagerProvider->getManager($assetFile);
-                $manager->delete($assetFile, false);
-            }
-
-            $this->assetManager->delete($asset);
+            $this->deleteWithFiles($asset);
             $this->indexManager->delete($asset, $deleteId);
-            $this->fileStash->emptyAll();
 
             $this->assetManager->commit();
 
             $this->assetFileDeleteEventDispatcher->dispatchAll();
-            $this->assetEventDispatcher->dispatchAssetDelete($deleteId, $asset, $deleteBy);
+            $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $exception) {
             $this->assetManager->rollback();
 
             throw new RuntimeException('asset_delete_failed', 0, $exception);
         }
+    }
+
+    /**
+     * @param ReadableCollection<int, Asset> $assets
+     *
+     * @throws FilesystemException
+     */
+    public function deleteBulk(ReadableCollection $assets): int
+    {
+        if ($assets->isEmpty()) {
+            return 0;
+        }
+        $deletedIds = [];
+        foreach ($assets as $asset) {
+            $deletedIds[] = (string) $asset->getId();
+            $this->deleteWithFiles($asset);
+        }
+        /** @var Asset $entity */
+        $entity = $assets->first();
+        $this->indexManager->deleteBulk($entity, $deletedIds);
+        $this->assetFileDeleteEventDispatcher->dispatchAll();
+        $this->assetEventDispatcher->dispatchAll();
+
+        return $assets->count();
+    }
+
+    /**
+     * @throws FilesystemException
+     */
+    private function deleteWithFiles(Asset $asset): void
+    {
+        $deleteId = (string) $asset->getId();
+        $deleteBy = $asset->getNotifyTo() ?: $asset->getCreatedBy();
+
+        foreach ($asset->getSlots() as $slot) {
+            $assetFile = $slot->getAssetFile();
+            $assetFile->setAsset(new Asset());
+            $this->assetFileDeleteEventDispatcher->addEvent(
+                (string) $assetFile->getId(),
+                $deleteId,
+                $assetFile,
+                $asset->getAttributes()->getAssetType(),
+                $deleteBy,
+            );
+            $manager = $this->assetFileManagerProvider->getManager($assetFile);
+            $manager->delete($assetFile, false);
+        }
+        $this->assetEventDispatcher->addEvent($deleteId, $asset, $deleteBy);
+
+        $this->assetManager->delete($asset);
+        $this->fileStash->emptyAll();
     }
 }
