@@ -12,6 +12,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
+/**
+ * @extends AssetFileFactory<ImageFile>
+ */
 final class ImageFactory extends AssetFileFactory
 {
     /**

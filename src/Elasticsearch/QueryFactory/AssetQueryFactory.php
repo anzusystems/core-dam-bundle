@@ -117,7 +117,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         if (false === empty($searchDto->getLicences())) {
             $filter[] = ['terms' => ['licence' => array_map(
-                fn (AssetLicence $assetLicence): int => $assetLicence->getId(),
+                fn (AssetLicence $assetLicence): int => (int) $assetLicence->getId(),
                 $searchDto->getLicences()
             )]];
         }

@@ -67,7 +67,7 @@ class ImageLinksHandler extends AbstractHandler
         }
 
         return [
-            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[0]),
+            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[array_key_first($sizeList)]),
         ];
     }
 

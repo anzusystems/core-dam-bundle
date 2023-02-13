@@ -25,7 +25,10 @@ class VideoFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(VideoFile $videoFile): static
     {
-        return parent::getBaseInstance($videoFile)
+        /** @psalm-var VideoFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($videoFile);
+
+        return $parent
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($videoFile->getAssetAttributes()))
             ->setVideo($videoFile);
     }
@@ -41,7 +44,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->fileAttributes;
     }
 
-    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): self
+    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): static
     {
         $this->fileAttributes = $fileAttributes;
 
@@ -53,7 +56,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->video;
     }
 
-    public function setVideo(VideoFile $video): self
+    public function setVideo(VideoFile $video): static
     {
         $this->video = $video;
 

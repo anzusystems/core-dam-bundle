@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -84,11 +85,13 @@ final class VideoFixtures extends AbstractAssetFileFixtures
             'headline' => 'Custom headline title',
             'description' => 'Custom video description',
         ]);
-        $asset->setKeywords(new ArrayCollection([
+        /** @var ArrayCollection<int, Keyword> $keywords */
+        $keywords = new ArrayCollection([
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_1),
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_2),
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_3),
-        ]));
+        ]);
+        $asset->setKeywords($keywords);
 
         $asset->setAuthors(new ArrayCollection([
             $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_1),

@@ -20,6 +20,8 @@ abstract class AbstractFilesystem extends BaseFilesystem
     }
 
     /**
+     * @psalm-suppress ParamNameMismatch
+     *
      * @inheritdoc
      */
     public function readStream(string $location)

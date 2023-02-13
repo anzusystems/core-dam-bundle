@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\VideoShow\VideoShowManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowTexts;
@@ -13,7 +12,7 @@ use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * @extends AbstractFixtures<VideoShow>
+ * @extends AbstractAssetFileFixtures<VideoShow>
  */
 final class VideoShowFixtures extends AbstractAssetFileFixtures
 {

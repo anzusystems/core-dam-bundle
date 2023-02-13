@@ -26,6 +26,7 @@ final class ExtSystemConfiguration
 
     public static function getFromArrayConfiguration(array $config): self
     {
+        /** @var ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration> $assetExternalProviders */
         $assetExternalProviders = new ArrayCollection();
         foreach ($config[self::ASSET_EXTERNAL_PROVIDERS_KEY] ?? [] as $providerConfig) {
             $provider = ExtSystemAssetExternalProviderConfiguration::getFromArrayConfiguration($providerConfig);
@@ -75,6 +76,9 @@ final class ExtSystemConfiguration
         return $this->document;
     }
 
+    /**
+     * @throws AnzuException
+     */
     public function getByAssetType(AssetType $type): ExtSystemAssetTypeConfiguration
     {
         return match ($type) {
@@ -82,7 +86,7 @@ final class ExtSystemConfiguration
             AssetType::Video => $this->getVideo(),
             AssetType::Image => $this->getImage(),
             AssetType::Document => $this->getDocument(),
-            default => new AnzuException(sprintf('Unrecognized asset type "%s".', $type->toString())),
+            default => throw new AnzuException(sprintf('Unrecognized asset type "%s".', $type->toString())),
         };
     }
 }

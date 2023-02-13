@@ -26,6 +26,8 @@ use Doctrine\ORM\Query\Expr;
 class DistributionRepository extends AbstractAnzuRepository
 {
     /**
+     * @return ApiResponseList<Distribution>
+     *
      * @throws ORMException
      */
     public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList

@@ -18,7 +18,10 @@ class AssetSlotAdmListDto extends AbstractEntityDto
 
     public static function getInstance(AssetSlot $assetSlot): static
     {
-        return self::getBaseInstance($assetSlot)
+        /** @psalm-var AssetSlotAdmListDto $parent */
+        $parent = self::getBaseInstance($assetSlot);
+
+        return $parent
             ->setAssetSlot($assetSlot);
     }
 

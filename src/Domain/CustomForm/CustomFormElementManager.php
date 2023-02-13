@@ -20,19 +20,26 @@ final class CustomFormElementManager extends AbstractManager
 
     public function colUpdateElements(CustomForm $form, CustomForm $newForm): void
     {
+        /** @psalm-suppress InvalidArgument */
         $this->colUpdate(
             oldCollection: $form->getElements(),
             newCollection: $newForm->getElements(),
-            updateElementFn: function (CustomFormElement $old, CustomFormElement $new) {
+            updateElementFn: function (CustomFormElement $old, CustomFormElement $new): bool {
                 $this->updateElement($old, $new);
+
+                return true;
             },
-            addElementFn: function (Collection $oldCollection, CustomFormElement $add) use ($form) {
+            addElementFn: function (Collection $oldCollection, CustomFormElement $add) use ($form): bool {
                 $this->createElement($form, $add);
                 $oldCollection->add($add);
+
+                return true;
             },
-            removeElementFn: function (Collection $oldCollection, CustomFormElement $del) {
+            removeElementFn: function (Collection $oldCollection, CustomFormElement $del): bool {
                 $oldCollection->removeElement($del);
                 $this->entityManager->remove($del);
+
+                return true;
             }
         );
     }

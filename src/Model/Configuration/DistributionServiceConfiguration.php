@@ -35,9 +35,11 @@ class DistributionServiceConfiguration
     public static function getFromArrayConfiguration(array $config): static
     {
         return new static(
-            array_map(
-                fn (string $status): DistributionProcessStatus => DistributionProcessStatus::tryFrom($status),
-                $config[self::ALLOWED_REDISTRIBUTE_STATUSES] ?? []
+            array_filter(
+                array_map(
+                    fn (string $status): ?DistributionProcessStatus => DistributionProcessStatus::tryFrom($status),
+                    $config[self::ALLOWED_REDISTRIBUTE_STATUSES] ?? []
+                )
             ),
             $config[self::TYPE_KEY] ?? '',
             $config[self::MODULE_KEY] ?? '',

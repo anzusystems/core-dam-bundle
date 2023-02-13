@@ -40,6 +40,8 @@ final class UnsplashAssetExternalProvider implements AssetExternalProviderInterf
     }
 
     /**
+     * @return ApiInfiniteResponseList<AssetExternalProviderDto>
+     *
      * @throws CacheException
      * @throws SerializerException
      * @throws InvalidArgumentException
@@ -47,13 +49,18 @@ final class UnsplashAssetExternalProvider implements AssetExternalProviderInterf
     public function search(AssetExternalProviderApiParams $apiParams): ApiInfiniteResponseList
     {
         $list = $this->unsplashClient->searchPhotos($this->configuration, $apiParams);
+        /** @var ApiInfiniteResponseList<AssetExternalProviderDto> $response */
+        $response = new ApiInfiniteResponseList();
 
-        return $list
+        return $response
             ->setData(array_map($this->mapUnsplashImageDtoToListDto(...), $list->getData()))
+            ->setHasNextPage($list->isHasNextPage())
         ;
     }
 
     /**
+     * @return ApiResponseList<AssetExternalProviderDto>
+     *
      * @throws CacheException
      * @throws SerializerException
      * @throws InvalidArgumentException

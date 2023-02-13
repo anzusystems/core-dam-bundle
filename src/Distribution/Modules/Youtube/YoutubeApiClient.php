@@ -159,6 +159,7 @@ final class YoutubeApiClient
                     'notifySubscribers' => $distribution->getFlags()->isNotifySubscribers(),
                 ]
             );
+            /** @psalm-suppress NullArgument */
             $media = new Google_Http_MediaFileUpload(
                 client: $client,
                 request: $insertRequest,

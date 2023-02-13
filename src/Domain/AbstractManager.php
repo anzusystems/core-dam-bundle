@@ -50,7 +50,9 @@ abstract class AbstractManager extends BaseAbstractManager
     }
 
     /**
-     * @param Collection<int, PositionableInterface> $coll
+     * @template T of PositionableInterface
+     *
+     * @param Collection<int, T> $coll
      *
      * @throws Exception
      */

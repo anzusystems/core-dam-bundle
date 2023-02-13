@@ -11,6 +11,9 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
 
+/**
+ * @extends AssetFileFactory<DocumentFile>
+ */
 final class DocumentFactory extends AssetFileFactory
 {
     /**

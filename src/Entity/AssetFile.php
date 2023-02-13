@@ -68,7 +68,7 @@ abstract class AssetFile implements
         $this->setFlags(new AssetFileFlags());
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->getId();
     }

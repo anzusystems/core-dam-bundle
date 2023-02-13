@@ -21,7 +21,7 @@ trait UserTrackingDtoTrait
         return $this->createdBy;
     }
 
-    public function setCreatedBy(AnzuUser|DamUser $createdBy): self
+    public function setCreatedBy(AnzuUser|DamUser $createdBy): static
     {
         $this->createdBy = $createdBy;
 
@@ -34,7 +34,7 @@ trait UserTrackingDtoTrait
         return $this->modifiedBy;
     }
 
-    public function setModifiedBy(AnzuUser|DamUser $modifiedBy): self
+    public function setModifiedBy(AnzuUser|DamUser $modifiedBy): static
     {
         $this->modifiedBy = $modifiedBy;
 

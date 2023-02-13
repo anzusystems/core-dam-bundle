@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<psalm
+    errorLevel="2"
+    resolveFromConfigFile="true"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns="https://getpsalm.org/schema/config"
+    xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    usePhpDocMethodsWithoutMagicCall="true"
+    memoizeMethodCallResults="true"
+    findUnusedBaselineEntry="false"
+    findUnusedCode="false"
+    reportInfo="false"
+>
+    <projectFiles>
+        <directory name="src"/>
+        <ignoreFiles>
+            <directory name="vendor"/>
+            <file name="src/DependencyInjection/Configuration.php"/>
+        </ignoreFiles>
+    </projectFiles>
+    <issueHandlers>
+        <MoreSpecificImplementedParamType errorLevel="suppress"/>
+        <UnnecessaryVarAnnotation errorLevel="suppress"/>
+        <ImplicitToStringCast errorLevel="suppress"/>
+        <RedundantCast errorLevel="suppress"/>
+        <MoreSpecificReturnType errorLevel="suppress"/>
+        <LessSpecificReturnStatement errorLevel="suppress"/>
+        <MissingConstructor errorLevel="suppress"/>
+        <PropertyNotSetInConstructor errorLevel="suppress"/>
+        <UnsafeInstantiation errorLevel="suppress"/>
+
+        <MethodSignatureMustProvideReturnType>
+            <errorLevel type="suppress">
+                <file name="src/Controller/Api/AbstractApiController.php"/>
+            </errorLevel>
+        </MethodSignatureMustProvideReturnType>
+    </issueHandlers>
+    <plugins>
+        <pluginClass class="Weirdan\DoctrinePsalmPlugin\Plugin"/>
+        <pluginClass class="Psalm\SymfonyPsalmPlugin\Plugin">
+        </pluginClass>
+    </plugins>
+</psalm>

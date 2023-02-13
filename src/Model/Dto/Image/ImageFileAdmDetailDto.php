@@ -25,7 +25,10 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
 
     public static function getInstance(ImageFile $image): static
     {
-        return parent::getInstance($image)
+        /** @psalm-var ImageFileAdmDetailDto $parent */
+        $parent = parent::getInstance($image);
+
+        return $parent
             ->setImageAttributes(ImageAttributesAdmDto::getInstance($image->getImageAttributes()))
             ->setMetadata(AssetFileMetadataAdmDetailDto::getInstance($image->getMetadata()))
             ->setAssetMetadata(AssetMetadataAdmDetailDto::getInstance($image->getAsset()->getMetadata()))

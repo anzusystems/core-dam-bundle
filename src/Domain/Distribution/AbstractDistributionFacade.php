@@ -18,9 +18,9 @@ abstract class AbstractDistributionFacade
 {
     use ValidatorAwareTrait;
 
-    protected readonly DistributionBroker $distributionBroker;
-    protected readonly DistributionConfigurationProvider $distributionConfigurationProvider;
-    protected readonly DistributionManagerProvider $distributionManagerProvider;
+    protected DistributionBroker $distributionBroker;
+    protected DistributionConfigurationProvider $distributionConfigurationProvider;
+    protected DistributionManagerProvider $distributionManagerProvider;
 
     #[Required]
     public function setDistributionConfigurationProvider(DistributionConfigurationProvider $distributionConfigurationProvider): void

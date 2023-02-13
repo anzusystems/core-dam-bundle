@@ -33,7 +33,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
 /**
- * @template-covariant T of AssetFile
+ * @template T of AssetFile
  */
 abstract class AssetFileFacade
 {
@@ -229,6 +229,9 @@ abstract class AssetFileFacade
         }
     }
 
+    /**
+     * @param T $assetFile
+     */
     public function delete(AssetFile $assetFile): void
     {
         try {
@@ -332,8 +335,14 @@ abstract class AssetFileFacade
         throw new ForbiddenOperationException(ForbiddenOperationException::FILE_UPLOAD_TOO_MANY_FILES);
     }
 
+    /**
+     * @return AssetFileManager<T>
+     */
     abstract protected function getManager(): AssetFileManager;
 
+    /**
+     * @return AssetFileFactory<T>
+     */
     abstract protected function getFactory(): AssetFileFactory;
 
     abstract protected function getRepository(): AbstractAssetFileRepository;

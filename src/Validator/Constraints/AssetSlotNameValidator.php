@@ -16,9 +16,6 @@ final class AssetSlotNameValidator extends ConstraintValidator
 {
     use ExtSystemConfigurationProviderAwareTrait;
 
-    /**
-     * @param AssetSlotMinimalAdmDto $value
-     */
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof AssetSlotMinimalAdmDto)) {

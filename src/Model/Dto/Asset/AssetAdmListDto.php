@@ -24,7 +24,10 @@ class AssetAdmListDto extends AbstractEntityDto
 
     public static function getInstance(Asset $asset): static
     {
-        return parent::getBaseInstance($asset)
+        /** @psalm-var AssetAdmListDto $parent */
+        $parent = parent::getBaseInstance($asset);
+
+        return $parent
             ->setTexts(AssetTextsAdmListDto::getInstance($asset->getTexts()))
             ->setAttributes(AssetAttributesAdmDto::getInstance($asset->getAttributes()))
             ->setAssetFileProperties(AssetFilePropertiesAdmDto::getInstance($asset->getAssetFileProperties()))
@@ -36,7 +39,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->asset;
     }
 
-    public function setAsset(Asset $asset): self
+    public function setAsset(Asset $asset): static
     {
         $this->asset = $asset;
 
@@ -55,7 +58,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->attributes;
     }
 
-    public function setAttributes(AssetAttributesAdmDto $attributes): self
+    public function setAttributes(AssetAttributesAdmDto $attributes): static
     {
         $this->attributes = $attributes;
 
@@ -68,7 +71,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->texts;
     }
 
-    public function setTexts(AssetTextsAdmListDto $texts): self
+    public function setTexts(AssetTextsAdmListDto $texts): static
     {
         $this->texts = $texts;
 
@@ -81,7 +84,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->assetFileProperties;
     }
 
-    public function setAssetFileProperties(AssetFilePropertiesAdmDto $assetFileProperties): self
+    public function setAssetFileProperties(AssetFilePropertiesAdmDto $assetFileProperties): static
     {
         $this->assetFileProperties = $assetFileProperties;
 

@@ -30,7 +30,10 @@ class RegionOfInterestAdmListDto extends AbstractEntityDto
 
     public static function getInstance(RegionOfInterest $regionOfInterest): static
     {
-        return parent::getBaseInstance($regionOfInterest)
+        /** @psalm-var RegionOfInterestAdmListDto $parent */
+        $parent = parent::getBaseInstance($regionOfInterest);
+
+        return $parent
             ->setPosition($regionOfInterest->getPosition())
             ->setImage($regionOfInterest->getImage())
             ->setTitle($regionOfInterest->getTitle());

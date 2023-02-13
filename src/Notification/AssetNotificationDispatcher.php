@@ -20,7 +20,7 @@ final class AssetNotificationDispatcher extends AbstractNotificationDispatcher
     public function notifyAssetDeleted(AssetDeleteEvent $event): void
     {
         $this->notify(
-            [$event->getDeletedBy()->getId()],
+            [(int) $event->getDeletedBy()->getId()],
             self::EVENT_ASSET_DELETED_NAME,
             AssetAdmNotificationDecorator::getInstance($event->getDeleteId())
         );

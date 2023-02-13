@@ -12,6 +12,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
+/**
+ * @extends AssetFileFactory<AudioFile>
+ */
 final class AudioFactory extends AssetFileFactory
 {
     /**

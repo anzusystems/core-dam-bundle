@@ -106,6 +106,11 @@ abstract class DamUser extends AnzuUser
         return $this->adminToExtSystems;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, ExtSystem> $adminToExtSystems
+     */
     public function setAdminToExtSystems(Collection $adminToExtSystems): static
     {
         $this->adminToExtSystems = $adminToExtSystems;
@@ -121,6 +126,11 @@ abstract class DamUser extends AnzuUser
         return $this->userToExtSystems;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, ExtSystem> $userToExtSystems
+     */
     public function setUserToExtSystems(Collection $userToExtSystems): self
     {
         $this->userToExtSystems = $userToExtSystems;

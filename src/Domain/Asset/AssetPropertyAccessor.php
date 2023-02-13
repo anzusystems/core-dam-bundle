@@ -91,7 +91,7 @@ final class AssetPropertyAccessor
 
         $getter = 'get' . ucfirst($key);
         if (method_exists($asset->getMainFile(), $getter)) {
-            return (string) $assetFile->{$getter}();
+            return (string) $asset->getMainFile()->{$getter}();
         }
 
         return '';

@@ -22,7 +22,10 @@ class AudioFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(AudioFile $audioFile): static
     {
-        return parent::getBaseInstance($audioFile)
+        /** @psalm-var AudioFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($audioFile);
+
+        return $parent
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($audioFile->getAssetAttributes()))
             ->setAudio($audioFile);
     }

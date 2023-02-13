@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomDistributionFilter;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use Doctrine\ORM\Exception\ORMException;
@@ -23,7 +24,7 @@ final class DistributionRepositoryDecorator
     ) {
     }
 
-    public function decorate(Distribution $distribution): mixed
+    public function decorate(Distribution $distribution): Distribution|CustomDistributionAdmDto
     {
         $adapter = $this->moduleProvider->provideAdapter($distribution->getDistributionService());
         if ($adapter) {
@@ -34,6 +35,8 @@ final class DistributionRepositoryDecorator
     }
 
     /**
+     * @return ApiResponseList<Distribution|CustomDistributionAdmDto>
+     *
      * @throws ORMException
      */
     public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList
@@ -46,6 +49,8 @@ final class DistributionRepositoryDecorator
     }
 
     /**
+     * @return ApiResponseList<Distribution|CustomDistributionAdmDto>
+     *
      * @throws ORMException
      */
     public function findByApiParamsByAsset(ApiParams $apiParams, Asset $asset): ApiResponseList
@@ -61,12 +66,12 @@ final class DistributionRepositoryDecorator
     }
 
     /**
-     * @param array<int, Distribution> $data
+     * @param list<Distribution> $data
      */
     private function mapToDecorators(array $data): array
     {
         return array_map(
-            function (Distribution $distribution): mixed {
+            function (Distribution $distribution): Distribution|CustomDistributionAdmDto {
                 return $this->decorate($distribution);
             },
             $data

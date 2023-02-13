@@ -70,6 +70,7 @@ final class VispImageManipulator extends AbstractImageManipulator
             [$v, $x, $y] = $hist->maxpos();
 
             $pixel = $hist->getpoint($x, $y);
+            /** @var int $z */
             $z = array_search($v, $pixel, true);
 
             $r = ($x + 0.5) * self::BIN_SIZE / self::N_BINS;

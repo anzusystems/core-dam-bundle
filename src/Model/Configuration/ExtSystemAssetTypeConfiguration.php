@@ -122,7 +122,7 @@ class ExtSystemAssetTypeConfiguration
     }
 
     /**
-     * @return array<int, TextsWriterConfiguration>
+     * @return array<string, TextsWriterConfiguration>
      */
     public function getAssetExternalProvidersMap(): array
     {

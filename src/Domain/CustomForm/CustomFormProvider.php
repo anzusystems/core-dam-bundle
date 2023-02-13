@@ -30,7 +30,7 @@ final class CustomFormProvider extends AbstractManager
     {
         return $this->customFormElementRepository->findAllAssetSearchableElementsByForms(
             $this->assetCustomFormRepository->findAllByExtSystemSlug($slug)->map(
-                fn (CustomForm $customForm): string => $customForm->getId()
+                fn (CustomForm $customForm): string => (string) $customForm->getId()
             )->getValues()
         );
     }

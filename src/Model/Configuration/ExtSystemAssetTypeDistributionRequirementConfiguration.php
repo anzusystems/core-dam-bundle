@@ -45,7 +45,7 @@ final class ExtSystemAssetTypeDistributionRequirementConfiguration
     }
 
     /**
-     * @return array<int, TextsWriterConfiguration>
+     * @return array<string, TextsWriterConfiguration>
      */
     public function getMetadataMap(): array
     {
