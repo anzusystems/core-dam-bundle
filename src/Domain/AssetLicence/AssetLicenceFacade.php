@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetLicence;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use Doctrine\Common\Collections\ReadableCollection;
 
 final class AssetLicenceFacade
 {
@@ -35,5 +36,13 @@ final class AssetLicenceFacade
         $this->validator->validate($newAssetLicence, $assetLicence);
 
         return $this->assetLicenceManager->update($assetLicence, $newAssetLicence);
+    }
+
+    public function deleteBulk(ReadableCollection $licences): void
+    {
+        foreach ($licences as $licence) {
+            $this->assetLicenceManager->delete($licence, false);
+        }
+        $this->assetLicenceManager->flush();
     }
 }

@@ -50,4 +50,29 @@ final class IndexManager
 
         throw new RuntimeException('elastic_delete_failed');
     }
+
+    /**
+     * @param list<string>|list<int> $deleteIds
+     */
+    public function deleteBulk(ExtSystemIndexableInterface $entity, array $deleteIds): bool
+    {
+        $response = $this->client->deleteByQuery([
+            'index' => $this->indexSettings->getFullIndexNameByEntity($entity),
+            'body' => [
+                'query' => [
+                    'bool' => [
+                        'must' => [
+                            'terms' => ['id' => $deleteIds]
+                        ]
+                    ],
+                ]
+            ]
+        ]);
+
+        if (count($deleteIds) === $response['deleted'] || empty($response['failures'])) {
+            return true;
+        }
+
+        throw new RuntimeException('elastic_delete_bulk_failed');
+    }
 }

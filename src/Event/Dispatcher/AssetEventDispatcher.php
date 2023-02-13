@@ -13,11 +13,26 @@ final class AssetEventDispatcher
 {
     public function __construct(
         private readonly EventDispatcherInterface $dispatcher,
+        private $eventStack = [],
     ) {
+    }
+
+    public function addEvent(string $deleteId, Asset $asset, DamUser $deletedBy): void
+    {
+        $this->eventStack[] = new AssetDeleteEvent($deleteId, $asset, $deletedBy);
     }
 
     public function dispatchAssetDelete(string $deleteId, Asset $asset, DamUser $deletedBy): void
     {
         $this->dispatcher->dispatch(new AssetDeleteEvent($deleteId, $asset, $deletedBy));
+    }
+
+    public function dispatchAll(): void
+    {
+        foreach ($this->eventStack as $event) {
+            $this->dispatcher->dispatch($event);
+        }
+
+        $this->eventStack = [];
     }
 }

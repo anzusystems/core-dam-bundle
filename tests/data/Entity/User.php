@@ -13,6 +13,8 @@ class User extends DamUser
     public const ID_ADMIN = 1;
     public const ID_ANONYMOUS = 2;
     public const ID_CONSOLE = 3;
+    public const ID_BLOG_USER = 4;
+    public const ID_CMS_USER = 5;
 
     public function __construct()
     {

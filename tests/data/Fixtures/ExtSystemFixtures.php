@@ -18,6 +18,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 final class ExtSystemFixtures extends AbstractFixtures
 {
     public const ID_CMS = 1;
+    public const ID_BLOG = 4;
 
     public function __construct(
         private readonly ExtSystemManager $extSystemManager,
@@ -57,6 +58,11 @@ final class ExtSystemFixtures extends AbstractFixtures
             ->setId(self::ID_CMS)
             ->setName('CMS system')
             ->setSlug('cms')
+        ;
+        yield (new ExtSystem())
+            ->setId(self::ID_BLOG)
+            ->setName('Blog system')
+            ->setSlug('blog')
         ;
     }
 }
