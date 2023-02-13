@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use League\Flysystem\FilesystemException;
 
 final class AudioPublicManager
@@ -17,7 +16,6 @@ final class AudioPublicManager
     use IndexManagerAwareTrait;
 
     public function __construct(
-        private readonly EntityValidator $validator,
         private readonly AudioManager $audioManager,
         private readonly FileSystemProvider $fileSystemProvider,
     ) {

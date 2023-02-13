@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\CustomDistribution;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\DistributionAdapterInterface;
 use AnzuSystems\CoreDamBundle\Distribution\DistributionBroker;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
@@ -16,17 +17,17 @@ use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CustomDistributionFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
         private readonly DistributionBodyBuilder $distributionBodyBuilder,
         private readonly ModuleProvider $moduleProvider,
-        private readonly EntityValidator $entityValidator,
         private readonly DistributionBroker $distributionBroker,
         private readonly DistributionManagerProvider $managerProvider,
         private readonly DistributionConfigurationProvider $distributionConfigurationProvider,
@@ -62,7 +63,7 @@ final class CustomDistributionFacade
      */
     public function distribute(AssetFile $assetFile, CustomDistributionAdmDto $distributionDto): Distribution
     {
-        $this->entityValidator->validateDto($distributionDto);
+        $this->validator->validate($distributionDto);
         $distribution = $this->getAdapter($distributionDto)->createDistributionEntity($assetFile, $distributionDto);
         $this->managerProvider->get($distribution::class)->create($distribution);
 

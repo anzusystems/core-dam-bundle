@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Chunk;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileCounter;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileMetadataProcessMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Psr\Cache\InvalidArgumentException;
 use RuntimeException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -18,9 +18,10 @@ use Throwable;
 
 final class ChunkFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
         private readonly ChunkManager $chunkManager,
-        private readonly EntityValidator $entityValidator,
         private readonly ChunkFactory $chunkFactory,
         private readonly ChunkFileManager $chunkFileManager,
         private readonly MessageBusInterface $messageBus,
@@ -35,7 +36,7 @@ final class ChunkFacade
     public function create(ChunkAdmCreateDto $createDto, AssetFile $assetFile): Chunk
     {
         $createDto->setAssetFile($assetFile);
-        $this->entityValidator->validateDto($createDto);
+        $this->validator->validate($createDto);
         $chunk = $this->chunkFactory->createFromAdmDto($createDto);
         $this->chunkManager->setAssetFile($chunk, $assetFile);
         $this->chunkManager->setNotifyTo($assetFile);

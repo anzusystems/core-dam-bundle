@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -14,7 +15,6 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
-use AnzuSystems\CoreDamBundle\Traits\EntityValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -24,7 +24,7 @@ class AssetFacade
 {
     use FileStashAwareTrait;
     use IndexManagerAwareTrait;
-    use EntityValidatorAwareTrait;
+    use ValidatorAwareTrait;
 
     public function __construct(
         private readonly AssetManager $assetManager,
@@ -42,7 +42,7 @@ class AssetFacade
      */
     public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto): Asset
     {
-        $this->entityValidator->validateDto($newAssetDto, $asset);
+        $this->validator->validate($newAssetDto, $asset);
 
         try {
             $this->assetManager->beginTransaction();
@@ -64,7 +64,7 @@ class AssetFacade
      */
     public function create(AssetAdmCreateDto $assetAdmCreateDto, AssetLicence $assetLicence): Asset
     {
-        $this->entityValidator->validateDto($assetAdmCreateDto);
+        $this->validator->validate($assetAdmCreateDto);
         $asset = $this->assetFactory->createFromAdmDto($assetAdmCreateDto, $assetLicence);
         $asset->getAssetFlags()->setAutoDeleteUnprocessed(false);
 

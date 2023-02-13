@@ -12,6 +12,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
@@ -52,7 +53,7 @@ final class PermissionGroupController extends AbstractApiController
      * @throws ORMException
      */
     #[Route('/permission-group', 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponse([PermissionGroup::class])]
+    #[OAResponseList(PermissionGroup::class)]
     public function getList(ApiParams $apiParams): JsonResponse
     {
         return $this->okResponse(

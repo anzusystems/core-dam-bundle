@@ -10,12 +10,11 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\DistributionCategoryOptionRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\DBAL\Types\Types;
@@ -24,7 +23,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DistributionCategoryOptionRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_select_name_value', fields: ['select', 'name', 'value'])]
-#[AppAssert\UniqueEntity(fields: ['select', 'name', 'value'])]
+#[BaseAppAssert\UniqueEntity(fields: ['select', 'name', 'value'])]
 class DistributionCategoryOption implements TimeTrackingInterface, UserTrackingInterface, UuidIdentifiableInterface, PositionableInterface
 {
     use UuidIdentityTrait;

@@ -10,6 +10,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFacade;
@@ -61,7 +62,7 @@ final class AssetCustomFormController extends AbstractApiController
      * @throws ORMException
      */
     #[Route(path: '/ext-system/{extSystem}/type/{assetType}/element', name: 'get_elements_by_ext_system_and_type', methods: [Request::METHOD_GET])]
-    #[OAResponse([AssetCustomForm::class])]
+    #[OAResponseList(AssetCustomForm::class)]
     public function getElements(ExtSystem $extSystem, AssetType $assetType, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW);
@@ -82,7 +83,7 @@ final class AssetCustomFormController extends AbstractApiController
      * @throws ORMException
      */
     #[Route(path: '/distribution-service/{distributionService}/element', name: 'get_elements_by_distribution', methods: [Request::METHOD_GET])]
-    #[OAResponse([AssetCustomForm::class])]
+    #[OAResponseList(AssetCustomForm::class)]
     public function getDistributionElements(string $distributionService, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);

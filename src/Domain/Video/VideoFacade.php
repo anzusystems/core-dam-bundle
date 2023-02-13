@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
@@ -32,7 +32,7 @@ final class VideoFacade extends AssetFileFacade
      */
     public function update(VideoFile $video, VideoAdmUpdateDto $newVideo): VideoFile
     {
-        $this->entityValidator->validateDto($newVideo, $video);
+        $this->validator->validate($newVideo, $video);
 
         try {
             $this->videoManager->beginTransaction();
