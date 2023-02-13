@@ -88,6 +88,8 @@ abstract class AbstractManager extends BaseAbstractManager
             $this->eventDispatcher->dispatch($event);
             $object->setModifiedBy($event->getUser());
         }
+
+        $this->trackNotifyTo($object);
     }
 
     public function trackModification(object $object): void
@@ -99,6 +101,11 @@ abstract class AbstractManager extends BaseAbstractManager
             $object->setModifiedBy($event->getUser());
         }
 
+        $this->trackNotifyTo($object);
+    }
+
+    private function trackNotifyTo(object $object): void
+    {
         if ($object instanceof NotifiableInterface && $this->requestStack->getCurrentRequest()) {
             /** @var DamUser $currentUser */
             $currentUser = $this->currentUser->getCurrentUser();
