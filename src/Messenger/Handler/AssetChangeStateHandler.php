@@ -43,7 +43,7 @@ final class AssetChangeStateHandler
                     DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
                     sprintf(
                         'Asset (%s) change state to (%s) not suitable for handle',
-                        $asset->getId(),
+                        (string) $asset->getId(),
                         $asset->getAttributes()->getStatus()->toString()
                     ),
                 )
@@ -53,7 +53,7 @@ final class AssetChangeStateHandler
                 DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
                 sprintf(
                     'Asset (%s) change state to (%s) failed',
-                    $asset->getId(),
+                    (string) $asset->getId(),
                     $asset->getAttributes()->getStatus()->toString()
                 ),
                 $e

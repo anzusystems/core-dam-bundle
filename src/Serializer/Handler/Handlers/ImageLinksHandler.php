@@ -67,7 +67,7 @@ class ImageLinksHandler extends AbstractHandler
         }
 
         return [
-            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[0]),
+            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[array_key_first($sizeList)]),
         ];
     }
 
@@ -94,7 +94,8 @@ class ImageLinksHandler extends AbstractHandler
             ->setRequestHeight($item->getHeight())
             ->setRoi(RegionOfInterest::FIRST_ROI_POSITION);
 
-        $roi = $this->roiRepository->findByImageIdAndPosition($imageFile->getId(), RegionOfInterest::FIRST_ROI_POSITION);
+        $imageFileId = (string) $imageFile->getId();
+        $roi = $this->roiRepository->findByImageIdAndPosition($imageFileId, RegionOfInterest::FIRST_ROI_POSITION);
         if (null === $roi) {
             return [];
         }
@@ -102,7 +103,7 @@ class ImageLinksHandler extends AbstractHandler
         return [
             'type' => self::LINKS_TYPE,
             'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
-                imageId: $imageFile->getId(),
+                imageId: $imageFileId,
                 width: $reqCrop->getRequestWidth(),
                 height: $reqCrop->getRequestHeight(),
                 roiPosition: $roi->getPosition()

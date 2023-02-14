@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 final class IndexFactoryProvider
 {
     /**
-     * @var iterable<string<IndexFactoryInterface>, IndexFactoryInterface>
+     * @var iterable<class-string<IndexFactoryInterface>, IndexFactoryInterface>
      */
     private iterable $indexFactories;
 

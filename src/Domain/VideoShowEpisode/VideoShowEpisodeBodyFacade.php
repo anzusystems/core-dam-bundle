@@ -9,6 +9,8 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
+use InvalidArgumentException;
 
 final class VideoShowEpisodeBodyFacade
 {
@@ -28,12 +30,15 @@ final class VideoShowEpisodeBodyFacade
         $this->videoShowEpisodeManager->trackModification($episode);
         $this->videoShowEpisodeManager->trackCreation($episode);
 
+        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($asset);
+        if (false === ($config instanceof ExtSystemVideoTypeConfiguration)) {
+            throw new InvalidArgumentException('Asset type must be a type of video');
+        }
+
         $this->assetTextsWriter->writeValues(
             from: $asset,
             to: $episode,
-            config: $this->extSystemConfigurationProvider
-                ->getExtSystemConfigurationByAsset($asset)
-                ->getVideoEpisodeEntityMap()
+            config: $config->getVideoEpisodeEntityMap()
         );
 
         return $episode;

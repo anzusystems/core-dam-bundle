@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DisplayTitleConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 
 final class ConfigurationProvider
 {
@@ -23,7 +21,6 @@ final class ConfigurationProvider
         private readonly array $settings,
         private readonly array $displayTitle,
         private readonly AllowListConfiguration $allowListConfiguration,
-        private readonly AssetLicenceRepository $repository,
         private readonly array $colorSet,
     ) {
     }
@@ -90,10 +87,5 @@ final class ConfigurationProvider
             $this->getAdminAllowListName(),
             $type
         );
-    }
-
-    public function getDefaultAssetLicence(): AssetLicence
-    {
-        return $this->repository->find($this->getSettings()->getDefaultAssetLicenceId());
     }
 }

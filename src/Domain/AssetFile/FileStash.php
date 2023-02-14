@@ -11,7 +11,7 @@ use League\Flysystem\FilesystemException;
 class FileStash
 {
     /**
-     * @var array<string, array<int,string>>
+     * @var array<string, array<int, string>>
      */
     private array $fileDeleteStash = [];
 
@@ -39,7 +39,7 @@ class FileStash
         foreach ($this->fileDeleteStash as $storageKey => $files) {
             $storage = $this->fileSystemProvider->getFileSystemByStorageName($storageKey);
             foreach ($files as $file) {
-                $storage->delete($file);
+                $storage?->delete($file);
             }
         }
     }

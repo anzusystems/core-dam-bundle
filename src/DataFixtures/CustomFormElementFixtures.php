@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetCustomForm;
-use AnzuSystems\CoreDamBundle\Entity\CustomForm;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\CustomFormElementAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -44,7 +43,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
      */
     public function load(ProgressBar $progressBar): void
     {
-        /** @var CustomForm $customForm */
+        /** @var AssetCustomForm $customForm */
         foreach ($progressBar->iterate($this->getData()) as $newCustomForm) {
             $customForm = $this->assetCustomFormRepository->findOneByTypeAndExtSystem(
                 $newCustomForm->getExtSystem(),
@@ -61,10 +60,11 @@ final class CustomFormElementFixtures extends AbstractFixtures
     }
 
     /**
-     * @return Generator<int, CustomForm>
+     * @return Generator<int, AssetCustomForm>
      */
     private function getData(): Generator
     {
+        /** @var ExtSystem $extSystem */
         $extSystem = $this->entityManager->getPartialReference(ExtSystem::class, 1);
 
         yield $this->createImageCustomForm($extSystem);

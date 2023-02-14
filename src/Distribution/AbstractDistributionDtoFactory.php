@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDistributionDtoFactory
 {
-    private readonly DistributionCategorySelectRepository $categorySelectRepository;
+    private DistributionCategorySelectRepository $categorySelectRepository;
 
     #[Required]
     public function setCategorySelectRepository(DistributionCategorySelectRepository $categorySelectRepository): void

@@ -33,7 +33,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
 /**
- * @template-covariant T of AssetFile
+ * @template T of AssetFile
  */
 abstract class AssetFileFacade
 {
@@ -205,7 +205,7 @@ abstract class AssetFileFacade
         $this->validator->validate($createDto);
         $this->validateLimitedAssetLicenceFileCount($asset->getLicence());
 
-        $slot = $this->assetSlotRepository->findSlotByAssetAndTitle($asset->getId(), $slotName);
+        $slot = $this->assetSlotRepository->findSlotByAssetAndTitle((string) $asset->getId(), $slotName);
 
         if ($slot) {
             throw new AssetSlotUsedException($slot->getAssetFile(), $slotName);
@@ -229,6 +229,9 @@ abstract class AssetFileFacade
         }
     }
 
+    /**
+     * @psalm-param T $assetFile
+     */
     public function delete(AssetFile $assetFile): void
     {
         try {
@@ -252,7 +255,7 @@ abstract class AssetFileFacade
             $this->getManager()->commit();
 
             $this->assetFileDeleteEventDispatcher->dispatchFileDelete(
-                $deleteId,
+                (string) $deleteId,
                 (string) $asset->getId(),
                 $assetFile,
                 $asset->getAttributes()->getAssetType(),
@@ -332,8 +335,14 @@ abstract class AssetFileFacade
         throw new ForbiddenOperationException(ForbiddenOperationException::FILE_UPLOAD_TOO_MANY_FILES);
     }
 
+    /**
+     * @return AssetFileManager<T>
+     */
     abstract protected function getManager(): AssetFileManager;
 
+    /**
+     * @return AssetFileFactory<T>
+     */
     abstract protected function getFactory(): AssetFileFactory;
 
     abstract protected function getRepository(): AbstractAssetFileRepository;

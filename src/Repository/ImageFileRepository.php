@@ -19,7 +19,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
     /**
-     * @return ArrayCollection<int, AssetLicence>
+     * @return ArrayCollection<int, ImageFile>
      */
     public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): ArrayCollection
     {

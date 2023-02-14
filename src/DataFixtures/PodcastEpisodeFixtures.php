@@ -56,7 +56,9 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        /** @var Podcast $podcast */
         $podcast = $this->entityManager->find(Podcast::class, PodcastFixtures::PODCAST_1);
+        /** @var AudioFile $audio */
         $audio = $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1);
 
         yield (new PodcastEpisode())

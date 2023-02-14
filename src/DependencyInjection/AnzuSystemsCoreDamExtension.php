@@ -635,6 +635,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     private function addDefaultsToExtSystemsAssetExternalProviders(): void
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
+            /** @psalm-suppress NoValue */
             foreach (array_keys($extSystemConfig['asset_external_providers'] ?? []) as $providerName) {
                 $this->processedConfig['ext_systems'][$extSystemSlug]['asset_external_providers'][$providerName][ExtSystemAssetExternalProviderConfiguration::PROVIDER_NAME_KEY] = $providerName;
 

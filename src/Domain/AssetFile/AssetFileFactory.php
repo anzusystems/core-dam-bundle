@@ -33,28 +33,35 @@ use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
-use League\Flysystem\FilesystemException;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
+/**
+ * @template T of AssetFile
+ */
 abstract class AssetFileFactory
 {
+    /**
+     * @var AssetFileManager<T>
+     */
+    protected readonly AssetFileManager $assetFileManager;
+
+    /**
+     * @param AssetFileManager<T> $assetFileManager
+     */
     public function __construct(
         protected readonly AssetFactory $assetFactory,
         protected readonly AssetManager $assetManager,
-        protected readonly AssetFileManager $assetFileManager,
         protected readonly AssetFileMetadataManager $assetFileMetadataManager,
         protected readonly AssetTextsWriter $textsWriter,
         protected readonly ExtSystemConfigurationProvider $configurationProvider,
         protected readonly ImageStatusFacade $imageStatusFacade,
         protected readonly AssetAuthorForExternalProviderAssigner $authorForExternalProviderAssigner,
+        AssetFileManager $assetFileManager,
     ) {
+        $this->assetFileManager = $assetFileManager;
     }
 
     /**
      * @throws SerializerException
-     * @throws TransportExceptionInterface
-     * @throws FilesystemException
-     * @throws NonUniqueResultException
      */
     public function createAndProcessFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
     {
@@ -69,6 +76,8 @@ abstract class AssetFileFactory
     }
 
     /**
+     * @return T
+     *
      * @throws DomainException
      */
     public function createFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
@@ -79,6 +88,9 @@ abstract class AssetFileFactory
         return $assetFile;
     }
 
+    /**
+     * @return T
+     */
     public function createBlankAssetFile(AdapterFile $file, AssetLicence $licence, ?string $id = null): AssetFile
     {
         $assetFile = null;
@@ -95,6 +107,7 @@ abstract class AssetFileFactory
             $assetFile = $this->createBlankVideo($licence, $id);
         }
 
+        /** @psalm-var T|null $assetFile */
         if (null === $assetFile) {
             throw new DomainException(sprintf('File with mime type (%s) cannot be created', $file->getMimeType()));
         }
@@ -103,6 +116,8 @@ abstract class AssetFileFactory
     }
 
     /**
+     * @return T
+     *
      * @throws NonUniqueResultException
      * @throws AnzuException
      */
@@ -123,6 +138,11 @@ abstract class AssetFileFactory
 
         return $this->assetFileManager->create($assetFile, false);
     }
+
+    /**
+     * @return T
+     */
+    abstract public function createFromAdmDto(AssetLicence $licence, AssetFileAdmCreateDto $createDto): AssetFile;
 
     protected function createBlankImage(AssetLicence $licence, ?string $id = null): ImageFile
     {
@@ -172,8 +192,9 @@ abstract class AssetFileFactory
         ;
     }
 
-    abstract protected function createFromAdmDto(AssetLicence $licence, AssetFileAdmCreateDto $createDto): AssetFile;
-
+    /**
+     * @return T
+     */
     private function createAssetFileForExternalProvider(
         string $providerName,
         AssetExternalProviderDto $assetDto,
@@ -194,6 +215,7 @@ abstract class AssetFileFactory
             ->setOriginUrl($assetDto->getUrl())
             ->setOriginExternalProvider(new OriginExternalProvider($providerName, $assetDto->getId()))
         ;
+        /** @psalm-var T $assetFile */
 
         return $assetFile;
     }

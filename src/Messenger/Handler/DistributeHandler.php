@@ -50,7 +50,7 @@ final class DistributeHandler
             DamLogger::NAMESPACE_DISTRIBUTION,
             sprintf(
                 'Redistributing! (%s)',
-                $distribution->getId(),
+                (string) $distribution->getId(),
             )
         );
 
@@ -66,7 +66,7 @@ final class DistributeHandler
             DamLogger::NAMESPACE_DISTRIBUTION,
             sprintf(
                 'Invalid status to handle id (%s) status (%s)',
-                $distribution->getId(),
+                (string) $distribution->getId(),
                 $distribution->getStatus()->toString()
             )
         );

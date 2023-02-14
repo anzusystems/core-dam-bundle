@@ -9,7 +9,9 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
+use InvalidArgumentException;
 
 final class PodcastEpisodeBodyFacade
 {
@@ -23,6 +25,11 @@ final class PodcastEpisodeBodyFacade
 
     public function preparePayload(Asset $asset, Podcast $podcast): PodcastEpisode
     {
+        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($asset);
+        if (false === ($config instanceof ExtSystemAudioTypeConfiguration)) {
+            throw new InvalidArgumentException('Asset type must be a type of audio');
+        }
+
         $episode = (new PodcastEpisode())
             ->setPodcast($podcast)
             ->setAsset($asset);
@@ -33,9 +40,7 @@ final class PodcastEpisodeBodyFacade
         $this->assetTextsWriter->writeValues(
             from: $asset,
             to: $episode,
-            config: $this->extSystemConfigurationProvider
-                ->getExtSystemConfigurationByAsset($asset)
-                ->getPodcastEpisodeEntityMap()
+            config: $config->getPodcastEpisodeEntityMap()
         );
 
         $this->setNumbers($podcast, $episode);

@@ -50,7 +50,9 @@ abstract class AbstractManager extends BaseAbstractManager
     }
 
     /**
-     * @param Collection<int, PositionableInterface> $coll
+     * @template T of PositionableInterface
+     *
+     * @param Collection<int, T> $coll
      *
      * @throws Exception
      */
@@ -76,6 +78,7 @@ abstract class AbstractManager extends BaseAbstractManager
      */
     public function setNotifyTo(NotifiableInterface $object): void
     {
+        /** @var DamUser $currentUser */
         $currentUser = $this->currentUser->getCurrentUser();
         $object->setNotifyTo($currentUser);
     }
@@ -84,7 +87,9 @@ abstract class AbstractManager extends BaseAbstractManager
     {
         parent::trackCreation($object);
         if ($object instanceof UserTrackingInterface) {
-            $event = new UserTrackingEvent($object->getCreatedBy(), $object);
+            /** @var DamUser $createdBy */
+            $createdBy = $object->getCreatedBy();
+            $event = new UserTrackingEvent($createdBy, $object);
             $this->eventDispatcher->dispatch($event);
             $object->setModifiedBy($event->getUser());
         }
@@ -96,7 +101,9 @@ abstract class AbstractManager extends BaseAbstractManager
     {
         parent::trackModification($object);
         if ($object instanceof UserTrackingInterface) {
-            $event = new UserTrackingEvent($object->getModifiedBy(), $object);
+            /** @var DamUser $modifiedBy */
+            $modifiedBy = $object->getModifiedBy();
+            $event = new UserTrackingEvent($modifiedBy, $object);
             $this->eventDispatcher->dispatch($event);
             $object->setModifiedBy($event->getUser());
         }

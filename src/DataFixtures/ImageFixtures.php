@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -63,6 +64,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
     private function getData(): Generator
     {
         $fileSystem = $this->fileSystemProvider->createLocalFilesystem(self::DATA_PATH);
+        /** @var AssetLicence $licence */
         $licence = $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $file = $this->getFile($fileSystem, 'text_image_108x192.png');
@@ -94,7 +96,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $file = $this->getFile($fileSystem, 'text_image_192x108.jpg');
         $image = $this->imageFactory->createFromFile(
             $file,
-            $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID),
+            $licence,
             self::IMAGE_ID_2
         );
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
@@ -106,7 +108,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $file = $this->getFile($fileSystem, 'text_image_200x200.jpg');
         $image = $this->imageFactory->createFromFile(
             $file,
-            $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID),
+            $licence,
             self::IMAGE_ID_3
         );
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);

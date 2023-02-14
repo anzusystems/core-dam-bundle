@@ -36,11 +36,9 @@ final class DistributionValidator extends ConstraintValidator
     }
 
     /**
-     * @param Distribution $constraint
-     *
      * @throws InvalidArgumentException
      */
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         // validate if distribution entity is supported by distribution service (jw, custom, yt)
         if (false === ($value instanceof DistributionEntity)) {

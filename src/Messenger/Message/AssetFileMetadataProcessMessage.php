@@ -15,7 +15,7 @@ final class AssetFileMetadataProcessMessage extends AbstractAssetFileMessage
         AssetFile $asset,
         Chunk $chunk
     ) {
-        $this->chunkId = $chunk->getId();
+        $this->chunkId = (string) $chunk->getId();
         parent::__construct($asset);
     }
 

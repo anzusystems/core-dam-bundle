@@ -21,7 +21,10 @@ class DocumentFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(DocumentFile $documentFile): static
     {
-        return parent::getBaseInstance($documentFile)
+        /** @psalm-var DocumentFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($documentFile);
+
+        return $parent
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($documentFile->getAssetAttributes()))
             ->setDocument($documentFile);
     }

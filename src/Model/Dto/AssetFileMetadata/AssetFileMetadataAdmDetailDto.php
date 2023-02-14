@@ -22,7 +22,7 @@ final class AssetFileMetadataAdmDetailDto
     public static function getInstance(AssetFileMetadata $fileMetadata): self
     {
         return (new self())
-            ->setId($fileMetadata->getId())
+            ->setId((string) $fileMetadata->getId())
             ->setCreatedAt($fileMetadata->getCreatedAt())
             ->setModifiedAt($fileMetadata->getModifiedAt())
             ->setCreatedBy($fileMetadata->getCreatedBy())

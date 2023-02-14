@@ -41,8 +41,11 @@ final class ChunkFacade
         $this->chunkManager->setAssetFile($chunk, $assetFile);
         $this->chunkManager->setNotifyTo($assetFile);
         $uploadedFile = $createDto->getFile();
+        if (null === $uploadedFile) {
+            throw new RuntimeException('Uploaded file must be set at this step');
+        }
 
-        $uploadedSize = (int) $createDto->getFile()->getSize();
+        $uploadedSize = (int) $uploadedFile->getSize();
 
         try {
             $this->chunkManager->beginTransaction();

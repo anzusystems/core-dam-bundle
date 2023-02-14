@@ -58,7 +58,7 @@ final class ImageRotator
      * @throws ImageManipulatorException
      * @throws RuntimeException
      */
-    private function rotateResizes(ImageFile $image, $angle): ImageFileOptimalResize
+    private function rotateResizes(ImageFile $image, float $angle): ImageFileOptimalResize
     {
         $originalResize = null;
         foreach ($image->getResizes() as $resize) {

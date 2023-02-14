@@ -16,7 +16,7 @@ final class AssetTextsWriter
     }
 
     /**
-     * @param array<string, TextsWriterConfiguration> $config
+     * @param array<int, TextsWriterConfiguration> $config
      */
     public function writeValues(object $from, object $to, array $config, bool $reversedConfig = false): void
     {

@@ -6,16 +6,16 @@ namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 
 final class AssetExternalProviderConfigurationProvider
 {
     /**
-     * @param array<int, DistributionServiceConfiguration> $assetExternalProvidersCache
+     * @var array<string, AssetExternalProviderConfiguration>
      */
+    private array $assetExternalProvidersCache = [];
+
     public function __construct(
         private readonly AssetExternalProviderContainer $assetExternalProviderContainer,
-        private array $assetExternalProvidersCache = [],
     ) {
     }
 

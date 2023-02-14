@@ -91,11 +91,17 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
         return $this;
     }
 
+    /**
+     * @return Collection<string, Keyword>
+     */
     public function getKeywords(): Collection
     {
         return $this->keywords;
     }
 
+    /**
+     * @param Collection<string, Keyword> $keywords
+     */
     public function setKeywords(Collection $keywords): self
     {
         $this->keywords = $keywords;
@@ -103,11 +109,17 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
         return $this;
     }
 
+    /**
+     * @return Collection<string, Author>
+     */
     public function getAuthors(): Collection
     {
         return $this->authors;
     }
 
+    /**
+     * @param Collection<string, Author> $authors
+     */
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;

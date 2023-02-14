@@ -121,7 +121,7 @@ final class UnsplashClient
             try {
                 $response = $this->unsplashApiClient->request(
                     Request::METHOD_GET,
-                    sprintf('/photos/%s', $photoId),
+                    sprintf('/photos/%s', $photoId->toString()),
                     self::getHeaders($configuration),
                 );
 
@@ -129,7 +129,7 @@ final class UnsplashClient
             } catch (Throwable $exception) {
                 $this->logger->error(
                     DamLogger::NAMESPACE_ASSET_EXTERNAL_PROVIDER,
-                    sprintf('Unsplash failed to fetch image "%s" (%s)', $photoId, $exception->getMessage())
+                    sprintf('Unsplash failed to fetch image "%s" (%s)', $photoId->toString(), $exception->getMessage())
                 );
 
                 continue;
@@ -169,6 +169,9 @@ final class UnsplashClient
     public function download(UnsplashAssetExternalProviderConfiguration $configuration, string $id)
     {
         $image = $this->getPhotoById($configuration, $id);
+        if (null === $image) {
+            throw new NotFoundHttpException(sprintf('Image by id (%s) not found.', $id));
+        }
 
         try {
             $response = $this->unsplashApiClient->request(Request::METHOD_GET, $image->getUrls()->getFull());

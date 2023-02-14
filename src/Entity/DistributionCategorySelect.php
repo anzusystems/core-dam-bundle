@@ -106,6 +106,9 @@ class DistributionCategorySelect implements TimeTrackingInterface, UserTrackingI
         return $this->options;
     }
 
+    /**
+     * @param Collection<int, DistributionCategoryOption> $options
+     */
     public function setOptions(Collection $options): self
     {
         $this->options = $options;

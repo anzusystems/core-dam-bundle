@@ -14,12 +14,14 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\YoutubeDistributionServiceConf
 final class DistributionConfigurationProvider
 {
     /**
-     * @param array<int, DistributionServiceConfiguration> $distributionServicesCache
+     * @var array<string, DistributionServiceConfiguration>
      */
+    private array $distributionServicesCache = [];
+
     public function __construct(
         private readonly ConfigurationProvider $configurationProvider,
+        /** @psalm-var array<string, array> */
         private readonly array $distributionServices,
-        private array $distributionServicesCache = [],
     ) {
     }
 

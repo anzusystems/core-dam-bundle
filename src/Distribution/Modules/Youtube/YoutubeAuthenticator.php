@@ -52,8 +52,8 @@ final class YoutubeAuthenticator
         $user = $this->currentUserProvider->getCurrentUser();
         $exchangeToken = $this->exchangeCodeStateManager->generateExchangeCodeStateDto(
             $distributionService,
-            $user->getId(),
-            $user->getId()
+            (int) $user->getId(),
+            (int) $user->getId()
         );
 
         $this->tokenStorage->storeExchangeTokenState($exchangeToken);
@@ -131,13 +131,16 @@ final class YoutubeAuthenticator
         ExchangeCodeStateDto $exchangeCodeStateDto,
         YoutubeCodeDto $youtubeCodeDto
     ): AccessTokenDto {
-        $token = $this->clientProvider
+        $tokenRaw = $this->clientProvider
             ->getClient($exchangeCodeStateDto->getService())
             ->fetchAccessTokenWithAuthCode($youtubeCodeDto->getCode());
 
+        /** @var TokenResponseDto $token */
+        $token = $this->serializer->fromArray($tokenRaw, TokenResponseDto::class);
+
         return $this->storeTokens(
             $exchangeCodeStateDto->getService(),
-            $this->serializer->fromArray($token, TokenResponseDto::class)
+            $token
         );
     }
 
@@ -149,13 +152,16 @@ final class YoutubeAuthenticator
     private function refreshAccessToken(
         RefreshTokenDto $refreshTokenDto
     ): AccessTokenDto {
-        $token = $this->clientProvider
+        $tokenRaw = $this->clientProvider
             ->getClient($refreshTokenDto->getServiceId())
             ->fetchAccessTokenWithRefreshToken($refreshTokenDto->getRefreshToken());
 
+        /** @var TokenResponseDto $token */
+        $token = $this->serializer->fromArray($tokenRaw, TokenResponseDto::class);
+
         return $this->storeTokens(
             $refreshTokenDto->getServiceId(),
-            $this->serializer->fromArray($token, TokenResponseDto::class)
+            $token
         );
     }
 

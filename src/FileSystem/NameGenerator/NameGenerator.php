@@ -17,7 +17,7 @@ class NameGenerator
     public function alternatePath(string $originPath, ?string $fileNameSuffix = null, ?string $extension = null): GeneratedPath
     {
         $pathParts = pathinfo($originPath);
-        $useExtension = $extension ?? (string) $pathParts['extension'];
+        $useExtension = $extension ?? (string) ($pathParts['extension'] ?? '');
         $fileName = $fileNameSuffix
             ? $pathParts['filename'] . '_' . $fileNameSuffix . '.' . $useExtension
             : $pathParts['filename'] . '.' . $useExtension;
@@ -34,9 +34,9 @@ class NameGenerator
         $pathParts = pathinfo($path);
 
         return new GeneratedPath(
-            dir: $pathParts['dirname'],
-            fileName: $pathParts['filename'],
-            extension: $pathParts['extension']
+            dir: $pathParts['dirname'] ?? '',
+            fileName: $pathParts['filename'] ?? '',
+            extension: $pathParts['extension'] ?? '',
         );
     }
 

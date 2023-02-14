@@ -103,6 +103,11 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->licences;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, AssetLicence> $licences
+     */
     public function setLicences(Collection $licences): self
     {
         $this->licences = $licences;
@@ -118,6 +123,11 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->adminUsers;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, DamUser> $adminUsers
+     */
     public function setAdminUsers(Collection $adminUsers): self
     {
         $this->adminUsers = $adminUsers;

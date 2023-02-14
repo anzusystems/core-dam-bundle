@@ -20,8 +20,8 @@ final class UnsplashMetadataDto extends AssetExternalProviderMetadataDto
             ->setWidth($imageDto->getWidth())
             ->setHeight($imageDto->getHeight())
             ->setTags($imageDto->getTags()->map(static fn (UnsplashTagDto $tagDto) => $tagDto->getTitle())->getValues())
-            ->setAuthorName($imageDto->getUser()->getName())
             ->setAuthorPortfolio($imageDto->getUser()->getPortfolioUrl())
+            ->setAuthorName($imageDto->getUser()->getName())
         ;
     }
 

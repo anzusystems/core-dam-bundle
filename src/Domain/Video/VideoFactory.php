@@ -11,6 +11,9 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmCreateDto;
 
+/**
+ * @extends AssetFileFactory<VideoFile>
+ */
 final class VideoFactory extends AssetFileFactory
 {
     /**

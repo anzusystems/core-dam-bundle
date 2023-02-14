@@ -10,6 +10,9 @@ use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeAbstractDistribu
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeLanguageDto;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Google\Exception;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -23,7 +26,7 @@ final class YoutubeValidator extends ConstraintValidator
     }
 
     /**
-     * @param YoutubeDistribution $value
+     * @throws InvalidArgumentException
      */
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -58,6 +61,11 @@ final class YoutubeValidator extends ConstraintValidator
         }
     }
 
+    /**
+     * @throws SerializerException
+     * @throws Exception
+     * @throws InvalidArgumentException
+     */
     private function hasPlaylist(string $distributionService, string $playlistId): bool
     {
         $playlistResponse = $this->playlistFacade->getPlaylists($distributionService);
@@ -71,6 +79,9 @@ final class YoutubeValidator extends ConstraintValidator
         return false;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     private function hasLanguage(string $distributionService, string $languageId): bool
     {
         $languageResponse = $this->playlistFacade->getLanguage($distributionService);

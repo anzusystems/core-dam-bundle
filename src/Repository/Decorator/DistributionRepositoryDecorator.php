@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomDistributionFilter;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use Doctrine\ORM\Exception\ORMException;
@@ -23,7 +24,7 @@ final class DistributionRepositoryDecorator
     ) {
     }
 
-    public function decorate(Distribution $distribution): mixed
+    public function decorate(Distribution $distribution): Distribution|CustomDistributionAdmDto
     {
         $adapter = $this->moduleProvider->provideAdapter($distribution->getDistributionService());
         if ($adapter) {
@@ -34,10 +35,13 @@ final class DistributionRepositoryDecorator
     }
 
     /**
+     * @return ApiResponseList<Distribution|CustomDistributionAdmDto>
+     *
      * @throws ORMException
      */
     public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList
     {
+        /** @var ApiResponseList<Distribution> $responseList */
         $responseList = $this->distributionRepository->findByApiParamsByAssetFile($apiParams, $assetFile);
 
         return $responseList->setData(
@@ -46,10 +50,13 @@ final class DistributionRepositoryDecorator
     }
 
     /**
+     * @return ApiResponseList<Distribution|CustomDistributionAdmDto>
+     *
      * @throws ORMException
      */
     public function findByApiParamsByAsset(ApiParams $apiParams, Asset $asset): ApiResponseList
     {
+        /** @var ApiResponseList<Distribution> $responseList */
         $responseList = $this->distributionRepository->findByApiParams(
             apiParams: DistributionApiParams::applyAssetCustomFilter($apiParams, $asset),
             customFilters: [new CustomDistributionFilter()]
@@ -61,12 +68,14 @@ final class DistributionRepositoryDecorator
     }
 
     /**
-     * @param array<int, Distribution> $data
+     * @template TKey of array-key
+     *
+     * @param array<TKey, Distribution> $data
      */
     private function mapToDecorators(array $data): array
     {
         return array_map(
-            function (Distribution $distribution): mixed {
+            function (Distribution $distribution): Distribution|CustomDistributionAdmDto {
                 return $this->decorate($distribution);
             },
             $data

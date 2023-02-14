@@ -34,8 +34,10 @@ final class JwVideoClient
     /**
      * @throws SerializerException
      */
-    public function createVideoObject(JwDistributionServiceConfiguration $configuration, JwVideoMediaUploadDto $jwVideoDto)
-    {
+    public function createVideoObject(
+        JwDistributionServiceConfiguration $configuration,
+        JwVideoMediaUploadDto $jwVideoDto,
+    ): VideoUploadPayloadDto {
         try {
             $response = $this->jwPlayerApiClient->request(
                 Request::METHOD_POST,
