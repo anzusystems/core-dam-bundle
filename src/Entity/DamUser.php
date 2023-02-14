@@ -91,6 +91,11 @@ abstract class DamUser extends AnzuUser
         return $this->assetLicences;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, AssetLicence> $assetLicences
+     */
     public function setAssetLicences(Collection $assetLicences): static
     {
         $this->assetLicences = $assetLicences;
