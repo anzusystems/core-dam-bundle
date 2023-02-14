@@ -38,7 +38,7 @@ final class RssClient
         } catch (Throwable $exception) {
             $this->logger->error(
                 DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
-                sprintf('Failed read rss feed (%s)', $podcast->getId())
+                sprintf('Failed read rss feed (%s)', (string) $podcast->getId())
             );
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);

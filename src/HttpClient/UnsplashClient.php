@@ -169,6 +169,9 @@ final class UnsplashClient
     public function download(UnsplashAssetExternalProviderConfiguration $configuration, string $id)
     {
         $image = $this->getPhotoById($configuration, $id);
+        if (null === $image) {
+            throw new NotFoundHttpException(sprintf('Image by id (%s) not found.', $id));
+        }
 
         try {
             $response = $this->unsplashApiClient->request(Request::METHOD_GET, $image->getUrls()->getFull());

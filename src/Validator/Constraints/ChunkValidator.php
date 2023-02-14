@@ -38,7 +38,7 @@ final class ChunkValidator extends ConstraintValidator
                 ->addViolation();
         }
 
-        if (false === ($value->getSize() === $value->getFile()->getSize())) {
+        if (false === ($value->getSize() === $value->getFile()?->getSize())) {
             $this->context->buildViolation(ValidationException::ERROR_FIELD_INVALID)
                 ->atPath('size')
                 ->addViolation();

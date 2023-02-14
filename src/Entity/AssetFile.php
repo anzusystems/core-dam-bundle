@@ -24,6 +24,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-method DamUser getCreatedBy()
+ * @psalm-method DamUser getModifiedBy()
+ */
 #[ORM\Entity(repositoryClass: AssetFileRepository::class)]
 #[ORM\Index(fields: ['licence', 'assetAttributes.originExternalProvider'], name: 'IDX_licence_attributes_external_provider')]
 #[ORM\Index(fields: ['assetAttributes.status'], name: 'IDX_attributes_status')]

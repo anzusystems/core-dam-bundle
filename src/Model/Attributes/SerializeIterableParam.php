@@ -10,6 +10,7 @@ use Attribute;
 final class SerializeIterableParam
 {
     public function __construct(
+        /** @var class-string */
         public string $type,
         public ?int $maxItems = null,
     ) {

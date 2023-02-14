@@ -53,7 +53,9 @@ final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
 
     private function getData(): Generator
     {
+        /** @var VideoShow $show */
         $show = $this->entityManager->find(VideoShow::class, VideoShowFixtures::SHOW_1);
+        /** @var VideoFile $videoFile */
         $videoFile = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         yield (new VideoShowEpisode())

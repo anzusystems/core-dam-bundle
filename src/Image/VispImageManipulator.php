@@ -13,16 +13,21 @@ use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Jcupitt\Vips\Exception;
 use Jcupitt\Vips\Image;
+use League\Flysystem\FilesystemException;
 use Throwable;
 
+/**
+ * @psalm-suppress PossiblyNullReference
+ * @psalm-suppress PossiblyNullPropertyFetch
+ */
 final class VispImageManipulator extends AbstractImageManipulator
 {
     private const N_BINS = 10;
     private const BIN_SIZE = 256;
     private const DEFAULT_QUALITY = 100;
 
-    protected ?Image $image = null;
-    protected int $quality;
+    private ?Image $image = null;
+    private int $quality;
 
     public function __construct(
         FilterProcessorStack $filterProcessorStack,
@@ -122,6 +127,11 @@ final class VispImageManipulator extends AbstractImageManipulator
         }
     }
 
+    /**
+     * @throws FilesystemException
+     * @throws Exception
+     * @throws ImageManipulatorException
+     */
     public function getStream(string $extension)
     {
         $this->ensureImage();
@@ -144,6 +154,10 @@ final class VispImageManipulator extends AbstractImageManipulator
         $this->image = $this->image->resize($scale);
     }
 
+    /**
+     * @throws Exception
+     * @throws ImageManipulatorException
+     */
     public function rotate(float $angle): void
     {
         $this->ensureImage();

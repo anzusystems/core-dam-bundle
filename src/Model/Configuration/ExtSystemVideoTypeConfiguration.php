@@ -25,7 +25,7 @@ final class ExtSystemVideoTypeConfiguration extends ExtSystemAssetTypeConfigurat
     }
 
     /**
-     * @return array<int, TextsWriterConfiguration>
+     * @return array<string, TextsWriterConfiguration>
      */
     public function getVideoEpisodeEntityMap(): array
     {

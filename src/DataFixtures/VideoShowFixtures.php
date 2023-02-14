@@ -51,6 +51,7 @@ final class VideoShowFixtures extends AbstractAssetFileFixtures
 
     private function getData(): Generator
     {
+        /** @var AssetLicence $licence */
         $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         yield (new VideoShow())

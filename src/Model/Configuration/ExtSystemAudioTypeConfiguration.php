@@ -65,7 +65,7 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     }
 
     /**
-     * @return array<int, TextsWriterConfiguration>
+     * @return array<string, TextsWriterConfiguration>
      */
     public function getPodcastEpisodeRssMap(): array
     {
@@ -80,7 +80,7 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     }
 
     /**
-     * @return array<int, TextsWriterConfiguration>
+     * @return array<string, TextsWriterConfiguration>
      */
     public function getPodcastEpisodeEntityMap(): array
     {

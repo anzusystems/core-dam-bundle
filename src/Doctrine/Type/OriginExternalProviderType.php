@@ -21,6 +21,12 @@ final class OriginExternalProviderType extends AbstractValueObjectType
         }
 
         try {
+            /**
+             * @var string $providerName
+             * @var string $id
+             *
+             * @psalm-suppress PossiblyUndefinedArrayOffset
+             */
             [$providerName, $id] = explode('|', $value, 2);
 
             return new OriginExternalProvider($providerName, $id);

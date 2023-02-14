@@ -67,7 +67,7 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->texts;
     }
 
-    public function setTexts(AssetTextsAdmListDto $texts): self
+    public function setTexts(AssetTextsAdmListDto $texts): static
     {
         $this->texts = $texts;
 

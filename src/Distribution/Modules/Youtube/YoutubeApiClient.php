@@ -226,7 +226,7 @@ final class YoutubeApiClient
             'id' => $id,
         ]);
 
-        /** @var Google_Service_YouTube_Video $video */
+        /** @var Google_Service_YouTube_Video|null $video */
         $video = $res->getItems()[0] ?? null;
 
         if (null === $video) {

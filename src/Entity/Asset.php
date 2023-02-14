@@ -29,6 +29,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-method DamUser getCreatedBy()
+ * @psalm-method DamUser getModifiedBy()
+ */
 #[ORM\Entity(repositoryClass: AssetRepository::class)]
 class Asset implements
     TimeTrackingInterface,

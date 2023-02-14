@@ -28,7 +28,7 @@ final class AssetExtSystemAdminVoter extends AbstractVoter
             return false;
         }
 
-        return $user->getAdminToExtSystems()->containsKey($subject->getId());
+        return $user->getAdminToExtSystems()->containsKey((int) $subject->getId());
     }
 
     protected function getSupportedPermissions(): array

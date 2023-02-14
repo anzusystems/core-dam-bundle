@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
@@ -69,6 +70,7 @@ final class VideoFixtures extends AbstractAssetFileFixtures
     private function getData(): Generator
     {
         $fileSystem = $this->fileSystemProvider->createLocalFilesystem(self::DATA_PATH);
+        /** @var AssetLicence $licence */
         $licence = $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $file = $this->getFile($fileSystem, 'video_fixtures_sample.mp4');

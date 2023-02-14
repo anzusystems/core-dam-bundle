@@ -32,7 +32,7 @@ final class ExtSystemAwareVoter extends AbstractVoter
             return false;
         }
 
-        $extSystemId = $subject->getExtSystem()->getId();
+        $extSystemId = (int) $subject->getExtSystem()->getId();
 
         if ($user->getAdminToExtSystems()->containsKey($extSystemId)) {
             return true;

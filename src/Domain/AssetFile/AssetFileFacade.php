@@ -205,7 +205,7 @@ abstract class AssetFileFacade
         $this->validator->validate($createDto);
         $this->validateLimitedAssetLicenceFileCount($asset->getLicence());
 
-        $slot = $this->assetSlotRepository->findSlotByAssetAndTitle($asset->getId(), $slotName);
+        $slot = $this->assetSlotRepository->findSlotByAssetAndTitle((string) $asset->getId(), $slotName);
 
         if ($slot) {
             throw new AssetSlotUsedException($slot->getAssetFile(), $slotName);
@@ -230,7 +230,7 @@ abstract class AssetFileFacade
     }
 
     /**
-     * @param T $assetFile
+     * @psalm-param T $assetFile
      */
     public function delete(AssetFile $assetFile): void
     {
@@ -255,7 +255,7 @@ abstract class AssetFileFacade
             $this->getManager()->commit();
 
             $this->assetFileDeleteEventDispatcher->dispatchFileDelete(
-                $deleteId,
+                (string) $deleteId,
                 (string) $asset->getId(),
                 $assetFile,
                 $asset->getAttributes()->getAssetType(),

@@ -35,7 +35,7 @@ final class CropAllowListConfiguration
     }
 
     /**
-     * @return array<int, array{width: string, height: string}>
+     * @return list<array{width: int, height: int, tags: list<string>, title: string}>
      */
     public function getCrops(): array
     {

@@ -24,7 +24,7 @@ final class AssetFileStorageOperator
      */
     public function save(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $path = $this->nameGenerator->generatePath(FileHelper::guessExtension($file->getMimeType()));
+        $path = $this->nameGenerator->generatePath(FileHelper::guessExtension((string) $file->getMimeType()));
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($assetFile);
 
         $fileSystem->writeStream(
@@ -34,7 +34,7 @@ final class AssetFileStorageOperator
 
         $assetFile->getAssetAttributes()
             ->setFilePath($path->getRelativePath())
-            ->setMimeType($file->getMimeType());
+            ->setMimeType((string) $file->getMimeType());
 
         return $assetFile;
     }

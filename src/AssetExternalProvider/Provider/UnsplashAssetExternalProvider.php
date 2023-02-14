@@ -84,9 +84,10 @@ final class UnsplashAssetExternalProvider implements AssetExternalProviderInterf
      */
     public function getById(string $id): AssetExternalProviderDto
     {
-        return $this->mapUnsplashImageDtoToDetailDto(
-            $this->unsplashClient->getPhotoById($this->configuration, $id)
-        );
+        /** @var UnsplashImageDto $image */
+        $image = $this->unsplashClient->getPhotoById($this->configuration, $id);
+
+        return $this->mapUnsplashImageDtoToDetailDto($image);
     }
 
     /**

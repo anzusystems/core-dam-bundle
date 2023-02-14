@@ -14,6 +14,7 @@ final class AssetFileDeleteEventDispatcher
 {
     public function __construct(
         private readonly EventDispatcherInterface $dispatcher,
+        /** @var list<AssetFileDeleteEvent> */
         private $eventStack = [],
     ) {
     }

@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Configuration\YoutubeDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\YoutubeVideoPrivacy;
-use DateTime;
+use DateTimeInterface;
 use Google_Service_YouTube_Video;
 use Google_Service_YouTube_VideoSnippet;
 use Google_Service_YouTube_VideoStatus;
@@ -80,7 +80,7 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         $status->setSelfDeclaredMadeForKids($distribution->getFlags()->isForKids());
 
         if ($distribution->getPrivacy()->is(YoutubeVideoPrivacy::dynamic)) {
-            $status->setPublishAt($distribution->getPublishAt()->format(DateTime::ATOM));
+            $status->setPublishAt($distribution->getPublishAt()?->format(DateTimeInterface::ATOM));
 
             return $status;
         }

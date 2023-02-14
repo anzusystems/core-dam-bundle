@@ -8,6 +8,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Elasticsearch\Client;
@@ -80,6 +81,7 @@ final class IndexBuilder
         $maxId = $idUntil ?: $repo->getMaxId();
         do {
             $payload = ['body' => []];
+            /** @var ExtSystemIndexableInterface $item */
             foreach ($repo->getAll($idFrom, $idUntil, $batch) as $item) {
                 $payload['body'][] = [
                     'index' => [

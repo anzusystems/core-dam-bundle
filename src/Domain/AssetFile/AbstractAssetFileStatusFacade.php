@@ -320,6 +320,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * @throws AssetFileProcessFailed
      * @throws FilesystemException
+     *
+     * @psalm-suppress PossiblyNullArgument
      */
     private function createFile(AssetFile $assetFile): AdapterFile
     {

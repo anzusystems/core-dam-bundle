@@ -41,6 +41,7 @@ final class DistributionRepositoryDecorator
      */
     public function findByApiParamsByAssetFile(ApiParams $apiParams, AssetFile $assetFile): ApiResponseList
     {
+        /** @var ApiResponseList<Distribution> $responseList */
         $responseList = $this->distributionRepository->findByApiParamsByAssetFile($apiParams, $assetFile);
 
         return $responseList->setData(
@@ -55,6 +56,7 @@ final class DistributionRepositoryDecorator
      */
     public function findByApiParamsByAsset(ApiParams $apiParams, Asset $asset): ApiResponseList
     {
+        /** @var ApiResponseList<Distribution> $responseList */
         $responseList = $this->distributionRepository->findByApiParams(
             apiParams: DistributionApiParams::applyAssetCustomFilter($apiParams, $asset),
             customFilters: [new CustomDistributionFilter()]
@@ -66,7 +68,9 @@ final class DistributionRepositoryDecorator
     }
 
     /**
-     * @param list<Distribution> $data
+     * @template TKey of array-key
+     *
+     * @param array<TKey, Distribution> $data
      */
     private function mapToDecorators(array $data): array
     {

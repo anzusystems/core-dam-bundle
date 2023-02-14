@@ -30,11 +30,11 @@ final class AssetLicenceAwareVoter extends AbstractVoter
 
         $assetLicence = $subject->getLicence();
 
-        if ($user->getAssetLicences()->containsKey($assetLicence->getId())) {
+        if ($user->getAssetLicences()->containsKey((int) $assetLicence->getId())) {
             return true;
         }
 
-        return $user->getAdminToExtSystems()->containsKey($assetLicence->getExtSystem()->getId());
+        return $user->getAdminToExtSystems()->containsKey((int) $assetLicence->getExtSystem()->getId());
     }
 
     protected function getSupportedPermissions(): array

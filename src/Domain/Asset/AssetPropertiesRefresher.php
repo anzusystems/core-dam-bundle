@@ -114,7 +114,7 @@ class AssetPropertiesRefresher extends AbstractManager
     /**
      * Updates slot flags based on asset main file
      */
-    private function syncMainFile(Asset $asset)
+    private function syncMainFile(Asset $asset): void
     {
         $asset->getSlots()->map(
             fn (AssetSlot $slot) => $slot->getFlags()->setMain(
