@@ -50,7 +50,7 @@ final class RefreshAssetPropertiesHandler
                 DamLogger::NAMESPACE_ASSET_PROPERTY_REFRESHER,
                 sprintf(
                     'Asset (%s) property refresh failed',
-                    $asset->getId(),
+                    (string) $asset->getId(),
                 ),
                 $e
             );

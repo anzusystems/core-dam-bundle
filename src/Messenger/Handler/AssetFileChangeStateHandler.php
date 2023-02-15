@@ -93,7 +93,7 @@ final class AssetFileChangeStateHandler
                     DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
                     sprintf(
                         'AssetFile (%s) change state to (%s) not suitable for handle',
-                        $assetFile->getId(),
+                        (string) $assetFile->getId(),
                         $assetFile->getAssetAttributes()->getStatus()->toString()
                     ),
                 )
@@ -103,7 +103,7 @@ final class AssetFileChangeStateHandler
                 DamLogger::NAMESPACE_ASSET_FILE_CHANGE_STATE,
                 sprintf(
                     'AssetFile (%s) change state to (%s) failed',
-                    $assetFile->getId(),
+                    (string) $assetFile->getId(),
                     $assetFile->getAssetAttributes()->getStatus()->toString()
                 ),
                 $e
@@ -123,7 +123,7 @@ final class AssetFileChangeStateHandler
             DamLogger::NAMESPACE_ASSET_FILE_CHANGE_STATE,
             sprintf(
                 'AssetFile (%s) handling storing state (possible killed by k8s).',
-                $assetFile->getId(),
+                (string) $assetFile->getId(),
             ),
         );
         $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();

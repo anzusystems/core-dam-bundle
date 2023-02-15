@@ -19,9 +19,11 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use InvalidArgumentException;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final class EpisodeRssImportManager
@@ -134,10 +136,15 @@ final class EpisodeRssImportManager
         $asset->getAssetFlags()->setDescribed(true);
         $this->audioManager->create($audioFile, false);
 
+        $config = $this->configurationProvider->getExtSystemConfigurationByAsset($asset);
+        if (false === ($config instanceof ExtSystemAudioTypeConfiguration)) {
+            throw new InvalidArgumentException('Asset type must be a type of audio');
+        }
+
         $this->textsWriter->writeValues(
             from: $item,
             to: $asset,
-            config: $this->configurationProvider->getExtSystemConfigurationByAsset($asset)->getPodcastEpisodeRssMap()
+            config: $config->getPodcastEpisodeRssMap()
         );
 
         return $audioFile;

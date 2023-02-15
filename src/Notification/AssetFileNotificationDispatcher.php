@@ -25,7 +25,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
     public function notifyAssetFileDeleted(AssetFileDeleteEvent $event): void
     {
         $this->notify(
-            [$event->getDeletedBy()->getId()],
+            [(int) $event->getDeletedBy()->getId()],
             self::EVENT_ASSET_FILE_DELETED_NAME,
             AsseFileAdmNotificationDecorator::getBaseInstance($event->getDeleteAssetId(), $event->getDeleteId())
         );
@@ -40,7 +40,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
             return;
         }
         $this->notify(
-            [$event->getAsset()->getNotifyTo()->getId()],
+            [(int) $event->getAsset()->getNotifyTo()->getId()],
             self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
             AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
         );
@@ -55,7 +55,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
             return;
         }
         $this->notify(
-            [$event->getAsset()->getNotifyTo()->getId()],
+            [(int) $event->getAsset()->getNotifyTo()->getId()],
             self::EVENT_METADATA_PROCESSED_NAME,
             AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
         );

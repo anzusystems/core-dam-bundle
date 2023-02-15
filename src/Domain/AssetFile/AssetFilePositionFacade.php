@@ -20,7 +20,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
 /**
- * @template-covariant T of AssetFile
+ * @template T of AssetFile
  */
 abstract class AssetFilePositionFacade
 {
@@ -57,6 +57,8 @@ abstract class AssetFilePositionFacade
     }
 
     /**
+     * @param T $assetFile
+     *
      * @return T
      */
     public function setMainFile(Asset $asset, AssetFile $assetFile): AssetFile
@@ -80,6 +82,9 @@ abstract class AssetFilePositionFacade
         }
     }
 
+    /**
+     * @param T $assetFile
+     */
     public function removeFromSlot(Asset $asset, AssetFile $assetFile, string $slotName): Asset
     {
         $assetSlot = $this->assetSlotRepository->findSlotByAssetAndTitle((string) $asset->getId(), $slotName);
@@ -109,6 +114,8 @@ abstract class AssetFilePositionFacade
     }
 
     /**
+     * @param T $assetFile
+     *
      * @return T
      */
     public function setToSlot(Asset $asset, AssetFile $assetFile, string $slotName): AssetFile
@@ -142,6 +149,9 @@ abstract class AssetFilePositionFacade
         }
     }
 
+    /**
+     * @param T $assetFile
+     */
     private function removeOtherAssetSlots(Asset $asset, AssetFile $assetFile): void
     {
         foreach ($assetFile->getSlots() as $slot) {
@@ -153,6 +163,9 @@ abstract class AssetFilePositionFacade
         }
     }
 
+    /**
+     * @param T $assetFile
+     */
     private function validate(Asset $asset, AssetFile $assetFile, string $slotName): void
     {
         foreach ($asset->getSlots() as $slot) {

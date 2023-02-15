@@ -43,6 +43,11 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
         return $this->elements;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, CustomFormElement> $elements
+     */
     public function setElements(Collection $elements): self
     {
         $this->elements = $elements;

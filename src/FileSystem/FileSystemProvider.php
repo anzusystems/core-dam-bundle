@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Doctrine\Common\Util\ClassUtils;
@@ -88,6 +89,9 @@ final class FileSystemProvider
     public function getPublicFilesystem(AudioFile $audioFile): AbstractFilesystem
     {
         $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($audioFile->getAsset());
+        if (false === ($extSystemConfig instanceof ExtSystemAudioTypeConfiguration)) {
+            throw new InvalidArgumentException('Unsupported public storage');
+        }
         $filesystem = $this->getFileSystemByStorageName($extSystemConfig->getPublicStorage());
 
         if (null === $filesystem) {

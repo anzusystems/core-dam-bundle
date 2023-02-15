@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileCounter;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
@@ -20,9 +21,9 @@ final class ChunkValidator extends ConstraintValidator
     }
 
     /**
-     * @param ChunkAdmCreateDto $value
+     * @throws InvalidArgumentException
      */
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof ChunkAdmCreateDto)) {
             return;
@@ -37,7 +38,7 @@ final class ChunkValidator extends ConstraintValidator
                 ->addViolation();
         }
 
-        if (false === ($value->getSize() === $value->getFile()->getSize())) {
+        if (false === ($value->getSize() === $value->getFile()?->getSize())) {
             $this->context->buildViolation(ValidationException::ERROR_FIELD_INVALID)
                 ->atPath('size')
                 ->addViolation();

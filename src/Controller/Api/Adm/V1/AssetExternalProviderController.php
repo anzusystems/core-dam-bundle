@@ -39,6 +39,9 @@ final class AssetExternalProviderController extends AbstractApiController
         );
     }
 
+    /**
+     * @param list<string> $ids
+     */
     #[Route('/{providerName}/ids/{ids}', name: 'get_by_provider_service_ids', methods: [Request::METHOD_GET])]
     #[OAParameterPath('ids', description: 'List of ids.'), OAResponse([AssetExternalProviderDto::class])]
     public function getByProviderService(

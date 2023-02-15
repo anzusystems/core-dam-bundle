@@ -13,6 +13,9 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
 
+/**
+ * @extends AssetFileManager<AssetFile>
+ */
 final class AssetFileStatusManager extends AssetFileManager
 {
     private DamLogger $damLogger;

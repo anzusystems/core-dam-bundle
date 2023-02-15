@@ -12,6 +12,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 
+/**
+ * @extends AssetFileManager<ImageFile>
+ */
 final class ImageManager extends AssetFileManager
 {
     public function __construct(

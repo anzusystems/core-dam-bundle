@@ -29,7 +29,7 @@ final class MetadataProcessor
      * @throws NonUniqueResultException
      * @throws SerializerException
      */
-    public function process(AssetFile $assetFile, BaseFile $file = null): AssetFile
+    public function process(AssetFile $assetFile, BaseFile $file): AssetFile
     {
         $asset = $assetFile->getAsset();
         $this->assetMetadataProvider->provideMetaData($assetFile, $file);

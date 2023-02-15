@@ -23,7 +23,7 @@ abstract class AbstractSearchDto implements SearchDtoInterface
     #[Serialize]
     protected array $order = [];
 
-    public function setId(int|string $id): static
+    public function setId(string $id): static
     {
         $this->id = $id;
 

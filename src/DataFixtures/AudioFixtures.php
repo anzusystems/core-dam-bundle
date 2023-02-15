@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -65,6 +66,7 @@ final class AudioFixtures extends AbstractAssetFileFixtures
     private function getData(): Generator
     {
         $fileSystem = $this->fileSystemProvider->createLocalFilesystem(self::DATA_PATH);
+        /** @var AssetLicence $licence */
         $licence = $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $file = $this->getFile($fileSystem, 'audio_fixtures_sample.mp3');

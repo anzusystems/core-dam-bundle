@@ -44,6 +44,7 @@ final class ByteSizeEnvVarProcessor implements EnvVarProcessorInterface
             return (int) $byteValue;
         }
 
+        /** @var int $value */
         $value = substr($byteValue, 0, -2);
         $unit = strtoupper(substr($byteValue, -2));
 

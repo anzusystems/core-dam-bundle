@@ -36,7 +36,7 @@ final class CustomDataValidator extends ConstraintValidator
     /**
      * @throws NonUniqueResultException
      */
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof ResourceCustomFormProvidableInterface) &&
             false === ($value instanceof AssetCustomFormProvidableInterface)

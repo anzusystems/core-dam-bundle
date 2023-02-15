@@ -16,7 +16,7 @@ class AssetExternalProviderMetadataDto
         return $this->authorName;
     }
 
-    public function setAuthorName(string $authorName): self
+    public function setAuthorName(string $authorName): static
     {
         $this->authorName = $authorName;
 

@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\Asset as EntityAsset;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -15,7 +14,6 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 final class AssetPropertiesValidator extends ConstraintValidator
 {
     /**
-     * @param AssetSlotMinimalAdmDto $value
      * @param AssetProperties $constraint
      */
     public function validate(mixed $value, Constraint $constraint): void

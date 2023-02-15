@@ -43,9 +43,9 @@ class YoutubeDistribution extends Distribution
     #[Serialize]
     private string $playlist;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(type: Types::STRING, length: 20)]
     #[Serialize]
-    private int $language;
+    private string $language;
 
     public function __construct()
     {
@@ -55,7 +55,7 @@ class YoutubeDistribution extends Distribution
         $this->setTexts(new YoutubeTexts());
         $this->setFlags(new YoutubeFlags());
         $this->setPlaylist('');
-        $this->setLanguage(0);
+        $this->setLanguage('0');
     }
 
     public function getPrivacy(): YoutubeVideoPrivacy
@@ -119,12 +119,12 @@ class YoutubeDistribution extends Distribution
         return $this;
     }
 
-    public function getLanguage(): int
+    public function getLanguage(): string
     {
         return $this->language;
     }
 
-    public function setLanguage(int $language): self
+    public function setLanguage(string $language): self
     {
         $this->language = $language;
 

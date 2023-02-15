@@ -17,6 +17,7 @@ final class ArrayParser implements ElementParserInterface
 
     public function parse(CustomFormElement $element, mixed $value): array
     {
+        /** @psalm-suppress PossiblyNullArgument */
         $parts = explode(
             separator: ',',
             string: (string) $value,

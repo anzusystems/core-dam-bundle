@@ -37,7 +37,7 @@ final class UnsplashImageProvider
 
         $fixturesPath = $this->nameGenerator->alternatePath(
             originPath: $file->getAdapterPath(),
-            extension: FileHelper::guessExtension($file->getMimeType())
+            extension: FileHelper::guessExtension((string) $file->getMimeType())
         );
 
         $this->fileSystemProvider->getFixturesFileSystem()

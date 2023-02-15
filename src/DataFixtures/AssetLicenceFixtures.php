@@ -44,6 +44,7 @@ final class AssetLicenceFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        /** @var ExtSystem $cmsExtSystem */
         $cmsExtSystem = $this->entityManager->find(
             ExtSystem::class,
             1

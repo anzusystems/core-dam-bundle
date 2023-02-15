@@ -26,9 +26,15 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     #[Serialize]
     protected AssetTextsAdmListDto $texts;
 
+    /**
+     * @var Collection<string, Keyword>
+     */
     #[Serialize(handler: EntityIdHandler::class, type: Keyword::class)]
     protected Collection $keywords;
 
+    /**
+     * @var Collection<string, Author>
+     */
     #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
     protected Collection $authors;
 
@@ -43,7 +49,10 @@ final class AssetAdmDetailDto extends AssetAdmListDto
 
     public static function getInstance(Asset $asset): static
     {
-        return parent::getInstance($asset)
+        /** @psalm-var AssetAdmDetailDto $parent */
+        $parent = parent::getInstance($asset);
+
+        return $parent
             ->setTexts(AssetTextsAdmListDto::getInstance($asset->getTexts()))
             ->setFlags(AssetFlagsAdmDto::getInstance($asset->getAssetFlags()))
             ->setLicence($asset->getLicence())
@@ -58,7 +67,7 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->texts;
     }
 
-    public function setTexts(AssetTextsAdmListDto $texts): self
+    public function setTexts(AssetTextsAdmListDto $texts): static
     {
         $this->texts = $texts;
 
@@ -106,6 +115,9 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->keywords;
     }
 
+    /**
+     * @param Collection<string, Keyword> $keywords
+     */
     public function setKeywords(Collection $keywords): self
     {
         $this->keywords = $keywords;
@@ -118,6 +130,9 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->authors;
     }
 
+    /**
+     * @param Collection<string, Author> $authors
+     */
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;

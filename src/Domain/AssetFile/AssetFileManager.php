@@ -11,6 +11,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;
 
+/**
+ * @template T of AssetFile
+ */
 class AssetFileManager extends AbstractManager
 {
     use FileStashAwareTrait;
@@ -30,6 +33,11 @@ class AssetFileManager extends AbstractManager
         $this->chunkManager = $chunkManager;
     }
 
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
     public function updateExisting(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->trackModification($assetFile);
@@ -38,6 +46,11 @@ class AssetFileManager extends AbstractManager
         return $assetFile;
     }
 
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->trackCreation($assetFile);
@@ -47,6 +60,9 @@ class AssetFileManager extends AbstractManager
         return $assetFile;
     }
 
+    /**
+     * @param T $assetFile
+     */
     public function delete(AssetFile $assetFile, bool $flush = true): bool
     {
         foreach ($assetFile->getSlots() as $slot) {
@@ -64,6 +80,9 @@ class AssetFileManager extends AbstractManager
         return true;
     }
 
+    /**
+     * @param T $assetFile
+     */
     protected function deleteAssetFileRelations(AssetFile $assetFile): void
     {
     }

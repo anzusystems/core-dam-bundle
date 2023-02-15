@@ -29,6 +29,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-method DamUser getCreatedBy()
+ * @psalm-method DamUser getModifiedBy()
+ */
 #[ORM\Entity(repositoryClass: AssetRepository::class)]
 class Asset implements
     TimeTrackingInterface,
@@ -221,13 +225,16 @@ class Asset implements
         return $this;
     }
 
+    /**
+     * @return Collection<string, Author>
+     */
     public function getAuthors(): Collection
     {
         return $this->authors;
     }
 
     /**
-     * @return array<int, string>
+     * @return list<string>
      */
     public function getAuthorsAsStringArray(): array
     {
@@ -236,6 +243,11 @@ class Asset implements
         )->getValues();
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, Author> $authors
+     */
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;
@@ -243,13 +255,16 @@ class Asset implements
         return $this;
     }
 
+    /**
+     * @return Collection<string, Keyword>
+     */
     public function getKeywords(): Collection
     {
         return $this->keywords;
     }
 
     /**
-     * @return array<int, string>
+     * @return list<string>
      */
     public function getKeywordsAsStringArray(): array
     {
@@ -258,6 +273,11 @@ class Asset implements
         )->getValues();
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, Keyword> $keywords
+     */
     public function setKeywords(Collection $keywords): self
     {
         $this->keywords = $keywords;

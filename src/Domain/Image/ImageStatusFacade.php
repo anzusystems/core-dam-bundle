@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use InvalidArgumentException;
 use League\Flysystem\FilesystemException;
 
 /**
@@ -40,9 +41,14 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
      * @throws ImageManipulatorException
      * @throws FilesystemException
      * @throws SerializerException
+     * @throws InvalidArgumentException
      */
     protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
+        if (false === ($assetFile instanceof ImageFile)) {
+            throw new InvalidArgumentException('Asset type must be a type of image');
+        }
+
         $this->mostDominantColorProcessor->process($assetFile, $file);
         $this->optimalCropsProcessor->process($assetFile, $file);
         $this->defaultRoiProcessor->process($assetFile, $file);

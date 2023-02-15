@@ -13,6 +13,7 @@ final class AssetEventDispatcher
 {
     public function __construct(
         private readonly EventDispatcherInterface $dispatcher,
+        /** @var list<AssetDeleteEvent> */
         private $eventStack = [],
     ) {
     }

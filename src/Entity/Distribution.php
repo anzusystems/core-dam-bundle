@@ -100,7 +100,7 @@ class Distribution implements
         return $this->publishAt;
     }
 
-    public function setPublishAt(?DateTimeImmutable $publishAt): self
+    public function setPublishAt(?DateTimeImmutable $publishAt): static
     {
         $this->publishAt = $publishAt;
 
@@ -115,7 +115,7 @@ class Distribution implements
         return $this->blocks;
     }
 
-    public function setBlocks(Collection $blocks): self
+    public function setBlocks(Collection $blocks): static
     {
         $this->blocks = $blocks;
 
@@ -130,7 +130,7 @@ class Distribution implements
         return $this->blockedBy;
     }
 
-    public function setBlockedBy(Collection $blockedBy): self
+    public function setBlockedBy(Collection $blockedBy): static
     {
         $this->blockedBy = $blockedBy;
 
@@ -142,7 +142,7 @@ class Distribution implements
         return $this->status;
     }
 
-    public function setStatus(DistributionProcessStatus $status): self
+    public function setStatus(DistributionProcessStatus $status): static
     {
         $this->status = $status;
 
@@ -154,7 +154,7 @@ class Distribution implements
         return $this->distributionService;
     }
 
-    public function setDistributionService(string $distributionService): self
+    public function setDistributionService(string $distributionService): static
     {
         $this->distributionService = $distributionService;
 
@@ -167,7 +167,7 @@ class Distribution implements
         return $this->assetFileId;
     }
 
-    public function setAssetFileId(string $assetFileId): self
+    public function setAssetFileId(string $assetFileId): static
     {
         $this->assetFileId = $assetFileId;
 
@@ -180,7 +180,7 @@ class Distribution implements
         return $this->assetId;
     }
 
-    public function setAssetId(string $assetId): self
+    public function setAssetId(string $assetId): static
     {
         $this->assetId = $assetId;
 
@@ -193,7 +193,7 @@ class Distribution implements
         return $this->extId;
     }
 
-    public function setExtId(string $extId): self
+    public function setExtId(string $extId): static
     {
         $this->extId = $extId;
 
@@ -205,7 +205,7 @@ class Distribution implements
         return $this->distributionData;
     }
 
-    public function setDistributionData(array $distributionData): self
+    public function setDistributionData(array $distributionData): static
     {
         $this->distributionData = $distributionData;
 
@@ -217,7 +217,7 @@ class Distribution implements
         return $this->failReason;
     }
 
-    public function setFailReason(DistributionFailReason $failReason): self
+    public function setFailReason(DistributionFailReason $failReason): static
     {
         $this->failReason = $failReason;
 

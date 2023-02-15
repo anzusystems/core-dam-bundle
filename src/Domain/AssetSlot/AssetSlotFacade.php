@@ -53,6 +53,7 @@ class AssetSlotFacade
         $this->validator->validate($list);
         $this->validateOwnership($asset, $list);
 
+        /** @var ArrayCollection<int, AssetSlot> $newSlots */
         $newSlots = new ArrayCollection();
         foreach ($list as $minimalSlot) {
             $slot = $asset->getSlots()->filter(fn (AssetSlot $slot): bool => $slot->getName() === $minimalSlot->getSlotName())->first();

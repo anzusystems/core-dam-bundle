@@ -51,6 +51,9 @@ class ImageFile extends AssetFile
         return $this->resizes;
     }
 
+    /**
+     * @param Collection<int, ImageFileOptimalResize> $resizes
+     */
     public function setResizes(Collection $resizes): self
     {
         $this->resizes = $resizes;
@@ -78,6 +81,9 @@ class ImageFile extends AssetFile
         return $this->regionsOfInterest;
     }
 
+    /**
+     * @param Collection<int, RegionOfInterest> $regionsOfInterest
+     */
     public function setRegionsOfInterest(Collection $regionsOfInterest): self
     {
         $this->regionsOfInterest = $regionsOfInterest;

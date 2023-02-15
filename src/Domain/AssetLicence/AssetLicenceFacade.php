@@ -38,6 +38,9 @@ final class AssetLicenceFacade
         return $this->assetLicenceManager->update($assetLicence, $newAssetLicence);
     }
 
+    /**
+     * @param ReadableCollection<int, AssetLicence> $licences
+     */
     public function deleteBulk(ReadableCollection $licences): void
     {
         foreach ($licences as $licence) {

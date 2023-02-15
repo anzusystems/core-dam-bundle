@@ -72,6 +72,9 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this->blockedBy;
     }
 
+    /**
+     * @param Collection<int, Distribution> $blockedBy
+     */
     public function setBlockedBy(Collection $blockedBy): self
     {
         $this->blockedBy = $blockedBy;

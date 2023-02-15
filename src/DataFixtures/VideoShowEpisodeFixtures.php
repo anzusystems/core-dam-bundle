@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\VideoShowEpisode\VideoShowEpisodeManager;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -14,7 +13,7 @@ use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * @extends AbstractFixtures<VideoShowEpisode>
+ * @extends AbstractAssetFileFixtures<VideoShowEpisode>
  */
 final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
 {
@@ -54,7 +53,9 @@ final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
 
     private function getData(): Generator
     {
+        /** @var VideoShow $show */
         $show = $this->entityManager->find(VideoShow::class, VideoShowFixtures::SHOW_1);
+        /** @var VideoFile $videoFile */
         $videoFile = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         yield (new VideoShowEpisode())

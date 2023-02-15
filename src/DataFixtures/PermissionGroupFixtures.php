@@ -31,6 +31,7 @@ final class PermissionGroupFixtures extends AbstractFixtures
     public function load(ProgressBar $progressBar): void
     {
         foreach ($progressBar->iterate($this->getData()) as $permissionGroup) {
+            /** @var PermissionGroup $permissionGroup */
             $permissionGroup = $this->permissionGroupManager->create($permissionGroup, false);
             $this->addToRegistry($permissionGroup, $permissionGroup->getTitle());
         }

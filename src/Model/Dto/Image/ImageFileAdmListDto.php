@@ -26,7 +26,10 @@ class ImageFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(ImageFile $image): static
     {
-        return parent::getBaseInstance($image)
+        /** @psalm-var ImageFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($image);
+
+        return $parent
             ->setAsset($image->getAsset())
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($image->getAssetAttributes()))
             ->setImage($image);

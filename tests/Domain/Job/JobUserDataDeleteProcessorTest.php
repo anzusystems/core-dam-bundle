@@ -10,8 +10,12 @@ use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
 use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
 use AnzuSystems\Contracts\Entity\AnzuUser;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -68,5 +72,15 @@ final class JobUserDataDeleteProcessorTest extends AnzuKernelTestCase
         $this->assertInstanceOf(User::class, $user);
         $this->assertCount(0, $user->getAssetLicences());
         $this->assertStringStartsWith('deleted_', $user->getEmail());
+
+        // 5. Check if licence for blog deleted but cms kept untouched
+        $blogLicence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+        $this->assertNull($blogLicence);
+        $cmsLicence = $this->entityManager->find(AssetLicence::class, BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        $this->assertInstanceOf(AssetLicence::class, $cmsLicence);
+        /** @var AssetRepository $assetRepository */
+        $assetRepository = self::getContainer()->get(AssetRepository::class);
+        $assets = $assetRepository->geAllByLicenceIds([BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID], 1);
+        $this->assertNotEmpty($assets);
     }
 }

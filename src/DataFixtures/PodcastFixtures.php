@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use Generator;
@@ -58,7 +59,10 @@ final class PodcastFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        /** @var AssetLicence $licence */
         $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        /** @var ImageFile $imageFile */
+        $imageFile = $this->imageFileRepository->find(ImageFixtures::IMAGE_ID_1_2);
 
         $podcast = (new Podcast())
             ->setId(self::PODCAST_1)
@@ -74,7 +78,7 @@ final class PodcastFixtures extends AbstractFixtures
 
         $podcast->setImagePreview(
             $this->imagePreviewFactory->createFromImageFile(
-                imageFile: $this->imageFileRepository->find(ImageFixtures::IMAGE_ID_1_2),
+                imageFile: $imageFile,
                 flush: false
             )
         );

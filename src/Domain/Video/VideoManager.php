@@ -12,6 +12,9 @@ use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 
+/**
+ * @extends AssetFileManager<VideoFile>
+ */
 final class VideoManager extends AssetFileManager
 {
     public function __construct(

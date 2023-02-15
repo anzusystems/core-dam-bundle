@@ -21,6 +21,13 @@ final class ColorType extends AbstractValueObjectType
         }
 
         try {
+            /**
+             * @var string $r
+             * @var string $g
+             * @var string $b
+             *
+             * @psalm-suppress PossiblyUndefinedArrayOffset
+             */
             [$r, $g, $b] = str_split(ltrim($value, '#'), 2);
 
             return new Color(hexdec($r), hexdec($g), hexdec($b));

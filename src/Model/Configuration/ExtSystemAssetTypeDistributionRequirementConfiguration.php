@@ -35,7 +35,7 @@ final class ExtSystemAssetTypeDistributionRequirementConfiguration
             $config[self::TITLE_KEY] ?? '',
             $config[self::BLOCKED_BY_KEY] ?? [],
             ExtSystemAssetTypeDistributionRequirementCategorySelectConfiguration::getFromArrayConfiguration($config[self::CATEGORY_SELECT_KEY] ?? []),
-            DistributionRequirementStrategy::tryFrom($config[self::STRATEGY_KEY]),
+            DistributionRequirementStrategy::from($config[self::STRATEGY_KEY]),
             $config[self::REQUIRED_AUTH_KEY] ?? false,
             array_map(
                 fn (array $episodeMapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($episodeMapConfig),

@@ -42,6 +42,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
         $iteration = 0;
         foreach ($tags as $tag) {
             $ids = [];
+            /** @psalm-suppress TypeDoesNotContainNull */
             if (null === self::MAX_IDS_SUGGESTIONS || $iteration < self::MAX_IDS_SUGGESTIONS) {
                 $ids = $this->suggestIdsByTag($tag, $originAsset);
             }
@@ -60,6 +61,8 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             && $authorSettings->isEnabled()
             && false === empty($authorSettings->getAutocompleteFromMetadataTags());
     }
+
+    abstract protected function storeSuggestionsOnAsset(Asset $asset, array $suggestions): void;
 
     /**
      * @return list<string>

@@ -14,6 +14,10 @@ use AnzuSystems\CoreDamBundle\Repository\AssetFileMetadataRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-method DamUser getCreatedBy()
+ * @psalm-method DamUser getModifiedBy()
+ */
 #[ORM\Entity(repositoryClass: AssetFileMetadataRepository::class)]
 class AssetFileMetadata implements TimeTrackingInterface, UuidIdentifiableInterface, UserTrackingInterface
 {

@@ -66,6 +66,9 @@ final class AssetMetadataBulkFacade
         return new ArrayCollection($updated);
     }
 
+    /**
+     * @param Collection<int, FormProvidableMetadataBulkUpdateDto> $dtoList
+     */
     private function validateMaxBulkCount(Collection $dtoList): void
     {
         if ($dtoList->count() > $this->configurationProvider->getSettings()->getMaxBulkItemCount()) {

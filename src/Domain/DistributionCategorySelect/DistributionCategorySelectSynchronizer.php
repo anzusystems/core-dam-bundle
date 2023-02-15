@@ -50,6 +50,7 @@ final class DistributionCategorySelectSynchronizer
         $distributionConfig = $this->extSystemConfigurationProvider->getExtSystemConfiguration($extSystem->getSlug());
 
         foreach (AssetType::cases() as $type) {
+            /** @var ArrayCollection<int, DistributionCategorySelect> $handledCategorySelects */
             $handledCategorySelects = new ArrayCollection();
             $distributionRequirements = $distributionConfig
                 ->getByAssetType($type)
