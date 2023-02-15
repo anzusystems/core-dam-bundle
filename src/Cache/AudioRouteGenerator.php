@@ -5,19 +5,28 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Cache;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
-final class AudioRouteGenerator
+final readonly class AudioRouteGenerator
 {
     public function __construct(
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
     ) {
     }
 
-    public function getFullUrl(AudioFile $audioFile): string
-    {
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetFile($audioFile);
+    public function getFullUrl(
+        string $path,
+        string $extSlug
+    ): string {
+        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
+            assetType: AssetType::Audio,
+            extSystemSlug: $extSlug
+        );
 
-        return $config->getPublicDomainName() . '/' . $audioFile->getAudioPublicLink()->getPath();
+        return UrlHelper::concatPathWithDomain(
+            $config->getPublicDomainName(),
+            $path
+        );
     }
 }

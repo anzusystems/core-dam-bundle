@@ -48,6 +48,7 @@ class PodcastEpisode implements
     use PositionTrait;
 
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]

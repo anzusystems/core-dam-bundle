@@ -87,7 +87,6 @@ class AssetFacade
     {
         try {
             $this->assetManager->beginTransaction();
-            $this->assetManager->setNotifyTo($asset);
             $this->assetStatusManager->toDeleting($asset);
             $this->assetManager->commit();
 
@@ -138,8 +137,6 @@ class AssetFacade
         /** @var Asset $entity */
         $entity = $assets->first();
         $this->indexManager->deleteBulk($entity, $deletedIds);
-        $this->assetFileDeleteEventDispatcher->dispatchAll();
-        $this->assetEventDispatcher->dispatchAll();
 
         return $assets->count();
     }
@@ -154,7 +151,6 @@ class AssetFacade
 
         foreach ($asset->getSlots() as $slot) {
             $assetFile = $slot->getAssetFile();
-            $assetFile->setAsset(new Asset());
             $this->assetFileDeleteEventDispatcher->addEvent(
                 (string) $assetFile->getId(),
                 $deleteId,

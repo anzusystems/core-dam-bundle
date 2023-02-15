@@ -10,8 +10,12 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropCache;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 use RuntimeException;
 use Throwable;
 
@@ -20,6 +24,8 @@ use Throwable;
  */
 final class ImageFacade extends AssetFileFacade
 {
+    use EventDispatcherAwareTrait;
+
     public function __construct(
         private readonly ImageManager $imageManager,
         private readonly ImageFactory $imageFactory,
@@ -38,6 +44,7 @@ final class ImageFacade extends AssetFileFacade
         try {
             $this->imageManager->beginTransaction();
 
+            $event = $this->createEvent($image);
             $this->imageRotator->rotateImage($image, $angle);
             $this->imageManager->updateExisting($image);
             $this->indexManager->index($image->getAsset());
@@ -45,6 +52,8 @@ final class ImageFacade extends AssetFileFacade
             $this->cropCache->removeCache($image);
 
             $this->imageManager->commit();
+
+            $this->dispatcher->dispatch($event);
         } catch (Throwable $exception) {
             $this->imageManager->rollback();
 
@@ -67,5 +76,17 @@ final class ImageFacade extends AssetFileFacade
     protected function getRepository(): AbstractAssetFileRepository
     {
         return $this->assetRepository;
+    }
+
+    private function createEvent(ImageFile $image): ManipulatedImageEvent
+    {
+        return $this->dispatcher->dispatch(new ManipulatedImageEvent(
+            imageId: (string) $image->getId(),
+            roiPositions: CollectionHelper::traversableToIds(
+                traversable: $image->getRegionsOfInterest(),
+                getIdAction: fn (RegionOfInterest $regionOfInterest): int => $regionOfInterest->getPosition()
+            ),
+            extSystem: $image->getExtSystem()->getSlug()
+        ));
     }
 }

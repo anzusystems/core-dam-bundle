@@ -45,11 +45,17 @@ final class ExtSystemConfigurationProvider
 
     public function getExtSystemConfigurationByAsset(Asset $asset): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration|ExtSystemVideoTypeConfiguration
     {
-        $configuration = $this->getExtSystemConfiguration(
+        return $this->getExtSystemConfigurationByAssetType(
+            $asset->getAttributes()->getAssetType(),
             $asset->getLicence()->getExtSystem()->getSlug()
         );
+    }
 
-        return match ($asset->getAttributes()->getAssetType()) {
+    public function getExtSystemConfigurationByAssetType(AssetType $assetType, string $extSystemSlug): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration|ExtSystemVideoTypeConfiguration
+    {
+        $configuration = $this->getExtSystemConfiguration($extSystemSlug);
+
+        return match ($assetType) {
             AssetType::Image => $configuration->getImage(),
             AssetType::Video => $configuration->getVideo(),
             AssetType::Audio => $configuration->getAudio(),

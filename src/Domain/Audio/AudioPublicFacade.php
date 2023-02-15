@@ -7,10 +7,12 @@ namespace AnzuSystems\CoreDamBundle\Domain\Audio;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Event\ManipulatedAudioEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use RuntimeException;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -20,6 +22,7 @@ final class AudioPublicFacade
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+    use EventDispatcherAwareTrait;
 
     public const SLUG_REGEX = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
@@ -45,13 +48,12 @@ final class AudioPublicFacade
             $this->audioManager->beginTransaction();
 
             $this->audioPublicManager->makePublic($audio, $dto);
-            // todo purge cache
-            // $this->cachePurgeManager->purgeAudioCache((string) $audio->getId(), $path);
-
             $this->audioManager->flush();
             $this->indexManager->index($audio->getAsset());
 
             $this->audioManager->commit();
+
+            $this->dispatcher->dispatch($this->createEvent($audio));
         } catch (Throwable $exception) {
             $this->audioManager->rollback();
 
@@ -67,16 +69,14 @@ final class AudioPublicFacade
 
         try {
             $this->audioManager->beginTransaction();
+            $event = $this->createEvent($audio);
 
             $this->audioPublicManager->makePrivate($audio);
-
-            // todo save existing
-            // todo purge cache
-            // $this->cachePurgeManager->purgeAudioCache($audio->getId(), $path);
-
             $this->audioManager->flush();
             $this->indexManager->index($audio->getAsset());
             $this->audioManager->commit();
+
+            $this->dispatcher->dispatch($event);
         } catch (Throwable $exception) {
             $this->audioManager->rollback();
 
@@ -84,6 +84,15 @@ final class AudioPublicFacade
         }
 
         return $audio;
+    }
+
+    private function createEvent(AudioFile $audio): ManipulatedAudioEvent
+    {
+        return new ManipulatedAudioEvent(
+            audioId: (string) $audio->getId(),
+            publicPath: $audio->getAudioPublicLink()->getPath(),
+            extSystemSlug: $audio->getExtSystem()->getSlug()
+        );
     }
 
     private function ensureSlug(AudioFile $audio, AudioPublicationAdmDto $dto): void

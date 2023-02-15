@@ -17,7 +17,6 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Exception as YoutubeException;
 use Google\Exception;
 use Psr\Cache\InvalidArgumentException as PsrInvalidArgumentException;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class YoutubeAuthenticator
 {
@@ -28,7 +27,6 @@ final class YoutubeAuthenticator
         private readonly GoogleClientProvider $clientProvider,
         private readonly CurrentAnzuUserProvider $currentUserProvider,
         private readonly TokenStorage $tokenStorage,
-        private readonly EventDispatcherInterface $dispatcher,
     ) {
     }
 
