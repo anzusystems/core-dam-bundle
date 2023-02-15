@@ -19,10 +19,7 @@ final readonly class AudioRouteGenerator
         string $path,
         string $extSlug
     ): string {
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
-            assetType: AssetType::Audio,
-            extSystemSlug: $extSlug
-        );
+        $config = $this->extSystemConfigurationProvider->getAudioExtSystemConfiguration(extSystemSlug: $extSlug);
 
         return UrlHelper::concatPathWithDomain(
             $config->getPublicDomainName(),

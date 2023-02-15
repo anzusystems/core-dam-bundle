@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\ExchangeCodeStateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\RefreshTokenDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\TokenResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeCodeDto;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Exception as YoutubeException;
 use Google\Exception;
@@ -21,6 +22,7 @@ use Psr\Cache\InvalidArgumentException as PsrInvalidArgumentException;
 final class YoutubeAuthenticator
 {
     use SerializerAwareTrait;
+    use EventDispatcherAwareTrait;
 
     public function __construct(
         private readonly YoutubeExchangeCodeStateManager $exchangeCodeStateManager,

@@ -23,10 +23,7 @@ final readonly class ImageRouteGenerator
 
     public function generateAllPaths(string $extSystemSlug, string $imageId, array $roiPositions = []): array
     {
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
-            AssetType::Image,
-            $extSystemSlug
-        );
+        $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($extSystemSlug);
 
         return array_merge(
             $this->generateDomainPaths($config->getAdminDomain(), $imageId, $roiPositions),
@@ -36,12 +33,11 @@ final readonly class ImageRouteGenerator
 
     public function generateAllPublicDomainPaths(string $extSystemSlug, string $imageId, array $roiPositions = []): array
     {
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
-            AssetType::Image,
-            $extSystemSlug
+        return $this->generateDomainPaths(
+            domain: $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($extSystemSlug)->getPublicDomain(),
+            imageId: $imageId,
+            roiPositions: $roiPositions
         );
-
-        return $this->generateDomainPaths($config->getPublicDomain(), $imageId, $roiPositions);
     }
 
     public function generateAdminRouteByTag(string $imageId, string $extSystemSlug, string $tag, ?int $roiPosition): string
@@ -51,16 +47,11 @@ final readonly class ImageRouteGenerator
             return '';
         }
 
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
-            AssetType::Image,
-            $extSystemSlug
-        );
-
         return UrlHelper::concatPathWithDomain(
-            $config->getAdminDomain(),
-            $this->imageUrlFactory->generateAllowListUrl(
+            domain: $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($extSystemSlug)->getAdminDomain(),
+            path: $this->imageUrlFactory->generateAllowListUrl(
                 imageId: $imageId,
-                item: $sizeList[0],
+                item: $sizeList[array_key_first($sizeList)],
                 roiPosition: $roiPosition,
             )
         );

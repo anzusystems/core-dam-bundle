@@ -88,7 +88,8 @@ class ImageLinksHandler extends AbstractHandler
      */
     protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
-        $roi = $this->roiRepository->findByImageIdAndPosition($imageFile->getId(), RegionOfInterest::FIRST_ROI_POSITION);
+        $imageId = (string) $imageFile->getId();
+        $roi = $this->roiRepository->findByImageIdAndPosition($imageId, RegionOfInterest::FIRST_ROI_POSITION);
         if (null === $roi) {
             return [];
         }
@@ -96,7 +97,7 @@ class ImageLinksHandler extends AbstractHandler
         return [
             'type' => self::LINKS_TYPE,
             'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
-                imageId: $imageFile->getId(),
+                imageId: $imageId,
                 item: $item,
                 roiPosition: $roi->getPosition()
             ),
