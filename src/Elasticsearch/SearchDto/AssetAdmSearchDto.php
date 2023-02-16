@@ -595,6 +595,7 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setSlotsCountFrom(?int $slotsCountFrom): self
     {
         $this->slotsCountFrom = $slotsCountFrom;
+
         return $this;
     }
 
@@ -606,6 +607,7 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setSlotsCountUntil(?int $slotsCountUntil): self
     {
         $this->slotsCountUntil = $slotsCountUntil;
+
         return $this;
     }
 }
