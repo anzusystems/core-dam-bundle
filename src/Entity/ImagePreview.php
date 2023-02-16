@@ -35,7 +35,7 @@ class ImagePreview implements
     #[Serialize(handler: EntityIdHandler::class)]
     protected ImageFile $imageFile;
 
-    // validate if roi exist
+    // todo validate if roi exist
     #[ORM\Column(type: Types::SMALLINT)]
     #[Serialize]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]

@@ -8,15 +8,27 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
-final class AssetFileDeleteEvent
+final readonly class AssetFileDeleteEvent
 {
     public function __construct(
-        protected readonly string $deleteId,
-        protected readonly string $deleteAssetId,
-        protected readonly AssetFile $assetFile,
-        protected readonly AssetType $type,
-        protected readonly DamUser $deletedBy,
+        protected string $deleteId,
+        protected string $deleteAssetId,
+        protected AssetFile $assetFile,
+        protected AssetType $type,
+        protected DamUser $deletedBy,
+        protected array $roiPositions,
+        protected string $extSystem,
     ) {
+    }
+
+    public function getRoiPositions(): array
+    {
+        return $this->roiPositions;
+    }
+
+    public function getExtSystem(): string
+    {
+        return $this->extSystem;
     }
 
     public function getDeleteAssetId(): string

@@ -9,11 +9,14 @@ use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
 use AnzuSystems\CoreDamBundle\Model\Dto\RegionOfInterest\RegionOfInterestAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 
 class RegionOfInterestFacade
 {
     use ValidatorAwareTrait;
+    use EventDispatcherAwareTrait;
 
     public function __construct(
         private readonly RegionOfInterestManager $regionOfInterestManager,
@@ -43,16 +46,34 @@ class RegionOfInterestFacade
         RegionOfInterestAdmDetailDto $roiDto,
     ): RegionOfInterest {
         $this->validator->validate($roiDto);
+        $event = $this->createEvent($regionOfInterest);
         $this->regionOfInterestManager->update($regionOfInterest, $roiDto);
+        $this->dispatcher->dispatch($event);
 
         return $regionOfInterest;
     }
 
     public function delete(RegionOfInterest $regionOfInterest): bool
     {
+        $event = $this->createEvent($regionOfInterest);
         $regionOfInterest->getImage()->getRegionsOfInterest()->removeElement($regionOfInterest);
 
-        return $this->regionOfInterestManager->delete($regionOfInterest);
+        if ($this->regionOfInterestManager->delete($regionOfInterest)) {
+            $this->dispatcher->dispatch($event);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function createEvent(RegionOfInterest $regionOfInterest): ManipulatedImageEvent
+    {
+        return $this->dispatcher->dispatch(new ManipulatedImageEvent(
+            imageId: (string) $regionOfInterest->getImage()->getId(),
+            roiPositions: [$regionOfInterest->getPosition()],
+            extSystem: $regionOfInterest->getImage()->getExtSystem()->getSlug()
+        ));
     }
 
     /**

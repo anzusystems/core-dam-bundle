@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
@@ -89,29 +88,23 @@ class ImageLinksHandler extends AbstractHandler
      */
     protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
-        $reqCrop = (new RequestedCropDto())
-            ->setRequestWidth($item->getWidth())
-            ->setRequestHeight($item->getHeight())
-            ->setRoi(RegionOfInterest::FIRST_ROI_POSITION);
-
-        $imageFileId = (string) $imageFile->getId();
-        $roi = $this->roiRepository->findByImageIdAndPosition($imageFileId, RegionOfInterest::FIRST_ROI_POSITION);
+        $imageId = (string) $imageFile->getId();
+        $roi = $this->roiRepository->findByImageIdAndPosition($imageId, RegionOfInterest::FIRST_ROI_POSITION);
         if (null === $roi) {
             return [];
         }
 
         return [
             'type' => self::LINKS_TYPE,
-            'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
-                imageId: $imageFileId,
-                width: $reqCrop->getRequestWidth(),
-                height: $reqCrop->getRequestHeight(),
+            'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
+                imageId: $imageId,
+                item: $item,
                 roiPosition: $roi->getPosition()
             ),
-            'requestedWidth' => $reqCrop->getRequestWidth(),
-            'requestedHeight' => $reqCrop->getRequestHeight(),
+            'requestedWidth' => $item->getWidth(),
+            'requestedHeight' => $item->getHeight(),
             'title' => empty($item->getTitle())
-                ? "{$reqCrop->getRequestWidth()}x{$reqCrop->getRequestHeight()}"
+                ? "{$item->getWidth()}x{$item->getHeight()}"
                 : $item->getTitle(),
         ];
     }

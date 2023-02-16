@@ -71,7 +71,10 @@ final class AudioLinksHandler extends AbstractHandler
     {
         return [
             'type' => self::LINKS_TYPE,
-            'url' => $this->audioRouteGenerator->getFullUrl($audioFile),
+            'url' => $this->audioRouteGenerator->getFullUrl(
+                path: $audioFile->getAudioPublicLink()->getPath(),
+                extSlug: $audioFile->getExtSystem()->getSlug()
+            ),
         ];
     }
 }

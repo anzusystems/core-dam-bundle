@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
@@ -430,6 +431,12 @@ class Configuration implements ConfigurationInterface
 
         if ($type->is(AssetType::Image)) {
             $config
+                ->scalarNode(ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY)
+                    ->isRequired()
+                ->end()
                 ->scalarNode(ExtSystemImageTypeConfiguration::ROI_WIDTH_KEY)
                     ->isRequired()
                 ->end()
@@ -554,13 +561,13 @@ class Configuration implements ConfigurationInterface
                     ->useAttributeAsKey('name')
                     ->arrayPrototype()
                     ->children()
-                        ->arrayNode('domains')
+                        ->scalarNode(CropAllowListConfiguration::DOMAIN)
+                            ->isRequired()
+                        ->end()
+                        ->arrayNode(CropAllowListConfiguration::QUALITY_ALLOW_LIST)
                             ->scalarPrototype()->end()
                         ->end()
-                        ->arrayNode('quality_whitelist')
-                            ->scalarPrototype()->end()
-                        ->end()
-                        ->arrayNode('crops')
+                        ->arrayNode(CropAllowListConfiguration::CROPS)
                             ->arrayPrototype()
                             ->children()
                                 ->integerNode(AllowListConfiguration::CROP_ALLOW_ITEM_WIDTH)->end()

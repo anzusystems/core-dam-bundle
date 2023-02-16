@@ -5,11 +5,18 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\ImagePreview;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
+use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
 
 final class ImagePreviewManager extends AbstractManager
 {
+    public function __construct(
+        private readonly ImagePreviewRepository $imagePreviewRepository
+    ) {
+    }
+
     public function create(ImagePreview $imagePreview, bool $flush = true): ImagePreview
     {
         $this->trackCreation($imagePreview);
@@ -45,6 +52,15 @@ final class ImagePreviewManager extends AbstractManager
         $this->flush($flush);
 
         return true;
+    }
+
+    public function deleteByImage(ImageFile $imageFile): void
+    {
+        $previews = $this->imagePreviewRepository->findByImage((string) $imageFile->getId());
+
+        foreach ($previews as $preview) {
+            $this->delete($preview, false);
+        }
     }
 
     public function setImagePreviewRelation(

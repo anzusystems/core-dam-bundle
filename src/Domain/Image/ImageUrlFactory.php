@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use Symfony\Component\Routing\RouterInterface;
 
 final class ImageUrlFactory
@@ -11,6 +12,21 @@ final class ImageUrlFactory
     public function __construct(
         private readonly RouterInterface $router,
     ) {
+    }
+
+    public function generateAllowListUrl(
+        string $imageId,
+        CropAllowItem $item,
+        ?int $roiPosition = null,
+        ?int $quality = null,
+    ): string {
+        return $this->generatePublicUrl(
+            imageId: $imageId,
+            width: $item->getWidth(),
+            height: $item->getHeight(),
+            roiPosition: $roiPosition,
+            quality: $quality
+        );
     }
 
     public function generatePublicUrl(

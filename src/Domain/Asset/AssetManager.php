@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetManager extends AbstractManager
@@ -55,6 +56,12 @@ class AssetManager extends AbstractManager
         foreach ($asset->getEpisodes() as $episode) {
             $episode->setAsset(null);
         }
+        foreach ($asset->getVideoEpisodes() as $episode) {
+            $episode->setAsset(null);
+        }
+
+        $asset->setEpisodes(new ArrayCollection());
+        $asset->setVideoEpisodes(new ArrayCollection());
         $this->entityManager->remove($asset);
         $this->flush($flush);
 

@@ -48,6 +48,7 @@ class Podcast implements
     protected AssetLicence $licence;
 
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]

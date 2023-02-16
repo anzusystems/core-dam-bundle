@@ -37,9 +37,9 @@ final class AllowListConfiguration
         throw new DomainException("Domain ({$domainName}) not supported");
     }
 
-    public function getListByDomain(): CropAllowListConfiguration
+    public function getListByDomain(?string $domain = null): CropAllowListConfiguration
     {
-        $schemeAndHost = $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+        $schemeAndHost = $domain ?? $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
 
         if (isset($this->domainAllowList[$schemeAndHost])) {
             return CropAllowListConfiguration::getFromArrayConfiguration($this->domainAllowList[$schemeAndHost]);

@@ -24,10 +24,13 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Exception;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use Symfony\Component\Config\FileLocator;
@@ -369,10 +372,10 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             'http_client' => [
                 'scoped_clients' => [
                     'jwPlayer.api.client' => [
-                        'base_uri' => 'https://api.jwplayer.com',
+                        'base_uri' => 'https://api.jwplayer.com', // todo env
                     ],
                     'unsplash.api.client' => [
-                        'base_uri' => 'https://api.unsplash.com',
+                        'base_uri' => 'https://api.unsplash.com', // todo env
                         'headers' => [
                             'Accept-Version' => 'v1',
                         ],
@@ -497,10 +500,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $container->setParameter('anzu_systems.dam_bundle.tagged_allow_list', $tagGroups);
 
         $domainAllowList = [];
-        foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $name => $allowList) {
-            foreach ($allowList['domains'] as $domain) {
-                $domainAllowList[$this->getDomain($domain)] = $allowList;
-            }
+        foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $allowList) {
+            $domainAllowList[$this->getDomain($allowList[CropAllowListConfiguration::DOMAIN])] = $allowList;
         }
         $container->setParameter('anzu_systems.dam_bundle.domain_allow_list', $domainAllowList);
 
@@ -622,6 +623,11 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
+                if (AssetType::Image->toString() === $assetType) {
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY]);
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY]);
+                }
+
                 $distRequirements = $assetExtSystemConfig['distribution']['distribution_requirements'] ?? [];
                 foreach ($distRequirements as $name => $distRequirement) {
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType]['distribution']['distribution_requirements'][$name][ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_SERVICE_ID_KEY] = $name;

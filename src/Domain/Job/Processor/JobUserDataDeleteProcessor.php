@@ -15,6 +15,8 @@ use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use Throwable;
@@ -30,6 +32,8 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
         private readonly UserManager $userManager,
         private readonly AssetFacade $assetFacade,
         private readonly AssetLicenceFacade $licenceFacade,
+        private readonly AssetEventDispatcher $assetEventDispatcher,
+        private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -72,8 +76,10 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
                 }
             }
             $this->finishProcessCycle($job, $removedCount, $assets->last() ?: null);
-
             $this->entityManager->commit();
+
+            $this->assetFileDeleteEventDispatcher->dispatchAll();
+            $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $throwable) {
             $this->entityManager->rollback();
             $this->finishFail($job, substr($throwable->getMessage(), 0, 255));
