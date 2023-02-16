@@ -12,8 +12,8 @@ final class AssetFilePropertiesAdmDto
     private array $distributesInServices;
     private array $slotNames;
     private bool $fromRss;
-    private int $pixels;
-    private int $shortestDimension;
+    private int $width;
+    private int $height;
 
     public static function getInstance(AssetFileProperties $properties): self
     {
@@ -21,8 +21,8 @@ final class AssetFilePropertiesAdmDto
             ->setDistributesInServices($properties->getDistributesInServices())
             ->setSlotNames($properties->getSlotNames())
             ->setFromRss($properties->isFromRss())
-            ->setPixels($properties->getPixels())
-            ->setShortestDimension($properties->getShortestDimension());
+            ->setWidth($properties->getWidth())
+            ->setHeight($properties->getHeight());
     }
 
     #[Serialize]
@@ -65,27 +65,27 @@ final class AssetFilePropertiesAdmDto
     }
 
     #[Serialize]
-    public function getPixels(): int
+    public function getWidth(): int
     {
-        return $this->pixels;
+        return $this->width;
     }
 
-    public function setPixels(int $pixels): self
+    public function setWidth(int $width): self
     {
-        $this->pixels = $pixels;
+        $this->width = $width;
 
         return $this;
     }
 
     #[Serialize]
-    public function getShortestDimension(): int
+    public function getHeight(): int
     {
-        return $this->shortestDimension;
+        return $this->height;
     }
 
-    public function setShortestDimension(int $shortestDimension): self
+    public function setHeight(int $height): self
     {
-        $this->shortestDimension = $shortestDimension;
+        $this->height = $height;
 
         return $this;
     }

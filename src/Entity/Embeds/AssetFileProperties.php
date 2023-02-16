@@ -20,18 +20,18 @@ class AssetFileProperties
     private bool $fromRss;
 
     #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true])]
-    private int $pixels;
+    private int $width;
 
     #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true])]
-    private int $shortestDimension;
+    private int $height;
 
     public function __construct()
     {
         $this->setDistributesInServices([]);
         $this->setSlotNames([]);
         $this->setFromRss(false);
-        $this->setPixels(0);
-        $this->setShortestDimension(0);
+        $this->setWidth(0);
+        $this->setHeight(0);
     }
 
     public function getDistributesInServices(): array
@@ -70,26 +70,26 @@ class AssetFileProperties
         return $this;
     }
 
-    public function getPixels(): int
+    public function getWidth(): int
     {
-        return $this->pixels;
+        return $this->width;
     }
 
-    public function setPixels(int $pixels): self
+    public function setWidth(int $width): self
     {
-        $this->pixels = $pixels;
+        $this->width = $width;
 
         return $this;
     }
 
-    public function getShortestDimension(): int
+    public function getHeight(): int
     {
-        return $this->shortestDimension;
+        return $this->height;
     }
 
-    public function setShortestDimension(int $shortestDimension): self
+    public function setHeight(int $height): self
     {
-        $this->shortestDimension = $shortestDimension;
+        $this->height = $height;
 
         return $this;
     }

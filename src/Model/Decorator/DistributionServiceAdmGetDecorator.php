@@ -37,6 +37,12 @@ final class DistributionServiceAdmGetDecorator
     }
 
     #[Serialize]
+    public function getIconPath(): string
+    {
+        return $this->configuration->getIconPath();
+    }
+
+    #[Serialize]
     public function getType(): string
     {
         return $this->configuration->getType();

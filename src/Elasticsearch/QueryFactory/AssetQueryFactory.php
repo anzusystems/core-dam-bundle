@@ -111,9 +111,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'rotation', $searchDto->getRotationFrom(), $searchDto->getRotationUntil());
         $this->applyRangeFilter($filter, 'duration', $searchDto->getDurationFrom(), $searchDto->getDurationUntil());
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
+        $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
-        $this->applyRangeFilter($filter, 'pixels', $searchDto->getPixelsFrom(), $searchDto->getPixelsUntil());
-        $this->applyRangeFilter($filter, 'shortest_dimension', $searchDto->getShortestDimensionFrom(), $searchDto->getShortestDimensionUntil());
 
         if (false === empty($searchDto->getLicences())) {
             $filter[] = ['terms' => ['licence' => array_map(
