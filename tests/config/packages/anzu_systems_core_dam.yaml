@@ -120,14 +120,14 @@ anzu_systems_core_dam:
         rgb: [ 154, 0, 5 ]
     crop_allow_list:
       admin:
-        domains: [ admin ]
+        domain: admin
         quality_whitelist: [ ]
         crops:
           - { width: 0, height: 200, tags: ['list'] }       # admin DAM listing
           - { width: 1920, height: 0, tags: ['detail'] }    # admin DAM image crop
           - { width: 200, height: 100}    # admin DAM image crop
       web_cms:
-        domains: [ web_cms ]
+        domain: web_cms
         quality_whitelist: [ 90 ]
         crops:
           - { width: 800, height: 450 }   # anzu web general
@@ -138,6 +138,8 @@ anzu_systems_core_dam:
       image:
         title: ['customData:title']
         custom_metadata_pinned_amount: 3
+        public_domain: web_cms
+        admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'
         chunk_storage_name: 'cms.chunk'
@@ -208,6 +210,8 @@ anzu_systems_core_dam:
         storage_name: 'blog.image'
         crop_storage_name: 'blog.crop'
         chunk_storage_name: 'blog.chunk'
+        public_domain: web_cms
+        admin_domain: admin
         size_limit: 20971520  # 20MB
         roi_width: 16
         roi_height: 9
