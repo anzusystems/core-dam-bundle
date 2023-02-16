@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
 final readonly class ImageRouteGenerator
 {

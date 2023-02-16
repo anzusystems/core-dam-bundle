@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Cache;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
 final readonly class AudioRouteGenerator
 {
