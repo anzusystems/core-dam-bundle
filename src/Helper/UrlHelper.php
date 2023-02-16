@@ -15,7 +15,7 @@ final class UrlHelper
         }
 
         return sprintf(
-            '%s%s',
+            '%s/%s',
             $domain,
             $path,
         );
