@@ -11,6 +11,4 @@ enum YoutubeDataStorage: string implements EnumInterface
 
     case Playlist = 'playlist';
     case Language = 'language';
-
-
 }

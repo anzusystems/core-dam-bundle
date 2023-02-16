@@ -9,10 +9,10 @@ enum PodcastEpisodeStatus: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case notImported = 'not_imported';
-    case imported = 'imported';
-    case importFailed = 'import_failed';
-    case conflict = 'conflict';
+    case NotImported = 'not_imported';
+    case Imported = 'imported';
+    case ImportFailed = 'import_failed';
+    case Conflict = 'conflict';
 
-    public const Default = self::notImported;
+    public const Default = self::NotImported;
 }

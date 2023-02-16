@@ -9,9 +9,9 @@ enum PodcastLastImportStatus: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case notImported = 'not_imported';
-    case imported = 'imported';
-    case importFailed = 'import_failed';
+    case NotImported = 'not_imported';
+    case Imported = 'imported';
+    case ImportFailed = 'import_failed';
 
-    public const Default = self::notImported;
+    public const Default = self::NotImported;
 }

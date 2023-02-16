@@ -11,17 +11,17 @@ final class PodcastEpisodeStatusManager extends PodcastEpisodeManager
 {
     public function toImported(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
     {
-        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::imported, $flush);
+        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::Imported, $flush);
     }
 
     public function toImportFailed(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
     {
-        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::importFailed, $flush);
+        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::ImportFailed, $flush);
     }
 
     public function toConflict(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
     {
-        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::importFailed, $flush);
+        return $this->setStatus($podcastEpisode, PodcastEpisodeStatus::ImportFailed, $flush);
     }
 
     private function setStatus(PodcastEpisode $podcastEpisode, PodcastEpisodeStatus $status, bool $flush = true): PodcastEpisode

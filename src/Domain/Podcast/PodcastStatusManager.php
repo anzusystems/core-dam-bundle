@@ -11,12 +11,12 @@ final class PodcastStatusManager extends PodcastManager
 {
     public function toImported(Podcast $podcast, bool $flush = true): Podcast
     {
-        return $this->setStatus($podcast, PodcastLastImportStatus::imported, $flush);
+        return $this->setStatus($podcast, PodcastLastImportStatus::Imported, $flush);
     }
 
     public function toImportFailed(Podcast $podcast, bool $flush = true): Podcast
     {
-        return $this->setStatus($podcast, PodcastLastImportStatus::importFailed, $flush);
+        return $this->setStatus($podcast, PodcastLastImportStatus::ImportFailed, $flush);
     }
 
     private function setStatus(Podcast $podcast, PodcastLastImportStatus $status, bool $flush = true): Podcast

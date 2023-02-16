@@ -79,7 +79,7 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         $status->setMadeForKids($distribution->getFlags()->isForKids());
         $status->setSelfDeclaredMadeForKids($distribution->getFlags()->isForKids());
 
-        if ($distribution->getPrivacy()->is(YoutubeVideoPrivacy::dynamic)) {
+        if ($distribution->getPrivacy()->is(YoutubeVideoPrivacy::Dynamic)) {
             $status->setPublishAt($distribution->getPublishAt()?->format(DateTimeInterface::ATOM));
 
             return $status;

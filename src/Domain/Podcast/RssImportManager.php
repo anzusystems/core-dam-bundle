@@ -75,7 +75,7 @@ final class RssImportManager
         $this->reader->initReader($this->client->readPodcastRss($podcast));
 
         $this->outputUtil->writeln(sprintf('Importing podcast (%s)', $podcast->getTexts()->getTitle()));
-        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::notImported)) {
+        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
             $this->outputUtil->writeln('Updating podcast metadata');
             $this->updatePodcast($podcast, $this->reader->readChannel());
         }

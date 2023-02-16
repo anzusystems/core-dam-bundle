@@ -9,15 +9,15 @@ enum PodcastImportMode: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case notImport = 'not_import';
-    case import = 'import';
+    case NotImport = 'not_import';
+    case Import = 'import';
 
-    public const Default = self::import;
+    public const Default = self::Import;
 
     public static function getAllImportModes(): array
     {
         return [
-            self::import
+            self::Import
         ];
     }
 }

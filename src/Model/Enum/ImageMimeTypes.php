@@ -21,8 +21,8 @@ enum ImageMimeTypes: string implements EnumInterface
     private const MIME_WEBP = 'image/webp';
     private const MIME_GIF = 'image/gif';
 
-    case mimeJpeg = self::MIME_JPEG;
-    case mimePng = self::MIME_PNG;
-    case mimeWebp = self::MIME_WEBP;
-    case mimeGif = self::MIME_GIF;
+    case MimeJpeg = self::MIME_JPEG;
+    case MimePng = self::MIME_PNG;
+    case MimeWebp = self::MIME_WEBP;
+    case MimeGif = self::MIME_GIF;
 }
