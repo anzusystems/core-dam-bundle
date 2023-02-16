@@ -103,6 +103,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'bitrate' => [
                     'type' => 'integer',
                 ],
+                'slotsCount' => [
+                    'type' => 'integer',
+                ],
                 'codecName' => [
                     'type' => 'keyword',
                 ],
@@ -114,12 +117,6 @@ return static function (ContainerConfigurator $configurator): void {
                 ],
                 'from_rss' => [
                     'type' => 'boolean',
-                ],
-                'pixels' => [
-                    'type' => 'integer',
-                ],
-                'shortest_dimension' => [
-                    'type' => 'integer',
                 ],
             ]
         );

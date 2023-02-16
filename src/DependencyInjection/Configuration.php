@@ -96,6 +96,7 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode(DistributionServiceConfiguration::TYPE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::TITLE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::MODULE_KEY)->isRequired()->end()
+                        ->scalarNode(DistributionServiceConfiguration::ICON_PATH)->defaultValue('')->end()
                         ->arrayNode(DistributionServiceConfiguration::ALLOWED_REDISTRIBUTE_STATUSES)
                             ->defaultValue([DistributionProcessStatus::Failed->toString()])
                             ->scalarPrototype()->end()
@@ -116,6 +117,7 @@ class Configuration implements ConfigurationInterface
                             ->defaultValue(false)
                         ->end()
                         ->scalarNode(DistributionServiceConfiguration::AUTH_REDIRECT_URL_KEY)->defaultValue(null)->end()
+
                         ->booleanNode(DistributionServiceConfiguration::USE_MOCK_KEY)
                             ->defaultValue(false)
                         ->end()

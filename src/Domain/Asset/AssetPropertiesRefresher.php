@@ -89,26 +89,22 @@ class AssetPropertiesRefresher extends AbstractManager
             return;
         }
 
-        $pixels = 0;
-        $shortestDimension = 0;
-
         if ($mainFile instanceof ImageFile) {
-            $pixels = $mainFile->getImageAttributes()->getWidth() * $mainFile->getImageAttributes()->getHeight();
-            $shortestDimension = min(
-                $mainFile->getImageAttributes()->getWidth(),
+            $asset->getAssetFileProperties()->setWidth(
+                $mainFile->getImageAttributes()->getWidth()
+            );
+            $asset->getAssetFileProperties()->setHeight(
                 $mainFile->getImageAttributes()->getHeight()
             );
         }
         if ($mainFile instanceof VideoFile) {
-            $pixels = $mainFile->getAttributes()->getWidth() * $mainFile->getAttributes()->getHeight();
-            $shortestDimension = min(
-                $mainFile->getAttributes()->getWidth(),
+            $asset->getAssetFileProperties()->setWidth(
+                $mainFile->getAttributes()->getWidth()
+            );
+            $asset->getAssetFileProperties()->setHeight(
                 $mainFile->getAttributes()->getHeight()
             );
         }
-
-        $asset->getAssetFileProperties()->setPixels($pixels);
-        $asset->getAssetFileProperties()->setShortestDimension($shortestDimension);
     }
 
     /**
