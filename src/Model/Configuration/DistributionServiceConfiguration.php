@@ -15,6 +15,7 @@ class DistributionServiceConfiguration
     public const USE_MOCK_KEY = 'use_mock';
     public const MOCK_OPTIONS_KEY = 'mock_options';
     public const AUTH_REDIRECT_URL_KEY = 'auth_redirect_url';
+    public const ICON_PATH = 'icon_path';
     public const REQUIRED_AUTH_KEY = 'required_auth';
     public const ALLOWED_REDISTRIBUTE_STATUSES = 'redistribute_statuses';
 
@@ -29,6 +30,7 @@ class DistributionServiceConfiguration
         private readonly bool $requiredAuth,
         private readonly ?string $authRedirectUrlKey = null,
         private string $serviceId = '',
+        private string $iconPath = '',
     ) {
     }
 
@@ -51,6 +53,7 @@ class DistributionServiceConfiguration
             ),
             $config[self::REQUIRED_AUTH_KEY] ?? false,
             $config[self::AUTH_REDIRECT_URL_KEY] ?? null,
+            $config[self::ICON_PATH] ?? '',
         );
     }
 
@@ -109,5 +112,17 @@ class DistributionServiceConfiguration
     public function isRequiredAuth(): bool
     {
         return $this->requiredAuth;
+    }
+
+    public function getIconPath(): string
+    {
+        return $this->iconPath;
+    }
+
+    public function setIconPath(string $iconPath): self
+    {
+        $this->iconPath = $iconPath;
+
+        return $this;
     }
 }
