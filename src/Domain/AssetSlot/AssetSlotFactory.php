@@ -15,11 +15,11 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
 
-class AssetSlotFactory
+readonly class AssetSlotFactory
 {
     public function __construct(
-        private readonly AssetSlotManager $manager,
-        private readonly ExtSystemConfigurationProvider $configurationProvider,
+        private AssetSlotManager $manager,
+        private ExtSystemConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -47,6 +47,21 @@ class AssetSlotFactory
         return $this->manager->create($assetSlot, $flush);
     }
 
+    public function getSlotName(
+        ExtSystemAssetTypeConfiguration $configuration,
+        ?string $slotName = null
+    ): string {
+        if (empty($slotName)) {
+            return $configuration->getSlots()->getDefault();
+        }
+
+        if (in_array($slotName, $configuration->getSlots()->getSlots(), true)) {
+            return $slotName;
+        }
+
+        throw new DomainException('invalid_slot_name');
+    }
+
     private function initRelationEntity(Asset $asset, ?string $slotName = null): AssetSlot
     {
         $configuration = $this->configurationProvider->getExtSystemConfigurationByAsset($asset);
@@ -58,20 +73,5 @@ class AssetSlotFactory
         $assetSlot->getFlags()->setDefault($configuration->getSlots()->getDefault() === $actualSlotName);
 
         return $assetSlot;
-    }
-
-    private function getSlotName(
-        ExtSystemAssetTypeConfiguration $configuration,
-        ?string $slotName = null
-    ): string {
-        if (null === $slotName) {
-            return $configuration->getSlots()->getDefault();
-        }
-
-        if (in_array($slotName, $configuration->getSlots()->getSlots(), true)) {
-            return $slotName;
-        }
-
-        throw new DomainException('invalid_slot_name');
     }
 }
