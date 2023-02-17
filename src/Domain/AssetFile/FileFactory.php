@@ -12,11 +12,11 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 
-final class FileFactory
+final readonly class FileFactory
 {
     public function __construct(
-        private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
+        private FileSystemProvider $fileSystemProvider,
+        private NameGenerator $nameGenerator,
     ) {
     }
 

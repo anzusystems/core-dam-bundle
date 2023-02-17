@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\FileAttributesProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\MetadataProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
@@ -60,6 +61,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected AssetManager $assetManager;
     protected DamLogger $damLogger;
     protected AssetFileCounter $assetFileCounter;
+    protected ChunkFileManager $chunkFileManager;
 
     #[Required]
     public function setAssetFileCounter(AssetFileCounter $assetFileCounter): void
@@ -157,6 +159,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->damLogger = $damLogger;
     }
 
+    #[Required]
+    public function setChunkFileManager(ChunkFileManager $chunkFileManager): void
+    {
+        $this->chunkFileManager = $chunkFileManager;
+    }
+
     /**
      * @throws SerializerException
      * @throws ValidationException
@@ -188,6 +196,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 throw new RuntimeException(sprintf('AssetFile (%s) cant be processed without file', $assetFile->getId()));
             }
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored)) {
+                $this->chunkFileManager->clearChunks($assetFile);
                 $this->process($assetFile, $file);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
@@ -244,7 +253,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             throw $exception;
         }
 
-        // todo clear chunks
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
         return $file;
