@@ -11,29 +11,35 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
-use Elasticsearch\Client;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ElasticsearchException;
+use Elastic\Elasticsearch\Response\Elasticsearch as ElasticsearchResponse;
 
-final class ElasticSearch
+final readonly class ElasticSearch
 {
     public function __construct(
-        private readonly Client $client,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly IndexSettings $idxSettings,
-        private readonly DamLogger $damLogger,
-        private readonly QueryFactoryProvider $queryFactoryProvider,
+        private Client $client,
+        private EntityManagerInterface $entityManager,
+        private IndexSettings $idxSettings,
+        private DamLogger $damLogger,
+        private QueryFactoryProvider $queryFactoryProvider,
     ) {
     }
 
     /**
      * @throws SerializerException
+     * @throws ElasticsearchException
      */
     public function searchInfiniteList(SearchDtoInterface $searchDto, ExtSystem $extSystem): ApiInfiniteResponseList
     {
+        /** @var ElasticsearchResponse $results */
+        $results = $this->client->search(
+            $this->queryFactoryProvider->getQueryFactory($searchDto)->buildQuery($searchDto, $extSystem)
+        );
+
         return $this->hydrateInfiniteResponseList(
             $searchDto,
-            $this->client->search(
-                $this->queryFactoryProvider->getQueryFactory($searchDto)->buildQuery($searchDto, $extSystem)
-            ),
+            $results->asArray(),
             $this->idxSettings->getEntityClassName($searchDto->getIndexName())
         );
     }

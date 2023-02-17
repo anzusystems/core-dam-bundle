@@ -6,7 +6,7 @@
   "authors": [
   ],
   "require": {
-    "php": ">=8.1",
+    "php": ">=8.2",
     "ext-json": "*",
     "ext-mongodb": "*",
     "ext-redis": "*",
@@ -16,7 +16,7 @@
     "ext-zend-opcache": "*",
     "anzusystems/common-bundle": "^2.5",
     "doctrine/orm": ">=2.10",
-    "elasticsearch/elasticsearch": "^7.10",
+    "elasticsearch/elasticsearch": "^8.6",
     "fakerphp/faker": "^1.20",
     "google/apiclient": "^2.12",
     "google/cloud-pubsub": "^1.39",
@@ -87,7 +87,8 @@
     "allow-plugins": {
       "composer/package-versions-deprecated": true,
       "dealerdirect/phpcodesniffer-composer-installer": true,
-      "symfony/runtime": true
+      "symfony/runtime": true,
+      "php-http/discovery": true
     }
   }
 }

@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CommonBundle\Repository\AbstractAnzuRepository as BaseAbstractAnzuRepository;
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
+use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\NonUniqueResultException;
@@ -20,40 +22,79 @@ use Doctrine\ORM\QueryBuilder;
  */
 abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
 {
+    protected ?int $extSystemIdReindexCache = null;
+
     /**
      * @return ArrayCollection<int, T>
      */
-    public function getAll(int|string $idFrom = 0, int|string $idUntil = 0, int $limit = 500): ArrayCollection
+    public function getAllForIndexRebuild(RebuildIndexConfig $config): ArrayCollection
     {
         return new ArrayCollection(
-            $this->getAllQuery($idFrom, $idUntil)
-                ->setMaxResults($limit)
+            $this->getAllForIndexRebuildQuery($config)
+                ->setMaxResults($config->getBatchSize())
                 ->getQuery()->getResult()
         );
     }
 
-    public function getAllCount(int|string $idFrom = 0, int|string $idUntil = 0): int
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function getAllCountForIndexRebuild(RebuildIndexConfig $config): int
     {
-        return $this
-            ->getAllQuery($idFrom, $idUntil)
-            ->select('COUNT(entity)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        try {
+            return $this
+                ->getAllForIndexRebuildQuery($config)
+                ->select('COUNT(entity)')
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (NoResultException) {
+            return 0;
+        }
     }
 
     /**
      * @throws NonUniqueResultException
-     * @throws NoResultException
      */
-    public function getMaxId(): int|string
+    public function getMaxIdForIndexRebuild(RebuildIndexConfig $config): string
     {
-        return $this
-            ->createQueryBuilder('entity')
-            ->select('entity.id')
-            ->setMaxResults(1)
-            ->orderBy('entity.id', Criteria::DESC)
-            ->getQuery()
-            ->getSingleScalarResult();
+        try {
+            return $this
+                ->getAllForIndexRebuildQuery($config)
+                ->select('entity.id')
+                ->orderBy('entity.id', Criteria::DESC)
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } catch (NoResultException) {
+            return '';
+        }
+    }
+
+    private function getAllForIndexRebuildQuery(RebuildIndexConfig $config): QueryBuilder
+    {
+        $queryBuilder = $this->getEntityManager()->createQueryBuilder()
+            ->select('entity')
+            ->from($this->getEntityClass(), 'entity')
+        ;
+
+        if ($config->hasExtSystemSlug()) {
+            $this->extSystemIdReindexCache ??= $this->getEntityManager()
+                ->getRepository(ExtSystem::class)
+                ->getIdBySlug($config->getExtSystemSlug());
+            $queryBuilder = $this->appendRebuildIndexQueryForExtSystem($queryBuilder, $this->extSystemIdReindexCache);
+        }
+        if ($config->hasIdFrom() || $config->hasLastProcessedId()) {
+            $idFromCompareCharacter = $config->hasLastProcessedId() ? '>' : '>=';
+            $idFrom = $config->hasLastProcessedId() ? $config->getLastProcessedId() : $config->getIdFrom();
+            $queryBuilder->andWhere("entity.id {$idFromCompareCharacter} :idFrom")
+                ->setParameter('idFrom', $idFrom);
+        }
+        if ($config->hasIdUntil()) {
+            $queryBuilder->andWhere('entity.id <= :idUntil')
+                ->setParameter('idUntil', $config->getResolvedMaxId());
+        }
+
+        return $queryBuilder;
     }
 
     /**
@@ -61,24 +102,10 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
      */
     abstract protected function getEntityClass(): string;
 
-    protected function getAllQuery(
-        int|string $idFrom = 0,
-        int|string $idUntil = 0,
-    ): QueryBuilder {
-        $query = $this->getEntityManager()->createQueryBuilder()
-            ->select('entity')
-            ->from($this->getEntityClass(), 'entity')
-        ;
-
-        if ($idFrom) {
-            $query->andWhere('entity.id >= :idFrom')
-                ->setParameter('idFrom', $idFrom);
-        }
-        if ($idUntil) {
-            $query->andWhere('entity.id <= :idUntil')
-                ->setParameter('idUntil', $idUntil);
-        }
-
-        return $query;
+    protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
+    {
+        return $queryBuilder
+            ->andWhere('IDENTITY(entity.extSystem) = :extSystemId')
+            ->setParameter('extSystemId', $extSystemId);
     }
 }

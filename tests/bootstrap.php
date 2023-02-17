@@ -77,19 +77,19 @@ $app->run($input, $output);
 # Elastic index rebuild
 $input = new ArrayInput([
     'command' => 'anzu-dam:elastic:rebuild',
-    'indexName' => 'asset',
+    'index-name' => 'asset',
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
 $input = new ArrayInput([
     'command' => 'anzu-dam:elastic:rebuild',
-    'indexName' => 'author',
+    'index-name' => 'author',
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
 $input = new ArrayInput([
     'command' => 'anzu-dam:elastic:rebuild',
-    'indexName' => 'keyword',
+    'index-name' => 'keyword',
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
