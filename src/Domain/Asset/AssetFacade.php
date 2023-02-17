@@ -129,14 +129,11 @@ class AssetFacade
         if ($assets->isEmpty()) {
             return 0;
         }
-        $deletedIds = [];
         foreach ($assets as $asset) {
-            $deletedIds[] = (string) $asset->getId();
+            $deletedId = (string) $asset->getId();
             $this->deleteWithFiles($asset);
+            $this->indexManager->delete($asset, $deletedId);
         }
-        /** @var Asset $entity */
-        $entity = $assets->first();
-        $this->indexManager->deleteBulk($entity, $deletedIds);
 
         return $assets->count();
     }

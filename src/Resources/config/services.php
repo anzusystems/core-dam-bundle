@@ -12,8 +12,8 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGeneratorInterfac
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileMetadataProcessHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Util\Slugger;
-use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 return static function (ContainerConfigurator $configurator): void {

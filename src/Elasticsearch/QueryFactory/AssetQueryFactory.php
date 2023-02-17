@@ -64,13 +64,13 @@ final class AssetQueryFactory extends AbstractQueryFactory
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
         }
         if (false === (null === $searchDto->isFromRss())) {
-            $filter[] = ['terms' => ['from_rss' => [$searchDto->isFromRss()]]];
+            $filter[] = ['terms' => ['fromRss' => [$searchDto->isFromRss()]]];
         }
         if (false === empty($searchDto->getDistributedInServices())) {
-            $filter[] = ['terms' => ['distributed_in_services' => $searchDto->getDistributedInServices()]];
+            $filter[] = ['terms' => ['distributedInServices' => $searchDto->getDistributedInServices()]];
         }
         if (false === empty($searchDto->getSlotNames())) {
-            $filter[] = ['terms' => ['slot_names' => $searchDto->getSlotNames()]];
+            $filter[] = ['terms' => ['slotNames' => $searchDto->getSlotNames()]];
         }
         if (false === (null === $searchDto->isGeneratedBySystem())) {
             $filter[] = ['terms' => ['generatedBySystem' => [$searchDto->isGeneratedBySystem()]]];

@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends AbstractAnzuRepository<Asset>
@@ -66,6 +67,14 @@ final class AssetRepository extends AbstractAnzuRepository
                 ->getQuery()
                 ->getResult()
         );
+    }
+
+    protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
+    {
+        return $queryBuilder
+            ->innerJoin('entity.licence', 'licence')
+            ->andWhere('IDENTITY(licence.extSystem) = :extSystemId')
+            ->setParameter('extSystemId', $extSystemId);
     }
 
     protected function getEntityClass(): string

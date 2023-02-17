@@ -83,6 +83,9 @@ final class ExtSystemConfigurationProvider
         };
     }
 
+    /**
+     * @return list<string>
+     */
     public function getExtSystemSlugs(): array
     {
         return array_keys($this->extSystems);

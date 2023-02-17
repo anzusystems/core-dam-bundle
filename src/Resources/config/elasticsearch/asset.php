@@ -52,7 +52,6 @@ return static function (ContainerConfigurator $configurator): void {
                 ],
                 'originFileName' => [
                     'type' => 'text',
-                    'boost' => 3,
                     'analyzer' => 'exact',
                     'fields' => [
                         'edgegrams' => [
@@ -109,13 +108,13 @@ return static function (ContainerConfigurator $configurator): void {
                 'codecName' => [
                     'type' => 'keyword',
                 ],
-                'distributed_in_services' => [
+                'distributedInServices' => [
                     'type' => 'keyword',
                 ],
-                'slot_names' => [
+                'slotNames' => [
                     'type' => 'keyword',
                 ],
-                'from_rss' => [
+                'fromRss' => [
                     'type' => 'boolean',
                 ],
             ]
