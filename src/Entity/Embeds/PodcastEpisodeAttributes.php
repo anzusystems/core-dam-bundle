@@ -42,12 +42,12 @@ class PodcastEpisodeAttributes
         $this->setRssUrl('');
     }
 
+    #[Serialize]
     public function getLastImportStatus(): PodcastEpisodeStatus
     {
         return $this->lastImportStatus;
     }
 
-    #[Serialize]
     public function setLastImportStatus(PodcastEpisodeStatus $lastImportStatus): self
     {
         $this->lastImportStatus = $lastImportStatus;
@@ -79,17 +79,17 @@ class PodcastEpisodeAttributes
         return $this;
     }
 
+    #[Serialize]
+    public function getRssUrl(): string
+    {
+        return $this->rssUrl;
+    }
+
     public function setRssUrl(string $rssUrl): self
     {
         $this->rssUrl = $rssUrl;
 
         return $this;
-    }
-
-    #[Serialize]
-    public function getRssUrl(): string
-    {
-        return $this->rssUrl;
     }
 
     #[Serialize]
