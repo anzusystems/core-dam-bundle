@@ -16,10 +16,10 @@ enum YoutubeVideoPrivacy: string implements EnumInterface
     public const UNLISTED = 'unlisted';
     public const DYNAMIC = 'dynamic';
 
-    case private = self::PRIVATE;
-    case public = self::PUBLIC;
-    case unlisted = self::UNLISTED;
-    case dynamic = self::DYNAMIC;
+    case Private = self::PRIVATE;
+    case Public = self::PUBLIC;
+    case Unlisted = self::UNLISTED;
+    case Dynamic = self::DYNAMIC;
 
-    public const Default = self::private;
+    public const Default = self::Private;
 }

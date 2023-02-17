@@ -25,17 +25,17 @@ enum AudioMimeTypes: string implements EnumInterface
     private const MIME_M4A = 'audio/m4a';
     private const MIME_X_M4A = 'audio/x-m4a';
 
-    case mimeMp4 = self::MIME_AUDIO_MP4;
-    case mimeWaw = self::MIME_WAV;
-    case mimeXWaw = self::MIME_X_WAV;
-    case mimeMpeg = self::MIME_MPEG;
-    case mimeM4a = self::MIME_M4A;
-    case mimeXm4a = self::MIME_X_M4A;
+    case MimeMp4 = self::MIME_AUDIO_MP4;
+    case MimeWaw = self::MIME_WAV;
+    case MimeXWaw = self::MIME_X_WAV;
+    case MimeMpeg = self::MIME_MPEG;
+    case MimeM4a = self::MIME_M4A;
+    case MimeXm4a = self::MIME_X_M4A;
 
     public static function getBrowserTypes(): array
     {
         return [
-            self::mimeMpeg
+            self::MimeMpeg
         ];
     }
 }

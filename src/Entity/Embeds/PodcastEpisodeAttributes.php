@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Model\Enum\PodcastEpisodeStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -18,6 +19,9 @@ class PodcastEpisodeAttributes
 
     #[ORM\Column(type: Types::STRING, length: 256)]
     private string $rssId;
+
+    #[ORM\Column(enumType: PodcastEpisodeStatus::class)]
+    private PodcastEpisodeStatus $lastImportStatus;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true, options: ['unsigned' => true])]
     #[Assert\Range(maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX, max: 65_535)]
@@ -33,8 +37,22 @@ class PodcastEpisodeAttributes
     {
         $this->setEpisodeNumber(null);
         $this->setSeasonNumber(null);
+        $this->setLastImportStatus(PodcastEpisodeStatus::Default);
         $this->setRssId('');
         $this->setRssUrl('');
+    }
+
+    public function getLastImportStatus(): PodcastEpisodeStatus
+    {
+        return $this->lastImportStatus;
+    }
+
+    #[Serialize]
+    public function setLastImportStatus(PodcastEpisodeStatus $lastImportStatus): self
+    {
+        $this->lastImportStatus = $lastImportStatus;
+
+        return $this;
     }
 
     public function getSeasonNumber(): ?int
