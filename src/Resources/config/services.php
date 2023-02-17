@@ -25,6 +25,10 @@ return static function (ContainerConfigurator $configurator): void {
         ->parameters()
         ->set('elastic_client_config', [
             'hosts' => env('ELASTIC_HOSTS')->json(),
+            'basicAuthentication' => [
+                'username' => env('ELASTIC_USERNAME')->string(),
+                'password' => env('ELASTIC_PASSWORD')->string(),
+            ],
         ])
         ->set('elastic_index_settings', [
             'asset' => param('anzu_systems.dam_bundle.index_asset'),
