@@ -144,9 +144,9 @@ final class DistributionValidator extends ConstraintValidator
         }
 
         match ($requirements->getStrategy()) {
-            DistributionRequirementStrategy::none => $this->validateNoneStrategy($distribution),
-            DistributionRequirementStrategy::atLeastOne => $this->validateAtLeastOneStrategy($distribution),
-            DistributionRequirementStrategy::waitForAll => $this->validateWaitForAllStrategy($distribution, $requirements),
+            DistributionRequirementStrategy::None => $this->validateNoneStrategy($distribution),
+            DistributionRequirementStrategy::AtLeastOne => $this->validateAtLeastOneStrategy($distribution),
+            DistributionRequirementStrategy::WaitForAll => $this->validateWaitForAllStrategy($distribution, $requirements),
         };
     }
 

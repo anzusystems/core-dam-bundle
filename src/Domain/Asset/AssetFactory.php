@@ -33,47 +33,47 @@ final class AssetFactory
     }
 
     // @todo remove licence
-    public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence): Asset
+    public function createForAssetFile(AssetFile $assetFile, AssetLicence $assetLicence, ?string $slotName = null): Asset
     {
         $asset = match ($assetFile::class) {
-            ImageFile::class => $this->assetManager->create($this->createForImageFile($assetFile, $assetLicence), false),
-            AudioFile::class => $this->assetManager->create($this->createForAudioFile($assetFile, $assetLicence), false),
-            VideoFile::class => $this->assetManager->create($this->createForVideoFile($assetFile, $assetLicence), false),
-            DocumentFile::class => $this->assetManager->create($this->createForDocumentFile($assetFile, $assetLicence), false),
+            ImageFile::class => $this->assetManager->create($this->createForImageFile($assetFile, $assetLicence, $slotName), false),
+            AudioFile::class => $this->assetManager->create($this->createForAudioFile($assetFile, $assetLicence, $slotName), false),
+            VideoFile::class => $this->assetManager->create($this->createForVideoFile($assetFile, $assetLicence, $slotName), false),
+            DocumentFile::class => $this->assetManager->create($this->createForDocumentFile($assetFile, $assetLicence, $slotName), false),
         };
         $asset->setLicence($assetLicence);
 
         return $asset;
     }
 
-    private function createForImageFile(ImageFile $imageFile, AssetLicence $assetLicence): Asset
+    private function createForImageFile(ImageFile $imageFile, AssetLicence $assetLicence, ?string $slotName = null): Asset
     {
         $asset = $this->initAsset(AssetType::Image, $assetLicence);
-        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $imageFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $imageFile, slotName: $slotName, flush: false);
 
         return $asset;
     }
 
-    private function createForAudioFile(AudioFile $audioFile, AssetLicence $assetLicence): Asset
+    private function createForAudioFile(AudioFile $audioFile, AssetLicence $assetLicence, ?string $slotName = null): Asset
     {
         $asset = $this->initAsset(AssetType::Audio, $assetLicence);
-        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $audioFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $audioFile, slotName: $slotName, flush: false);
 
         return $asset;
     }
 
-    private function createForVideoFile(VideoFile $videoFile, AssetLicence $assetLicence): Asset
+    private function createForVideoFile(VideoFile $videoFile, AssetLicence $assetLicence, ?string $slotName = null): Asset
     {
         $asset = $this->initAsset(AssetType::Video, $assetLicence);
-        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $videoFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $videoFile, slotName: $slotName, flush: false);
 
         return $asset;
     }
 
-    private function createForDocumentFile(DocumentFile $documentFile, AssetLicence $assetLicence): Asset
+    private function createForDocumentFile(DocumentFile $documentFile, AssetLicence $assetLicence, ?string $slotName = null): Asset
     {
         $asset = $this->initAsset(AssetType::Document, $assetLicence);
-        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $documentFile, flush: false);
+        $this->assetSlotFactory->createRelation(asset: $asset, assetFile: $documentFile, slotName: $slotName, flush: false);
 
         return $asset;
     }

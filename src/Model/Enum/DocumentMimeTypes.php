@@ -17,5 +17,5 @@ enum DocumentMimeTypes: string implements EnumInterface
     private const MIME_PDF = 'application/pdf';
     private const TEXT_PLAIN = 'text/plain';
 
-    case mimePdf = self::MIME_PDF;
+    case MimePdf = self::MIME_PDF;
 }

@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 
-final class PodcastEpisodeManager extends AbstractManager
+class PodcastEpisodeManager extends AbstractManager
 {
     public function __construct(
         private readonly PodcastEpisodeRepository $repository,
@@ -22,6 +22,14 @@ final class PodcastEpisodeManager extends AbstractManager
         $this->setPosition($podcastEpisode);
         $this->trackCreation($podcastEpisode);
         $this->entityManager->persist($podcastEpisode);
+        $this->flush($flush);
+
+        return $podcastEpisode;
+    }
+
+    public function updateExisting(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
+    {
+        $this->trackModification($podcastEpisode);
         $this->flush($flush);
 
         return $podcastEpisode;

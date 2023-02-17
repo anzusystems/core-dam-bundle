@@ -16,7 +16,6 @@ use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
-use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
@@ -46,7 +45,7 @@ final class RssImportManager
     /**
      * @throws SerializerException
      */
-    public function readAllPodcastRss(): void
+    public function readAllPodcastRss(bool $fullImport = true): void
     {
         $podcast = $this->podcastRepository->findOneToImport();
         while ($podcast) {
@@ -71,12 +70,12 @@ final class RssImportManager
      * @throws SerializerException
      * @throws Exception
      */
-    public function syncPodcast(Podcast $podcast): void
+    public function syncPodcast(Podcast $podcast, bool $fullImport = true): void
     {
         $this->reader->initReader($this->client->readPodcastRss($podcast));
 
         $this->outputUtil->writeln(sprintf('Importing podcast (%s)', $podcast->getTexts()->getTitle()));
-        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::notImported)) {
+        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
             $this->outputUtil->writeln('Updating podcast metadata');
             $this->updatePodcast($podcast, $this->reader->readChannel());
         }
@@ -84,10 +83,12 @@ final class RssImportManager
         $progressBar = $this->outputUtil->createProgressBar();
         $progressBar->start();
 
-        $createdItems = 0;
         foreach ($this->reader->readItems() as $podcastItem) {
-            if ($this->importEpisode($podcast, $podcastItem)) {
-                $createdItems++;
+            if (
+                false === $this->episodeRssImportManager->importEpisode($podcast, $podcastItem) &&
+                false === $fullImport
+            ) {
+                break;
             }
             $progressBar->advance();
         }
@@ -95,30 +96,6 @@ final class RssImportManager
         $this->podcastStatusManager->toImported($podcast);
 
         $progressBar->finish();
-        $this->outputUtil->writeln(sprintf('Created items (%d)', $createdItems));
-    }
-
-    /**
-     * @throws SerializerException
-     */
-    private function importEpisode(Podcast $podcast, Item $podcastItem): bool
-    {
-        try {
-            $this->episodeRssImportManager->importEpisode($podcast, $podcastItem);
-
-            return true;
-        } catch (Throwable $exception) {
-            $this->damLogger->error(
-                DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
-                sprintf(
-                    'Podcast episode (%s) import failed (%s)',
-                    $podcastItem->getTitle(),
-                    $exception->getMessage()
-                )
-            );
-        }
-
-        return false;
     }
 
     private function updatePodcast(Podcast $podcast, Channel $channel): void

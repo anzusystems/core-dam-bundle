@@ -194,4 +194,22 @@ class PodcastEpisode implements
     {
         return $this->getImagePreview()?->getImageFile();
     }
+
+    /**
+     * Returns AssetSlot assigned to episode and specified in Podcast
+     */
+    public function getTargetSlot(): ?AssetSlot
+    {
+        $asset = $this->getAsset();
+        if (null === $asset) {
+            return null;
+        }
+
+        $slotName = $this->getPodcast()->getAttributes()->getFileSlot();
+        $slot = $asset->getSlots()->filter(
+            fn (AssetSlot $assetSlot): bool => $assetSlot->getName() === $slotName || (empty($slotName) && $assetSlot->getFlags()->isDefault())
+        )->first();
+
+        return $slot instanceof AssetSlot ? $slot : null;
+    }
 }

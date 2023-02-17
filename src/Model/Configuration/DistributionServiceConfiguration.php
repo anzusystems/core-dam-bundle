@@ -29,8 +29,8 @@ class DistributionServiceConfiguration
         private readonly DistributionServiceMockOptionsConfiguration $mockOptions,
         private readonly bool $requiredAuth,
         private readonly ?string $authRedirectUrlKey = null,
-        private string $serviceId = '',
         private string $iconPath = '',
+        private string $serviceId = '',
     ) {
     }
 
