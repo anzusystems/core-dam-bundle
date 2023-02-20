@@ -79,17 +79,17 @@ class PodcastEpisodeAttributes
         return $this;
     }
 
+    #[Serialize]
+    public function getRssUrl(): string
+    {
+        return $this->rssUrl;
+    }
+
     public function setRssUrl(string $rssUrl): self
     {
         $this->rssUrl = $rssUrl;
 
         return $this;
-    }
-
-    #[Serialize]
-    public function getRssUrl(): string
-    {
-        return $this->rssUrl;
     }
 
     #[Serialize]
