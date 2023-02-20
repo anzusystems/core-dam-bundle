@@ -55,7 +55,7 @@ class YoutubeDistribution extends Distribution
         $this->setTexts(new YoutubeTexts());
         $this->setFlags(new YoutubeFlags());
         $this->setPlaylist('');
-        $this->setLanguage('0');
+        $this->setLanguage('');
     }
 
     public function getPrivacy(): YoutubeVideoPrivacy

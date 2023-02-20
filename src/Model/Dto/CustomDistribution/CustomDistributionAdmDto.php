@@ -147,7 +147,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         return $this;
     }
 
-    #[Serialize]
+    #[Serialize(strategy: Serialize::KEYS_VALUES)]
     public function getDistributionData(): array
     {
         return $this->distributionData;
