@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
-use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;

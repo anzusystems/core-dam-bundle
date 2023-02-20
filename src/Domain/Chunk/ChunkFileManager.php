@@ -56,6 +56,5 @@ final class ChunkFileManager extends ChunkManager
             $this->flush($flush);
             $this->stash->emptyAll();
         }
-
     }
 }

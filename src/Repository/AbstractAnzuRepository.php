@@ -70,6 +70,18 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
         }
     }
 
+    /**
+     * @return class-string<T>
+     */
+    abstract protected function getEntityClass(): string;
+
+    protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
+    {
+        return $queryBuilder
+            ->andWhere('IDENTITY(entity.extSystem) = :extSystemId')
+            ->setParameter('extSystemId', $extSystemId);
+    }
+
     private function getAllForIndexRebuildQuery(RebuildIndexConfig $config): QueryBuilder
     {
         $queryBuilder = $this->getEntityManager()->createQueryBuilder()
@@ -95,17 +107,5 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
         }
 
         return $queryBuilder;
-    }
-
-    /**
-     * @return class-string<T>
-     */
-    abstract protected function getEntityClass(): string;
-
-    protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
-    {
-        return $queryBuilder
-            ->andWhere('IDENTITY(entity.extSystem) = :extSystemId')
-            ->setParameter('extSystemId', $extSystemId);
     }
 }

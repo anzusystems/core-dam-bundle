@@ -42,12 +42,12 @@ class PodcastEpisodeAttributes
         $this->setRssUrl('');
     }
 
+    #[Serialize]
     public function getLastImportStatus(): PodcastEpisodeStatus
     {
         return $this->lastImportStatus;
     }
 
-    #[Serialize]
     public function setLastImportStatus(PodcastEpisodeStatus $lastImportStatus): self
     {
         $this->lastImportStatus = $lastImportStatus;
