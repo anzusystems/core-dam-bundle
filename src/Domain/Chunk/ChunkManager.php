@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 class ChunkManager extends AbstractManager
 {
-    protected readonly FileStash $stash;
+    protected FileStash $stash;
 
     #[Required]
     public function setStash(FileStash $stash): void
