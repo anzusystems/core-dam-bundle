@@ -22,6 +22,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 final class AudioFixtures extends AbstractAssetFileFixtures
 {
     public const AUDIO_ID_1 = '7994f48d-118e-4dc6-8245-98b546cda6dc';
+    public const AUDIO_ID_2 = '7994f48d-118e-4dc6-8245-98b546cda6de';
 
     public function __construct(
         private readonly AudioFactory $audioFactory,
@@ -96,6 +97,16 @@ final class AudioFixtures extends AbstractAssetFileFixtures
             $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_3),
         ]));
         $this->facadeProvider->getStatusFacade($audio)->storeAndProcess($audio, $file);
+
+        yield $audio;
+
+        $file = $this->getFile($fileSystem, 'audio_fixtures_sample.mp3');
+        $audio = $this->audioFactory->createFromFile(
+            $file,
+            $licence,
+            self::AUDIO_ID_2
+        );
+        $audio->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
 
         yield $audio;
     }

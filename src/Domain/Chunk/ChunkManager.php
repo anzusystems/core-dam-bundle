@@ -8,12 +8,16 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
+use Symfony\Contracts\Service\Attribute\Required;
 
-final class ChunkManager extends AbstractManager
+class ChunkManager extends AbstractManager
 {
-    public function __construct(
-        private readonly FileStash $stash
-    ) {
+    protected FileStash $stash;
+
+    #[Required]
+    public function setStash(FileStash $stash): void
+    {
+        $this->stash = $stash;
     }
 
     public function create(Chunk $chunk, bool $flush = true): Chunk
@@ -31,13 +35,5 @@ final class ChunkManager extends AbstractManager
         $assetFile->getChunks()->add($chunk);
 
         return $chunk;
-    }
-
-    public function deleteByAsset(AssetFile $assetFile): void
-    {
-        foreach ($assetFile->getChunks() as $chunk) {
-            $this->stash->add($chunk);
-            $this->entityManager->remove($chunk);
-        }
     }
 }

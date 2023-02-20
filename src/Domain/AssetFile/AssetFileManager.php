@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
-use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkManager;
+use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -19,7 +19,7 @@ class AssetFileManager extends AbstractManager
     use FileStashAwareTrait;
 
     protected AssetSlotManager $assetSlotManager;
-    protected ChunkManager $chunkManager;
+    protected ChunkFileManager $chunkFileManager;
 
     #[Required]
     public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
@@ -28,9 +28,9 @@ class AssetFileManager extends AbstractManager
     }
 
     #[Required]
-    public function setChunkManager(ChunkManager $chunkManager): void
+    public function setChunkFileManager(ChunkFileManager $chunkFileManager): void
     {
-        $this->chunkManager = $chunkManager;
+        $this->chunkFileManager = $chunkFileManager;
     }
 
     /**
@@ -69,7 +69,7 @@ class AssetFileManager extends AbstractManager
             $this->assetSlotManager->delete($slot, false);
         }
 
-        $this->chunkManager->deleteByAsset($assetFile);
+        $this->chunkFileManager->clearChunks($assetFile, false);
         $this->deleteAssetFileRelations($assetFile);
         if (false === empty($assetFile->getAssetAttributes()->getFilePath())) {
             $this->fileStash->add($assetFile);
