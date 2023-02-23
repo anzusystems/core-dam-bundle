@@ -37,6 +37,8 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
             return;
         }
 
+        $this->start($job);
+
         try {
             $this->entityManager->beginTransaction();
 
