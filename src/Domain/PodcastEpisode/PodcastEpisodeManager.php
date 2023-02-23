@@ -6,8 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 
 class PodcastEpisodeManager extends AbstractManager
 {
@@ -33,6 +35,16 @@ class PodcastEpisodeManager extends AbstractManager
         $this->flush($flush);
 
         return $podcastEpisode;
+    }
+
+    public function moveEpisodes(Asset $fromAsset, Asset $toAsset, bool $flush = false): void
+    {
+        foreach ($fromAsset->getEpisodes() as $episode) {
+            $toAsset->addEpisode($episode);
+        }
+        $fromAsset->setEpisodes(new ArrayCollection());
+
+        $this->flush($flush);
     }
 
     public function update(PodcastEpisode $podcastEpisode, PodcastEpisode $newPodcastEpisode, bool $flush = true): PodcastEpisode

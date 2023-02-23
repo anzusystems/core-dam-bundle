@@ -102,6 +102,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === empty($searchDto->getPodcastIds())) {
             $filter[] = ['terms' => ['podcastIds' => $searchDto->getPodcastIds()]];
         }
+        if (false === empty($searchDto->getAssetIds())) {
+            $filter[] = ['terms' => ['fileIds' => $searchDto->getAssetIds()]];
+        }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
         $this->applyRangeFilter($filter, 'ratioWidth', $searchDto->getRatioWidthFrom(), $searchDto->getRatioWidthUntil());

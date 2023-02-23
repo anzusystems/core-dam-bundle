@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Message;
 
-final class AssetRefreshPropertiesMessage
+final readonly class AssetRefreshPropertiesMessage
 {
     public function __construct(
-        private readonly string $assetId
+        private string $assetId
     ) {
     }
 

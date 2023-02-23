@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -55,9 +56,13 @@ class AssetPropertiesRefresher extends AbstractManager
         $distributions = $this->distributionRepository->findByAsset((string) $asset->getId());
         $asset->getAssetFileProperties()->setDistributesInServices(
             array_unique(
-                $distributions->map(
-                    fn (Distribution $distribution): string => $distribution->getDistributionService(),
-                )->toArray()
+                $distributions
+                    ->filter(
+                        fn (Distribution $distribution): bool => $distribution->getStatus()->is(DistributionProcessStatus::Distributed),
+                    )
+                    ->map(
+                        fn (Distribution $distribution): string => $distribution->getDistributionService(),
+                    )->toArray()
             )
         );
     }

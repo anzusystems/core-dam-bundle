@@ -23,6 +23,10 @@ final class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $assetIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $podcastIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
@@ -153,6 +157,18 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function getIndexName(): string
     {
         return Asset::getResourceName();
+    }
+
+    public function getAssetIds(): array
+    {
+        return $this->assetIds;
+    }
+
+    public function setAssetIds(array $assetIds): self
+    {
+        $this->assetIds = $assetIds;
+
+        return $this;
     }
 
     public function getText(): string

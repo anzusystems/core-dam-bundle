@@ -19,6 +19,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'podcastIds' => [
                     'type' => 'keyword',
                 ],
+                'fileIds' => [
+                    'type' => 'keyword',
+                ],
                 'withProcessedFile' => [
                     'type' => 'boolean',
                 ],

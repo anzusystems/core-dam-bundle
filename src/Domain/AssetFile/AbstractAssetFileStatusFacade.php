@@ -203,6 +203,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
+            $this->assetFileEventDispatcher->dispatchDuplicatePreFlush(
+                assetFile: $assetFile,
+                originAssetFile: $duplicateAssetFileException->getOldAsset()
+            );
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
@@ -240,10 +244,11 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
         }
 
+        $this->fileAttributesPostProcessor->process($assetFile, $file);
+        $this->checkDuplicate($assetFile);
+
         try {
             $this->assetManager->beginTransaction();
-            $this->fileAttributesPostProcessor->process($assetFile, $file);
-            $this->checkDuplicate($assetFile);
             $this->assetFileStorageOperator->save($assetFile, $file);
             $this->assetStatusManager->toStored($assetFile);
             $this->assetManager->commit();
