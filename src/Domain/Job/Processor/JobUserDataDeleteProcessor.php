@@ -60,6 +60,8 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
         );
         $licencesWithUserOnlyMembershipIds = CollectionHelper::traversableToIds($licencesWithUserOnlyMembership);
 
+        $this->start($job);
+
         try {
             $this->entityManager->beginTransaction();
 

@@ -126,12 +126,14 @@ class DamPermissions
     public const DAM_VIDEO_SHOW_UPDATE = 'dam_videoShow_update';
     public const DAM_VIDEO_SHOW_VIEW = 'dam_videoShow_view';
     public const DAM_VIDEO_SHOW_DELETE = 'dam_videoShow_delete';
+    public const DAM_VIDEO_SHOW_UI = 'dam_videoShow_ui';
 
     // VideoShowEpisode
     public const DAM_VIDEO_SHOW_EPISODE_CREATE = 'dam_videoShowEpisode_create';
     public const DAM_VIDEO_SHOW_EPISODE_UPDATE = 'dam_videoShowEpisode_update';
     public const DAM_VIDEO_SHOW_EPISODE_VIEW = 'dam_videoShowEpisode_view';
     public const DAM_VIDEO_SHOW_EPISODE_DELETE = 'dam_videoShowEpisode_delete';
+    public const DAM_VIDEO_SHOW_EPISODE_UI = 'dam_videoShowEpisode_ui';
 
     // Job
     public const DAM_JOB_VIEW = 'dam_job_view';
@@ -217,10 +219,12 @@ class DamPermissions
         self::DAM_VIDEO_SHOW_UPDATE,
         self::DAM_VIDEO_SHOW_VIEW,
         self::DAM_VIDEO_SHOW_DELETE,
+        self::DAM_VIDEO_SHOW_UI,
         self::DAM_VIDEO_SHOW_EPISODE_CREATE,
         self::DAM_VIDEO_SHOW_EPISODE_UPDATE,
         self::DAM_VIDEO_SHOW_EPISODE_VIEW,
         self::DAM_VIDEO_SHOW_EPISODE_DELETE,
+        self::DAM_VIDEO_SHOW_EPISODE_UI,
         self::DAM_JOB_VIEW,
         self::DAM_JOB_CREATE,
         self::DAM_JOB_DELETE,
