@@ -55,7 +55,7 @@ class AssetPropertiesRefresher extends AbstractManager
     {
         $distributions = $this->distributionRepository->findByAsset((string) $asset->getId());
         $asset->getAssetFileProperties()->setDistributesInServices(
-            array_unique(
+            array_values(array_unique(
                 $distributions
                     ->filter(
                         fn (Distribution $distribution): bool => $distribution->getStatus()->is(DistributionProcessStatus::Distributed),
@@ -63,7 +63,7 @@ class AssetPropertiesRefresher extends AbstractManager
                     ->map(
                         fn (Distribution $distribution): string => $distribution->getDistributionService(),
                     )->toArray()
-            )
+            ))
         );
     }
 
