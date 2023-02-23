@@ -7,12 +7,14 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Elasticsearch\CustomData\AssetMetadataCustomData;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\ClosestColorProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
@@ -45,6 +47,10 @@ final class AssetIndexFactory implements IndexFactoryInterface
 
         return [
             'id' => $entity->getId(),
+            'fileIds' => CollectionHelper::traversableToIds(
+                $entity->getSlots(),
+                fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
+            ),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),

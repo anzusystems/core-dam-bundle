@@ -16,7 +16,7 @@ class PodcastEpisodeFlags
 
     public function __construct()
     {
-        $this->setFromRss(true);
+        $this->setFromRss(false);
     }
 
     #[Serialize]

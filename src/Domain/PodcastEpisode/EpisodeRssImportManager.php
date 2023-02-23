@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -24,6 +25,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use InvalidArgumentException;
@@ -65,13 +67,15 @@ final readonly class EpisodeRssImportManager
                 return $this->createPodcastEpisode($podcast, $podcastItem);
             }
 
+            // todo asset Failed scenario!
             $asset = $episode->getAsset();
+
             // Episode exists, but has no asset
             if (null === $asset) {
                 return $this->assignToPodcastEpisode($episode, $podcastItem);
             }
 
-            $slot = $episode->getTargetSlot();
+            $slot = $this->getTargetSlot($episode);
             // Episode has Asset but import slot is empty
             if (null === $slot) {
                 return $this->assignToPodcastEpisodeAndExistingAsset($episode, $asset, $podcastItem);
@@ -81,7 +85,6 @@ final readonly class EpisodeRssImportManager
             if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $podcastItem->getEnclosure()->getUrl()) {
                 return false;
             }
-
             // Probably new version of podcast was uploaded, need to solve manually
             $this->podcastEpisodeStatusManager->toConflict($episode);
 
@@ -102,6 +105,28 @@ final readonly class EpisodeRssImportManager
         }
 
         return false;
+    }
+
+    /**
+     * Returns AssetSlot assigned to episode and specified in Podcast
+     */
+    public function getTargetSlot(PodcastEpisode $episode): ?AssetSlot
+    {
+        $configuration = $this->configurationProvider->getExtSystemConfigurationByAssetType(AssetType::Audio, $episode->getExtSystem()->getSlug());
+
+        $asset = $episode->getAsset();
+        if (null === $asset) {
+            return null;
+        }
+
+        $requiredSlotName = $episode->getPodcast()->getAttributes()->getFileSlot();
+        $slotName = empty($requiredSlotName) ? $configuration->getSlots()->getDefault() : $requiredSlotName;
+
+        $slot = $asset->getSlots()->filter(
+            fn (AssetSlot $assetSlot): bool => $assetSlot->getName() === $slotName
+        )->first();
+
+        return $slot instanceof AssetSlot ? $slot : null;
     }
 
     /**
@@ -151,8 +176,10 @@ final readonly class EpisodeRssImportManager
         $this->assetSlotFactory->createRelation(
             asset: $asset,
             assetFile: $audioFile,
-            slotName: $podcastEpisode->getPodcast()->getAttributes()->getFileSlot()
+            slotName: $podcastEpisode->getPodcast()->getAttributes()->getFileSlot(),
+            flush: false
         );
+        $this->audioManager->create($audioFile, false);
 
         $this->updateEpisodeData($podcastEpisode, $item);
         $this->toUploaded($audioFile);
@@ -189,6 +216,7 @@ final readonly class EpisodeRssImportManager
         $episode->getAttributes()
             ->setRssId($item->getGuid())
             ->setRssUrl($item->getEnclosure()->getUrl());
+        // todo preveric
         $episode->getFlags()->setFromRss(true);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -37,6 +38,12 @@ final class AssetFileStatusAdmNotificationDecorator extends AsseFileAdmNotificat
     public function getStatus(): AssetFileProcessStatus
     {
         return $this->assetFile->getAssetAttributes()->getStatus();
+    }
+
+    #[Serialize]
+    public function getFailReason(): AssetFileFailedType
+    {
+        return $this->assetFile->getAssetAttributes()->getFailReason();
     }
 
     #[Serialize]
