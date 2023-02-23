@@ -79,7 +79,7 @@ class Distribution implements
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     #[Serialize]
-    private ?DateTimeImmutable $publishAt;
+    protected ?DateTimeImmutable $publishAt;
 
     public function __construct()
     {

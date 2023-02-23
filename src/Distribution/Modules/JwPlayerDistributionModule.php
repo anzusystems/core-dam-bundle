@@ -67,7 +67,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         );
         if ($video->getStatus()->is(JwMediaStatus::Ready)) {
             $distribution->setDistributionData(
-                [JwDistribution::THUMBNAIL_DATA => $this->jwVideoDtoFactory->createThumbnailUrl((string) $distribution->getId())]
+                [JwDistribution::THUMBNAIL_DATA => $this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId())]
             );
 
             return;
