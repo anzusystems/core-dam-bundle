@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
+use AnzuSystems\CoreDamBundle\Domain\Job\JobPodcastSynchronizerFactory;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -16,17 +17,18 @@ use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
+use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
-use Throwable;
 
 final class RssImportManager
 {
     use OutputUtilTrait;
+    private const BULK_SIZE = 20;
 
     public function __construct(
         private readonly RssClient $client,
@@ -39,31 +41,49 @@ final class RssImportManager
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly EntityManagerInterface $manager,
         private readonly ImagePreviewFactory $imagePreviewFactory,
+        private readonly JobPodcastSynchronizerFactory $jobPodcastSynchronizerFactory,
     ) {
+    }
+
+    public function generateImportJobs(bool $fullImport = true): void
+    {
+        $lastId = null;
+
+        while ($podcast = $this->podcastRepository->findOneToImport($lastId)) {
+            $lastId = (string) $podcast->getId();
+            $this->jobPodcastSynchronizerFactory->createPodcastSynchronizerJob(
+                podcastId: $lastId,
+                fullSync: $fullImport
+            );
+        }
     }
 
     /**
      * @throws SerializerException
+     * @throws Exception
      */
-    public function readAllPodcastRss(bool $fullImport = true): void
+    public function syncBulkPodcast(Podcast $podcast, int $bulkSize = self::BULK_SIZE, ?string $startFromGuid = null): ?Item
     {
-        $podcast = $this->podcastRepository->findOneToImport();
-        while ($podcast) {
-            $lastId = $podcast->getId();
+        $this->reader->initReader($this->client->readPodcastRss($podcast));
 
-            try {
-                $this->syncPodcast($podcast);
-            } catch (Throwable $exception) {
-                $this->damLogger->error(
-                    DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
-                    sprintf('Podcast import failed (%s)', $exception->getMessage())
-                );
-                $this->podcastStatusManager->toImportFailed($podcast);
+        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
+            $this->updatePodcast($podcast, $this->reader->readChannel());
+        }
+
+        $imported = 0;
+        foreach ($this->reader->readItems($startFromGuid) as $podcastItem) {
+            if ($this->episodeRssImportManager->importEpisode($podcast, $podcastItem)) {
+                $imported++;
             }
 
-            $this->manager->clear();
-            $podcast = $this->podcastRepository->findOneToImport($lastId);
+            if ($bulkSize === $imported) {
+                return $podcastItem;
+            }
         }
+
+        $this->podcastStatusManager->toImported($podcast);
+
+        return null;
     }
 
     /**

@@ -87,9 +87,16 @@ final class PodcastRssReader
      * @throws SerializerException
      * @throws Exception
      */
-    public function readItems(): Generator
+    public function readItems(?string $startFromGuid = null): Generator
     {
         foreach (array_reverse($this->body->channel->xpath('item')) as $item) {
+            if ($startFromGuid) {
+                if ((string) $item->guid === $startFromGuid) {
+                    $startFromGuid = null;
+                }
+
+                continue;
+            }
             yield $this->readItem($item);
         }
     }
