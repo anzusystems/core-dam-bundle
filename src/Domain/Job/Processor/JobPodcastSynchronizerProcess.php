@@ -46,7 +46,6 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
                 job: $job,
                 item: $this->rssImportManager->syncBulkPodcast(
                     podcast: $podcast,
-                    bulkSize: 3,
                     startFromGuid: $job->getLastBatchProcessedRecord() ?: null
                 )
             );
