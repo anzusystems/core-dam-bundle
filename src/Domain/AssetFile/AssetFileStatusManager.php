@@ -29,9 +29,13 @@ final class AssetFileStatusManager extends AssetFileManager
     /**
      * @throws SerializerException
      */
-    public function toUploaded(AssetFile $assetFile): AssetFile
+    public function toUploaded(AssetFile $assetFile, bool $flush = true): AssetFile
     {
-        return $this->changeTransition($assetFile, AssetFileProcessStatus::Uploaded);
+        return $this->changeTransition(
+            assetFile: $assetFile,
+            status: AssetFileProcessStatus::Uploaded,
+            flush: $flush
+        );
     }
 
     /**
@@ -83,7 +87,8 @@ final class AssetFileStatusManager extends AssetFileManager
     private function changeTransition(
         AssetFile $assetFile,
         AssetFileProcessStatus $status,
-        ?AssetFileFailedType $failedType = null
+        ?AssetFileFailedType $failedType = null,
+        bool $flush = true
     ): AssetFile {
         $this->validateTransition($assetFile, $status);
         $assetFile->getAssetAttributes()

@@ -14,18 +14,20 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
+use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Dto\PodcastEpisode\PodcastEpisodeImportDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use InvalidArgumentException;
@@ -50,13 +52,15 @@ final readonly class EpisodeRssImportManager
         private PodcastEpisodeStatusManager $podcastEpisodeStatusManager,
         private AssetSlotFactory $assetSlotFactory,
         private DamLogger $damLogger,
+        private ImageFileRepository $imageFileRepository,
     ) {
     }
 
     /**
      * @throws SerializerException
+     * @throws DomainException
      */
-    public function importEpisode(Podcast $podcast, Item $podcastItem): bool
+    public function importEpisode(Podcast $podcast, Item $podcastItem): PodcastEpisodeImportDto
     {
         $episode = null;
 
@@ -83,12 +87,18 @@ final readonly class EpisodeRssImportManager
 
             // Slot is used but URL equals (already imported episode)
             if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $podcastItem->getEnclosure()->getUrl()) {
-                return false;
+                return new PodcastEpisodeImportDto(
+                    episode: $episode,
+                    newlyImported: false
+                );
             }
             // Probably new version of podcast was uploaded, need to solve manually
             $this->podcastEpisodeStatusManager->toConflict($episode);
 
-            return false;
+            return new PodcastEpisodeImportDto(
+                episode: $episode,
+                newlyImported: false
+            );
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
@@ -102,9 +112,11 @@ final readonly class EpisodeRssImportManager
             if ($episode) {
                 $this->podcastEpisodeStatusManager->toImportFailed($episode);
             }
-        }
 
-        return false;
+            throw new DomainException(
+                sprintf('Podcast episode (%s) import failed', $podcastItem->getTitle())
+            );
+        }
     }
 
     /**
@@ -112,16 +124,12 @@ final readonly class EpisodeRssImportManager
      */
     public function getTargetSlot(PodcastEpisode $episode): ?AssetSlot
     {
-        $configuration = $this->configurationProvider->getExtSystemConfigurationByAssetType(AssetType::Audio, $episode->getExtSystem()->getSlug());
-
         $asset = $episode->getAsset();
         if (null === $asset) {
             return null;
         }
 
-        $requiredSlotName = $episode->getPodcast()->getAttributes()->getFileSlot();
-        $slotName = empty($requiredSlotName) ? $configuration->getSlots()->getDefault() : $requiredSlotName;
-
+        $slotName = $this->getTargetSlotName($episode);
         $slot = $asset->getSlots()->filter(
             fn (AssetSlot $assetSlot): bool => $assetSlot->getName() === $slotName
         )->first();
@@ -129,98 +137,134 @@ final readonly class EpisodeRssImportManager
         return $slot instanceof AssetSlot ? $slot : null;
     }
 
+    private function getTargetSlotName(PodcastEpisode $episode): string
+    {
+        $configuration = $this->configurationProvider->getExtSystemConfigurationByAssetType(
+            assetType: AssetType::Audio,
+            extSystemSlug: $episode->getExtSystem()->getSlug()
+        );
+        $requiredSlotName = $episode->getPodcast()->getAttributes()->getFileSlot();
+
+        return empty($requiredSlotName) ? $configuration->getSlots()->getDefault() : $requiredSlotName;
+    }
+
     /**
      * @throws SerializerException
      */
-    private function createPodcastEpisode(Podcast $podcast, Item $item): bool
+    private function createPodcastEpisode(Podcast $podcast, Item $item): PodcastEpisodeImportDto
     {
-        $audioFile = $this->downloadAsset(
-            podcast: $podcast,
-            item: $item
-        );
-
+        $audioFile = $this->prepareAudioFile(podcast: $podcast, item: $item);
         $episode = $this->podcastEpisodeFactory->createEpisodeWithAsset($audioFile->getAsset(), $podcast, false);
 
+        $this->updateImage($episode, $item);
         $this->updateEpisodeData($episode, $item);
         $this->toUploaded($audioFile);
 
-        return true;
+        return new PodcastEpisodeImportDto(
+            episode: $episode,
+            newlyImported: true
+        );
     }
 
     /**
      * @throws SerializerException
      */
-    private function assignToPodcastEpisode(PodcastEpisode $podcastEpisode, Item $item): bool
+    private function assignToPodcastEpisode(PodcastEpisode $episode, Item $item): PodcastEpisodeImportDto
     {
-        $audioFile = $this->downloadAsset(
-            podcast: $podcastEpisode->getPodcast(),
-            item: $item
-        );
-        $audioFile->getAsset()->addEpisode($podcastEpisode);
+        $audioFile = $this->prepareAudioFile(podcast: $episode->getPodcast(), item: $item);
+        $audioFile->getAsset()->addEpisode($episode);
 
-        $this->updateEpisodeData($podcastEpisode, $item);
+        $this->updateImage($episode, $item);
+        $this->updateEpisodeData($episode, $item);
         $this->toUploaded($audioFile);
 
-        return true;
+        return new PodcastEpisodeImportDto(
+            episode: $episode,
+            newlyImported: true
+        );
     }
 
     /**
      * @throws SerializerException
      */
-    private function assignToPodcastEpisodeAndExistingAsset(PodcastEpisode $podcastEpisode, Asset $asset, Item $item): bool
+    private function assignToPodcastEpisodeAndExistingAsset(PodcastEpisode $episode, Asset $asset, Item $item): PodcastEpisodeImportDto
     {
         $audioFile = $this->audioFactory->createFromUrl(
-            licence: $podcastEpisode->getPodcast()->getLicence(),
+            licence: $episode->getPodcast()->getLicence(),
             url: $item->getEnclosure()->getUrl()
         );
         $this->assetSlotFactory->createRelation(
             asset: $asset,
             assetFile: $audioFile,
-            slotName: $podcastEpisode->getPodcast()->getAttributes()->getFileSlot(),
+            slotName: $this->getTargetSlotName($episode),
             flush: false
         );
         $this->audioManager->create($audioFile, false);
 
-        $this->updateEpisodeData($podcastEpisode, $item);
+        $this->updateImage($episode, $item);
+        $this->updateEpisodeData($episode, $item);
         $this->toUploaded($audioFile);
 
-        return true;
+        return new PodcastEpisodeImportDto(
+            episode: $episode,
+            newlyImported: true
+        );
+    }
+
+    private function updateEpisodeData(PodcastEpisode $episode, Item $item): void
+    {
+        $episode->getTexts()->setTitle($item->getTitle());
+        $episode->getAttributes()
+            ->setRssId($item->getGuid())
+            ->setRssUrl($item->getEnclosure()->getUrl());
+        $episode->getFlags()->setFromRss(true);
+        $this->podcastEpisodeStatusManager->toImported($episode, false);
     }
 
     /**
      * @throws SerializerException
      */
-    private function updateEpisodeData(PodcastEpisode $podcastEpisode, Item $item): void
+    private function updateImage(PodcastEpisode $podcastEpisode, Item $item): void
     {
-        $podcastEpisode->getTexts()->setTitle($item->getTitle());
-
-        $imageFileForPreview = $this->getPreviewImage($podcastEpisode->getPodcast()->getLicence(), $item);
-        if ($imageFileForPreview) {
-            $podcastEpisode->setImagePreview(
-                $this->imagePreviewFactory->createFromImageFile(
-                    imageFile: $imageFileForPreview,
-                    flush: false
-                )
-            );
+        if ($podcastEpisode->getImagePreview()) {
+            return;
         }
 
-        $this->updatePodcastEpisodeAttributes($podcastEpisode, $item);
-        $this->podcastEpisodeStatusManager->toImported($podcastEpisode, false);
+        if (empty($item->getItunes()->getImage())) {
+            return;
+        }
+
+        $imageFile = $this->imageDownloadFacade->downloadSynchronous(
+            assetLicence: $podcastEpisode->getPodcast()->getLicence(),
+            url: $item->getItunes()->getImage()
+        );
+
+        if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Duplicate)) {
+            $imageFile = $this->imageFileRepository->find($imageFile->getAssetAttributes()->getOriginAssetId());
+        }
+
+        if (null === $imageFile) {
+            return;
+        }
+
+        if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                sprintf('ImageFile download failed (%s)', $item->getItunes()->getImage())
+            );
+
+            return;
+        }
+
+        $podcastEpisode->setImagePreview(
+            $this->imagePreviewFactory->createFromImageFile(
+                imageFile: $imageFile,
+                flush: false
+            )
+        );
     }
 
-    /**
-     * Assigns Attributes from imported RssItem
-     */
-    private function updatePodcastEpisodeAttributes(PodcastEpisode $episode, Item $item): void
-    {
-        $episode->getAttributes()
-            ->setRssId($item->getGuid())
-            ->setRssUrl($item->getEnclosure()->getUrl());
-        // todo preveric
-        $episode->getFlags()->setFromRss(true);
-    }
-
-    private function downloadAsset(Podcast $podcast, Item $item): AudioFile
+    private function prepareAudioFile(Podcast $podcast, Item $item): AudioFile
     {
         $audioFile = $this->audioFactory->createFromUrl(
             licence: $podcast->getLicence(),
@@ -246,21 +290,6 @@ final readonly class EpisodeRssImportManager
         );
 
         return $audioFile;
-    }
-
-    /**
-     * @throws SerializerException
-     */
-    private function getPreviewImage(AssetLicence $licence, Item $item): ?ImageFile
-    {
-        if (empty($item->getItunes()->getImage())) {
-            return null;
-        }
-
-        return $this->imageDownloadFacade->download(
-            assetLicence: $licence,
-            url: $item->getItunes()->getImage()
-        );
     }
 
     /**

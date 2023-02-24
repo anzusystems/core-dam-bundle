@@ -13,25 +13,20 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Helper\HtmlHelper;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
-use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
-use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
-use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
 
 final class RssImportManager
 {
     use OutputUtilTrait;
-    private const BULK_SIZE = 20;
+    private const BULK_SIZE = 2;
 
     public function __construct(
-        private readonly RssClient $client,
         private readonly AssetRepository $assetRepository,
         private readonly PodcastRepository $podcastRepository,
         private readonly PodcastStatusManager $podcastStatusManager,
@@ -60,70 +55,13 @@ final class RssImportManager
 
     /**
      * @throws SerializerException
-     * @throws Exception
      */
-    public function syncBulkPodcast(Podcast $podcast, int $bulkSize = self::BULK_SIZE, ?string $startFromGuid = null): ?Item
-    {
-        $this->reader->initReader($this->client->readPodcastRss($podcast));
-
-        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
-            $this->updatePodcast($podcast, $this->reader->readChannel());
-        }
-
-        $imported = 0;
-        foreach ($this->reader->readItems($startFromGuid) as $podcastItem) {
-            if ($this->episodeRssImportManager->importEpisode($podcast, $podcastItem)) {
-                $imported++;
-            }
-
-            if ($bulkSize === $imported) {
-                return $podcastItem;
-            }
-        }
-
-        $this->podcastStatusManager->toImported($podcast);
-
-        return null;
-    }
-
-    /**
-     * @throws SerializerException
-     * @throws Exception
-     */
-    public function syncPodcast(Podcast $podcast, bool $fullImport = true): void
-    {
-        $this->reader->initReader($this->client->readPodcastRss($podcast));
-
-        $this->outputUtil->writeln(sprintf('Importing podcast (%s)', $podcast->getTexts()->getTitle()));
-        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
-            $this->outputUtil->writeln('Updating podcast metadata');
-            $this->updatePodcast($podcast, $this->reader->readChannel());
-        }
-
-        $progressBar = $this->outputUtil->createProgressBar();
-        $progressBar->start();
-
-        foreach ($this->reader->readItems() as $podcastItem) {
-            if (
-                false === $this->episodeRssImportManager->importEpisode($podcast, $podcastItem) &&
-                false === $fullImport
-            ) {
-                break;
-            }
-            $progressBar->advance();
-        }
-
-        $this->podcastStatusManager->toImported($podcast);
-
-        $progressBar->finish();
-    }
-
-    private function updatePodcast(Podcast $podcast, Channel $channel): void
+    public function syncPodcast(Podcast $podcast, Channel $channel): void
     {
         if (false === empty($channel->getItunes()->getImage())) {
             $podcast->setImagePreview(
                 $this->imagePreviewFactory->createFromImageFile(
-                    imageFile: $this->imageDownloadFacade->download(
+                    imageFile: $this->imageDownloadFacade->downloadSynchronous(
                         assetLicence: $podcast->getLicence(),
                         url: $channel->getItunes()->getImage()
                     ),
@@ -149,5 +87,7 @@ final class RssImportManager
                 )
             );
         }
+
+        $this->podcastStatusManager->toImported($podcast);
     }
 }
