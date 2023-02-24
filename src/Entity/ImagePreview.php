@@ -31,6 +31,7 @@ class ImagePreview implements
     use UserTrackingTrait;
 
     #[ORM\ManyToOne(targetEntity: ImageFile::class)]
+    #[ORM\JoinColumn(onDelete: 'CASCADE')]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Serialize(handler: EntityIdHandler::class)]
     protected ImageFile $imageFile;

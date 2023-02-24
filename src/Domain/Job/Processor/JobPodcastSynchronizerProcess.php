@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Throwable;
 
@@ -41,19 +42,38 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
 
         try {
             $this->entityManager->beginTransaction();
-
-            $this->rssImportManager->syncPodcast(
-                podcast: $podcast,
-                fullImport: $job->isFullSync()
+            $this->finishProcessCycle(
+                job: $job,
+                item: $this->rssImportManager->syncBulkPodcast(
+                    podcast: $podcast,
+                    bulkSize: 3,
+                    startFromGuid: $job->getLastBatchProcessedRecord() ?: null
+                )
             );
-
-            $this->getManagedJob($job)->setResult('Podcast synced');
-            $this->finishSuccess($job);
-
             $this->entityManager->commit();
         } catch (Throwable $throwable) {
             $this->entityManager->rollback();
             $this->finishFail($job, substr($throwable->getMessage(), 0, 255));
         }
+    }
+
+    private function finishProcessCycle(JobPodcastSynchronizer $job, ?Item $item = null): void
+    {
+        if (null === $item) {
+            $this->getManagedJob($job)->setResult('Podcast was fully synced');
+            $this->finishSuccess($job);
+
+            return;
+        }
+
+        if (empty($item->getGuid())) {
+            $this->getManagedJob($job)->setResult('Not possible to chain Podcast import, because Episode GUID is empty');
+            $this->finishFail($job, 'Empty GUID');
+        }
+
+        $job = $this->getManagedJob($job)->setResult(
+            sprintf('Last synced episode GUID (%s)', $item->getGuid())
+        );
+        $this->toAwaitingBatchProcess($job, $item->getGuid());
     }
 }
