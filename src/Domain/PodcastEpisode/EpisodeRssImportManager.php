@@ -239,7 +239,7 @@ final readonly class EpisodeRssImportManager
             url: $item->getItunes()->getImage()
         );
 
-        if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Duplicate)) {
+        if ($imageFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Duplicate)) {
             $imageFile = $this->imageFileRepository->find($imageFile->getAssetAttributes()->getOriginAssetId());
         }
 
