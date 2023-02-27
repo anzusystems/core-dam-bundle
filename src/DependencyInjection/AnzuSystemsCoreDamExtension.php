@@ -73,6 +73,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                         'prefix' => 'AnzuSystems\CommonBundle\Entity',
                         'alias' => 'AnzuSystems\CommonBundle',
                     ],
+                    'AnzuSystemsContractsEmbeds' => [
+                        'is_bundle' => false,
+                        'type' => 'attribute',
+                        'dir' => 'vendor/anzusystems/contracts/src/Entity/Embeds',
+                        'prefix' => 'AnzuSystems\Contracts\Entity\Embeds',
+                        'alias' => 'AnzuSystems\ContractsEmbeds',
+                    ],
                 ],
             ],
         ]);
