@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use League\Flysystem\FilesystemException;
 
-final class CropFacade
+final readonly class CropFacade
 {
     public function __construct(
         private readonly CropFactory $cropFactory,

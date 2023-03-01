@@ -14,6 +14,7 @@ final class AssetFileCacheManager
 {
     private const CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
     private const X_KEY_HEADER = 'xkey';
+    private const NOT_FOUND_TTL = 360;
 
     private AllowListConfiguration $allowListConfiguration;
 
@@ -32,6 +33,13 @@ final class AssetFileCacheManager
         $response->setMaxAge($cache->getMaxAge());
         $response->headers->set(self::CACHE_CONTROL_TTL_HEADER, (string) $cache->getCacheTtl());
         $this->setXKeys($response, $asset);
+    }
+
+    public function setNotFoundCache(Response $response): void
+    {
+        $response->setPublic();
+        $response->setMaxAge(self::NOT_FOUND_TTL);
+        $response->headers->set(self::CACHE_CONTROL_TTL_HEADER, (string) self::NOT_FOUND_TTL);
     }
 
     public static function getAssetFileXKey(string $assetId): string
