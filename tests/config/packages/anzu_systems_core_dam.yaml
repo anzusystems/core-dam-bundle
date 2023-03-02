@@ -7,6 +7,7 @@ anzu_systems_core_dam:
     distribution_auth_redirect_url: '%env(resolve:string:DISTRIBUTION_AUTH_REDIRECT_URL)%'
     default_ext_system_id: 1
     default_asset_licence_id: 100000
+    not_found_image_id: '0d584443-2718-470a-b9b1-92d2d9c7447c'
     allow_select_ext_system: false
     allow_select_licence: false
     admin_allow_list_name: 'admin'

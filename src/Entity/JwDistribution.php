@@ -13,8 +13,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: JwDistributionRepository::class)]
 class JwDistribution extends Distribution
 {
-    public const THUMBNAIL_DATA = 'thumbnail';
-
     #[ORM\Embedded(JwTexts::class)]
     #[Assert\Valid]
     #[Serialize]

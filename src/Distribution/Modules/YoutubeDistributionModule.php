@@ -22,7 +22,6 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Exception;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
-use RedisException;
 
 final class YoutubeDistributionModule extends AbstractDistributionModule implements
     RemoteProcessingDistributionModuleInterface,
@@ -32,6 +31,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         private readonly YoutubeApiClient $client,
         private readonly YoutubeAuthenticator $authenticator,
         private readonly DamLogger $logger,
+        private readonly YoutubeCustomDataFactory $youtubeCustomDataFactory
     ) {
     }
 
@@ -46,10 +46,10 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     /**
      * @param YoutubeDistribution $distribution
      *
-     * @throws SerializerException
      * @throws Exception
      * @throws FilesystemException
-     * @throws RedisException
+     * @throws InvalidArgumentException
+     * @throws SerializerException
      */
     public function distribute(Distribution $distribution): void
     {
@@ -96,6 +96,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
     /**
      * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws SerializerException
      */
     public function checkDistributionStatus(Distribution $distribution): void
     {
@@ -107,11 +109,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         }
 
         if (YoutubeVideoDto::UPLOAD_STATUS_PROCESSED === $video->getUploadStatus()) {
-            $distribution->setDistributionData([
-                YoutubeDistribution::THUMBNAIL_WIDTH => $video->getThumbnailWidth(),
-                YoutubeDistribution::THUMBNAIL_HEIGHT => $video->getThumbnailHeight(),
-                YoutubeDistribution::THUMBNAIL_DATA => $video->getThumbnailUrl(),
-            ]);
+            $distribution->setDistributionData($this->youtubeCustomDataFactory->createDistributionData($video));
 
             return;
         }
@@ -126,11 +124,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
     public function getPreviewLink(Distribution $distribution): ?string
     {
-        if (
-            $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
-            isset($distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA])
-        ) {
-            return $distribution->getDistributionData()[YoutubeDistribution::THUMBNAIL_DATA] ?? null;
+        if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
+            return $this->youtubeCustomDataFactory->getUrl($distribution);
         }
 
         return null;

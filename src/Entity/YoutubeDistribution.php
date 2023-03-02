@@ -18,10 +18,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[AppAssert\Youtube]
 class YoutubeDistribution extends Distribution
 {
-    public const THUMBNAIL_DATA = 'thumbnail';
-    public const THUMBNAIL_WIDTH = 'width';
-    public const THUMBNAIL_HEIGHT = 'height';
-
     #[ORM\Embedded(YoutubeTexts::class)]
     #[Assert\Valid]
     #[Serialize]
