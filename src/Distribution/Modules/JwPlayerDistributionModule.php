@@ -26,6 +26,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
     public function __construct(
         private readonly JwVideoClient $jwVideoClient,
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
+        private readonly JwPlayerCustomDataFactory $customDataFactory,
     ) {
     }
 
@@ -66,9 +67,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
             $distribution
         );
         if ($video->getStatus()->is(JwMediaStatus::Ready)) {
-            $distribution->setDistributionData(
-                [JwDistribution::THUMBNAIL_DATA => $this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId())]
-            );
+            $distribution->setDistributionData($this->customDataFactory->createDistributionData($distribution));
 
             return;
         }
@@ -93,11 +92,8 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
 
     public function getPreviewLink(Distribution $distribution): ?string
     {
-        if (
-            $distribution->getStatus()->is(DistributionProcessStatus::Distributed) &&
-            isset($distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA])
-        ) {
-            return $distribution->getDistributionData()[JwDistribution::THUMBNAIL_DATA] ?? null;
+        if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
+            return $this->customDataFactory->getUrl($distribution);
         }
 
         return null;
