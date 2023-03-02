@@ -73,6 +73,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                         'prefix' => 'AnzuSystems\CommonBundle\Entity',
                         'alias' => 'AnzuSystems\CommonBundle',
                     ],
+                    'AnzuSystemsContractsEmbeds' => [
+                        'is_bundle' => false,
+                        'type' => 'attribute',
+                        'dir' => 'vendor/anzusystems/contracts/src/Entity/Embeds',
+                        'prefix' => 'AnzuSystems\Contracts\Entity\Embeds',
+                        'alias' => 'AnzuSystems\ContractsEmbeds',
+                    ],
                 ],
             ],
         ]);
@@ -393,7 +400,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             'core_dam_bundle.asset_external_provider_cache' => [
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
-                                'default_lifetime' => 'PT3M',
+                                'default_lifetime' => 'P3M',
                             ],
                             'core_dam_bundle.counter_cache' => [
                                 'adapter' => 'cache.adapter.redis',
@@ -403,7 +410,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             'core_dam_bundle.youtube_cache' => [
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
-                                'default_lifetime' => 'PT1M',
+                                'default_lifetime' => 'P1M',
                             ],
                         ],
                     ],
