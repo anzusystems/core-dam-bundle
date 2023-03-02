@@ -11,12 +11,14 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public const ROI_WIDTH_KEY = 'roi_width';
     public const ROI_HEIGHT_KEY = 'roi_height';
     public const CROP_STORAGE_NAME = 'crop_storage_name';
+    public const NOT_FOUND_IMAGE_ID = 'not_found_image_id';
 
     private int $roiWidth;
     private int $roiHeight;
     private string $cropStorageName;
     private string $publicDomain;
     private string $adminDomain;
+    private string $notFoundImageId;
 
     public static function getFromArrayConfiguration(array $config): static
     {
@@ -84,6 +86,18 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setRoiHeight(int $roiHeight): self
     {
         $this->roiHeight = $roiHeight;
+
+        return $this;
+    }
+
+    public function getNotFoundImageId(): string
+    {
+        return $this->notFoundImageId;
+    }
+
+    public function setNotFoundImageId(string $notFoundImageId): self
+    {
+        $this->notFoundImageId = $notFoundImageId;
 
         return $this;
     }

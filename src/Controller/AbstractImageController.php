@@ -17,8 +17,24 @@ abstract class AbstractImageController extends AbstractPublicController
 
     protected function okResponse(string $content, AssetFile $asset): Response
     {
+        $response = $this->getImageResponse($content, $asset)->setStatusCode(Response::HTTP_OK);
+        $this->assetFileCacheManager->setCache($response, $asset);
+
+        return $response;
+    }
+
+    protected function notFoundResponse(string $content, AssetFile $asset): Response
+    {
+        $response = $this->getImageResponse($content, $asset)->setStatusCode(Response::HTTP_NOT_FOUND);
+        $this->assetFileCacheManager->setNotFoundCache($response);
+
+        return $response;
+    }
+
+    protected function getImageResponse(string $content, AssetFile $assetFile): Response
+    {
         $fileName = FileNameHelper::changeFileExtension(
-            (string) $asset->getId(),
+            (string) $assetFile->getId(),
             self::CROP_EXTENSION
         );
 
@@ -28,21 +44,10 @@ abstract class AbstractImageController extends AbstractPublicController
             (new UnicodeString($fileName))->ascii()->toString()
         );
 
-        $response = new Response($content, Response::HTTP_OK, [
+        return new Response($content, Response::HTTP_OK, [
             'Content-Type' => self::DEFAULT_CROP_MIME_TYPE,
             'Content-Disposition' => $disposition,
             'Content-Length' => strlen($content),
         ]);
-        $this->setCache($response, $asset);
-
-        return $response;
-    }
-
-    protected function notFoundResponse(): Response
-    {
-        return new Response(
-            'Image not found',
-            Response::HTTP_NOT_FOUND,
-        );
     }
 }

@@ -8,6 +8,9 @@ use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\QueryBuilder;
@@ -20,6 +23,22 @@ use Doctrine\ORM\QueryBuilder;
  */
 abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
 {
+    public function findAllProcessed(int $limit, ?string $idFrom = null): Collection
+    {
+        $qb = $this->createQueryBuilder('entity')
+            ->andWhere('entity.assetAttributes.status = :status')
+            ->setParameter('status', AssetFileProcessStatus::Processed)
+            ->addOrderBy('entity.id', Criteria::ASC)
+            ->setMaxResults($limit);
+
+        if ($idFrom) {
+            $qb->andWhere('entity.id > :id')
+                ->setParameter('id', $idFrom);
+        }
+
+        return new ArrayCollection($qb->getQuery()->getResult());
+    }
+
     /**
      * @throws NonUniqueResultException
      */

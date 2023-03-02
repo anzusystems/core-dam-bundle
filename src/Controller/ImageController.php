@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Controller;
 
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
+use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
@@ -13,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(path: '/image', name: 'image_')]
@@ -22,6 +25,7 @@ final class ImageController extends AbstractImageController
         private readonly CropFacade $cropFacade,
         private readonly ImageFileRepository $imageFileRepository,
         private readonly RegionOfInterestRepository $roiRepository,
+        private readonly ConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -48,15 +52,47 @@ final class ImageController extends AbstractImageController
         string $imageId,
     ): Response {
         $image = $this->imageFileRepository->findProcessedById($imageId);
-        $roi = $this->roiRepository->findByImageIdAndPosition($imageId, $cropPayload->getRoi());
+        if (null === $image) {
+            return $this->createNotFoundResponse($cropPayload);
+        }
 
-        if ($image && $roi) {
-            return $this->okResponse(
-                $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
-                $image,
+        $roi = $this->roiRepository->findByImageIdAndPosition($imageId, $cropPayload->getRoi());
+        if (null === $roi) {
+            return $this->createNotFoundResponse($cropPayload);
+        }
+
+        return $this->okResponse(
+            $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
+            $image,
+        );
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidCropException
+     * @throws NonUniqueResultException
+     */
+    private function createNotFoundResponse(RequestedCropDto $cropPayload): Response
+    {
+        $notFoundImageId = $this->configurationProvider->getSettings()->getNotFoundImageId();
+        if (empty($notFoundImageId)) {
+            throw new NotFoundHttpException('Image not found');
+        }
+
+        $notFoundImage = $this->imageFileRepository->findProcessedById($notFoundImageId);
+        if (null === $notFoundImage) {
+            throw new NotFoundHttpException('Image not found');
+        }
+
+        $notFoundRoi = $notFoundImage->getRegionsOfInterest()->first();
+        if ($notFoundRoi instanceof RegionOfInterest) {
+            return $this->notFoundResponse(
+                $this->cropFacade->applyCropPayload($notFoundImage, $cropPayload, $notFoundRoi),
+                $notFoundImage,
             );
         }
 
-        return $this->notFoundResponse();
+        throw new NotFoundHttpException('Image not found');
     }
 }
