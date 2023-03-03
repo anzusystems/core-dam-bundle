@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\JobPodcastSynchronizerRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,6 +38,7 @@ final class RssImportManager
         private readonly EntityManagerInterface $manager,
         private readonly ImagePreviewFactory $imagePreviewFactory,
         private readonly JobPodcastSynchronizerFactory $jobPodcastSynchronizerFactory,
+        private readonly JobPodcastSynchronizerRepository $podcastSynchronizerRepository,
     ) {
     }
 
@@ -46,6 +48,14 @@ final class RssImportManager
 
         while ($podcast = $this->podcastRepository->findOneToImport($lastId)) {
             $lastId = (string) $podcast->getId();
+            $notFinished = $this->podcastSynchronizerRepository->findOneNotFinishedByPodcast($lastId);
+
+            if ($notFinished) {
+                $this->outputUtil->writeln(sprintf('Another JOB with id (%s) in queue', $lastId));
+
+                continue;
+            }
+
             $this->jobPodcastSynchronizerFactory->createPodcastSynchronizerJob(
                 podcastId: $lastId,
                 fullSync: $fullImport

@@ -43,20 +43,20 @@ final class CustomFormElementFixtures extends AbstractFixtures
      */
     public function load(ProgressBar $progressBar): void
     {
-        /** @var AssetCustomForm $customForm */
-        foreach ($progressBar->iterate($this->getData()) as $newCustomForm) {
-            $customForm = $this->assetCustomFormRepository->findOneByTypeAndExtSystem(
-                $newCustomForm->getExtSystem(),
-                $newCustomForm->getAssetType()
-            );
-            if ($customForm) {
-                $this->customFormManager->update($customForm, $newCustomForm);
-
-                continue;
-            }
-
-            $this->customFormManager->create($newCustomForm);
-        }
+        //        /** @var AssetCustomForm $customForm */
+        //        foreach ($progressBar->iterate($this->getData()) as $newCustomForm) {
+        //            $customForm = $this->assetCustomFormRepository->findOneByTypeAndExtSystem(
+        //                $newCustomForm->getExtSystem(),
+        //                $newCustomForm->getAssetType()
+        //            );
+        //            if ($customForm) {
+        //                $this->customFormManager->update($customForm, $newCustomForm);
+        //
+        //                continue;
+        //            }
+        //
+        //            $this->customFormManager->create($newCustomForm);
+        //        }
     }
 
     /**
