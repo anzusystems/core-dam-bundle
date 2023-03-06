@@ -39,7 +39,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
 
     public static function getDependencies(): array
     {
-        return [AssetLicenceFixtures::class, CustomFormElementFixtures::class];
+        return [AssetLicenceFixtures::class];
     }
 
     public static function getIndexKey(): string

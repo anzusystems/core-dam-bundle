@@ -39,7 +39,6 @@ final class AudioFixtures extends AbstractAssetFileFixtures
     {
         return [
             AssetLicenceFixtures::class,
-            CustomFormElementFixtures::class,
             KeywordFixtures::class,
             AuthorFixtures::class,
         ];

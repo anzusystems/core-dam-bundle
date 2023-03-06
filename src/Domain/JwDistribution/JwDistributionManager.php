@@ -22,6 +22,7 @@ final class JwDistributionManager extends AbstractDistributionManager
             ->setDescription($newDistribution->getTexts()->getDescription())
             ->setKeywords($newDistribution->getTexts()->getKeywords())
             ->setAuthor($newDistribution->getTexts()->getAuthor());
+        $distribution->setPublishAt($newDistribution->getPublishAt());
 
         $this->flush($flush);
 

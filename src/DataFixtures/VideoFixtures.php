@@ -41,7 +41,6 @@ final class VideoFixtures extends AbstractAssetFileFixtures
     {
         return [
             AssetLicenceFixtures::class,
-            CustomFormElementFixtures::class,
             AuthorFixtures::class,
             KeywordFixtures::class,
         ];
