@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaGetDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaUploadDto;
@@ -19,6 +20,7 @@ use Psr\Log\LoggerAwareInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Throwable;
 
 final class JwVideoClient implements LoggerAwareInterface
 {
@@ -29,6 +31,7 @@ final class JwVideoClient implements LoggerAwareInterface
         private readonly HttpClientInterface $client,
         private readonly HttpClientInterface $jwPlayerApiClient,
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -61,25 +64,32 @@ final class JwVideoClient implements LoggerAwareInterface
     }
 
     /**
-     * @throws JsonException
+     * @throws SerializerException
      */
     public function uploadVideoObject(VideoUploadPayloadDto $videoUploadPayloadDto, File $file): void
     {
-        $response = $this->loggedRequest(
-            client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] upload video object',
-            url: $videoUploadPayloadDto->getUploadLink(),
-            method: Request::METHOD_PUT,
-            headers: [
-                'headers' => [
-                    'Content-Type' => '',
-                ],
-            ],
-            body: file_get_contents($file->getRealPath())
-        );
+        try {
+            $response = $this->client->request(
+                Request::METHOD_PUT,
+                $videoUploadPayloadDto->getUploadLink(),
+                [
+                    'body' => file_get_contents($file->getRealPath()),
+                    'headers' => [
+                        'Content-Type' => '',
+                    ],
+                ]
+            );
 
-        if ($response->hasError()) {
-            throw new RuntimeException('JwVideoDistribution upload video failed');
+            $response->getContent();
+
+            return;
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('JwVideo failed upload video (%s)', $exception->getMessage())
+            );
+
+            throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
         }
     }
 
