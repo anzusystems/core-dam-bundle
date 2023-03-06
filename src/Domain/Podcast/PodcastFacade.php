@@ -38,11 +38,4 @@ final class PodcastFacade
 
         return $podcast;
     }
-
-    public function delete(Podcast $podcast): bool
-    {
-        $this->podcastManager->delete($podcast);
-
-        return true;
-    }
 }

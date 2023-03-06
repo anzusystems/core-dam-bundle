@@ -30,6 +30,7 @@ return static function (ContainerConfigurator $configurator): void {
                 'password' => env('ELASTIC_PASSWORD')->string(),
             ],
         ])
+        ->set('app_cache_proxy_enabled', true)
         ->set('elastic_index_settings', [
             'asset' => param('anzu_systems.dam_bundle.index_asset'),
             'keyword' => param('anzu_systems.dam_bundle.index_keyword'),

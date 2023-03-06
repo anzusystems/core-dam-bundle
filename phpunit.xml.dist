@@ -32,6 +32,8 @@
         <exclude>
             <directory>./vendor</directory>
             <directory>./tests</directory>
+            <directory>src/DataFixtures</directory>
+            <directory>src/Resources</directory>
         </exclude>
     </coverage>
     <listeners>

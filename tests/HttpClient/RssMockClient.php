@@ -5,11 +5,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\HttpClient;
 
+use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use JsonException;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
-final class RssMockClient
+final class RssMockClient extends CoreDamKernelTestCase
 {
     /**
      * @throws JsonException

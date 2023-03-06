@@ -22,6 +22,9 @@ class PodcastEpisodeManager extends AbstractManager
     public function create(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
     {
         $this->setPosition($podcastEpisode);
+        if ($podcastEpisode->getImagePreview()) {
+            $this->imagePreviewManager->create($podcastEpisode->getImagePreview(), false);
+        }
         $this->trackCreation($podcastEpisode);
         $this->entityManager->persist($podcastEpisode);
         $this->flush($flush);
@@ -37,7 +40,7 @@ class PodcastEpisodeManager extends AbstractManager
         return $podcastEpisode;
     }
 
-    public function moveEpisodes(Asset $fromAsset, Asset $toAsset, bool $flush = false): void
+    public function moveEpisodes(Asset $fromAsset, Asset $toAsset, bool $flush = true): void
     {
         foreach ($fromAsset->getEpisodes() as $episode) {
             $toAsset->addEpisode($episode);

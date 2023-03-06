@@ -6,12 +6,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
@@ -23,6 +25,47 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
     private const TEST_DATA_2_FILENAME = 'solid_image.jpeg';
 
     protected ImageUrlFactory $imageUrlFactory;
+
+    /**
+     * @dataProvider updateDataProvider
+     */
+    public function testUpdate(int $statusCode, ?string $categoryId = null): void
+    {
+        $client = $this->getClient(User::ID_ADMIN);
+        $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
+
+        $response = $client->put(
+            '/api/adm/v1/asset/'. $video->getAsset()->getId(),
+            [
+                'id' => $video->getAsset()->getId(),
+                'distributionCategory' => $categoryId
+            ]
+        );
+
+        $this->assertEquals($statusCode, $response->getStatusCode());
+    }
+
+    private function updateDataProvider(): array
+    {
+        return [
+            [
+                Response::HTTP_OK,
+                DistributionCategoryFixtures::CATEGORY_2,
+            ],
+            [
+                Response::HTTP_OK,
+                null,
+            ],
+            [
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                DistributionCategoryFixtures::CATEGORY_1,
+            ],
+            [
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                DistributionCategoryFixtures::CATEGORY_4,
+            ],
+        ];
+    }
 
     protected function setUp(): void
     {

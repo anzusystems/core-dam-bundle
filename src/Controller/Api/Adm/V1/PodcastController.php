@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
-use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
@@ -109,20 +108,5 @@ final class PodcastController extends AbstractApiController
             apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),
             customFilters: [new LicensedEntityFilter()]
         ));
-    }
-
-    /**
-     * @throws AppReadOnlyModeException
-     */
-    #[Route(path: '/{podcast}', name: 'delete', methods: [Request::METHOD_DELETE])]
-    #[OAParameterPath('podcast'), OAResponseDeleted]
-    public function delete(Podcast $podcast): JsonResponse
-    {
-        App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_DELETE, $podcast);
-
-        $this->podcastFacade->delete($podcast);
-
-        return $this->noContentResponse();
     }
 }

@@ -31,6 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PodcastRepository::class)]
 #[ORM\Index(fields: ['attributes.mode'], name: 'IDX_name')]
+#[AppAssert\PodcastConstraint]
 class Podcast implements
     UuidIdentifiableInterface,
     UserTrackingInterface,

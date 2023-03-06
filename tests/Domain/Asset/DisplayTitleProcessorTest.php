@@ -14,10 +14,11 @@ use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DisplayTitleConfiguration;
+use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
 
-final class DisplayTitleProcessorTest extends AnzuKernelTestCase
+final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
 {
     protected AssetTextsProcessor $displayTitleProcessor;
     protected ConfigurationProvider $configurationProvider;

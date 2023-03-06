@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CoreDamBundle\Cache\Settings\AdmConfigCacheSettings;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationFacade;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -35,7 +36,8 @@ final class ConfigurationController extends AbstractApiController
     public function get(): JsonResponse
     {
         return $this->okResponse(
-            $this->configurationFacade->decorateAdm()
+            $this->configurationFacade->decorateAdm(),
+            new AdmConfigCacheSettings()
         );
     }
 
@@ -49,7 +51,8 @@ final class ConfigurationController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_VIEW, $extSystem);
 
         return $this->okResponse(
-            $this->configurationFacade->decorateExtSystemAdm($extSystem)
+            $this->configurationFacade->decorateExtSystemAdm($extSystem),
+            new AdmConfigCacheSettings()
         );
     }
 }

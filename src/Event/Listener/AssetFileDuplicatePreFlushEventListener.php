@@ -21,6 +21,7 @@ final readonly class AssetFileDuplicatePreFlushEventListener
         $this->manager->moveEpisodes(
             fromAsset: $event->getAssetFile()->getAsset(),
             toAsset: $event->getOriginAssetFile()->getAsset(),
+            flush: false
         );
     }
 }

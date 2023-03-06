@@ -14,24 +14,20 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLice
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use Doctrine\ORM\EntityManagerInterface;
 
-final class JobUserDataDeleteProcessorTest extends AnzuKernelTestCase
+final class JobUserDataDeleteProcessorTest extends CoreDamKernelTestCase
 {
     private JobProcessor $jobProcessor;
     private JobUserDataDeleteProcessor $jobUserDataDeleteProcessor;
-    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        /** @var EntityManagerInterface $entityManager */
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-        $this->entityManager = $entityManager;
 
         /** @var JobProcessor $jobProcessor */
         $jobProcessor = self::getContainer()->get(JobProcessor::class);
@@ -50,6 +46,7 @@ final class JobUserDataDeleteProcessorTest extends AnzuKernelTestCase
         $this->jobProcessor->process();
         $job = $this->entityManager->find(Job::class, JobFixtures::ID_DELETE_BLOG_USER_JOB);
         $this->assertInstanceOf(JobUserDataDelete::class, $job);
+
         $this->assertSame(JobStatus::AwaitingBatchProcess, $job->getStatus());
         $this->assertSame(1, $job->getBatchProcessedIterationCount());
 
