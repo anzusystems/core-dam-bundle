@@ -90,6 +90,9 @@ final class ImageFixtures extends AbstractAssetFileFixtures
             $licence,
             self::IMAGE_ID_1_2
         );
+        $image->getAsset()->getMetadata()->setCustomData([
+            'title' => 'Image 1_2 title',
+        ]);
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
         $image->getAsset()->getAssetFlags()->setDescribed(true);
