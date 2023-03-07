@@ -35,7 +35,6 @@ final class JwDistributionController extends AbstractApiController
     ) {
     }
 
-
     /**
      * @throws NonUniqueResultException
      * @throws ValidationException

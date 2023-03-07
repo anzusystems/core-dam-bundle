@@ -180,7 +180,7 @@ anzu_systems_core_dam:
             source_property_path: 'metadata.customData[title]'
             destination_property_path: 'texts.title'
         distribution:
-          distribution_services: [ youtube_cms_main ]
+          distribution_services: [ youtube_cms_main, jw_cms_main ]
           distribution_requirements:
             youtube_cms_main:
               title: 'Youtube CMS'
@@ -193,6 +193,30 @@ anzu_systems_core_dam:
                 description:
                   source_property_path: 'metadata.customData[description]'
                   destination_property_path: 'customData[description]'
+              category_select:
+                enabled: true
+                required: false
+            jw_cms_main:
+              title: 'JW Player Video'
+              distribution_metadata_map:
+                title:
+                  source_property_path: 'metadata.customData[title]'
+                  destination_property_path: 'texts.title'
+                  normalizers:
+                    - { type: string, options: { empty_string: true } }
+                description:
+                  source_property_path: 'metadata.customData[description]'
+                  destination_property_path: 'texts.description'
+                  normalizers:
+                    - { type: string, options: { empty_string: true } }
+                keywords:
+                  source_property_path: 'keywords_as_string_array'
+                  destination_property_path: 'texts.keywords'
+                author:
+                  source_property_path: 'authors_as_string_array[0]'
+                  destination_property_path: 'texts.null_author'
+              blocked_by: [ ]
+              strategy: none
               category_select:
                 enabled: true
                 required: false

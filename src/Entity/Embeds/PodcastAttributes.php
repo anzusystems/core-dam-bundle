@@ -23,6 +23,7 @@ class PodcastAttributes
 
     #[ORM\Column(type: Types::STRING, length: 128, nullable: true)]
     #[Assert\Length(max: 128, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Serialize]
     private string $fileSlot;
 
     #[ORM\Column(enumType: PodcastLastImportStatus::class)]

@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Throwable;
 
 final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
@@ -50,42 +51,51 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
         $this->start($job);
 
         try {
-            $this->reader->initReader($this->client->readPodcastRss($podcast));
-
-            if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
-                $this->rssImportManager->syncPodcast($podcast, $this->reader->readChannel());
-            }
-
-            $imported = 0;
-            $lastPodcastItem = null;
-
-            foreach ($this->reader->readItems($job->getLastBatchProcessedRecord()) as $podcastItem) {
-                $lastPodcastItem = $podcastItem;
-                $episodeImportDto = $this->episodeRssImportManager->importEpisode($podcast, $podcastItem);
-
-                if ($episodeImportDto->isNewlyImported()) {
-                    $imported++;
-                }
-
-                if (self::BULK_SIZE === $imported) {
-                    break;
-                }
-            }
-
             $this->finishProcessCycle(
+                podcast: $podcast,
                 job: $job,
-                item: $lastPodcastItem
+                item: $this->importPodcast($podcast, $job->getLastBatchProcessedRecord())
             );
         } catch (Throwable $throwable) {
             $this->finishFail($job, substr($throwable->getMessage(), 0, 255));
         }
     }
 
-    private function finishProcessCycle(JobPodcastSynchronizer $job, ?Item $item = null): void
+    /**
+     * @throws SerializerException
+     */
+    public function importPodcast(Podcast $podcast, ?string $startFromGuid = null): ?Item
+    {
+        $this->reader->initReader($this->client->readPodcastRss($podcast));
+
+        if ($podcast->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
+            $this->rssImportManager->syncPodcast($podcast, $this->reader->readChannel());
+        }
+
+        $imported = 0;
+        $lastPodcastItem = null;
+
+        foreach ($this->reader->readItems($startFromGuid, $podcast->getDates()->getImportFrom()) as $podcastItem) {
+            $lastPodcastItem = $podcastItem;
+            $episodeImportDto = $this->episodeRssImportManager->importEpisode($podcast, $podcastItem);
+
+            if ($episodeImportDto->isNewlyImported()) {
+                $imported++;
+            }
+
+            if (self::BULK_SIZE === $imported) {
+                break;
+            }
+        }
+
+        return $lastPodcastItem;
+    }
+
+    private function finishProcessCycle(Podcast $podcast, JobPodcastSynchronizer $job, ?Item $item = null): void
     {
         if (null === $item) {
             $this->getManagedJob($job)->setResult(
-                sprintf('Podcast (%s) was fully synced', 'TODO PODCAST TITLE')
+                sprintf('Podcast (%s) was fully synced', $podcast->getTexts()->getTitle())
             );
             $this->finishSuccess($job);
 

@@ -44,6 +44,7 @@ class AssetFacade
      */
     public function update(Asset $asset, AssetAdmUpdateDto $newAssetDto): Asset
     {
+        $newAssetDto->setAsset($asset);
         $this->validator->validate($newAssetDto, $asset);
 
         try {

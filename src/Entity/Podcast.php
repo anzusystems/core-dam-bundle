@@ -12,6 +12,7 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
@@ -30,6 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PodcastRepository::class)]
 #[ORM\Index(fields: ['attributes.mode'], name: 'IDX_name')]
+#[AppAssert\PodcastConstraint]
 class Podcast implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
@@ -59,6 +61,11 @@ class Podcast implements
     #[Assert\Valid]
     private PodcastTexts $texts;
 
+    #[ORM\Embedded(class: PodcastDates::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private PodcastDates $dates;
+
     #[ORM\Embedded(class: PodcastAttributes::class)]
     #[Serialize]
     #[Assert\Valid]
@@ -73,6 +80,7 @@ class Podcast implements
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
         $this->setImagePreview(null);
+        $this->setDates(new PodcastDates());
     }
 
     public function getImagePreview(): ?ImagePreview
@@ -131,6 +139,18 @@ class Podcast implements
     public function setEpisodes(Collection $episodes): self
     {
         $this->episodes = $episodes;
+
+        return $this;
+    }
+
+    public function getDates(): PodcastDates
+    {
+        return $this->dates;
+    }
+
+    public function setDates(PodcastDates $dates): self
+    {
+        $this->dates = $dates;
 
         return $this;
     }

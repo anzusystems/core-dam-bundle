@@ -58,12 +58,17 @@ final class CustomFormElementFixtures extends AbstractFixtures
      */
     private function getData(): Generator
     {
-        $extSystem = $this->entityManager->getPartialReference(ExtSystem::class, 4);
+        $blogExtSystem = $this->entityManager->getPartialReference(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
+        $cmsExtSystem = $this->entityManager->getPartialReference(ExtSystem::class, ExtSystemFixtures::ID_CMS);
 
-        yield $this->createImageCustomForm($extSystem);
+        yield $this->createBlogImageCustomForm($blogExtSystem);
+        yield $this->createImageCustomForm($cmsExtSystem);
+        yield $this->createAudioCustomForm($cmsExtSystem);
+        yield $this->createVideoCustomForm($cmsExtSystem);
+        yield $this->createDocumentCustomForm($cmsExtSystem);
     }
 
-    private function createImageCustomForm(ExtSystem $extSystem): AssetCustomForm
+    private function createBlogImageCustomForm(ExtSystem $extSystem): AssetCustomForm
     {
         return $this->customFormFactory->createAssetCustomForm(
             AssetType::Image,
@@ -90,6 +95,356 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                 ]),
+            );
+    }
+
+       private function createImageCustomForm(ExtSystem $extSystem): AssetCustomForm
+       {
+           return $this->customFormFactory->createAssetCustomForm(
+               AssetType::Image,
+               $extSystem
+           )
+               ->setElements(
+                   new ArrayCollection([
+                       (new CustomFormElement())
+                           ->setKey('headline')
+                           ->setName('Headline')
+                           ->setExifAutocomplete(['Headline', 'Subject'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setSearchable(true)
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(256)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('title')
+                           ->setName('Title')
+                           ->setExifAutocomplete(['Title', 'Subject'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setSearchable(true)
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(64)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('description')
+                           ->setName('Description')
+                           ->setExifAutocomplete(['Description', 'ImageDescription'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(2_000)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('creditLine')
+                           ->setName('Credit Line')
+                           ->setExifAutocomplete(['Credit'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(256)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('altText')
+                           ->setName('Alt Text')
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(5_000)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('source')
+                           ->setName('Source')
+                           ->setExifAutocomplete(['Source'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(32)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('copyrightNotice')
+                           ->setName('Copyright Notice')
+                           ->setExifAutocomplete(['CopyrightNotice'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(128)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('rightsUsageTerms')
+                           ->setName('Rights Usage Terms')
+                           ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::String)
+                                   ->setMaxValue(256)
+                           ),
+                       (new CustomFormElement())
+                           ->setKey('personInImage')
+                           ->setName('PersonInImage')
+                           ->setExifAutocomplete(['PersonInImage'])
+                           ->setAttributes(
+                               (new CustomFormElementAttributes())
+                                   ->setType(CustomFormElementType::StringArray)
+                                   ->setMaxValue(128)
+                                   ->setMaxCount(32)
+                           ),
+                   ]),
+               );
+       }
+
+    private function createAudioCustomForm(ExtSystem $extSystem): AssetCustomForm
+    {
+        return $this->customFormFactory->createAssetCustomForm(
+            AssetType::Audio,
+            $extSystem
+        )
+            ->setElements(
+                new ArrayCollection([
+                    (new CustomFormElement())
+                        ->setKey('headline')
+                        ->setName('Headline')
+                        ->setExifAutocomplete(['Headline', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('title')
+                        ->setName('Title')
+                        ->setExifAutocomplete(['Title', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(64)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('description')
+                        ->setName('Description')
+                        ->setExifAutocomplete(['Description', 'ImageDescription'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(5_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('creditLine')
+                        ->setName('Credit Line')
+                        ->setExifAutocomplete(['Credit'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('altText')
+                        ->setName('Alt Text')
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(5_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('source')
+                        ->setName('Source')
+                        ->setExifAutocomplete(['Source'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(32)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('copyrightNotice')
+                        ->setName('Copyright Notice')
+                        ->setExifAutocomplete(['CopyrightNotice'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(128)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('rightsUsageTerms')
+                        ->setName('Rights Usage Terms')
+                        ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                ])
+            );
+    }
+
+    private function createDocumentCustomForm(ExtSystem $extSystem): AssetCustomForm
+    {
+        return $this->customFormFactory->createAssetCustomForm(
+            AssetType::Document,
+            $extSystem
+        )
+            ->setElements(
+                new ArrayCollection([
+                    (new CustomFormElement())
+                        ->setKey('headline')
+                        ->setName('Headline')
+                        ->setExifAutocomplete(['Headline', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('title')
+                        ->setName('Title')
+                        ->setExifAutocomplete(['Title', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(64)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('description')
+                        ->setName('Description')
+                        ->setExifAutocomplete(['Description', 'ImageDescription'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(2_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('creditLine')
+                        ->setName('Credit Line')
+                        ->setExifAutocomplete(['Credit'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('altText')
+                        ->setName('Alt Text')
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(5_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('source')
+                        ->setName('Source')
+                        ->setExifAutocomplete(['Source'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(32)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('copyrightNotice')
+                        ->setName('Copyright Notice')
+                        ->setExifAutocomplete(['CopyrightNotice'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(128)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('rightsUsageTerms')
+                        ->setName('Rights Usage Terms')
+                        ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                ])
+            );
+    }
+
+    private function createVideoCustomForm(ExtSystem $extSystem): AssetCustomForm
+    {
+        return $this->customFormFactory->createAssetCustomForm(
+            AssetType::Video,
+            $extSystem
+        )
+            ->setElements(
+                new ArrayCollection([
+                    (new CustomFormElement())
+                        ->setKey('headline')
+                        ->setName('Headline')
+                        ->setExifAutocomplete(['Headline', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('title')
+                        ->setName('Title')
+                        ->setExifAutocomplete(['Title', 'Subject'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setSearchable(true)
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(64)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('description')
+                        ->setName('Description')
+                        ->setExifAutocomplete(['Description', 'ImageDescription'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(5_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('creditLine')
+                        ->setName('Credit Line')
+                        ->setExifAutocomplete(['Credit'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('altText')
+                        ->setName('Alt Text')
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(5_000)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('source')
+                        ->setName('Source')
+                        ->setExifAutocomplete(['Source'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(32)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('copyrightNotice')
+                        ->setName('Copyright Notice')
+                        ->setExifAutocomplete(['CopyrightNotice'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(128)
+                        ),
+                    (new CustomFormElement())
+                        ->setKey('rightsUsageTerms')
+                        ->setName('Rights Usage Terms')
+                        ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
+                        ->setAttributes(
+                            (new CustomFormElementAttributes())
+                                ->setType(CustomFormElementType::String)
+                                ->setMaxValue(256)
+                        ),
+                ])
             );
     }
 }

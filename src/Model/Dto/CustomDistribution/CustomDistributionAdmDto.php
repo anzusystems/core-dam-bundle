@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -33,6 +34,9 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
     #[Serialize(handler: EntityIdHandler::class, type: Distribution::class)]
     protected Collection $blockedBy;
 
+    #[Serialize]
+    protected ?DateTimeImmutable $publishAt;
+
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $customData;
 
@@ -50,6 +54,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
         $this->setFailReason(DistributionFailReason::None);
         $this->setDistributionData([]);
         $this->setBlockedBy(new ArrayCollection());
+        $this->setPublishAt(null);
     }
 
     public static function getFromDistribution(Distribution $distribution): static
@@ -64,7 +69,7 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
             ->setBlockedBy($distribution->getBlockedBy())
             ->setDistributionService($distribution->getDistributionService())
             ->setResourceName(Distribution::class)
-        ;
+            ->setPublishAt($distribution->getPublishAt());
     }
 
     public function getBlockedBy(): Collection
@@ -185,6 +190,18 @@ final class CustomDistributionAdmDto extends AbstractEntityDto implements Resour
     public function setDistributionService(string $distributionService): self
     {
         $this->distributionService = $distributionService;
+
+        return $this;
+    }
+
+    public function getPublishAt(): ?DateTimeImmutable
+    {
+        return $this->publishAt;
+    }
+
+    public function setPublishAt(?DateTimeImmutable $publishAt): self
+    {
+        $this->publishAt = $publishAt;
 
         return $this;
     }

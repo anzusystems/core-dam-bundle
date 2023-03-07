@@ -70,7 +70,7 @@ final class ImagePreviewManager extends AbstractManager
         if ($imagePreviewable->getImagePreview() && $newImagePreviewable->getImagePreview()) {
             $this->update(
                 imagPreview: $imagePreviewable->getImagePreview(),
-                newImagePreview: $imagePreviewable->getImagePreview(),
+                newImagePreview: $newImagePreviewable->getImagePreview(),
                 flush: false
             );
 

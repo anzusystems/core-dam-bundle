@@ -39,7 +39,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
 
     public static function getDependencies(): array
     {
-        return [AssetLicenceFixtures::class, CustomFormElementFixtures::class];
+        return [AssetLicenceFixtures::class];
     }
 
     public static function getIndexKey(): string
@@ -85,10 +85,13 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         yield $image;
 
         $file = $this->getFile($fileSystem, 'solid_image_200_100.jpeg');
-        $secondImage = $this->imageFactory->createBlankAssetFile($file, $licence, self::IMAGE_ID_1_2);
-        $this->assetSlotFactory->createRelation($image->getAsset(), $secondImage, 'extra');
-        $secondImage->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
-        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($secondImage, $file);
+        $image = $this->imageFactory->createFromFile(
+            $file,
+            $licence,
+            self::IMAGE_ID_1_2
+        );
+        $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
         $image->getAsset()->getAssetFlags()->setDescribed(true);
 
         yield $image;

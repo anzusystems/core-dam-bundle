@@ -63,6 +63,8 @@ final class GoogleClientProvider
             $client->addScope($scope);
         }
 
+        $client->setRedirectUri($configuration->getRedirectUri());
+
         return $client;
     }
 }

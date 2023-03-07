@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -20,6 +21,7 @@ final class AssetLicenceFixtures extends AbstractFixtures
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
+        private readonly AssetLicenceRepository $assetLicenceRepository,
     ) {
     }
 
@@ -44,6 +46,11 @@ final class AssetLicenceFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        $existingLicence = $this->assetLicenceRepository->find(self::DEFAULT_LICENCE_ID);
+        if ($existingLicence) {
+            return;
+        }
+
         /** @var ExtSystem $cmsExtSystem */
         $cmsExtSystem = $this->entityManager->find(
             ExtSystem::class,

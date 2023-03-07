@@ -9,10 +9,12 @@ final class YoutubeDistributionServiceConfiguration extends DistributionServiceC
     public const OAUTH_CREDENTIALS_KEY = 'oauth_credentials';
     public const CHANNEL_ID_KEY = 'channel_id';
     public const REGION_CODE = 'region_code';
+    public const REDIRECT_URI = 'redirect_uri';
 
     private string $oauthCredentials;
     private string $channelId;
     private string $regionCode;
+    private string $redirectUri;
 
     public static function getFromArrayConfiguration(array $config): static
     {
@@ -20,7 +22,20 @@ final class YoutubeDistributionServiceConfiguration extends DistributionServiceC
             ->setOauthCredentials($config[parent::OPTIONS_KEY][self::OAUTH_CREDENTIALS_KEY] ?? '')
             ->setChannelId($config[parent::OPTIONS_KEY][self::CHANNEL_ID_KEY] ?? '')
             ->setRegionCode($config[parent::OPTIONS_KEY][self::REGION_CODE] ?? '')
+            ->setRedirectUri($config[parent::OPTIONS_KEY][self::REDIRECT_URI] ?? '')
         ;
+    }
+
+    public function getRedirectUri(): string
+    {
+        return $this->redirectUri;
+    }
+
+    public function setRedirectUri(string $redirectUri): self
+    {
+        $this->redirectUri = $redirectUri;
+
+        return $this;
     }
 
     public function getOauthCredentials(): string
