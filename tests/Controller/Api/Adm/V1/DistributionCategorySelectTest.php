@@ -56,7 +56,7 @@ final class DistributionCategorySelectTest extends AbstractApiControllerTest
             ApiInfiniteResponseList::class
         );
 
-        $this->assertSame(1, count($distributionCategorySelect->getData()));
+        $this->assertSame(2, count($distributionCategorySelect->getData()));
     }
 
     /**
