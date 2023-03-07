@@ -105,7 +105,8 @@ final class JwVideoClient implements LoggerAwareInterface
             url: "/v2/sites/{$configuration->getSiteId()}/media/{$distribution->getExtId()}/",
             headers: [
                 'headers' => [
-                    'Content-Type' => '',
+                    'Authorization' => "Bearer {$configuration->getSecretV2()}",
+                    'Content-Type' => 'application/json',
                 ],
             ],
         );
