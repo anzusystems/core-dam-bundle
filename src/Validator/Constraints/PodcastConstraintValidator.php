@@ -28,6 +28,10 @@ final class PodcastConstraintValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, Podcast::class);
         }
 
+        if (empty($value->getAttributes()->getFileSlot())) {
+            return;
+        }
+
         $configuration = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
             assetType: AssetType::Audio,
             extSystemSlug: $value->getLicence()->getExtSystem()->getSlug()
