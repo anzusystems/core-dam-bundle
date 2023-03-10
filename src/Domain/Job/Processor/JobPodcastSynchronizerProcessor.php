@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
+use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastImportIterator;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastRssReader;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
@@ -14,11 +15,12 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
+use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Throwable;
 
-final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
+final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
     private const BULK_SIZE = 20;
 
@@ -28,6 +30,7 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
         private readonly PodcastRepository $podcastRepository,
         private readonly PodcastRssReader $reader,
         private readonly RssClient $client,
+        private readonly PodcastImportIterator $importIterator,
     ) {
     }
 
@@ -41,6 +44,12 @@ final class JobPodcastSynchronizerProcess extends AbstractJobProcessor
      */
     public function process(JobInterface $job): void
     {
+        if ($job->isFullSync()) {
+            $this->importIterator->iterate(PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()));
+
+            return;
+        }
+
         $podcast = $this->podcastRepository->find($job->getPodcastId());
         if (false === ($podcast instanceof Podcast)) {
             $this->finishFail($job, sprintf('Podcast with id (%s) not found', $job->getPodcastId()));

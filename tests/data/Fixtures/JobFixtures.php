@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
+use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -19,6 +20,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 final class JobFixtures extends AbstractFixtures
 {
     public const ID_DELETE_BLOG_USER_JOB = 1;
+    public const ID_PODCAST_SYNCHRONYZER_JOB = 2;
 
     public function __construct(
         private readonly JobManager $jobManager,
@@ -55,5 +57,9 @@ final class JobFixtures extends AbstractFixtures
             ->setTargetUserId(User::ID_BLOG_USER)
             ->setAnonymizeUser(true)
         ;
+
+        yield (new JobPodcastSynchronizer())
+            ->setFullSync(true)
+            ->setId(self::ID_PODCAST_SYNCHRONYZER_JOB);
     }
 }

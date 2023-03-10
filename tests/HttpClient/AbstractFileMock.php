@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\HttpClient;
 
+use AnzuSystems\CoreDamBundle\App;
 use Symfony\Component\HttpClient\MockHttpClient;
 
 abstract class AbstractFileMock extends MockHttpClient
 {
-    private const TEST_DATA_FILES = '/tests/data/files/';
+    private const TEST_DATA_FILES = '/tests/data/Files/';
 
     protected function getTestDataFile(string $file): string
     {

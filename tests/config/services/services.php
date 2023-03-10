@@ -30,6 +30,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use App\Tests\HttpClient\ArtemisClientMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Redis;
@@ -103,6 +104,10 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(BaseClient::class);
     $services->set(HttpClientInterface::class . ' $client', MockHttpClient::class)
         ->factory(service(BaseClient::class));
+
+    $services->set(RssPodcastMock::class);
+    $services->set(HttpClientInterface::class . ' $httpClient', MockHttpClient::class)
+        ->factory(service(RssPodcastMock::class));
 
     $services->set(ValidationExceptionHandler::class)
         ->tag(AnzuSystemsCommonBundle::TAG_EXCEPTION_HANDLER);

@@ -29,11 +29,14 @@ final class RssPodcastMock extends AbstractFileMock
 
     private function getContent(string $url): string
     {
-        if ('https://feed.podbean.com/vedatorskypodcast/feed.xml' === $url) {
-            return $this->getTestDataFile( 'vedator.xml');
+        if ('https://anchor.fm/s/8a651488/podcast/rss' === $url) {
+            return $this->getTestDataFile( 'firstPodcast.xml');
         }
-        if ('https://www.thisamericanlife.org/podcast/rss.xml' === $url) {
-            return $this->getTestDataFile( 'americanLife.xml');
+        if ('https://anchor.fm/s/4d8e8b48/podcast/rss' === $url) {
+            return $this->getTestDataFile( 'secondPodcast.xml');
+        }
+        if ('https://anchor.fm/s/7758ecd4/podcast/rss' === $url) {
+            return $this->getTestDataFile( 'thirdPodcast.xml');
         }
 
         return '';
