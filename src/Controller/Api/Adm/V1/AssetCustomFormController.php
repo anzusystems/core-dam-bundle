@@ -90,7 +90,6 @@ final class AssetCustomFormController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW);
         $form = $this->resourceCustomFormRepository->findByResource(CustomFormFactory::getDistributionServiceResourceKey($distributionService));
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_VIEW, $form);
 
         if (null === $form) {
             return $this->okResponse(new ApiResponseList());

@@ -47,10 +47,10 @@ final class AssetIndexFactory implements IndexFactoryInterface
 
         return [
             'id' => $entity->getId(),
-            'fileIds' => CollectionHelper::traversableToIds(
+            'fileIds' => array_values(CollectionHelper::traversableToIds(
                 $entity->getSlots(),
                 fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
-            ),
+            )),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),
@@ -61,7 +61,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'createdAt' => $entity->getCreatedAt()->getTimestamp(),
             'licence' => $entity->getLicence()->getId(),
             'distributedInServices' => array_values($entity->getAssetFileProperties()->getDistributesInServices()),
-            'slotNames' => $entity->getAssetFileProperties()->getSlotNames(),
+            'slotNames' => array_values($entity->getAssetFileProperties()->getSlotNames()),
             'fromRss' => $entity->getAssetFileProperties()->isFromRss(),
             'pixelSize' => $entity->getAssetFileProperties()->getWidth() * $entity->getAssetFileProperties()->getHeight(),
             'width' => $entity->getAssetFileProperties()->getWidth(),
