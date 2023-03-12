@@ -49,8 +49,27 @@ final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
         $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
 
         $job->setFullSync(true);
-        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
         $this->synchronizerProcessor->process($job);
+//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+
+        $this->synchronizerProcessor->process($job);
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->synchronizerProcessor->process($job);
+        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
 
 //        dump($job);
     }

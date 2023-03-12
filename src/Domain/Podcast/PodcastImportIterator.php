@@ -28,52 +28,28 @@ final readonly class PodcastImportIterator
     /**
      * @return Generator<int, PodcastImportIteratorDto>
      */
-    public function iterate(PodcastSynchronizerPointer $pointer, int $bulkSize = 2): Generator
+    public function iterate(PodcastSynchronizerPointer $pointer): Generator
     {
         // todo get next Podcast (order by updatedAt?)
-
-//        $this->reader->initReader($this->client->readPodcastRss($podcast));
-
-        $imported = 0;
-        $podcastId = $pointer->getPodcastId();
-
         $podcastToImport = $this->getPodcastToImport($pointer);
-        $podcastGuid = $pointer->getEpisodeGuid();
-
         $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+        $startFromDate = $pointer->getPubDate(); // todo importFrom
 
         while ($podcastToImport) {
-            foreach ($this->reader->readItems($podcastGuid, $podcastToImport->getDates()->getImportFrom()) as $podcastItem) {
-                $imported++;
-
-                dump(sprintf('Importing podcast (%s) guid (%s)', $podcastToImport->getTexts()->getTitle(), $podcastItem->getGuid()));
-
+            foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
                 yield new PodcastImportIteratorDto(
                     podcast: $podcastToImport,
                     item: $podcastItem
                 );
-
-                if ($imported === $bulkSize) {
-                    break;
-                }
             }
 
             $podcastToImport = $this->getNextPodcast((string) $podcastToImport->getId());
-
-            if ($imported === $bulkSize) {
+            if (null === $podcastToImport) {
                 break;
             }
+            $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+            $startFromDate = null;
         }
-
-
-
-
-
-
-//        $lastId = $pointer->getPodcastId();
-//        while ($podcast = $this->podcastRepository->findOneFrom($lastId, PodcastImportMode::Import)) {
-//
-//        }
     }
 
     private function getPodcastToImport(PodcastSynchronizerPointer $pointer): ?Podcast

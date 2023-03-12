@@ -6,12 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Model\ValueObject;
 
 use AnzuSystems\Contracts\Model\ValueObject\ValueObjectInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use DateTimeImmutable;
+use DateTimeInterface;
 
 final readonly class PodcastSynchronizerPointer implements ValueObjectInterface
 {
     public function __construct(
-        private ?int $podcastId = null,
-        private ?string $episodeGuid = null,
+        private ?string $podcastId = null,
+        private ?DateTimeImmutable $pubDate = null
     ) {
     }
 
@@ -20,7 +22,10 @@ final readonly class PodcastSynchronizerPointer implements ValueObjectInterface
         $parts = explode('|', $string);
 
         if (isset($parts[0], $parts[1])) {
-            return (new self((int) $parts[0], (string) $parts[1]));
+            return (new self(
+                $parts[0],
+                DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $parts[1])
+            ));
         }
 
         return (new self());
@@ -31,18 +36,18 @@ final readonly class PodcastSynchronizerPointer implements ValueObjectInterface
         return sprintf(
             '%s|%s',
             $this->podcastId,
-            $this->episodeGuid,
+            $this->pubDate->format(DateTimeInterface::ATOM),
         );
     }
 
-    public function getPodcastId(): ?int
+    public function getPodcastId(): ?string
     {
         return $this->podcastId;
     }
 
-    public function getEpisodeGuid(): ?string
+    public function getPubDate(): ?DateTimeImmutable
     {
-        return $this->episodeGuid;
+        return $this->pubDate;
     }
 
     public function is(string $value): bool

@@ -87,20 +87,12 @@ final class PodcastRssReader
      * @throws SerializerException
      * @throws Exception
      */
-    public function readItems(?string $startFromGuid = null, ?DateTimeImmutable $from = null): Generator
+    public function readItems(?DateTimeImmutable $from = null): Generator
     {
         foreach (array_reverse($this->body->channel->xpath('item')) as $item) {
-            if (false === empty($startFromGuid)) {
-                if ((string) $item->guid === $startFromGuid) {
-                    $startFromGuid = null;
-                }
-
-                continue;
-            }
-
             $item = $this->readItem($item);
 
-            if ($item->getPubDate() && $from && $from > $item->getPubDate()) {
+            if ($item->getPubDate() && $from && $from < $item->getPubDate()) {
                 continue;
             }
 
