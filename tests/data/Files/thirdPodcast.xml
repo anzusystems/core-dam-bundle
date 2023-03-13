@@ -16,14 +16,14 @@
         </itunes:category>
         <itunes:image href="http://core-dam.sme.localhost/download-file?file=50x50" />
         <item>
-            <title>3: episode</title>
+            <title>Rozpravky 3: episode</title>
             <link>https://www.thisamericanlife.org/789/the-runaround</link>
             <description>3: Rozprávky SME description
             </description>
             <pubDate>Tue, 07 Mar 2023 23:01:44 GMT</pubDate>
             <guid isPermaLink="false">tpg1</guid>
             <itunes:author>SME.sk</itunes:author>
-            <enclosure url="http://core-dam.sme.localhost/download-file?file=audioa" type="audio/mpeg" />
+            <enclosure url="http://core-dam.sme.localhost/download-file?file=audiob" type="audio/mpeg" />
             <itunes:duration>01:03:02</itunes:duration>
             <itunes:subtitle>3: Rozprávky SME subtitle
             </itunes:subtitle>

@@ -7,33 +7,35 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastImportIterator;
-use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastRssReader;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
-use AnzuSystems\CoreDamBundle\Entity\Podcast;
-use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Item;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use DateTimeInterface;
-use Throwable;
+use Generator;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
-    private const BULK_SIZE = 2;
+    private const BULK_SIZE = 20;
 
     public function __construct(
-        private readonly RssImportManager $rssImportManager,
         private readonly EpisodeRssImportManager $episodeRssImportManager,
-        private readonly PodcastRepository $podcastRepository,
-        private readonly PodcastRssReader $reader,
-        private readonly RssClient $client,
+        private readonly RssImportManager $rssImportManager,
         private readonly PodcastImportIterator $importIterator,
+        private readonly PodcastRepository $podcastRepository,
+        private int $bulkSize = self::BULK_SIZE,
     ) {
+    }
+
+    public function setBulkSize(int $bulkSize): self
+    {
+        $this->bulkSize = $bulkSize;
+
+        return $this;
     }
 
     public static function getSupportedJob(): string
@@ -43,16 +45,58 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 
     /**
      * @param JobPodcastSynchronizer $job
+     *
+     * @throws SerializerException
      */
     public function process(JobInterface $job): void
     {
-        // todo job contains PODCAST ID
+        if ($job->isFullSync()) {
+            $this->importFull(
+                job: $job,
+                generator: $this->importIterator->iterate(PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()))
+            );
 
+            return;
+        }
+
+        if (false === empty($job->getPodcastId())) {
+            $podcast = $this->podcastRepository->find($job->getPodcastId());
+
+            if (null === $podcast) {
+                $this->finishFail($job, 'Podcast to import not found');
+
+                return;
+            }
+
+            $this->importFull(
+                job: $job,
+                generator: $this->importIterator->iteratePodcast(
+                    pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
+                    podcastToImport: $podcast
+                )
+            );
+        }
+    }
+
+    /**
+     * @param Generator<int, PodcastImportIteratorDto> $generator
+     *
+     * @throws SerializerException
+     */
+    private function importFull(JobPodcastSynchronizer $job, Generator $generator): void
+    {
         $lastImportedDto = null;
         $imported = 0;
 
-        foreach ($this->importIterator->iterate(PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord())) as $importDto) {
-            // todo import PODCAST ! and sets last import dateTime
+        /** @var PodcastImportIteratorDto $importDto */
+        foreach ($generator as $importDto) {
+            if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
+                $this->rssImportManager->syncPodcast(
+                    podcast: $importDto->getPodcast(),
+                    channel: $importDto->getChannel()
+                );
+            }
+
             $lastImportedDto = $importDto;
             $episodeImportDto = $this->episodeRssImportManager->importEpisode(
                 $importDto->getPodcast(),
@@ -63,19 +107,17 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 $imported++;
             }
 
-            if (self::BULK_SIZE === $imported) {
+            if ($this->bulkSize === $imported) {
                 break;
             }
-
         }
 
         $this->finishProcessCycle($lastImportedDto, $imported, $job);
     }
 
-
     private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job): void
     {
-        if (null === $dto || $imported < self::BULK_SIZE) {
+        if (null === $dto || $imported < $this->bulkSize) {
             $this->getManagedJob($job)->setResult('Podcast job finished');
             $this->finishSuccess($job);
 
@@ -84,7 +126,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 
         $pointer = (new PodcastSynchronizerPointer(
             $dto->getPodcast()->getId(),
-            $dto->getItem()?->getPubDate()
+            $dto->getItem()->getPubDate()
         ));
 
         $job = $this->getManagedJob($job)->setResult(

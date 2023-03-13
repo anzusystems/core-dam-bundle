@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\ValueObject;
 
 use AnzuSystems\Contracts\Model\ValueObject\ValueObjectInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use DateTimeImmutable;
 use DateTimeInterface;
 
@@ -17,27 +18,29 @@ final readonly class PodcastSynchronizerPointer implements ValueObjectInterface
     ) {
     }
 
-    public static function fromString(string $string): self
-    {
-        $parts = explode('|', $string);
-
-        if (isset($parts[0], $parts[1])) {
-            return (new self(
-                $parts[0],
-                DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $parts[1])
-            ));
-        }
-
-        return (new self());
-    }
-
     public function __toString(): string
     {
         return sprintf(
             '%s|%s',
             $this->podcastId,
-            $this->pubDate->format(DateTimeInterface::ATOM),
+            $this->pubDate?->format(DateTimeInterface::ATOM),
         );
+    }
+
+    public static function fromString(string $string): self
+    {
+        $parts = explode('|', $string);
+
+        if (isset($parts[0], $parts[1])) {
+            $dateTimeString = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $parts[1]);
+            if (false === $dateTimeString instanceof DateTimeImmutable) {
+                throw new InvalidArgumentException(sprintf('Broken pointer %s', $string));
+            }
+
+            return new self($parts[0], $dateTimeString);
+        }
+
+        return new self();
     }
 
     public function getPodcastId(): ?string

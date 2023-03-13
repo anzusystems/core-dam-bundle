@@ -29,6 +29,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\DownloadFileClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use App\Tests\HttpClient\ArtemisClientMock;
@@ -111,5 +112,4 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(ValidationExceptionHandler::class)
         ->tag(AnzuSystemsCommonBundle::TAG_EXCEPTION_HANDLER);
-
 };

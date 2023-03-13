@@ -10,7 +10,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-final class BaseClient extends AbstractFileMock
+final class DownloadFileClient extends AbstractFileMock
 {
     private const DOWNLOAD_PATH = '/download-file';
 
@@ -29,19 +29,10 @@ final class BaseClient extends AbstractFileMock
             return $this->getDownloadResponse($url);
         }
 
-        if ('/jw-upload-link' === $url->getPath()) {
-            return new MockResponse(
-                '',
-                [
-                    'http_code' => Response::HTTP_OK,
-                ]
-            );
-        }
-
         return new MockResponse(
-           '',
+            '',
             [
-                'http_code' => Response::HTTP_NOT_FOUND,
+                'http_code' => Response::HTTP_OK,
             ]
         );
     }

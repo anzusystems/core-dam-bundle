@@ -2,23 +2,21 @@
 
 declare(strict_types=1);
 
-
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
-use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use DateTimeImmutable;
 use Generator;
 
 final readonly class PodcastImportIterator
 {
     public function __construct(
-        private RssImportManager $rssImportManager,
-        private EpisodeRssImportManager $episodeRssImportManager,
         private RssClient $client,
         private PodcastRssReader $reader,
         private PodcastRepository $podcastRepository,
@@ -27,29 +25,68 @@ final readonly class PodcastImportIterator
 
     /**
      * @return Generator<int, PodcastImportIteratorDto>
+     *
+     * @throws SerializerException
      */
     public function iterate(PodcastSynchronizerPointer $pointer): Generator
     {
-        // todo get next Podcast (order by updatedAt?)
         $podcastToImport = $this->getPodcastToImport($pointer);
+        if (null === $podcastToImport) {
+            return;
+        }
+
         $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
-        $startFromDate = $pointer->getPubDate(); // todo importFrom
+        $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
 
         while ($podcastToImport) {
             foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
                 yield new PodcastImportIteratorDto(
                     podcast: $podcastToImport,
-                    item: $podcastItem
+                    item: $podcastItem,
+                    channel: $this->reader->readChannel()
                 );
             }
 
             $podcastToImport = $this->getNextPodcast((string) $podcastToImport->getId());
-            if (null === $podcastToImport) {
-                break;
+            if ($podcastToImport) {
+                $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+                $startFromDate = null;
             }
-            $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
-            $startFromDate = null;
         }
+    }
+
+    /**
+     * @return Generator<int, PodcastImportIteratorDto>
+     *
+     * @throws SerializerException
+     */
+    public function iteratePodcast(PodcastSynchronizerPointer $pointer, Podcast $podcastToImport): Generator
+    {
+        $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+        $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
+
+        foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
+            yield new PodcastImportIteratorDto(
+                podcast: $podcastToImport,
+                item: $podcastItem,
+                channel: $this->reader->readChannel()
+            );
+        }
+    }
+
+    private function getImportFrom(PodcastSynchronizerPointer $pointer, Podcast $podcast): ?DateTimeImmutable
+    {
+        if (null === $podcast->getDates()->getImportFrom()) {
+            return $pointer->getPubDate();
+        }
+
+        if (null === $pointer->getPubDate()) {
+            return $podcast->getDates()->getImportFrom();
+        }
+
+        return $podcast->getDates()->getImportFrom() > $pointer->getPubDate()
+            ? $podcast->getDates()->getImportFrom()
+            : $pointer->getPubDate();
     }
 
     private function getPodcastToImport(PodcastSynchronizerPointer $pointer): ?Podcast

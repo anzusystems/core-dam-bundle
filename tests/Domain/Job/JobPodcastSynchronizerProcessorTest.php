@@ -11,11 +11,14 @@ use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
 use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
 use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobPodcastSynchronizerProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -24,53 +27,90 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
 {
-    private JobProcessor $jobProcessor;
     private JobPodcastSynchronizerProcessor $synchronizerProcessor;
+    private PodcastRepository $podcastRepository;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        /** @var JobProcessor $jobProcessor */
-        $jobProcessor = self::getContainer()->get(JobProcessor::class);
-        $this->jobProcessor = $jobProcessor;
-
-        /** @var JobUserDataDeleteProcessor $jobUserDataDeleteProcessor */
-
-        $synchronizerProcessor = self::getContainer()->get(JobPodcastSynchronizerProcessor::class);
-        $this->synchronizerProcessor = $synchronizerProcessor;
+        $this->synchronizerProcessor = $this->getService(JobPodcastSynchronizerProcessor::class);
+        $this->podcastRepository = $this->getService(PodcastRepository::class);
     }
 
-    public function testProcess(): void
+    public function testFullSyncProcess(): void
     {
-        // 1. Process the first bulk
-        $this->jobProcessor->process();
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_PODCAST_SYNCHRONYZER_JOB);
+        $job = $this->entityManager->find(Job::class, JobFixtures::ID_FULL_PODCAST_SYNCHRONYZER_JOB);
         $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
 
+        $this->synchronizerProcessor->setBulkSize(2);
         $job->setFullSync(true);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-//        dump($job->isFullSync(), $job->getLastBatchProcessedRecord());
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+
+        $podcast1 = $this->podcastRepository->find(PodcastFixtures::PODCAST_1);
+        $podcast2 = $this->podcastRepository->find(PodcastFixtures::PODCAST_2);
+        $podcast3 = $this->podcastRepository->find(PodcastFixtures::PODCAST_3);
+
+        $this->assertCount(2, $podcast1->getEpisodes());
+        $this->assertCount(0, $podcast2->getEpisodes());
+        $this->assertCount(0, $podcast3->getEpisodes());
 
         $this->synchronizerProcessor->process($job);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
-        $this->synchronizerProcessor->process($job);
-        dump($job->getStatus()->toString() . ' ' . $job->getLastBatchProcessedRecord());
+        $this->entityManager->refresh($podcast1);
+        $this->entityManager->refresh($podcast3);
+        $this->assertCount(3, $podcast1->getEpisodes());
+        $this->assertCount(1, $podcast3->getEpisodes());
+        $this->assertEquals(JobStatus::AwaitingBatchProcess, $job->getStatus());
+        $this->assertEquals(sprintf('%s|%s', PodcastFixtures::PODCAST_1, '2023-03-05T23:01:45+00:00'), $job->getLastBatchProcessedRecord());
 
-//        dump($job);
+        $this->synchronizerProcessor->process($job);
+        $this->entityManager->refresh($podcast1);
+        $this->assertCount(5, $podcast1->getEpisodes());
+        $this->assertEquals(JobStatus::AwaitingBatchProcess, $job->getStatus());
+        $this->assertEquals(sprintf('%s|%s', PodcastFixtures::PODCAST_1, '2023-03-07T23:01:44+00:00'), $job->getLastBatchProcessedRecord());
+
+        $this->synchronizerProcessor->process($job);
+        $this->entityManager->refresh($podcast2);
+        $this->assertCount(2, $podcast2->getEpisodes());
+        $this->assertEquals(JobStatus::AwaitingBatchProcess, $job->getStatus());
+        $this->assertEquals(sprintf('%s|%s', PodcastFixtures::PODCAST_2, '2023-03-07T23:01:44+00:00'), $job->getLastBatchProcessedRecord());
+
+        $this->synchronizerProcessor->process($job);
+        $this->assertEquals(JobStatus::Done, $job->getStatus());
+    }
+
+    public function testSpecificPodcastSyncProcess(): void
+    {
+        $job = $this->entityManager->find(Job::class, JobFixtures::ID_SINGLE_PODCAST_SYNCHRONYZER_JOB);
+        $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
+
+        $this->synchronizerProcessor->setBulkSize(2);
+        $podcast1 = $this->podcastRepository->find(PodcastFixtures::PODCAST_1);
+
+        $this->synchronizerProcessor->process($job);
+        $this->entityManager->refresh($podcast1);
+        $this->assertCount(4, $podcast1->getEpisodes());
+        $this->assertEquals(JobStatus::AwaitingBatchProcess, $job->getStatus());
+
+        $this->synchronizerProcessor->process($job);
+        $this->entityManager->refresh($podcast1);
+        $this->assertCount(5, $podcast1->getEpisodes());
+        $this->assertEquals(JobStatus::Done, $job->getStatus());
+    }
+
+    public function testSpecificPodcastSyncProcessAndImportFrom(): void
+    {
+        $job = $this->entityManager->find(Job::class, JobFixtures::ID_SINGLE_PODCAST_SYNCHRONYZER_JOB);
+        $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
+
+        $this->synchronizerProcessor->setBulkSize(2);
+        $podcast1 = $this->podcastRepository->find(PodcastFixtures::PODCAST_1);
+        $podcast1->getDates()->setImportFrom(\DateTimeImmutable::createFromFormat(
+            \DateTimeInterface::ATOM,
+            '2023-03-07T22:01:44+00:00'
+        ));
+
+        $this->synchronizerProcessor->process($job);
+        $this->entityManager->refresh($podcast1);
+        $this->assertCount(3, $podcast1->getEpisodes());
+        $this->assertEquals(JobStatus::Done, $job->getStatus());
     }
 }

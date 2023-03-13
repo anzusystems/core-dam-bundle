@@ -29,6 +29,18 @@ class CoreDamKernelTestCase extends AnzuKernelTestCase
         parent::tearDown();
     }
 
+    /**
+     * @template T of object
+     *
+     * @param class-string<T>|string $id
+     *
+     * @return T
+     */
+    protected function getService(string $id): object
+    {
+        return static::getContainer()->get($id);
+    }
+
     public function cleanup(): void
     {
         /** @var EntityManagerInterface $entityManager */

@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\JobPodcastSynchronizerRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
