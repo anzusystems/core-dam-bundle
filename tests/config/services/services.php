@@ -32,7 +32,6 @@ use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\DownloadFileClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
-use App\Tests\HttpClient\ArtemisClientMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Redis;
 use Symfony\Component\HttpClient\MockHttpClient;

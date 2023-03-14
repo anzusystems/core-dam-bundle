@@ -128,13 +128,15 @@ abstract class AssetFilePositionFacade
             $originAsset = $assetFile->getAsset();
 
             $this->removeOtherAssetSlots($asset, $assetFile);
+            $this->remoteOldMainFileRelation($asset, $assetFile);
+            if (false === ($asset === $originAsset)) {
+                $this->assetManager->updateExisting($originAsset);
+            }
+
             $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName, false);
             $assetFile->setAsset($asset);
-
-            if (false === ($asset === $originAsset)) {
-                $this->assetManager->updateExisting($originAsset, false);
-            }
             $this->assetManager->updateExisting($asset);
+
             $this->indexManager->index($asset);
             if (false === ($asset === $originAsset)) {
                 $this->indexManager->index($originAsset);
@@ -146,6 +148,17 @@ abstract class AssetFilePositionFacade
             $this->assetManager->rollback();
 
             throw new RuntimeException('add_to_slot_failed', 0, $exception);
+        }
+    }
+
+    private function remoteOldMainFileRelation(Asset $asset, AssetFile $assetFile): void
+    {
+        if ($assetFile->getAsset() === $asset) {
+            return;
+        }
+
+        if ($assetFile->getAsset()->getMainFile() === $assetFile) {
+            $assetFile->getAsset()->setMainFile(null);
         }
     }
 

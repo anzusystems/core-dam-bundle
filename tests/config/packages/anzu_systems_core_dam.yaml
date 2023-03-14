@@ -174,7 +174,9 @@ anzu_systems_core_dam:
         storage_name: 'cms.chunk'
         chunk_storage_name: 'cms.video'
         size_limit: 5242880000  # 5GB
-        file_slots: ~
+        file_slots:
+          default: free
+          slots: [ free, exclusive ]
         video_episode_entity_map:
           title:
             source_property_path: 'metadata.customData[title]'
@@ -226,7 +228,9 @@ anzu_systems_core_dam:
         storage_name: 'cms.document'
         chunk_storage_name: 'cms.chunk'
         size_limit: 1048576000 # 1GB
-        file_slots: ~
+        file_slots:
+          default: default
+          slots: [ default, exclusive ]
     blog:
       id: 4
       image:

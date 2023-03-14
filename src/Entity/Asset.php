@@ -53,6 +53,7 @@ class Asset implements
     private Collection $authors;
 
     #[ORM\OneToOne(targetEntity: AssetFile::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?AssetFile $mainFile;
 
