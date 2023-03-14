@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -35,11 +35,10 @@ final class AssetSlotController extends AbstractApiController
     }
 
     #[Route(path: '/asset/{asset}', name: 'list_by_asset', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('asset'), OAResponse(AssetSlotAdmListDto::class), OAResponseValidation]
+    #[OAParameterPath('asset'), OAResponse(AssetSlotAdmListDecorator::class), OAResponseValidation]
     public function list(Asset $asset): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
-        // @todo permissions based on type
 
         return $this->okResponse($this->assetSlotFacade->decorateAssetSlots($asset));
     }
@@ -49,7 +48,7 @@ final class AssetSlotController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '/asset/{asset}', name: 'update', methods: [Request::METHOD_PATCH])]
-    #[OARequest([AssetSlotMinimalAdmDto::class]), OAResponse([AssetSlotAdmListDto::class]), OAResponseValidation]
+    #[OARequest([AssetSlotMinimalAdmDto::class]), OAResponse([AssetSlotAdmListDecorator::class]), OAResponseValidation]
     public function update(Asset $asset, #[SerializeIterableParam(type: AssetSlotMinimalAdmDto::class)] Collection $list): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);

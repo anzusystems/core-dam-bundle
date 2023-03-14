@@ -25,6 +25,18 @@ abstract class AbstractControllerTest extends WebTestCase
         $this->entityManager->beginTransaction();
     }
 
+    /**
+     * @template T of object
+     *
+     * @param class-string<T>|string $id
+     *
+     * @return T
+     */
+    protected function getService(string $id): object
+    {
+        return static::getContainer()->get($id);
+    }
+
     protected function tearDown(): void
     {
         $this->cleanup();
