@@ -12,13 +12,13 @@ use AnzuSystems\CoreDamBundle\DataFixtures\VideoShowFixtures;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\VideoShowEpisodeUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class VideoShowEpisodeControllerTest extends AbstractApiControllerTest
+final class VideoShowEpisodeControllerTest extends AbstractApiController
 {
     /**
      * @throws SerializerException

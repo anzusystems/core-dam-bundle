@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
@@ -20,7 +20,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Model\PodcastUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class PodcastControllerTest extends AbstractApiControllerTest
+final class PodcastControllerTest extends AbstractApiController
 {
     /**
      * @throws SerializerException

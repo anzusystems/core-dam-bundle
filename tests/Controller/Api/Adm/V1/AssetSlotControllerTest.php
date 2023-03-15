@@ -8,13 +8,13 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CoreDamBundle\DataFixtures\AudioFixtures;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetSlotUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AssetSlotControllerTest extends AbstractApiControllerTest
+final class AssetSlotControllerTest extends AbstractApiController
 {
     private readonly AudioFileRepository $audioFileRepository;
 

@@ -7,11 +7,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class AssetTextsWriter
+final readonly class AssetTextsWriter
 {
     public function __construct(
-        private readonly PropertyAccessorInterface $propertyAccessor,
-        private readonly AssetTextStringNormalizer $textStringNormalizer,
+        private PropertyAccessorInterface $propertyAccessor,
+        private AssetTextStringNormalizer $textStringNormalizer,
     ) {
     }
 
@@ -29,6 +29,21 @@ final class AssetTextsWriter
                 value: $this->getValue($from, $propertyConfig, $reversedConfig)
             );
         }
+    }
+
+    /**
+     * @param array<int, TextsWriterConfiguration> $config
+     */
+    public function getFirstValue(object $from, array $config): mixed
+    {
+        foreach ($config as $propertyConfig) {
+            $value = $this->getValue($from, $propertyConfig);
+            if (false === empty($value)) {
+                return $value;
+            }
+        }
+
+        return null;
     }
 
     private function getValue(object $from, TextsWriterConfiguration $configuration, bool $reversed = false): mixed

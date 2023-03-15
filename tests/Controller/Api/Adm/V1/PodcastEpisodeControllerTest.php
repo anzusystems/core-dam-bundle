@@ -15,14 +15,14 @@ use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\PodcastEpisodeUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class PodcastEpisodeControllerTest extends AbstractApiControllerTest
+final class PodcastEpisodeControllerTest extends AbstractApiController
 {
     /**
      * @throws SerializerException

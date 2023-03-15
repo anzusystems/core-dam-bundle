@@ -26,8 +26,6 @@ $kernel = new AnzuTestKernel(
 );
 $kernel->boot();
 
-// return;
-
 $app = new Application($kernel);
 $app->setAutoExit(false);
 
@@ -41,6 +39,8 @@ $input = new ArrayInput([
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
+
+return;
 
 # Database drop
 $input = new ArrayInput([

@@ -63,7 +63,7 @@ final class ExtSystemConfigurationProvider
 
     public function getImageExtSystemConfiguration(string $extSystemSlug): ExtSystemImageTypeConfiguration
     {
-        $configuration = $this->getExtSystemConfigurationByAssetType(AssetType::Audio, $extSystemSlug);
+        $configuration = $this->getExtSystemConfigurationByAssetType(AssetType::Image, $extSystemSlug);
         if ($configuration instanceof ExtSystemImageTypeConfiguration) {
             return $configuration;
         }

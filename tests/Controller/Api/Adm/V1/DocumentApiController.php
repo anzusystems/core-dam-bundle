@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\DataFixtures\DocumentFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\DocumentUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\VideoUrl;
@@ -18,7 +18,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class DocumentApiControllerTest extends AbstractAssetFileApiControllerTest
+final class DocumentApiController extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'doc.txt';
 

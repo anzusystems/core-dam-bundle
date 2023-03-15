@@ -9,7 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\Cache;
 
-abstract class AbstractControllerTest extends WebTestCase
+abstract class AbstractController extends WebTestCase
 {
     use AnzuKernelTrait;
 

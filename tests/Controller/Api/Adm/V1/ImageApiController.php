@@ -16,7 +16,7 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\AudioUrl;
@@ -25,7 +25,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
+final class ImageApiController extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
 

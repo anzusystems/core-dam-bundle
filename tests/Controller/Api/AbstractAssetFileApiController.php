@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
-abstract class AbstractAssetFileApiControllerTest extends AbstractApiControllerTest
+abstract class AbstractAssetFileApiController extends AbstractApiController
 {
     protected FileSystemProvider $filesystemProvider;
     protected NameGenerator $nameGenerator;

@@ -9,14 +9,14 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AuthorUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AuthorControllerTest extends AbstractApiControllerTest
+final class AuthorControllerTest extends AbstractApiController
 {
     /**
      * @throws SerializerException

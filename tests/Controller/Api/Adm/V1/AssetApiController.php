@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
@@ -19,7 +19,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
+final class AssetApiController extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
     private const TEST_DATA_2_FILENAME = 'solid_image.jpeg';

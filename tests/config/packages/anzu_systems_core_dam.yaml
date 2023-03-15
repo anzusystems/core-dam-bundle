@@ -1,3 +1,16 @@
+parameters:
+  display_title_config:
+    title:
+      source_property_path: 'metadata.customData[title]'
+    headline:
+      source_property_path: 'metadata.customData[headline]'
+    originFileName:
+      source_property_path: 'mainFile?.assetAttributes.originFileName'
+    id:
+      source_property_path: 'id'
+    mainFileId:
+      source_property_path: 'mainFile?.id'
+
 anzu_systems_core_dam:
   settings:
     api_domain: '%env(resolve:string:DOMAIN_CORE_DAM_API)%'
@@ -21,38 +34,10 @@ anzu_systems_core_dam:
       max_size: 70000
     acl_check_enabled: false
   display_title:
-    image:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    audio:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    video:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    document:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
+    image: '%display_title_config%'
+    audio: '%display_title_config%'
+    video: '%display_title_config%'
+    document: '%display_title_config%'
   file_operations:
     tmp_dir_path: '%kernel.project_dir%/var/mnt/data/tmp'
     fixtures_dir_path: '%kernel.project_dir%/var/mnt/data/fixtures'

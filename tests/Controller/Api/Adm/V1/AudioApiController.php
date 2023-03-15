@@ -9,14 +9,14 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AudioFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\AudioUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AudioApiControllerTest extends AbstractAssetFileApiControllerTest
+final class AudioApiController extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'audio_example.mp3';
 

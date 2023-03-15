@@ -67,7 +67,7 @@ class Configuration implements ConfigurationInterface
                         ->isRequired()
                     ->end()
                     ->scalarNode(TextsWriterConfiguration::DESTINATION_PROPERTY_PATH_KEY)
-                        ->isRequired()
+                        ->defaultValue('')
                     ->end()
                     ->arrayNode(TextsWriterConfiguration::NORMALIZERS_KEY)
                         ->arrayPrototype()
@@ -157,20 +157,25 @@ class Configuration implements ConfigurationInterface
     private function addDisplayTitleSection(): NodeDefinition
     {
         return (new TreeBuilder('display_title'))->getRootNode()
-            ->children()
-                ->arrayNode(AssetType::Image->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Audio->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Document->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Video->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-            ->end();
+            ->append($this::addTextMapperConfiguration(AssetType::Image->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Audio->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Document->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Video->toString()))
+        ;
+        //            ->children()
+        //                ->arrayNode(AssetType::Image->toString())
+        //                    ->scalarPrototype()->end()
+        //                ->end()
+        //                ->arrayNode(AssetType::Audio->toString())
+        //                    ->scalarPrototype()->end()
+        //                ->end()
+        //                ->arrayNode(AssetType::Document->toString())
+        //                    ->scalarPrototype()->end()
+        //                ->end()
+        //                ->arrayNode(AssetType::Video->toString())
+        //                    ->scalarPrototype()->end()
+        //                ->end()
+        //            ->end();
     }
 
     private function addSettingsSection(): NodeDefinition
@@ -561,6 +566,7 @@ class Configuration implements ConfigurationInterface
                     ->defaultTrue()
                 ->end()
                 ->arrayNode('crop_allow_list')
+                    ->performNoDeepMerging()
                     ->useAttributeAsKey('name')
                     ->arrayPrototype()
                     ->children()
