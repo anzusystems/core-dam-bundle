@@ -42,7 +42,7 @@ final readonly class CropFacade
      */
     private function validateCrop(ImageFile $image, RequestedCropDto $cropDto): void
     {
-        $allowList = $this->allowListConfiguration->getListByDomain($image);
+        $allowList = $this->allowListConfiguration->getListByDomain($image->getExtSystem()->getSlug());
 
         if (
             $cropDto->getQuality() &&

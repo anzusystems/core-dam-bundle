@@ -514,6 +514,18 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         }
         $container->setParameter('anzu_systems.dam_bundle.crop_allow_map', $domainAllowMap);
 
+        $extSystemAllowMap = [];
+        foreach ($this->processedConfig['image_settings']['crop_allow_map'] as $allowMap) {
+            foreach ($allowMap['ext_system_slugs'] as $slug) {
+                if (false === isset($extSystemAllowMap[$slug])) {
+                    $extSystemAllowMap[$slug] = [];
+                }
+
+                $extSystemAllowMap[$slug][] = $allowMap;
+            }
+        }
+        $container->setParameter('anzu_systems.dam_bundle.ext_system_allow_list_map', $extSystemAllowMap);
+
         $colors = [];
         foreach ($this->processedConfig['image_settings']['color_set'] as $name => $color) {
             $colors[$name] = $color['rgb'];

@@ -53,6 +53,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$taggedAllowList', param('anzu_systems.dam_bundle.tagged_allow_list'))
         ->bind('$domainAllowList', param('anzu_systems.dam_bundle.domain_allow_list'))
         ->bind('$domainAllowMap', param('anzu_systems.dam_bundle.crop_allow_map'))
+        ->bind('$extSystemAllowListMap', param('anzu_systems.dam_bundle.ext_system_allow_list_map'))
         ->bind('$domainNames', param('anzu_systems.dam_bundle.domain_names'))
         ->bind('$exifCommonMetadata', param('anzu_systems.dam_bundle.common_metadata'))
         ->bind('$exifImageMetadata', param('anzu_systems.dam_bundle.image_metadata'))
