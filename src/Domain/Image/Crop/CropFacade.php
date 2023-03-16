@@ -31,7 +31,7 @@ final readonly class CropFacade
         RequestedCropDto $cropPayload,
         RegionOfInterest $roi,
     ): string {
-        $this->validateCrop($cropPayload);
+        $this->validateCrop($image, $cropPayload);
         $crop = $this->cropFactory->prepareImageCrop($roi, $cropPayload, $image);
 
         return $this->cropProcessor->applyCrop($image, $crop);
@@ -40,9 +40,9 @@ final readonly class CropFacade
     /**
      * @throws InvalidCropException
      */
-    private function validateCrop(RequestedCropDto $cropDto): void
+    private function validateCrop(ImageFile $image, RequestedCropDto $cropDto): void
     {
-        $allowList = $this->allowListConfiguration->getListByDomain();
+        $allowList = $this->allowListConfiguration->getListByDomain($image);
 
         if (
             $cropDto->getQuality() &&

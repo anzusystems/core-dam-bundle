@@ -25,7 +25,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class ImageApiController extends AbstractAssetFileApiController
+final class ImageApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
 
@@ -84,7 +84,9 @@ final class ImageApiController extends AbstractAssetFileApiController
         $this->assertEquals(3, count($filesystem->listContents($originImagePath->getDir())->toArray()));
 
         // get image url to create crop cache and validate.
-        $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
+        $response = $client->get(
+            'http://image.anzusystems.localhost' . $this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0)
+        );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $cropFilesystem = $this->filesystemProvider->getCropFilesystemByExtSystemSlug($imageEntity->getExtSystem()->getSlug());
         $this->assertEquals(1, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));

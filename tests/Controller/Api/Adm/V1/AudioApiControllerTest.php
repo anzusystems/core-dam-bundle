@@ -16,7 +16,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AudioApiController extends AbstractAssetFileApiController
+final class AudioApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'audio_example.mp3';
 

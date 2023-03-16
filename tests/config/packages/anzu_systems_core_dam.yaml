@@ -104,20 +104,35 @@ anzu_systems_core_dam:
         rgb: [ 210, 7, 151 ]
       brown:
         rgb: [ 154, 0, 5 ]
+    crop_allow_map:
+      admin:
+        crop_allow_list: admin
+        ext_system_slugs: [ blog, cms ]
+        domain: admin
+      cms_public_image:
+        crop_allow_list: web_cms
+        ext_system_slugs: [ cms ]
+        domain: web_cms
+      blog_public_image:
+        crop_allow_list: web_blog
+        ext_system_slugs: [ blog ]
+        domain: web_cms
     crop_allow_list:
       admin:
-        domain: admin
         quality_whitelist: [ ]
         crops:
           - { width: 0, height: 200, tags: ['list'] }       # admin DAM listing
           - { width: 1920, height: 0, tags: ['detail'] }    # admin DAM image crop
           - { width: 200, height: 100}    # admin DAM image crop
       web_cms:
-        domain: web_cms
         quality_whitelist: [ 90 ]
         crops:
           - { width: 800, height: 450 }   # anzu web general
           - { width: 350, height: 197 }   # anzu web box item photo
+      web_blog:
+        quality_whitelist: [ 90 ]
+        crops:
+          - { width: 300, height: 300 }
   ext_systems:
     cms:
       id: 1
@@ -234,9 +249,9 @@ anzu_systems_core_dam:
           slots: [ default, test ]
   domains:
     admin:
-      domain: '%env(resolve:string:DOMAIN_ADMIN_WEB)%'
+      domain: 'http://admin-image.anzusystems.localhost'
     web_cms:
-      domain: '%env(resolve:string:DOMAIN_CMS_WEB)%'
+      domain: 'http://image.anzusystems.localhost'
   storages:
     cms.audio:
       adapter: 'local'
@@ -274,4 +289,3 @@ anzu_systems_core_dam:
       adapter: 'local'
       options:
         directory: '%kernel.project_dir%/var/mnt/data/crop-blog'
-

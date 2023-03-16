@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
@@ -23,6 +24,7 @@ final class AllowListConfiguration
         private readonly array $domains,
         private readonly array $domainAllowList,
         private readonly array $domainNames,
+        private readonly array $domainAllowMap,
         private readonly RequestStack $requestStack,
     ) {
     }
@@ -37,12 +39,19 @@ final class AllowListConfiguration
         throw new DomainException("Domain ({$domainName}) not supported");
     }
 
-    public function getListByDomain(?string $domain = null): CropAllowListConfiguration
+    public function getListByDomain(ImageFile $imageFile): CropAllowListConfiguration
     {
-        $schemeAndHost = $domain ?? $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+        $schemeAndHost = $this->requestStack->getMainRequest()?->getSchemeAndHttpHost();
+        $key = sprintf('%s_%s', $schemeAndHost, $imageFile->getExtSystem()->getSlug());
 
-        if (isset($this->domainAllowList[$schemeAndHost])) {
-            return CropAllowListConfiguration::getFromArrayConfiguration($this->domainAllowList[$schemeAndHost]);
+        if (isset(
+            $this->domainAllowMap[$key],
+            $this->domainAllowMap[$key]['crop_allow_list'],
+            $this->domainAllowList[$this->domainAllowMap[$key]['crop_allow_list']])
+        ) {
+            return CropAllowListConfiguration::getFromArrayConfiguration(
+                $this->domainAllowList[$this->domainAllowMap[$key]['crop_allow_list']]
+            );
         }
 
         throw new DomainException("Domain ({$schemeAndHost}) not supported");
@@ -53,6 +62,8 @@ final class AllowListConfiguration
      */
     public function getTaggedList(string $allowListName, string $tag): array
     {
+        // TODO -> at this moment just admin list is used
+
         $key = $this->getKey($allowListName, $tag);
         if (false === isset($this->taggedListCache[$key])) {
             $this->buildTagListCache($allowListName, $tag);

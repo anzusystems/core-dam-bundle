@@ -31,6 +31,8 @@ $app->setAutoExit(false);
 
 $output = new ConsoleOutput();
 
+return;
+
 # Clear cache
 $input = new ArrayInput([
     'command' => 'cache:clear',
@@ -39,8 +41,6 @@ $input = new ArrayInput([
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
-
-return;
 
 # Database drop
 $input = new ArrayInput([

@@ -6,18 +6,21 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\DocumentFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
+use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\DocumentUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\VideoUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class VideoApiController extends AbstractAssetFileApiController
+final class DocumentApiControllerTest extends AbstractAssetFileApiController
 {
-    private const TEST_DATA_FILENAME = 'video_example.mp4';
+    private const TEST_DATA_FILENAME = 'doc.txt';
 
     /**
      * @throws SerializerException|FilesystemException
@@ -25,23 +28,23 @@ final class VideoApiController extends AbstractAssetFileApiController
     public function testUpload(): void
     {
         $client = $this->getClient(User::ID_ADMIN);
-        $videoUrl = new VideoUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        $documentUrl = new DocumentUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
-        $video = $this->uploadAsset(
+        $document = $this->uploadAsset(
             $client,
-            $videoUrl,
+            $documentUrl,
             self::TEST_DATA_FILENAME,
         );
 
-        $imageEntity = $this->entityManager->find(VideoFile::class, $video->getId());
-        $filesystem = $this->filesystemProvider->getFilesystemByStorable($imageEntity);
-        $originImagePath = $this->nameGenerator->getPath($imageEntity->getAssetAttributes()->getFilePath());
+        $documentEntity = $this->entityManager->find(DocumentFile::class, $document->getId());
+        $filesystem = $this->filesystemProvider->getFilesystemByStorable($documentEntity);
+        $originImagePath = $this->nameGenerator->getPath($documentEntity->getAssetAttributes()->getFilePath());
         $this->assertFileInFilesystemExists($filesystem, $originImagePath->getFullPath());
 
         $this->delete(
             $client,
-            $videoUrl,
-            $video->getId(),
+            $documentUrl,
+            $document->getId(),
             Response::HTTP_NO_CONTENT
         );
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
@@ -50,10 +53,10 @@ final class VideoApiController extends AbstractAssetFileApiController
     public function testSetSlotSuccess(): void
     {
         $this->testSlotsSuccess(
-            $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1),
-            $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_2),
+            $this->entityManager->find(DocumentFile::class, DocumentFixtures::DOC_ID_1),
+            $this->entityManager->find(DocumentFile::class, DocumentFixtures::DOC_ID_2),
             'exclusive',
-            new VideoUrl(1)
+            new DocumentUrl(1)
         );
     }
 }

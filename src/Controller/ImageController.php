@@ -52,6 +52,7 @@ final class ImageController extends AbstractImageController
         string $imageId,
     ): Response {
         $image = $this->imageFileRepository->findProcessedById($imageId);
+
         if (null === $image) {
             return $this->createNotFoundResponse($cropPayload);
         }

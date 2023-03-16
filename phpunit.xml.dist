@@ -34,6 +34,7 @@
             <directory>./tests</directory>
             <directory>src/DataFixtures</directory>
             <directory>src/Resources</directory>
+            <directory>src/DependencyInjection</directory>
         </exclude>
     </coverage>
     <listeners>
