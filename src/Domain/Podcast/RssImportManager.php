@@ -7,23 +7,13 @@ namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
-use AnzuSystems\CoreDamBundle\Domain\Job\JobPodcastSynchronizerFactory;
-use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Helper\HtmlHelper;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
-use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
-use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\JobPodcastSynchronizerRepository;
-use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\NonUniqueResultException;
 
 final class RssImportManager
 {

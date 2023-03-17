@@ -15,7 +15,9 @@ final class AssetMetadataCustomData
 {
     private const METADATA_PREFIX = 'custom_data_';
 
-    /** @var array<string, ReadableCollection<int, CustomFormElement>>  */
+    /**
+     * @var array<string, ReadableCollection<int, CustomFormElement>>
+     */
     private array $searchableElementsCache = [];
 
     public function __construct(
@@ -42,9 +44,9 @@ final class AssetMetadataCustomData
     }
 
     /**
-     * @throws NonUniqueResultException
-     *
      * @return ReadableCollection<int, CustomFormElement>
+     *
+     * @throws NonUniqueResultException
      */
     private function getSearchableElements(Asset $entity): ReadableCollection
     {
