@@ -34,7 +34,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
                 ],
                 'from' => $searchDto->getOffset(),
                 'size' => $searchDto->getLimit(),
-                'sort' => $searchDto->getOrder() ?: ['_score'],
+                'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
             ],
         ];
     }
