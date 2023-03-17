@@ -50,7 +50,7 @@ final readonly class PodcastImportIterator
             $podcastToImport = $this->getNextPodcast((string) $podcastToImport->getId());
             if ($podcastToImport) {
                 $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
-                $startFromDate = null;
+                $startFromDate = $podcastToImport->getDates()->getImportFrom();
             }
         }
     }
