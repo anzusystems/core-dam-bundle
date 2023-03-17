@@ -94,6 +94,7 @@ abstract class AssetFileFactory
     public function createBlankAssetFile(AdapterFile $file, AssetLicence $licence, ?string $id = null): AssetFile
     {
         $assetFile = null;
+
         if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {
             $assetFile = $this->createBlankImage($licence, $id);
         }

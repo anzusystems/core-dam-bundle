@@ -6,15 +6,19 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\DocumentFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\DocumentUrl;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\VideoUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class DocumentApiControllerTest extends AbstractAssetFileApiControllerTest
+final class DocumentApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'doc.txt';
 
@@ -44,5 +48,15 @@ final class DocumentApiControllerTest extends AbstractAssetFileApiControllerTest
             Response::HTTP_NO_CONTENT
         );
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
+    }
+
+    public function testSetSlotSuccess(): void
+    {
+        $this->testSlotsSuccess(
+            $this->entityManager->find(DocumentFile::class, DocumentFixtures::DOC_ID_1),
+            $this->entityManager->find(DocumentFile::class, DocumentFixtures::DOC_ID_2),
+            'exclusive',
+            new DocumentUrl(1)
+        );
     }
 }

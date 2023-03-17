@@ -21,8 +21,9 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class PodcastFixtures extends AbstractFixtures
 {
-    public const PODCAST_1 = '8fe7196e-1480-41b6-b0b3-1c73c79f3452';
-    public const PODCAST_2 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
+    public const PODCAST_1 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
+    public const PODCAST_2 = '8fe7196e-1480-41b6-b0b3-1c73c79f3452';
+    public const PODCAST_3 = '5edeb44d-c64b-4357-957d-688d9cf7e62a';
 
     public function __construct(
         private readonly PodcastManager $podcastManager,
@@ -68,11 +69,11 @@ final class PodcastFixtures extends AbstractFixtures
             ->setId(self::PODCAST_1)
             ->setTexts(
                 (new PodcastTexts())
-                    ->setTitle('This American Life')
+                    ->setTitle('Dobré ráno')
             )
             ->setAttributes(
                 (new PodcastAttributes())
-                    ->setRssUrl('https://www.thisamericanlife.org/podcast/rss.xml')
+                    ->setRssUrl('https://anchor.fm/s/8a651488/podcast/rss')
             )
             ->setLicence($licence);
 
@@ -84,5 +85,29 @@ final class PodcastFixtures extends AbstractFixtures
         );
 
         yield $podcast;
+
+        yield (new Podcast())
+            ->setId(self::PODCAST_2)
+            ->setTexts(
+                (new PodcastTexts())
+                    ->setTitle('Klik')
+            )
+            ->setAttributes(
+                (new PodcastAttributes())
+                    ->setRssUrl('https://anchor.fm/s/4d8e8b48/podcast/rss')
+            )
+            ->setLicence($licence);
+
+        yield (new Podcast())
+            ->setId(self::PODCAST_3)
+            ->setTexts(
+                (new PodcastTexts())
+                    ->setTitle('Rozprávky SME')
+            )
+            ->setAttributes(
+                (new PodcastAttributes())
+                    ->setRssUrl('https://anchor.fm/s/7758ecd4/podcast/rss')
+            )
+            ->setLicence($licence);
     }
 }

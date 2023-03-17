@@ -26,12 +26,12 @@ $kernel = new AnzuTestKernel(
 );
 $kernel->boot();
 
-// return;
-
 $app = new Application($kernel);
 $app->setAutoExit(false);
 
 $output = new ConsoleOutput();
+
+return;
 
 # Clear cache
 $input = new ArrayInput([

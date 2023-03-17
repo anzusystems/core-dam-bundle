@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
@@ -19,7 +19,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
+final class AssetApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
     private const TEST_DATA_2_FILENAME = 'solid_image.jpeg';
@@ -100,12 +100,14 @@ final class AssetApiControllerTest extends AbstractAssetFileApiControllerTest
         $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'undefined', Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
 
-        $images = $this->entityManager->getRepository(ImageFile::class)->findBy([
+        $this->entityManager->getRepository(ImageFile::class)->findBy([
             'asset' => $assetId
         ]);
-        $asset = $this->entityManager->find(Asset::class, $assetId);
+        $this->entityManager->find(Asset::class, $assetId);
 
-        $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
+        $response = $client->get(
+            'http://image.anzusystems.localhost' . $this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0)
+        );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
         $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getId());

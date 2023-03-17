@@ -11,14 +11,14 @@ use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-class AssetSlotAdmListDto extends AbstractEntityDto
+class AssetSlotAdmListDecorator extends AbstractEntityDto
 {
     protected string $resourceName = AssetSlot::class;
     protected AssetSlot $assetSlot;
 
     public static function getInstance(AssetSlot $assetSlot): static
     {
-        /** @psalm-var AssetSlotAdmListDto $parent */
+        /** @psalm-var AssetSlotAdmListDecorator $parent */
         $parent = self::getBaseInstance($assetSlot);
 
         return $parent

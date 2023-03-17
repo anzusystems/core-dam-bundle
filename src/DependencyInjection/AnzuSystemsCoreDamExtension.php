@@ -24,7 +24,6 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
@@ -505,12 +504,27 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             }
         }
         $container->setParameter('anzu_systems.dam_bundle.tagged_allow_list', $tagGroups);
+        $container->setParameter('anzu_systems.dam_bundle.domain_allow_list', $this->processedConfig['image_settings']['crop_allow_list']);
 
-        $domainAllowList = [];
-        foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $allowList) {
-            $domainAllowList[$this->getDomain($allowList[CropAllowListConfiguration::DOMAIN])] = $allowList;
+        $domainAllowMap = [];
+        foreach ($this->processedConfig['image_settings']['crop_allow_map'] as $allowMap) {
+            foreach ($allowMap['ext_system_slugs'] as $slug) {
+                $domainAllowMap[$this->getDomain($allowMap['domain']) . '_' . $slug] = $allowMap;
+            }
         }
-        $container->setParameter('anzu_systems.dam_bundle.domain_allow_list', $domainAllowList);
+        $container->setParameter('anzu_systems.dam_bundle.crop_allow_map', $domainAllowMap);
+
+        $extSystemAllowMap = [];
+        foreach ($this->processedConfig['image_settings']['crop_allow_map'] as $allowMap) {
+            foreach ($allowMap['ext_system_slugs'] as $slug) {
+                if (false === isset($extSystemAllowMap[$slug])) {
+                    $extSystemAllowMap[$slug] = [];
+                }
+
+                $extSystemAllowMap[$slug][] = $allowMap;
+            }
+        }
+        $container->setParameter('anzu_systems.dam_bundle.ext_system_allow_list_map', $extSystemAllowMap);
 
         $colors = [];
         foreach ($this->processedConfig['image_settings']['color_set'] as $name => $color) {

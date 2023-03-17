@@ -13,9 +13,12 @@ final class UrlHelper
         if (str_ends_with($domain, '/')) {
             $domain = substr($domain, 0, -1);
         }
+        if (false === str_starts_with($path, '/')) {
+            $path = '/' . $path;
+        }
 
         return sprintf(
-            '%s/%s',
+            '%s%s',
             $domain,
             $path,
         );

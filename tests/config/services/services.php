@@ -7,16 +7,21 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use AnzuSystems\CommonBundle\AnzuSystemsCommonBundle;
 use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
+use AnzuSystems\CoreDamBundle\Cache\ImageRouteGenerator;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
 use AnzuSystems\CoreDamBundle\Domain\DistributionCategory\DistributionCategoryManager;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -29,8 +34,9 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\DownloadFileClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
-use App\Tests\HttpClient\ArtemisClientMock;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use Doctrine\ORM\EntityManagerInterface;
 use Redis;
 use Symfony\Component\HttpClient\MockHttpClient;
@@ -104,7 +110,10 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(HttpClientInterface::class . ' $client', MockHttpClient::class)
         ->factory(service(BaseClient::class));
 
+    $services->set(RssPodcastMock::class);
+    $services->set(HttpClientInterface::class . ' $httpClient', MockHttpClient::class)
+        ->factory(service(RssPodcastMock::class));
+
     $services->set(ValidationExceptionHandler::class)
         ->tag(AnzuSystemsCommonBundle::TAG_EXCEPTION_HANDLER);
-
 };

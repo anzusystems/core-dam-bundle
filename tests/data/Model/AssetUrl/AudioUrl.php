@@ -28,6 +28,16 @@ final class AudioUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/audio/{$assetId}";
     }
 
+    public function setToSlot(string $assetId, string $assetFileId, string $position): string
+    {
+        return "/api/adm/v{$this->version}/audio/{$assetFileId}/asset/{$assetId}/slot-name/{$position}";
+    }
+
+    public function setMainFilePath(string $assetId, string $imageId): string
+    {
+        return "/api/adm/v{$this->version}/audio/{$imageId}/asset/{$assetId}/main";
+    }
+
     public function getAddToSlotPath(string $assetId, string $slotName): string
     {
         return "/api/adm/v{$this->version}/audio/asset/{$assetId}/slot-name/$slotName";

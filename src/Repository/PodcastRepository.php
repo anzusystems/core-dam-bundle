@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\NonUniqueResultException;
 
 /**
  * @extends AbstractAnzuRepository<Podcast>
@@ -16,17 +17,19 @@ use Doctrine\Common\Collections\Criteria;
  */
 final class PodcastRepository extends AbstractAnzuRepository
 {
-    public function findOneToImport(?string $idFrom = null): ?Podcast
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function findOneFrom(?string $idFrom = null, ?PodcastImportMode $mode = null): ?Podcast
     {
         $qb = $this->createQueryBuilder('entity')
-            ->where('entity.attributes.mode IN (:modes)')
-            ->setParameter('modes', array_map(
-                fn (PodcastImportMode $mode): string => $mode->toString(),
-                PodcastImportMode::getAllImportModes()
-            ))
             ->setMaxResults(1)
             ->orderBy('entity.id', Criteria::ASC);
 
+        if ($mode) {
+            $qb->andWhere('entity.attributes.mode = :mode')
+                ->setParameter('mode', $mode->toString());
+        }
         if ($idFrom) {
             $qb->andWhere('entity.id > :idFrom')
                 ->setParameter('idFrom', $idFrom)

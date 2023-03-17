@@ -27,22 +27,7 @@ final class Exiftool
     public function getTags(string $filePath): array
     {
         try {
-            $output = $this->execute($filePath);
-            $tags = explode(PHP_EOL, $output);
-            $tagList = [];
-
-            foreach ($tags as $tag) {
-                $tagPair = explode(':', $tag);
-                if (false === isset($tagPair[0]) || false === isset($tagPair[1])) {
-                    continue;
-                }
-
-                $tagName = preg_replace('/\s+/', '', trim($tagPair[0]));
-                $tagValue = trim($tagPair[1]);
-                $tagList[$tagName] = $tagValue;
-            }
-
-            return $tagList;
+            return $this->parseOutput($this->execute($filePath));
         } catch (RuntimeException $exception) {
             $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), $exception);
 
@@ -50,6 +35,9 @@ final class Exiftool
         }
     }
 
+    /**
+     * @throws SerializerException
+     */
     public function getVideoRotation(string $filePath): int
     {
         $tags = $this->getTags($filePath);
@@ -67,9 +55,41 @@ final class Exiftool
         $process->run();
 
         if (false === $process->isSuccessful()) {
-            throw new RuntimeException($process->getErrorOutput());
+            throw new RuntimeException(
+                empty($process->getErrorOutput())
+                    ? $this->getErrorFromOutput($process->getOutput())
+                    : $process->getErrorOutput()
+            );
         }
 
         return $process->getOutput();
+    }
+
+    private function getErrorFromOutput(string $output): string
+    {
+        $tags = $this->parseOutput($output);
+
+        return isset($tags['Error'])
+            ? (string) $tags['Error']
+            : '';
+    }
+
+    private function parseOutput(string $output): array
+    {
+        $tags = explode(PHP_EOL, $output);
+        $tagList = [];
+
+        foreach ($tags as $tag) {
+            $tagPair = explode(':', $tag);
+            if (false === isset($tagPair[0]) || false === isset($tagPair[1])) {
+                continue;
+            }
+
+            $tagName = preg_replace('/\s+/', '', trim($tagPair[0]));
+            $tagValue = trim($tagPair[1]);
+            $tagList[$tagName] = $tagValue;
+        }
+
+        return $tagList;
     }
 }

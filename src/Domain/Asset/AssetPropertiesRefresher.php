@@ -35,8 +35,8 @@ class AssetPropertiesRefresher extends AbstractManager
     {
         $this->assetTextsProcessor->updateAssetDisplayTitle($asset);
 
-        $this->syncMainFile($asset);
         $this->refreshMainFile($asset);
+        $this->syncMainFileFlagAtSlots($asset);
         $this->refreshStatus($asset);
         $this->refreshAssetFileProperties($asset);
 
@@ -115,7 +115,7 @@ class AssetPropertiesRefresher extends AbstractManager
     /**
      * Updates slot flags based on asset main file
      */
-    private function syncMainFile(Asset $asset): void
+    private function syncMainFileFlagAtSlots(Asset $asset): void
     {
         $asset->getSlots()->map(
             fn (AssetSlot $slot) => $slot->getFlags()->setMain(
@@ -146,7 +146,15 @@ class AssetPropertiesRefresher extends AbstractManager
      */
     private function refreshMainFile(Asset $asset): void
     {
-        if ($asset->getMainFile()) {
+        // Asset has no slots, set main file to null
+        if ($asset->getSlots()->isEmpty()) {
+            $asset->setMainFile(null);
+
+            return;
+        }
+
+        // Asset has valid main file
+        if ($asset->getMainFile() && $asset === $asset->getMainFile()->getAsset()) {
             return;
         }
 

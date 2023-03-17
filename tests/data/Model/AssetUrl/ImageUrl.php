@@ -33,9 +33,9 @@ final class ImageUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/image/asset/{$assetId}/slot-name/$slotName";
     }
 
-    public function setToPositionPath(string $assetId, string $imageId, string $position): string
+    public function setToSlot(string $assetId, string $assetFileId, string $position): string
     {
-        return "/api/adm/v{$this->version}/image/{$imageId}/asset/{$assetId}/slot-name/{$position}";
+        return "/api/adm/v{$this->version}/image/{$assetFileId}/asset/{$assetId}/slot-name/{$position}";
     }
 
     public function setMainFilePath(string $assetId, string $imageId): string

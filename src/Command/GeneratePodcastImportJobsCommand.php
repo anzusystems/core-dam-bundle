@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
+use AnzuSystems\CoreDamBundle\Domain\Job\JobPodcastSynchronizerFactory;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,13 +22,17 @@ final class GeneratePodcastImportJobsCommand extends Command
 
     public function __construct(
         private readonly RssImportManager $rssImportManager,
+        private readonly JobPodcastSynchronizerFactory $jobPodcastSynchronizerFactory,
     ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->rssImportManager->generateImportJobs();
+        $this->jobPodcastSynchronizerFactory->createPodcastSynchronizerJob(
+            podcastId: '',
+            fullSync: true
+        );
 
         return Command::SUCCESS;
     }

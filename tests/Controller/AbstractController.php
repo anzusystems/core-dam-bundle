@@ -9,7 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\Cache;
 
-abstract class AbstractControllerTest extends WebTestCase
+abstract class AbstractController extends WebTestCase
 {
     use AnzuKernelTrait;
 
@@ -23,6 +23,18 @@ abstract class AbstractControllerTest extends WebTestCase
         $this->entityManager = $entityManager;
 
         $this->entityManager->beginTransaction();
+    }
+
+    /**
+     * @template T of object
+     *
+     * @param class-string<T>|string $id
+     *
+     * @return T
+     */
+    protected function getService(string $id): object
+    {
+        return static::getContainer()->get($id);
     }
 
     protected function tearDown(): void

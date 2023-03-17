@@ -33,6 +33,16 @@ final class DocumentUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/document/asset/{$assetId}/slot-name/$slotName";
     }
 
+    public function setToSlot(string $assetId, string $assetFileId, string $position): string
+    {
+        return "/api/adm/v{$this->version}/document/{$assetFileId}/asset/{$assetId}/slot-name/{$position}";
+    }
+
+    public function setMainFilePath(string $assetId, string $imageId): string
+    {
+        return "/api/adm/v{$this->version}/document/{$imageId}/asset/{$assetId}/main";
+    }
+
     public function getSerializeClassString(): string
     {
         return DocumentFileAdmDetailDto::class;

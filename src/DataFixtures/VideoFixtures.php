@@ -24,6 +24,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 final class VideoFixtures extends AbstractAssetFileFixtures
 {
     public const VIDEO_ID_1 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabe';
+    public const VIDEO_ID_2 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabc';
 
     public function __construct(
         private readonly VideoManager $videoManager,
@@ -105,6 +106,18 @@ final class VideoFixtures extends AbstractAssetFileFixtures
                 'name' => 'Publicistika',
             ])
         );
+        $video->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($video)->storeAndProcess($video, $file);
+
+        yield $video;
+
+        $file = $this->getFile($fileSystem, 'video_fixtures_sample_2.mp4');
+        $video = $this->videoFactory->createFromFile(
+            $file,
+            $licence,
+            self::VIDEO_ID_2
+        );
+        $video->getAsset()->getAssetFlags()->setDescribed(true);
         $video->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($video)->storeAndProcess($video, $file);
 

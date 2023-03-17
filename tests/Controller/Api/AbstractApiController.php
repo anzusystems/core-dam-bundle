@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api;
 
 use AnzuSystems\CoreDamBundle\Tests\ApiClient;
-use AnzuSystems\CoreDamBundle\Tests\Controller\AbstractControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\AbstractController;
 use AnzuSystems\SerializerBundle\Serializer;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
-abstract class AbstractApiControllerTest extends AbstractControllerTest
+abstract class AbstractApiController extends AbstractController
 {
     protected Serializer $serializer;
     protected static KernelBrowser $client;

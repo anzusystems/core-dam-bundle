@@ -253,7 +253,7 @@ final class AudioController extends AbstractApiController
     #[OAParameterPath('audio'), OARequest(AudioPublicationAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
     public function makePublic(AudioFile $audio, #[SerializeParam] AudioPublicationAdmDto $dto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePublic($audio, $dto)),
@@ -268,7 +268,7 @@ final class AudioController extends AbstractApiController
     #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
     public function makePrivate(AudioFile $audio): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePrivate($audio)),

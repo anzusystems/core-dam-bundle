@@ -27,6 +27,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
     public const IMAGE_ID_1 = 'e9cb26ab-81bd-4804-9f86-fb629673b1b1';
     public const IMAGE_ID_2 = '8d7456dd-80cf-4d09-9ba8-b647d8895358';
     public const IMAGE_ID_2_1 = '8e7456dd-80cf-4d09-9ba8-b647d8895358';
+    public const IMAGE_ID_3 = '8e7456dd-80cf-4d09-9ba8-b647d8895359';
 
     public function __construct(
         private readonly ImageManager $imageManager,
@@ -97,6 +98,19 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $secondImage->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($secondImage, $file);
         $image->getAsset()->getAssetFlags()->setDescribed(true);
+
+        yield $image;
+
+        $licence = $this->licenceRepository->find(AssetLicenceFixtures::LICENCE_2_ID);
+
+        $file = $this->getFile($fileSystem, 'text_image_108x192.png');
+        $image = $this->imageFactory->createFromFile(
+            $file,
+            $licence,
+            self::IMAGE_ID_3
+        );
+        $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
 
         yield $image;
     }

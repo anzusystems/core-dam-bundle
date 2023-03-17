@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
+use AnzuSystems\CoreDamBundle\Model\Configuration\AllowListMapConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
@@ -23,13 +24,15 @@ final class AllowListConfiguration
         private readonly array $domains,
         private readonly array $domainAllowList,
         private readonly array $domainNames,
+        private readonly array $domainAllowMap,
+        private readonly array $extSystemAllowListMap,
         private readonly RequestStack $requestStack,
     ) {
     }
 
-    public function getCacheConfiguration(): CacheConfiguration
+    public function getCacheConfiguration(?string $domainName = null): CacheConfiguration
     {
-        $domainName = $this->getDomainName();
+        $domainName = $domainName ?? $this->getDomainName();
         if (isset($this->domains[$domainName])) {
             return CacheConfiguration::getFromArrayConfiguration($this->domains[$domainName]);
         }
@@ -37,12 +40,31 @@ final class AllowListConfiguration
         throw new DomainException("Domain ({$domainName}) not supported");
     }
 
-    public function getListByDomain(?string $domain = null): CropAllowListConfiguration
+    public function getSlugAllowLists(string $extSystemSlug): array
+    {
+        if (isset($this->extSystemAllowListMap[$extSystemSlug])) {
+            return array_map(
+                fn (array $config): AllowListMapConfiguration => AllowListMapConfiguration::getFromArrayConfiguration($config),
+                $this->extSystemAllowListMap[$extSystemSlug]
+            );
+        }
+
+        return [];
+    }
+
+    public function getListByDomain(string $extSystemSlug, ?string $domain = null): CropAllowListConfiguration
     {
         $schemeAndHost = $domain ?? $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+        $key = sprintf('%s_%s', $schemeAndHost, $extSystemSlug);
 
-        if (isset($this->domainAllowList[$schemeAndHost])) {
-            return CropAllowListConfiguration::getFromArrayConfiguration($this->domainAllowList[$schemeAndHost]);
+        if (isset(
+            $this->domainAllowMap[$key],
+            $this->domainAllowMap[$key]['crop_allow_list'],
+            $this->domainAllowList[$this->domainAllowMap[$key]['crop_allow_list']])
+        ) {
+            return CropAllowListConfiguration::getFromArrayConfiguration(
+                $this->domainAllowList[$this->domainAllowMap[$key]['crop_allow_list']]
+            );
         }
 
         throw new DomainException("Domain ({$schemeAndHost}) not supported");

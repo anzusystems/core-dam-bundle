@@ -8,19 +8,24 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiControllerTest;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\AudioUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
+final class ImageApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
 
@@ -79,7 +84,9 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         $this->assertEquals(3, count($filesystem->listContents($originImagePath->getDir())->toArray()));
 
         // get image url to create crop cache and validate.
-        $response = $client->get($this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0));
+        $response = $client->get(
+            'http://image.anzusystems.localhost' . $this->imageUrlFactory->generatePublicUrl($image->getId(), 800, 450, 0)
+        );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
         $cropFilesystem = $this->filesystemProvider->getCropFilesystemByExtSystemSlug($imageEntity->getExtSystem()->getSlug());
         $this->assertEquals(1, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
@@ -111,24 +118,16 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
         );
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
         $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+    }
 
-        // todo finish tests
-//        $response = $client->patch(
-//            (new ImageUrl(1))
-//                ->setToPositionPath($asset->getId(), ImageFixtures::IMAGE_ID_1_1, 'free'),
-//        );
-//        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
-//        $imageAtSecondPosition = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
-//        $response = $client->patch(
-//            (new ImageUrl(1))
-//                ->setMainFilePath($asset->getId(), $imageAtSecondPosition->getId()),
-//        );
-//        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
-//
-//        $assetEntity = $this->entityManager->find(Asset::class, $asset->getId());
-//
-//        $this->assertCount(2, $assetEntity->getSlots());
-//        $this->assertEquals(ImageFixtures::IMAGE_ID_1_1, $assetEntity->getMainFile()?->getId());
+    public function testSetSlotSuccess(): void
+    {
+        $this->testSlotsSuccess(
+            $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1),
+            $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_2),
+            'extra',
+            new ImageUrl(1)
+        );
     }
 
     /**
@@ -143,7 +142,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiControllerTest
 
         $response = $client->patch(
             (new ImageUrl(1))
-                ->setToPositionPath($asset->getId(), $imageId, $slot),
+                ->setToSlot($asset->getId(), $imageId, $slot),
             ['type' => 'image']
         );
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());

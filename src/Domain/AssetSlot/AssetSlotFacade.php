@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotAdmListDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot\AssetSlotMinimalAdmDto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -34,7 +34,7 @@ class AssetSlotFacade
         return (new ApiResponseList())
             ->setData(
                 $asset->getSlots()->map(
-                    fn (AssetSlot $assetSlot): AssetSlotAdmListDto => AssetSlotAdmListDto::getInstance($assetSlot)
+                    fn (AssetSlot $assetSlot): AssetSlotAdmListDecorator => AssetSlotAdmListDecorator::getInstance($assetSlot)
                 )->toArray()
             )
             ->setTotalCount(
@@ -91,9 +91,8 @@ class AssetSlotFacade
         foreach ($asset->getSlots() as $slot) {
             if (null === CollectionHelper::findFirst(
                 $list,
-                fn (AssetSlotMinimalAdmDto $minimalSlot): bool => false === ($minimalSlot->getAssetFile() === $slot->getAssetFile())
-            )
-            ) {
+                fn (AssetSlotMinimalAdmDto $minimalSlot): bool => $minimalSlot->getAssetFile()->getId() === $slot->getAssetFile()->getId()
+            )) {
                 throw new ForbiddenOperationException(ForbiddenOperationException::ASSET_DELETE_DURING_REORDER);
             }
         }
