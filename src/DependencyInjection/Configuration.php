@@ -588,9 +588,6 @@ class Configuration implements ConfigurationInterface
                     ->useAttributeAsKey('name')
                     ->arrayPrototype()
                         ->children()
-//                            ->scalarNode(CropAllowListConfiguration::DOMAIN) // todo remove
-//                                ->isRequired()
-//                            ->end()
                             ->arrayNode(CropAllowListConfiguration::QUALITY_ALLOW_LIST)
                                 ->scalarPrototype()->end()
                             ->end()
