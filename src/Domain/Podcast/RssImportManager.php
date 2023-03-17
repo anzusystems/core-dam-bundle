@@ -31,42 +31,10 @@ final class RssImportManager
     private const BULK_SIZE = 2;
 
     public function __construct(
-        private readonly AssetRepository $assetRepository,
-        private readonly PodcastRepository $podcastRepository,
         private readonly PodcastStatusManager $podcastStatusManager,
-        private readonly EpisodeRssImportManager $episodeRssImportManager,
-        private readonly DamLogger $damLogger,
-        private readonly PodcastRssReader $reader,
         private readonly ImageDownloadFacade $imageDownloadFacade,
-        private readonly EntityManagerInterface $manager,
         private readonly ImagePreviewFactory $imagePreviewFactory,
-        private readonly JobPodcastSynchronizerFactory $jobPodcastSynchronizerFactory,
-        private readonly JobPodcastSynchronizerRepository $podcastSynchronizerRepository,
-        private readonly RssClient $client,
     ) {
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function generateImportJobs(bool $fullImport = true): void
-    {
-        $lastId = null;
-        while ($podcast = $this->podcastRepository->findOneFrom($lastId, PodcastImportMode::Import)) {
-            $lastId = (string) $podcast->getId();
-            $notFinished = $this->podcastSynchronizerRepository->findOneNotFinishedByPodcast($lastId);
-
-            if ($notFinished) {
-                $this->outputUtil->writeln(sprintf('Another JOB with id (%s) in queue', $lastId));
-
-                continue;
-            }
-
-            $this->jobPodcastSynchronizerFactory->createPodcastSynchronizerJob(
-                podcastId: $lastId,
-                fullSync: $fullImport
-            );
-        }
     }
 
     /**
