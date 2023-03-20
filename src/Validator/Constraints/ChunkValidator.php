@@ -32,7 +32,6 @@ final class ChunkValidator extends ConstraintValidator
         $imageChunkConfig = $this->configurationProvider->getSettings()->getImageChunkConfig();
 
         if (false === ($this->assetFileCounter->getUploadedSize($value->getAssetFile()) === $value->getOffset())) {
-            // todo log
             $this->context->buildViolation(ValidationException::ERROR_FIELD_INVALID)
                 ->atPath('offset')
                 ->addViolation();

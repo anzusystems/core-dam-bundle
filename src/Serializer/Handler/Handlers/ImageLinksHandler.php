@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
@@ -51,9 +50,6 @@ class ImageLinksHandler extends AbstractHandler
         return $this->getImageLinkUrl($value, $type);
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
     public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
@@ -83,23 +79,16 @@ class ImageLinksHandler extends AbstractHandler
         return self::LINKS_TYPE . '_' . $cropTag->toString();
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
     protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
         $imageId = (string) $imageFile->getId();
-        $roi = $this->roiRepository->findByImageIdAndPosition($imageId, RegionOfInterest::FIRST_ROI_POSITION);
-        if (null === $roi) {
-            return [];
-        }
 
         return [
             'type' => self::LINKS_TYPE,
             'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
                 imageId: $imageId,
                 item: $item,
-                roiPosition: $roi->getPosition()
+                roiPosition: 0
             ),
             'requestedWidth' => $item->getWidth(),
             'requestedHeight' => $item->getHeight(),

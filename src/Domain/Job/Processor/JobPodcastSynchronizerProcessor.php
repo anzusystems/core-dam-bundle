@@ -117,6 +117,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 
     private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job): void
     {
+        // todo better result text?
         if (null === $dto || $imported < $this->bulkSize) {
             $this->getManagedJob($job)->setResult('Podcast job finished');
             $this->finishSuccess($job);

@@ -11,6 +11,7 @@ final class App extends AnzuApp
 {
     public const ZERO = 0;
     public const DOCTRINE_EXTRA_LAZY = 'EXTRA_LAZY';
+    public const CACHE_STRATEGY = 'NONSTRICT_READ_WRITE';
     public const DATE_TIME_API_FORMAT = 'Y-m-d\TH:i:s.u\Z';
 
     public const ENTITY_NAMESPACE = __NAMESPACE__ . '\Entity';

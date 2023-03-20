@@ -162,20 +162,6 @@ class Configuration implements ConfigurationInterface
             ->append($this::addTextMapperConfiguration(AssetType::Document->toString()))
             ->append($this::addTextMapperConfiguration(AssetType::Video->toString()))
         ;
-        //            ->children()
-        //                ->arrayNode(AssetType::Image->toString())
-        //                    ->scalarPrototype()->end()
-        //                ->end()
-        //                ->arrayNode(AssetType::Audio->toString())
-        //                    ->scalarPrototype()->end()
-        //                ->end()
-        //                ->arrayNode(AssetType::Document->toString())
-        //                    ->scalarPrototype()->end()
-        //                ->end()
-        //                ->arrayNode(AssetType::Video->toString())
-        //                    ->scalarPrototype()->end()
-        //                ->end()
-        //            ->end();
     }
 
     private function addSettingsSection(): NodeDefinition
@@ -194,6 +180,14 @@ class Configuration implements ConfigurationInterface
                             ->scalarPrototype()->end()
                         ->end()
                     ->end()
+                ->end()
+                ->scalarNode(SettingsConfiguration::UNSPLASH_API_CLIENT)
+                    ->defaultValue('https://api.unsplash.com')
+                    ->isRequired()
+                ->end()
+                ->scalarNode(SettingsConfiguration::JW_PLAYER_API_CLIENT)
+                    ->defaultValue('https://api.jwplayer.com')
+                    ->isRequired()
                 ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()

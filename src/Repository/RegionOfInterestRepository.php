@@ -28,7 +28,7 @@ final class RegionOfInterestRepository extends AbstractAnzuRepository
             ->andWhere('entity.position = :roiPosition')
             ->setParameter('imageId', $assetId)
             ->setParameter('roiPosition', $roiPosition)
-            ->setMaxResults(1) // todo tmp fix (multiple files at same position in slot)
+            ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult()
         ;

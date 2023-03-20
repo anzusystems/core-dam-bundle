@@ -84,7 +84,6 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         ]);
 
         $applicationName = 'core_dam';
-
         $imageFileChangeStateTopic = '%env(MESSENGER_IMAGE_FILE_CHANGE_STATE_TOPIC)%';
         $imageFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$imageFileChangeStateTopic}";
         $videoFileChangeStateTopic = '%env(MESSENGER_VIDEO_FILE_CHANGE_STATE_TOPIC)%';
@@ -101,7 +100,6 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $distributionTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionTopic}";
         $distributionRemoteProcessedCheckTopic = '%env(MESSENGER_DISTRIBUTION_REMOTE_PROCESSED_CHECK_TOPIC)%';
         $distributionRemoteProcessedCheckTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
-
         $assetPropertyRefreshTopic = '%env(MESSENGER_PROPERTY_REFRESH_TOPIC)%';
         $assetPropertyRefreshTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetPropertyRefreshTopic}";
 
@@ -375,24 +373,12 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     AssetRefreshPropertiesMessage::class => $assetPropertyRefreshTopic,
                 ],
             ],
-            'http_client' => [
-                'scoped_clients' => [
-                    'jwPlayer.api.client' => [
-                        'base_uri' => 'https://api.jwplayer.com', // todo env
-                    ],
-                    'unsplash.api.client' => [
-                        'base_uri' => 'https://api.unsplash.com', // todo env
-                        'headers' => [
-                            'Accept-Version' => 'v1',
-                        ],
-                    ],
-                ],
-            ],
         ]);
 
         foreach ($container->getExtensionConfig($this->getAlias()) as $config) {
             if (array_key_exists('settings', $config)) {
                 $configSettings = $config['settings'];
+
                 $container->prependExtensionConfig('framework', [
                     'cache' => [
                         'pools' => [
@@ -410,6 +396,19 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
                                 'default_lifetime' => 'P1M',
+                            ],
+                        ],
+                    ],
+                    'http_client' => [
+                        'scoped_clients' => [
+                            'jwPlayer.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_API_CLIENT],
+                            ],
+                            'unsplash.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::UNSPLASH_API_CLIENT],
+                                'headers' => [
+                                    'Accept-Version' => 'v1',
+                                ],
                             ],
                         ],
                     ],

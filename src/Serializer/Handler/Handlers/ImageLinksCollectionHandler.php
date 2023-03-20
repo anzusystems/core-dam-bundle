@@ -7,13 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
-use Doctrine\ORM\NonUniqueResultException;
 
 final class ImageLinksCollectionHandler extends ImageLinksHandler
 {
-    /**
-     * @throws NonUniqueResultException
-     */
     public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {

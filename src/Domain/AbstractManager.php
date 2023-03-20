@@ -73,16 +73,6 @@ abstract class AbstractManager extends BaseAbstractManager
         return new ArrayCollection(iterator_to_array($iterator));
     }
 
-    /**
-     * @deprecated
-     */
-    public function setNotifyTo(NotifiableInterface $object): void
-    {
-        /** @var DamUser $currentUser */
-        $currentUser = $this->currentUser->getCurrentUser();
-        $object->setNotifyTo($currentUser);
-    }
-
     public function trackCreation(object $object): void
     {
         parent::trackCreation($object);

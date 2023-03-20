@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\File;
 
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
+use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
 final class AdapterFile extends BaseFile
@@ -12,7 +13,6 @@ final class AdapterFile extends BaseFile
     private readonly string $adapterPath;
     private readonly LocalFilesystem $localFilesystem;
 
-    // @todo  remove $path and generate it from filesystem immediate
     public function __construct(string $path, string $adapterPath, LocalFilesystem $filesystem, bool $checkPath = true)
     {
         $this->adapterPath = $adapterPath;
@@ -36,6 +36,8 @@ final class AdapterFile extends BaseFile
 
     /**
      * @return resource
+     *
+     * @throws FilesystemException
      */
     public function readStream()
     {

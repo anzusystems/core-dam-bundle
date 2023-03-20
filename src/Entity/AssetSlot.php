@@ -19,7 +19,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
 #[ORM\Index(fields: ['name'], name: 'IDX_name')]
 #[ORM\Index(fields: ['flags.default'], name: 'IDX_default')]
-#[ORM\UniqueConstraint(name: 'UNIQ_asset_file_asset_name', fields: ['asset', 'name', 'image', 'audio', 'video', 'image'])]
+#[ORM\UniqueConstraint(name: 'UNIQ_asset_file_asset_name', fields: ['asset', 'name'])]
 class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;

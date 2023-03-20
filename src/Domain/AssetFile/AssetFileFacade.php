@@ -149,7 +149,6 @@ abstract class AssetFileFacade
                 assetDto: $imageDto,
                 assetLicence: $assetLicence,
             );
-            $this->assetStatusManager->setNotifyTo($assetFile);
             $this->getManager()->flush();
             $this->indexManager->index($assetFile->getAsset());
             $this->getManager()->commit();

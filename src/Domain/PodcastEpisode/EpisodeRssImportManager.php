@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
@@ -71,7 +72,6 @@ final readonly class EpisodeRssImportManager
                 return $this->createPodcastEpisode($podcast, $podcastItem);
             }
 
-            // todo asset Failed scenario!
             $asset = $episode->getAsset();
 
             // Episode exists, but has no asset
@@ -213,7 +213,12 @@ final readonly class EpisodeRssImportManager
 
     private function updateEpisodeData(PodcastEpisode $episode, Item $item): void
     {
-        $episode->getTexts()->setTitle($item->getTitle());
+        $episode->getTexts()
+            ->setTitle($item->getTitle())
+            ->setDescription(StringHelper::parseString($item->getDescription()))
+            ->setRawDescription($item->getDescription())
+        ;
+        $episode->getDates()->setPublicationDate($item->getPubDate());
         $episode->getAttributes()
             ->setRssId($item->getGuid())
             ->setRssUrl($item->getEnclosure()->getUrl());

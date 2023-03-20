@@ -10,6 +10,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
@@ -20,6 +21,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: ImagePreviewRepository::class)]
+#[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ImagePreview implements
     UuidIdentifiableInterface,
     TimeTrackingInterface,
@@ -36,7 +38,6 @@ class ImagePreview implements
     #[Serialize(handler: EntityIdHandler::class)]
     protected ImageFile $imageFile;
 
-    // todo validate if roi exist
     #[ORM\Column(type: Types::SMALLINT)]
     #[Serialize]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]

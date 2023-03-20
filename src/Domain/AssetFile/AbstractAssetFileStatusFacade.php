@@ -168,12 +168,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * @throws SerializerException
      * @throws ValidationException
+     * @throws InvalidArgumentException
      */
     public function finishUpload(AssetAdmFinishDto $assetFinishDto, AssetFile $assetFile): AssetFile
     {
         $this->validateFullyUploaded($assetFile);
         $this->validator->validate($assetFinishDto);
-        $this->assetStatusManager->setNotifyTo($assetFile);
         $assetFile->getAssetAttributes()->setChecksum($assetFinishDto->getChecksum());
         $this->assetStatusManager->toUploaded($assetFile);
 

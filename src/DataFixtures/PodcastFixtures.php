@@ -24,6 +24,7 @@ final class PodcastFixtures extends AbstractFixtures
     public const PODCAST_1 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
     public const PODCAST_2 = '8fe7196e-1480-41b6-b0b3-1c73c79f3452';
     public const PODCAST_3 = '5edeb44d-c64b-4357-957d-688d9cf7e62a';
+    public const PODCAST_4 = '5edeb44e-c64b-4357-957d-688d9cf7e62a';
 
     public function __construct(
         private readonly PodcastManager $podcastManager,
@@ -107,6 +108,18 @@ final class PodcastFixtures extends AbstractFixtures
             ->setAttributes(
                 (new PodcastAttributes())
                     ->setRssUrl('https://anchor.fm/s/7758ecd4/podcast/rss')
+            )
+            ->setLicence($licence);
+
+        yield (new Podcast())
+            ->setId(self::PODCAST_4)
+            ->setTexts(
+                (new PodcastTexts())
+                    ->setTitle('Test feed')
+            )
+            ->setAttributes(
+                (new PodcastAttributes())
+                    ->setRssUrl('https://anchor.fm/s/db2e247c/podcast/rss')
             )
             ->setLicence($licence);
     }

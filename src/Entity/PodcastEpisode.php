@@ -10,6 +10,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
@@ -52,6 +53,7 @@ class PodcastEpisode implements
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]

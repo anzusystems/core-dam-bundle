@@ -10,7 +10,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Embeddable]
 class AudioAttributes
 {
-    // todo
     #[ORM\Column(type: Types::INTEGER)]
     private int $duration;
 

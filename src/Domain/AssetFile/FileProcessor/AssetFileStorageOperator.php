@@ -11,11 +11,11 @@ use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 
-final class AssetFileStorageOperator
+final readonly class AssetFileStorageOperator
 {
     public function __construct(
-        private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
+        private FileSystemProvider $fileSystemProvider,
+        private NameGenerator $nameGenerator,
     ) {
     }
 

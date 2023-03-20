@@ -28,6 +28,8 @@ final class SettingsConfiguration
     public const ELASTIC_INDEX_PREFIX_KEY = 'elastic_index_prefix';
     public const ELASTIC_LANGUAGE_DICTIONARIES_KEY = 'elastic_language_dictionaries';
     public const LIMITED_ASSET_LICENCE_FILES_COUNT = 'limited_asset_licence_files_count';
+    public const UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
+    public const JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,
