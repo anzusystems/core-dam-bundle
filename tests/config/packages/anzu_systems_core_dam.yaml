@@ -29,6 +29,8 @@ anzu_systems_core_dam:
     cache_redis: TestRedis
     user_auth_type: json_credentials
     limited_asset_licence_files_count: 100
+    unsplash_api_client_host: 'https://api.unsplash.com'
+    jw_player_api_client_host: 'https://api.jwplayer.com'
     image_chunk_config:
       min_size: 5000
       max_size: 70000

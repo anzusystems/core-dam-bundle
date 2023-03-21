@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
@@ -20,6 +22,7 @@ final readonly class PodcastImportIterator
         private RssClient $client,
         private PodcastRssReader $reader,
         private PodcastRepository $podcastRepository,
+        private DamLogger $damLogger,
     ) {
     }
 
@@ -35,22 +38,17 @@ final readonly class PodcastImportIterator
             return;
         }
 
-        $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
-        $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
-
         while ($podcastToImport) {
-            foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
-                yield new PodcastImportIteratorDto(
-                    podcast: $podcastToImport,
-                    item: $podcastItem,
-                    channel: $this->reader->readChannel()
-                );
+            foreach ($this->iteratePodcast($pointer, $podcastToImport) as $item) {
+                yield $item;
             }
 
             $podcastToImport = $this->getNextPodcast((string) $podcastToImport->getId());
             if ($podcastToImport) {
-                $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
-                $startFromDate = $podcastToImport->getDates()->getImportFrom();
+                $pointer = (new PodcastSynchronizerPointer(
+                    $podcastToImport->getId(),
+                    null
+                ));
             }
         }
     }
@@ -62,7 +60,20 @@ final readonly class PodcastImportIterator
      */
     public function iteratePodcast(PodcastSynchronizerPointer $pointer, Podcast $podcastToImport): Generator
     {
-        $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+        try {
+            $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
+        } catch (InvalidArgumentException $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                sprintf(
+                    'Invalid RSS XML from URL (%s)',
+                    $podcastToImport->getAttributes()->getRssUrl()
+                ),
+                $exception
+            );
+
+            return;
+        }
         $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
