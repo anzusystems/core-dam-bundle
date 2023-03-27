@@ -18,6 +18,18 @@ final class TmpLocalFilesystem extends LocalFilesystem
     private array $paths = [];
     private NameGenerator $nameGenerator;
 
+    /**
+     * @throws FilesystemException
+     */
+    public function clearPaths(): void
+    {
+        foreach ($this->paths as $path) {
+            if ($this->fileExists($path)) {
+                $this->delete($path);
+            }
+        }
+    }
+
     public function getTmpFileName(?string $extension = null): string
     {
         $path = $this->nameGenerator->generatePath($extension)->getFileName();
