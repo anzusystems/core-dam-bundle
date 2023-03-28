@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\CustomDistribution\CustomDistributionAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -55,6 +56,20 @@ final class CustomDistributionFacade
         );
 
         return $distribution;
+    }
+
+    public function delete(Distribution $distribution): void
+    {
+        if (false === $distribution->getStatus()->in([DistributionProcessStatus::Waiting, DistributionProcessStatus::Failed])) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
+        }
+
+        if (false === $distribution->getBlocks()->isEmpty()) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::IS_BLOCKING_ERROR);
+        }
+
+        $manager = $this->managerProvider->get($distribution::class);
+        $manager->delete($distribution);
     }
 
     /**

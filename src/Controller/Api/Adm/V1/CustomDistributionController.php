@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
@@ -51,6 +52,23 @@ final class CustomDistributionController extends AbstractApiController
                 $this->customDistributionFacade->distribute($assetFile, $customDistribution)
             )
         );
+    }
+
+    /**
+     * Delete item.
+     *
+     * @throws AppReadOnlyModeException
+     */
+    #[Route(path: '/{distribution}', name: 'delete', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('distribution'), OAResponseDeleted]
+    public function delete(Distribution $distribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution);
+
+        $this->customDistributionFacade->delete($distribution);
+
+        return $this->noContentResponse();
     }
 
     /**

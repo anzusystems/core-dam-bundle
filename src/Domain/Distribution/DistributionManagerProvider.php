@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Distribution;
 use Symfony\Component\DependencyInjection\Attribute\TaggedLocator;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
-final class DistributionManagerProvider
+final readonly class DistributionManagerProvider
 {
-    private readonly ServiceLocator $manager;
+    private ServiceLocator $manager;
 
     public function __construct(
         #[TaggedLocator(DistributionManagerInterface::class, indexAttribute: 'key')] ServiceLocator $manager,

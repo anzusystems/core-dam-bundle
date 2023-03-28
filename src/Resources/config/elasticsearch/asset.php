@@ -67,7 +67,7 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'keyword',
                 ],
                 'size' => [
-                    'type' => 'integer',
+                    'type' => 'long',
                 ],
                 'ratioWidth' => [
                     'type' => 'integer',

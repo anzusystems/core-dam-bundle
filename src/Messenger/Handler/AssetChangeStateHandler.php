@@ -15,12 +15,12 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
 #[AsMessageHandler]
-final class AssetChangeStateHandler
+final readonly class AssetChangeStateHandler
 {
     public function __construct(
-        private readonly AssetRepository $assetRepository,
-        private readonly AssetFacade $assetFacade,
-        private readonly DamLogger $damLogger,
+        private AssetRepository $assetRepository,
+        private AssetFacade $assetFacade,
+        private DamLogger $damLogger,
     ) {
     }
 

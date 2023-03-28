@@ -17,4 +17,12 @@ interface DistributionManagerInterface
     public function updateExisting(Distribution $distribution, bool $flush = true): Distribution;
 
     public static function getDefaultKeyName(): string;
+
+    public function delete(Distribution $distribution, bool $flush = true): bool;
+
+    public function beginTransaction(): void;
+
+    public function commit(): void;
+
+    public function rollback(): void;
 }
