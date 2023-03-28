@@ -68,8 +68,7 @@ final class CustomDistributionFacade
             throw new ForbiddenOperationException(ForbiddenOperationException::IS_BLOCKING_ERROR);
         }
 
-        $manager = $this->managerProvider->get($distribution::class);
-        $manager->delete($distribution);
+        $this->managerProvider->get($distribution::class)->delete($distribution);
     }
 
     /**
