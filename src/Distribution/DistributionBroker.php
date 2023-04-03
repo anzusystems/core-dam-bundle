@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
+use Throwable;
 
 final class DistributionBroker
 {
@@ -82,6 +83,13 @@ final class DistributionBroker
             $this->distributionStatusManager->toFailed($distribution);
 
             return;
+        } catch (Throwable $e) {
+            $this->damLogger->warning(
+                DamLogger::NAMESPACE_DISTRIBUTION, sprintf(
+                'Unexpected distribution error (%s)', $e->getMessage()
+                )
+            );
+
         }
 
         if ($module instanceof RemoteProcessingDistributionModuleInterface) {
