@@ -84,12 +84,16 @@ final class DistributionBroker
 
             return;
         } catch (Throwable $e) {
-            $this->damLogger->warning(
-                DamLogger::NAMESPACE_DISTRIBUTION, sprintf(
-                'Unexpected distribution error (%s)', $e->getMessage()
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf(
+                    'Unexpected distribution error (%s)',
+                    $e->getMessage()
                 )
             );
 
+            $distribution->setFailReason(DistributionFailReason::Unknown);
+            $this->distributionStatusManager->toFailed($distribution);
         }
 
         if ($module instanceof RemoteProcessingDistributionModuleInterface) {
