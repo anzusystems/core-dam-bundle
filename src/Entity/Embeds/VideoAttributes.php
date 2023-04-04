@@ -106,12 +106,12 @@ class VideoAttributes
         return $this;
     }
 
-    public function getDuration(): float
+    public function getDuration(): int
     {
         return $this->duration;
     }
 
-    public function setDuration(float $duration): self
+    public function setDuration(int $duration): self
     {
         $this->duration = $duration;
 
