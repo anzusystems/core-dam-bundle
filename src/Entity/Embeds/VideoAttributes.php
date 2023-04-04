@@ -25,7 +25,7 @@ class VideoAttributes
     #[ORM\Column(type: Types::SMALLINT)]
     private int $rotation;
 
-    #[ORM\Column(type: Types::FLOAT)]
+    #[ORM\Column(type: Types::INTEGER)]
     private int $duration;
 
     #[ORM\Column(type: Types::STRING, length: 64)]
@@ -106,12 +106,12 @@ class VideoAttributes
         return $this;
     }
 
-    public function getDuration(): int
+    public function getDuration(): float
     {
         return $this->duration;
     }
 
-    public function setDuration(int $duration): self
+    public function setDuration(float $duration): self
     {
         $this->duration = $duration;
 
