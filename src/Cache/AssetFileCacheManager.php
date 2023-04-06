@@ -12,8 +12,8 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 final class AssetFileCacheManager
 {
-    private const CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
-    private const X_KEY_HEADER = 'xkey';
+    public const CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
+    public const X_KEY_HEADER = 'xkey';
     private const NOT_FOUND_TTL = 360;
 
     private AllowListConfiguration $allowListConfiguration;
@@ -52,6 +52,11 @@ final class AssetFileCacheManager
         return self::getSystemXkey() . '-' . $asset->getAsset()->getAttributes()->getAssetType()->toString();
     }
 
+    public static function getSystemXKey(): string
+    {
+        return 'anzu-' . AnzuApp::getAppSystem();
+    }
+
     private function setXKeys(Response $response, AssetFile $asset): void
     {
         $response->headers->set(self::X_KEY_HEADER, implode(' ', [
@@ -59,10 +64,5 @@ final class AssetFileCacheManager
             self::getAssetTypeXKey($asset),
             self::getAssetFileXKey((string) $asset->getId()),
         ]));
-    }
-
-    private static function getSystemXKey(): string
-    {
-        return 'anzu-' . AnzuApp::getAppSystem();
     }
 }

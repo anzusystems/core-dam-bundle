@@ -22,8 +22,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DistributionCategoryOptionRepository::class)]
-#[ORM\UniqueConstraint(name: 'UNIQ_select_name_value', fields: ['select', 'name', 'value'])]
-#[BaseAppAssert\UniqueEntity(fields: ['select', 'name', 'value'])]
+#[ORM\UniqueConstraint(name: 'UNIQ_select_name_value', fields: ['select', 'value'])]
+#[BaseAppAssert\UniqueEntity(fields: ['select', 'value'])]
 class DistributionCategoryOption implements TimeTrackingInterface, UserTrackingInterface, UuidIdentifiableInterface, PositionableInterface
 {
     use UuidIdentityTrait;
