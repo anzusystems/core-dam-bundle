@@ -77,7 +77,7 @@ class Distribution implements
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $distributionData;
 
-    #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     #[Serialize]
     protected ?DateTimeImmutable $publishAt;
 
