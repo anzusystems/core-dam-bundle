@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaGetDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaUploadDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadLinks;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use JsonException;
@@ -26,6 +27,10 @@ final class JwVideoClient implements LoggerAwareInterface
 {
     use SerializerAwareTrait;
     use LoggerAwareRequest;
+
+    private const CHUNK_SIZE = 50 * 1_024 * 1_024;
+    private const UPLOAD_TIMEOUT = 3_600;
+    private const UPLOAD_DURATION = 3_600;
 
     public function __construct(
         private readonly HttpClientInterface $client,
@@ -43,6 +48,9 @@ final class JwVideoClient implements LoggerAwareInterface
         JwDistributionServiceConfiguration $configuration,
         JwVideoMediaUploadDto $jwVideoDto,
     ): VideoUploadPayloadDto {
+        $data = $this->serializer->toArray($jwVideoDto);
+        $data['upload'] = ['method' => 'multipart'];
+
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
             message: '[JwVideoDistribution] create video object',
@@ -53,7 +61,7 @@ final class JwVideoClient implements LoggerAwareInterface
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
-            json: $this->serializer->toArray($jwVideoDto)
+            json: $data
         );
 
         if ($response->hasError()) {
@@ -66,25 +74,59 @@ final class JwVideoClient implements LoggerAwareInterface
     /**
      * @throws SerializerException
      */
-    public function uploadVideoObject(VideoUploadPayloadDto $videoUploadPayloadDto, File $file): void
+    public function uploadVideoObject(VideoUploadPayloadDto $dto, File $file): void
     {
         try {
-            $resource = fopen($file->getRealPath(), 'rb');
+            $partsCount = ceil(((int) $file->getSize()) / self::CHUNK_SIZE);
 
             $response = $this->client->request(
-                Request::METHOD_PUT,
-                $videoUploadPayloadDto->getUploadLink(),
+                Request::METHOD_GET,
+                sprintf('https://api.jwplayer.com/v2/uploads/%s/parts?page=1&page_length=%d', $dto->getUploadId(), $partsCount),
                 [
-                    'body' => $resource,
                     'headers' => [
-                        'Content-Type' => '',
+                        'Authorization' => 'Bearer ' . $dto->getUploadToken(),
+                        'Content-Type: application/json',
                     ],
-                    'timeout' => 3600,
-                    'max_duration' => 3600
                 ]
             );
 
-            fclose($resource);
+            $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
+
+            $handle = fopen($file->getRealPath(), 'rb');
+
+            foreach ($listData->getParts() as $part) {
+                $chunk = fread($handle, self::CHUNK_SIZE);
+
+                $response = $this->client->request(
+                    Request::METHOD_PUT,
+                    $part->getLink(),
+                    [
+                        'body' => $chunk,
+                        'headers' => [
+                            'Content-Length' => strlen($chunk),
+                            'Content-Type' => '',
+                        ],
+                        'timeout' => self::UPLOAD_TIMEOUT,
+                        'max_duration' => self::UPLOAD_DURATION,
+                    ]
+                );
+
+                $response->getContent();
+            }
+
+            fclose($handle);
+
+            $response = $this->client->request(
+                Request::METHOD_PUT,
+                sprintf('https://api.jwplayer.com/v2/uploads/%s/complete', $dto->getUploadId()),
+                [
+                    'headers' => [
+                        'Authorization' => 'Bearer ' . $dto->getUploadToken(),
+                        'Content-Type: application/json',
+                    ],
+                ]
+            );
+
             $response->getContent();
 
             return;
