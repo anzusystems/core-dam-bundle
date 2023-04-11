@@ -60,13 +60,16 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
         $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Prepare YT distribution for asset id (%s)', $assetFile->getId()));
 
+        $file = $this->getLocalFileCopy($assetFile);
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT Local file copy prepared (%s)', $assetFile->getId()));
+
         $video = $this->client->distribute(
             assetFile: $assetFile,
             distribution: $distribution,
             configuration: $this->distributionConfigurationProvider->getYoutubeDistributionService(
                 $distribution->getDistributionService()
             ),
-            file: $this->getLocalFileCopy($assetFile)
+            file: $file
         );
 
         if ($video) {

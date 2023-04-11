@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\HttpClient\JwVideoClient;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
@@ -27,6 +28,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         private readonly JwVideoClient $jwVideoClient,
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
         private readonly JwPlayerCustomDataFactory $customDataFactory,
+        private readonly DamLogger $logger,
     ) {
     }
 
@@ -43,13 +45,16 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
             return;
         }
 
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('JW creating video object (%s)', $assetFile->getId()));
         $createVideoDto = $this->jwVideoClient->createVideoObject(
             $this->distributionConfigurationProvider->getJwDistributionService($distribution->getDistributionService()),
             $this->jwVideoDtoFactory->createVideoDtoFromJwVideo($assetFile, $distribution),
         );
         $distribution->setExtId($createVideoDto->getId());
 
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('JW getting local file copy (%s)', $assetFile->getId()));
         $file = $this->getLocalFileCopy($assetFile);
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('JW upoloading (%s)', $assetFile->getId()));
         $this->jwVideoClient->uploadVideoObject($createVideoDto, $file);
     }
 

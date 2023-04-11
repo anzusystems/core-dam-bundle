@@ -327,11 +327,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $distributionTopic,
                                     ],
-                                    'ack_deadline_seconds' => '300s',
-                                    'retryPolicy' => [
-                                        'minimumBackoff' => '2s',
-                                        'maximumBackoff' => '600s',
-                                    ],
+                                    'ack_deadline_seconds' => '600s',
                                 ],
                             ],
                         ],
