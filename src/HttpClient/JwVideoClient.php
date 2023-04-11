@@ -69,11 +69,13 @@ final class JwVideoClient implements LoggerAwareInterface
     public function uploadVideoObject(VideoUploadPayloadDto $videoUploadPayloadDto, File $file): void
     {
         try {
+            $resource = fopen($file->getRealPath(), 'rb');
+
             $response = $this->client->request(
                 Request::METHOD_PUT,
                 $videoUploadPayloadDto->getUploadLink(),
                 [
-                    'body' => file_get_contents($file->getRealPath()),
+                    'body' => $resource,
                     'headers' => [
                         'Content-Type' => '',
                     ],
@@ -82,6 +84,7 @@ final class JwVideoClient implements LoggerAwareInterface
                 ]
             );
 
+            fclose($resource);
             $response->getContent();
 
             return;
