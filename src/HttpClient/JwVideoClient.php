@@ -77,6 +77,8 @@ final class JwVideoClient implements LoggerAwareInterface
                     'headers' => [
                         'Content-Type' => '',
                     ],
+                    'timeout' => 3600,
+                    'max_duration' => 3600
                 ]
             );
 
