@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
@@ -50,12 +51,18 @@ class AssetSlotFacade
      */
     public function update(Asset $asset, Collection $list): ApiResponseList
     {
-        $this->validator->validate($list);
-        $this->validateOwnership($asset, $list);
+        $filteredList = $list->filter(fn (AssetSlotMinimalAdmDto $dto): bool => $dto->getAssetFile() instanceof AssetFile);
+
+        $this->validator->validate($filteredList);
+        $this->validateOwnership($asset, $filteredList);
 
         /** @var ArrayCollection<int, AssetSlot> $newSlots */
         $newSlots = new ArrayCollection();
-        foreach ($list as $minimalSlot) {
+        foreach ($filteredList as $minimalSlot) {
+            if (null === $minimalSlot->getAssetFile()) {
+                continue;
+            }
+
             $slot = $asset->getSlots()->filter(fn (AssetSlot $slot): bool => $slot->getName() === $minimalSlot->getSlotName())->first();
             if ($slot instanceof AssetSlot) {
                 $newSlots->add($slot->setAssetFile($minimalSlot->getAssetFile()));
@@ -91,14 +98,14 @@ class AssetSlotFacade
         foreach ($asset->getSlots() as $slot) {
             if (null === CollectionHelper::findFirst(
                 $list,
-                fn (AssetSlotMinimalAdmDto $minimalSlot): bool => $minimalSlot->getAssetFile()->getId() === $slot->getAssetFile()->getId()
+                fn (AssetSlotMinimalAdmDto $minimalSlot): bool => $minimalSlot->getAssetFile()?->getId() === $slot->getAssetFile()->getId()
             )) {
                 throw new ForbiddenOperationException(ForbiddenOperationException::ASSET_DELETE_DURING_REORDER);
             }
         }
 
         foreach ($list as $index => $minimalSlot) {
-            if (false === ($minimalSlot->getAssetFile()->getAsset() === $asset)) {
+            if (false === ($minimalSlot->getAssetFile()?->getAsset() === $asset)) {
                 throw (new ValidationException())
                     ->addFormattedError("[{$index}].assetFile", ValidationException::ERROR_FIELD_INVALID);
             }

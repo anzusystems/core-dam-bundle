@@ -20,7 +20,7 @@ final class AssetSlotMinimalAdmDto
 
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    private AssetFile $assetFile;
+    private ?AssetFile $assetFile = null;
 
     public function getSlotName(): string
     {
@@ -34,12 +34,12 @@ final class AssetSlotMinimalAdmDto
         return $this;
     }
 
-    public function getAssetFile(): AssetFile
+    public function getAssetFile(): ?AssetFile
     {
         return $this->assetFile;
     }
 
-    public function setAssetFile(AssetFile $assetFile): self
+    public function setAssetFile(?AssetFile $assetFile): self
     {
         $this->assetFile = $assetFile;
 

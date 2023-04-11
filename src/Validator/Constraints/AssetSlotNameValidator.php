@@ -22,6 +22,10 @@ final class AssetSlotNameValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, AssetSlotMinimalAdmDto::class);
         }
 
+        if (null === $value->getAssetFile()) {
+            return;
+        }
+
         $this->validateSlot($value->getAssetFile(), $value->getSlotName());
     }
 
