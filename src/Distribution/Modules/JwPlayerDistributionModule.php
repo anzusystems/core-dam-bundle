@@ -56,6 +56,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         $file = $this->getLocalFileCopy($assetFile);
         $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('JW upoloading (%s)', $assetFile->getId()));
         $this->jwVideoClient->uploadVideoObject($createVideoDto, $file);
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('JW video uploaded (%s)', $assetFile->getId()));
     }
 
     /**
