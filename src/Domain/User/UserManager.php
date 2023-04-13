@@ -25,7 +25,6 @@ class UserManager extends AbstractManager
     {
         $this->trackModification($user);
         $user
-            ->setEnabled(false)
             ->setAssetLicences(new ArrayCollection())
             ->setUserToExtSystems(new ArrayCollection())
             ->setPermissions([])
