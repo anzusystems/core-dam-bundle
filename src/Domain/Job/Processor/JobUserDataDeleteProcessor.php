@@ -71,11 +71,9 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
                 idFrom: $job->getLastBatchProcessedRecord() ?: null
             );
             $removedCount = $this->assetFacade->deleteBulk($assets);
-            if (0 === $removedCount) {
+            if (0 === $removedCount && $job->isAnonymizeUser()) {
                 $this->licenceFacade->deleteBulk($licencesWithUserOnlyMembership);
-                if ($job->isAnonymizeUser()) {
-                    $this->userManager->deletePersonalData($user, false);
-                }
+                $this->userManager->deletePersonalData($user, false);
             }
             $this->finishProcessCycle($job, $removedCount, $assets->last() ?: null);
             $this->entityManager->commit();

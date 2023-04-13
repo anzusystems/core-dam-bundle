@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\Domain\Job\JobProcessor;
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
-use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
 use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
@@ -18,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
-use Doctrine\ORM\EntityManagerInterface;
 
 final class JobUserDataDeleteProcessorTest extends CoreDamKernelTestCase
 {
