@@ -75,6 +75,7 @@ final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
 
         $this->synchronizerProcessor->process($job);
         $this->assertEquals(JobStatus::Done, $job->getStatus());
+        $this->assertEquals('Podcast job finished. Imported 8 episodes.', $job->getResult());
     }
 
     public function testSpecificPodcastSyncProcess(): void

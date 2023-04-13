@@ -49,6 +49,9 @@ class PodcastManager extends AbstractManager
             ->setFileSlot($newPodcast->getAttributes()->getFileSlot())
             ->setMode($newPodcast->getAttributes()->getMode())
         ;
+        $podcast->getDates()
+            ->setImportFrom($newPodcast->getDates()->getImportFrom())
+        ;
         $this->flush($flush);
 
         return $podcast;

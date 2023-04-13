@@ -91,11 +91,7 @@ final class PodcastRssReader
     {
         foreach (array_reverse($this->body->channel->xpath('item')) as $item) {
             $item = $this->readItem($item);
-
-            //            dump('Reading '. $item->getTitle() . ' ' .  $item->getPubDate()->format('Y.m.d H:i:s'));
-
             if ($item->getPubDate() && $from && $from > $item->getPubDate()) {
-                //                dump('CONTINUE because '. $from->format('Y.m.d H:i:s'));
                 continue;
             }
 
