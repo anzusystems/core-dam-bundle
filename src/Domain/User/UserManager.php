@@ -26,6 +26,11 @@ class UserManager extends AbstractManager
         $this->trackModification($user);
         $user
             ->setAssetLicences(new ArrayCollection())
+            ->setUserToExtSystems(new ArrayCollection())
+            ->setPermissions([])
+            ->setPermissionGroups(new ArrayCollection())
+            ->setAllowedAssetExternalProviders([])
+            ->setAllowedDistributionServices([])
             ->setEmail(sprintf('deleted_%s@adam.sme.sk', Uuid::v7()))
         ;
         $this->eventDispatcher->dispatch(new UserDeletePersonalDataEvent($user));
