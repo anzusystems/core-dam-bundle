@@ -31,6 +31,7 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
     {
         return new ArrayCollection(
             $this->getAllForIndexRebuildQuery($config)
+                ->orderBy('entity.id', Criteria::ASC)
                 ->setMaxResults($config->getBatchSize())
                 ->getQuery()->getResult()
         );
