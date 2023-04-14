@@ -56,6 +56,7 @@ final class CropProcessor
 
         $this->imageManipulator->applyFilterStack(
             new FilterStack([
+                new AutoRotateFilter(true),
                 new CropFilter(
                     $recalculatedCrop->getPointX(),
                     $recalculatedCrop->getPointY(),
@@ -64,7 +65,6 @@ final class CropProcessor
                 ),
                 new ResizeFilter($recalculatedCrop->getRequestWidth(), $recalculatedCrop->getRequestHeight()),
                 new QualityFilter($recalculatedCrop->getQuality()),
-                new AutoRotateFilter(true),
             ])
         );
 

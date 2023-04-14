@@ -24,7 +24,7 @@ final readonly class AssetFileStorageOperator
      */
     public function save(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $path = $this->nameGenerator->generatePath(FileHelper::guessExtension((string) $file->getMimeType()));
+        $path = $this->nameGenerator->generatePath(FileHelper::guessExtension((string) $file->getMimeType()), true);
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($assetFile);
 
         $fileSystem->writeStream(

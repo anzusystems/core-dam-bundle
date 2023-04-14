@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -16,18 +15,16 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'anzu-dam:allow-list:debug',
-    description: 'Synchronize ext system by base configuration.'
+    description: 'Shows crops and domains for specific ext system.'
 )]
 final class DebugAllowListCommand extends Command
 {
-    use OutputUtilTrait;
     private const ARG_EXT_SYSTEM_SLUG = 'ext_system_slug';
 
     public function __construct(
         private readonly array $domainAllowMap,
         private readonly array $domains,
         private readonly array $domainAllowList,
-        private readonly array $domainNames,
     ) {
         parent::__construct();
     }
