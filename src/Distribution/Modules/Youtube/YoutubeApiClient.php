@@ -154,7 +154,7 @@ final class YoutubeApiClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $videoFile->getId())
+                sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $distributionId)
             );
         }
     }
