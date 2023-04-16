@@ -76,7 +76,7 @@ final class DefaultRegionOfInterestFactory
         return $roi
             ->setPointX($pointX)
             ->setPointY($pointY)
-            ->setPercentageWidth(round($widthPercentage, self::ROI_PERCENTAGE_DECIMAL_PLACES))
-            ->setPercentageHeight(round($heightPercentage, self::ROI_PERCENTAGE_DECIMAL_PLACES));
+            ->setPercentageWidth(floor(($widthPercentage * 100)) / 100)
+            ->setPercentageHeight(floor(($heightPercentage * 100)) / 100);
     }
 }

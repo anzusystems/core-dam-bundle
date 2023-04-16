@@ -25,7 +25,7 @@ final readonly class FileFactory
      */
     public function createFromChunks(AssetFile $assetFile): AdapterFile
     {
-        $path = $this->nameGenerator->generatePath('m4a');
+        $path = $this->nameGenerator->generatePath();
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
 
         $firstChunk = $assetFile->getChunks()->first();

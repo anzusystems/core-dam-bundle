@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
 use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
@@ -53,8 +54,9 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
      */
     public function distribute(Distribution $distribution): void
     {
+        /** @var VideoFile $assetFile */
         $assetFile = $this->assetFileRepository->find($distribution->getAssetFileId());
-        if (null === $assetFile) {
+        if (false === ($assetFile instanceof VideoFile)) {
             return;
         }
 
@@ -74,15 +76,6 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
         if ($video) {
             $distribution->setExtId($video->getId());
-            if (false === empty($distribution->getPlaylist())) {
-                $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT setting playlist for asset id (%s)', $assetFile->getId()));
-
-                $this->client->setPlaylist(
-                    distributionService: $distribution->getDistributionService(),
-                    videoId: $distribution->getExtId(),
-                    playlistId: $distribution->getPlaylist()
-                );
-            }
 
             return;
         }
@@ -98,6 +91,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     }
 
     /**
+     * @param YoutubeDistribution $distribution
+     *
      * @throws Exception
      * @throws InvalidArgumentException
      * @throws SerializerException
@@ -113,6 +108,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
         if (YoutubeVideoDto::UPLOAD_STATUS_PROCESSED === $video->getUploadStatus()) {
             $distribution->setDistributionData($this->youtubeCustomDataFactory->createDistributionData($video));
+            $this->updatePreviewAndPlaylist($distribution);
 
             return;
         }
@@ -132,5 +128,35 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         }
 
         return null;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * @throws SerializerException
+     * @throws Exception
+     */
+    private function updatePreviewAndPlaylist(YoutubeDistribution $distribution): void
+    {
+        /** @var VideoFile $video */
+        $video = $this->assetFileRepository->find($distribution->getAssetFileId());
+        if (false === ($video instanceof VideoFile)) {
+            return;
+        }
+
+        if (false === empty($distribution->getPlaylist())) {
+            $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT setting playlist for asset id (%s)', $video->getId()));
+
+            $this->client->setPlaylist(
+                distributionService: $distribution->getDistributionService(),
+                videoId: $distribution->getExtId(),
+                playlistId: $distribution->getPlaylist()
+            );
+        }
+
+        $this->client->setThumbnail(
+            distributionService: $distribution->getDistributionService(),
+            distributionId: $distribution->getExtId(),
+            videoFile: $video
+        );
     }
 }

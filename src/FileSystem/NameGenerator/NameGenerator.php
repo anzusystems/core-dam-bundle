@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\FileSystem\NameGenerator;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Model\Dto\NameGenerator\GeneratedPath;
 
-class NameGenerator
+readonly class NameGenerator
 {
     public function __construct(
-        private readonly FileNameGeneratorInterface $fileNameGenerator,
-        private readonly DirectoryNamGeneratorInterface $directoryNameGenerator,
+        private FileNameGeneratorInterface $fileNameGenerator,
+        private DirectoryNamGeneratorInterface $directoryNameGenerator,
     ) {
     }
 
@@ -40,10 +41,10 @@ class NameGenerator
         );
     }
 
-    public function generatePath(?string $extension = null): GeneratedPath
+    public function generatePath(?string $extension = null, bool $dateDirPath = false): GeneratedPath
     {
         return new GeneratedPath(
-            dir: $this->directoryNameGenerator->generateDirectoryPath(),
+            dir: $this->directoryNameGenerator->generateDirectoryPath($dateDirPath ? App::getAppDate() : null),
             fileName: $this->fileNameGenerator->generateFileName(
                 extension: $extension
             ),

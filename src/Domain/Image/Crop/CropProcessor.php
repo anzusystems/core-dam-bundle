@@ -56,6 +56,7 @@ final class CropProcessor
 
         $this->imageManipulator->applyFilterStack(
             new FilterStack([
+                new AutoRotateFilter(true),
                 new CropFilter(
                     $recalculatedCrop->getPointX(),
                     $recalculatedCrop->getPointY(),
@@ -64,7 +65,6 @@ final class CropProcessor
                 ),
                 new ResizeFilter($recalculatedCrop->getRequestWidth(), $recalculatedCrop->getRequestHeight()),
                 new QualityFilter($recalculatedCrop->getQuality()),
-                new AutoRotateFilter(true),
             ])
         );
 
@@ -106,13 +106,13 @@ final class CropProcessor
         $resizeRatio = $optimalResize->getWidth() / $image->getImageAttributes()->getWidth();
 
         return new ImageCropDto(
-            (int) ($imageCrop->getPointX() * $resizeRatio),
-            (int) ($imageCrop->getPointY() * $resizeRatio),
-            (int) ($imageCrop->getWidth() * $resizeRatio),
-            (int) ($imageCrop->getHeight() * $resizeRatio),
-            $imageCrop->getRequestWidth(),
-            $imageCrop->getRequestHeight(),
-            $imageCrop->getQuality(),
+            pointX: (int) ($imageCrop->getPointX() * $resizeRatio),
+            pointY: (int) ($imageCrop->getPointY() * $resizeRatio),
+            width: min((int) ($imageCrop->getWidth() * $resizeRatio), $optimalResize->getWidth()),
+            height: min((int) ($imageCrop->getHeight() * $resizeRatio), $optimalResize->getHeight()),
+            requestWidth: $imageCrop->getRequestWidth(),
+            requestHeight: $imageCrop->getRequestHeight(),
+            quality: $imageCrop->getQuality(),
         );
     }
 }

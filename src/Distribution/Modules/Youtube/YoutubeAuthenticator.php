@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Event\DistributionAuthorized;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\YoutubeAuthorizationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\AccessTokenDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\ExchangeCodeStateDto;
@@ -60,6 +61,18 @@ final class YoutubeAuthenticator
         $client->setState($exchangeToken->getState());
 
         return $client->createAuthUrl();
+    }
+
+    /**
+     * @throws PsrInvalidArgumentException
+     */
+    public function logout(string $distributionService): void
+    {
+        if (false === $this->tokenStorage->hasRefreshToken($distributionService)) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
+        }
+
+        $this->tokenStorage->clearTokens($distributionService);
     }
 
     /**
@@ -149,7 +162,7 @@ final class YoutubeAuthenticator
      * @throws PsrInvalidArgumentException
      * @throws SerializerException
      */
-    private function refreshAccessToken(
+    public function refreshAccessToken(
         RefreshTokenDto $refreshTokenDto
     ): AccessTokenDto {
         $tokenRaw = $this->clientProvider

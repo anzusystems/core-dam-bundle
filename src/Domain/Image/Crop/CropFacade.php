@@ -4,21 +4,50 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
+use Doctrine\ORM\NonUniqueResultException;
+use DomainException;
 use League\Flysystem\FilesystemException;
 
 final readonly class CropFacade
 {
     public function __construct(
-        private readonly CropFactory $cropFactory,
-        private readonly CropProcessor $cropProcessor,
-        private readonly AllowListConfiguration $allowListConfiguration,
+        private CropFactory $cropFactory,
+        private CropProcessor $cropProcessor,
+        private AllowListConfiguration $allowListConfiguration,
+        private RegionOfInterestRepository $regionOfInterestRepository,
     ) {
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidCropException
+     * @throws NonUniqueResultException
+     */
+    public function applyCropPayloadToDefaultRoi(
+        ImageFile $image,
+        RequestedCropDto $cropPayload,
+        bool $validate = true
+    ): string {
+        if ($image->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            throw new DomainException(sprintf('Image id (%s) is not processed', $image->getId()));
+        }
+
+        $roi = $this->regionOfInterestRepository->findByImageIdAndPosition((string) $image->getId(), App::ZERO);
+        if (null === $roi) {
+            throw new DomainException(sprintf('Image has no default ROI (%s)', $image->getId()));
+        }
+
+        return $this->applyCropPayload($image, $cropPayload, $roi, $validate);
     }
 
     /**
@@ -30,8 +59,11 @@ final readonly class CropFacade
         ImageFile $image,
         RequestedCropDto $cropPayload,
         RegionOfInterest $roi,
+        bool $validate = true
     ): string {
-        $this->validateCrop($image, $cropPayload);
+        if ($validate) {
+            $this->validateCrop($image, $cropPayload);
+        }
         $crop = $this->cropFactory->prepareImageCrop($roi, $cropPayload, $image);
 
         return $this->cropProcessor->applyCrop($image, $crop);

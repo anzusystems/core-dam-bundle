@@ -66,6 +66,26 @@ final class YoutubeDistributionController extends AbstractApiController
     }
 
     /**
+     * @throws AppReadOnlyModeException
+     * @throws InvalidArgumentException
+     */
+    #[Route('/{distributionService}/logout', name: 'logout', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('distributionService'), OAResponse(AuthorizeUrlAdmGetDto::class)]
+    public function logout(string $distributionService): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
+
+        try {
+            $this->youtubeAuthenticator->logout($distributionService);
+
+            return $this->noContentResponse();
+        } catch (DomainException) {
+            throw new NotFoundHttpException(sprintf('YT Distribution service (%s) not found', $distributionService));
+        }
+    }
+
+    /**
      * @throws NonUniqueResultException
      */
     #[Route('/asset-file/{assetFile}/prepare-payload/{distributionService}', name: 'prepare_payload', methods: [Request::METHOD_GET])]
