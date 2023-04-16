@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeApiClient;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
 use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
@@ -16,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
@@ -28,11 +32,15 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     RemoteProcessingDistributionModuleInterface,
     PreviewProvidableModuleInterface
 {
+    private const YOUTUBE_DISTRIBUTION_TAG = 'youtube_distribution';
+
     public function __construct(
         private readonly YoutubeApiClient $client,
         private readonly YoutubeAuthenticator $authenticator,
         private readonly DamLogger $logger,
-        private readonly YoutubeCustomDataFactory $youtubeCustomDataFactory
+        private readonly YoutubeCustomDataFactory $youtubeCustomDataFactory,
+        private readonly ConfigurationProvider $configurationProvider,
+        private readonly CropFacade $cropFacade,
     ) {
     }
 
@@ -137,14 +145,11 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
      */
     private function updatePreviewAndPlaylist(YoutubeDistribution $distribution): void
     {
-        /** @var VideoFile $video */
-        $video = $this->assetFileRepository->find($distribution->getAssetFileId());
-        if (false === ($video instanceof VideoFile)) {
-            return;
-        }
-
         if (false === empty($distribution->getPlaylist())) {
-            $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT setting playlist for asset id (%s)', $video->getId()));
+            $this->logger->info(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('YT setting playlist for asset id (%s)', $distribution->getAssetFileId())
+            );
 
             $this->client->setPlaylist(
                 distributionService: $distribution->getDistributionService(),
@@ -153,10 +158,43 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             );
         }
 
+        $this->setThumbnail($distribution);
+    }
+
+    private function setThumbnail(YoutubeDistribution $distribution): void
+    {
+        /** @var VideoFile $video */
+        $video = $this->assetFileRepository->find($distribution->getAssetFileId());
+        if (false === ($video instanceof VideoFile)) {
+            return;
+        }
+
+        $imageFile = $video->getImagePreview()?->getImageFile();
+        if (null === $imageFile) {
+            return;
+        }
+
+        $cropItem = $this->configurationProvider->getFirstCropAllowItemByTag(self::YOUTUBE_DISTRIBUTION_TAG);
+        if (null === $cropItem) {
+            $this->logger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('Youtube thumbnail update failed, crop allow item with tag (%s) not found', self::YOUTUBE_DISTRIBUTION_TAG)
+            );
+
+            return;
+        }
+
         $this->client->setThumbnail(
             distributionService: $distribution->getDistributionService(),
             distributionId: $distribution->getExtId(),
-            videoFile: $video
+            imageData: $this->cropFacade->applyCropPayloadToDefaultRoi(
+                image: $imageFile,
+                cropPayload: (new RequestedCropDto())
+                    ->setRoi(App::ZERO)
+                    ->setRequestHeight($cropItem->getHeight())
+                    ->setRequestWidth($cropItem->getWidth()),
+                validate: false
+            )
         );
     }
 }

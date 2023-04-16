@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 
-use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\YoutubeDistributionServiceConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistCollectionDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\PlaylistDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeLanguageDto;
@@ -41,8 +36,6 @@ final class YoutubeApiClient
     public const MAX_PAGE = 5;
     public const MAX_RESULTS = 50;
 
-    private const YOUTUBE_DISTRIBUTION_TAG = 'youtube_distribution';
-
     private const QUOTA_EXCEEDED_REASON = 'quotaExceeded';
     private const VIDEO_RESOURCE_TYPE = 'youtube#video';
     private const CHUNK_SIZE = 5 * 1_024 * 1_024;
@@ -52,8 +45,6 @@ final class YoutubeApiClient
         private readonly GoogleClientProvider $clientProvider,
         private readonly YoutubeAuthenticator $authenticator,
         private readonly DamLogger $damLogger,
-        private readonly ConfigurationProvider $configurationProvider,
-        private readonly CropFacade $cropFacade,
     ) {
     }
 
@@ -149,37 +140,15 @@ final class YoutubeApiClient
     public function setThumbnail(
         string $distributionService,
         string $distributionId,
-        VideoFile $videoFile,
+        string $imageData,
     ): void {
         $client = $this->clientProvider->getClient($distributionService);
         $client->setAccessToken($this->authenticator->getAccessToken($distributionService)->getAccessToken());
 
-        $imageFile = $videoFile->getImagePreview()?->getImageFile();
-        if (null === $imageFile) {
-            return;
-        }
-
-        $cropItem = $this->configurationProvider->getFirstCropAllowItemByTag(self::YOUTUBE_DISTRIBUTION_TAG);
-        if (null === $cropItem) {
-            $this->damLogger->error(
-                DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube thumbnail update failed, crop allow item with tag (%s) not found', self::YOUTUBE_DISTRIBUTION_TAG)
-            );
-
-            return;
-        }
-
         try {
             $youtubeService = new Google_Service_YouTube($client);
             $response = $youtubeService->thumbnails->set($distributionId, [
-                'data' => $this->cropFacade->applyCropPayloadToDefaultRoi(
-                    image: $imageFile,
-                    cropPayload: (new RequestedCropDto())
-                        ->setRoi(App::ZERO)
-                        ->setRequestHeight($cropItem->getHeight())
-                        ->setRequestWidth($cropItem->getWidth()),
-                    validate: false
-                ),
+                'data' => $imageData,
                 'mimeType' => CropProcessor::DEFAULT_MIME_TYPE,
             ]);
         } catch (Throwable $exception) {
