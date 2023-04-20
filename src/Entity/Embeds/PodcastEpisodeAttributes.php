@@ -17,7 +17,7 @@ class PodcastEpisodeAttributes
     #[ORM\Column(type: Types::STRING, length: 2_048)]
     private string $rssUrl;
 
-    #[ORM\Column(type: Types::STRING, length: 256)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private string $rssId;
 
     #[ORM\Column(enumType: PodcastEpisodeStatus::class)]

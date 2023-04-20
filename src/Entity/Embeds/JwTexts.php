@@ -27,7 +27,7 @@ class JwTexts
 
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(max: 5_000, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    #[ORM\Column(type: Types::STRING, length: 256)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
     private string $author;
 
