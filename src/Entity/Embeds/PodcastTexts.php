@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastTexts
 {
-    public const TITLE_LENGTH = 100;
+    public const TITLE_LENGTH = 127;
     public const DESCRIPTION_LENGTH = 2_000;
 
     #[ORM\Column(type: Types::STRING, length: 128)]
