@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -31,6 +33,25 @@ final class AssetRepository extends AbstractAnzuRepository
                     'id' => $ids,
                 ]
             )
+        );
+    }
+
+    /**
+     * @return Collection<int, Asset>
+     */
+    public function findToDelete(DateTimeInterface $createdAtUntil, int $limit): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->andWhere('entity.assetFlags.autoDeleteUnprocessed = :true')
+                ->andWhere('entity.attributes.status = :draftStatus')
+                ->andWhere('entity.createdAt < :createdAtUntil')
+                ->setParameter('true', true)
+                ->setParameter('draftStatus', AssetStatus::DRAFT)
+                ->setParameter('createdAtUntil', $createdAtUntil->format(DATE_ATOM))
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
         );
     }
 
