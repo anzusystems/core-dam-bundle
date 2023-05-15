@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeApiClient;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
+use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;

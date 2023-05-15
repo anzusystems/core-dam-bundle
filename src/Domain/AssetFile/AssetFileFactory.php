@@ -83,7 +83,11 @@ abstract class AssetFileFactory
     public function createFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
     {
         $assetFile = $this->createBlankAssetFile($file, $assetLicence, $id);
-        $this->assetFactory->createForAssetFile($assetFile, $assetLicence);
+        $this->assetFactory->createForAssetFile(
+            assetFile: $assetFile,
+            assetLicence: $assetLicence,
+            id: $id
+        );
 
         return $assetFile;
     }

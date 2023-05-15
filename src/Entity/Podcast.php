@@ -57,6 +57,14 @@ class Podcast implements
     #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
+    #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    #[Serialize]
+    #[Assert\Valid]
+    #[AppAssert\EqualLicence]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
+    protected ?ImagePreview $altImage;
+
     #[ORM\Embedded(class: PodcastTexts::class)]
     #[Serialize]
     #[Assert\Valid]
@@ -81,7 +89,20 @@ class Podcast implements
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
         $this->setImagePreview(null);
+        $this->setAltImage(null);
         $this->setDates(new PodcastDates());
+    }
+
+    public function getAltImage(): ?ImagePreview
+    {
+        return $this->altImage;
+    }
+
+    public function setAltImage(?ImagePreview $altImage): self
+    {
+        $this->altImage = $altImage;
+
+        return $this;
     }
 
     public function getImagePreview(): ?ImagePreview

@@ -43,7 +43,7 @@ final class DamLogger
             $context->setError($exception->getMessage());
         }
 
-        $this->appLogger->error("[{$namespace}] {$message}", $this->serializer->toArray($context));
+        $this->appLogger->error("_{$namespace}_ {$message}", $this->serializer->toArray($context));
     }
 
     /**
@@ -55,7 +55,7 @@ final class DamLogger
         $context->setContent($content);
         $context->setParams($params);
 
-        $this->appLogger->info("[{$namespace}] {$message}", $this->serializer->toArray($context));
+        $this->appLogger->info("_{$namespace}_ {$message}", $this->serializer->toArray($context));
     }
 
     /**
@@ -67,6 +67,6 @@ final class DamLogger
         $context->setContent($content);
         $context->setParams($params);
 
-        $this->appLogger->warning("[{$namespace}] {$message}", $this->serializer->toArray($context));
+        $this->appLogger->warning("_{$namespace}_ {$message}", $this->serializer->toArray($context));
     }
 }

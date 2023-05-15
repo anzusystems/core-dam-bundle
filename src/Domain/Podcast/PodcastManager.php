@@ -38,7 +38,13 @@ class PodcastManager extends AbstractManager
     public function update(Podcast $podcast, Podcast $newPodcast, bool $flush = true): Podcast
     {
         $this->trackModification($podcast);
-        $this->imagePreviewManager->setImagePreviewRelation($podcast, $newPodcast);
+
+        $podcast->setImagePreview(
+            $this->imagePreviewManager->getNewImagePreview($podcast->getImagePreview(), $newPodcast->getImagePreview())
+        );
+        $podcast->setAltImage(
+            $this->imagePreviewManager->getNewImagePreview($podcast->getAltImage(), $newPodcast->getAltImage())
+        );
 
         $podcast->getTexts()
             ->setTitle($newPodcast->getTexts()->getTitle())

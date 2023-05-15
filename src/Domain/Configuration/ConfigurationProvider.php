@@ -98,4 +98,11 @@ final class ConfigurationProvider
             $type
         );
     }
+
+    public function getFirstTaggedAllowItem(string $type): ?CropAllowItem
+    {
+        $cropList = $this->getImageAdminSizeList($type);
+
+        return reset($cropList) ?: null;
+    }
 }
