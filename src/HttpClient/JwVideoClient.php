@@ -45,7 +45,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] get video object',
+            message: '_JwVideoDistribution_ create thumbnail',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/",
             method: Request::METHOD_POST,
             headers: [
@@ -76,11 +76,15 @@ final class JwVideoClient implements LoggerAwareInterface
         return $this->serializer->deserialize($response->getContent(), JwVideoThumbnail::class);
     }
 
-    public function getPoster(JwDistributionServiceConfiguration $configuration, string $thumbnailId): JwVideoThumbnail
+    /**
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function getThumbnail(JwDistributionServiceConfiguration $configuration, string $thumbnailId): JwVideoThumbnail
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] get video object',
+            message: '_JwVideoDistribution_ get thumbnail',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",
@@ -96,11 +100,14 @@ final class JwVideoClient implements LoggerAwareInterface
         return $this->serializer->deserialize($response->getContent(), JwVideoThumbnail::class);
     }
 
+    /**
+     * @throws JsonException
+     */
     public function setPoster(JwDistributionServiceConfiguration $configuration, string $thumbnailId): void
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] get video object',
+            message: '_JwVideoDistribution_ set poster',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
             method: Request::METHOD_PATCH,
             headers: [
@@ -137,7 +144,7 @@ final class JwVideoClient implements LoggerAwareInterface
 
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] create video object',
+            message: '_JwVideoDistribution_ create video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media",
             method: Request::METHOD_POST,
             headers: [
@@ -232,7 +239,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] get video object',
+            message: '_JwVideoDistribution_ get video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media/{$distribution->getExtId()}/",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",

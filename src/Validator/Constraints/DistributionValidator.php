@@ -144,20 +144,10 @@ final class DistributionValidator extends ConstraintValidator
         }
 
         match ($requirements->getStrategy()) {
-            DistributionRequirementStrategy::None => $this->validateNoneStrategy($distribution),
+            DistributionRequirementStrategy::None => null,
             DistributionRequirementStrategy::AtLeastOne => $this->validateAtLeastOneStrategy($distribution),
             DistributionRequirementStrategy::WaitForAll => $this->validateWaitForAllStrategy($distribution, $requirements),
         };
-    }
-
-    private function validateNoneStrategy(
-        Distribution $distribution,
-    ): void {
-        if (false === $distribution->getBlockedBy()->isEmpty()) {
-            $this->context->buildViolation(self::BLOCKED_BY_STRATEGY)
-                ->atPath('blockedBy')
-                ->addViolation();
-        }
     }
 
     private function validateAtLeastOneStrategy(

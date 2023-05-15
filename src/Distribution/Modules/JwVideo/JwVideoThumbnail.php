@@ -12,6 +12,8 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\JwVideoThumbnailPosterMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use JsonException;
 
 final class JwVideoThumbnail extends AbstractDistributionDtoFactory
 {
@@ -40,11 +42,15 @@ final class JwVideoThumbnail extends AbstractDistributionDtoFactory
         ));
     }
 
+    /**
+     * @throws SerializerException
+     * @throws JsonException
+     */
     public function makeThumbnailPoster(string $thumbnailId, string $distribService): void
     {
         $config = $this->distributionConfigurationProvider->getJwDistributionService($distribService);
 
-        $thumbnail = $this->jwVideoClient->getPoster($config, $thumbnailId);
+        $thumbnail = $this->jwVideoClient->getThumbnail($config, $thumbnailId);
         if ($thumbnail->getStatus()->is(JwMediaStatus::Ready)) {
             $this->jwVideoClient->setPoster(
                 configuration: $config,
