@@ -45,5 +45,6 @@ final class AssetFileMetadataProcessHandler
         );
 
         $this->metadataProcessor->process($assetFile, $file);
+        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
     }
 }

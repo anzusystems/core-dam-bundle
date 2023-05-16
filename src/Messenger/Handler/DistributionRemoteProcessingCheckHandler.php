@@ -14,11 +14,11 @@ use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
-final class DistributionRemoteProcessingCheckHandler
+final readonly class DistributionRemoteProcessingCheckHandler
 {
     public function __construct(
-        private readonly DistributionRepository $distributionRepository,
-        private readonly DistributionBroker $distributionBroker,
+        private DistributionRepository $distributionRepository,
+        private DistributionBroker $distributionBroker,
     ) {
     }
 

@@ -62,7 +62,8 @@ final class OptimalResizeFactory extends AbstractManager
 
         // Prepare path and folder for Visp to write crop file
         $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();
-        $tmpPath = $this->nameGenerator->generatePath(AbstractImageController::CROP_EXTENSION)->getRelativePath();
+        $tmpPath = $tmpFilesystem->getTmpFileName(AbstractImageController::CROP_EXTENSION);
+
         $tmpFilesystem->ensureDirectory($tmpPath);
         // Write rotated crop file
         $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($tmpPath), false);

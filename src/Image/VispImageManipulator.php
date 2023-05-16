@@ -129,16 +129,14 @@ final class VispImageManipulator extends AbstractImageManipulator
 
     /**
      * @throws FilesystemException
-     * @throws Exception
      * @throws ImageManipulatorException
      */
     public function getStream(string $extension)
     {
         $this->ensureImage();
 
-        $tmpFilePath = $this->nameGenerator->generatePath($extension)->getRelativePath();
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
-
+        $tmpFilePath = $fileSystem->getTmpFileName();
         $this->image->writeToFile($fileSystem->extendPath($tmpFilePath));
 
         return $fileSystem->readStream($tmpFilePath);
@@ -155,7 +153,6 @@ final class VispImageManipulator extends AbstractImageManipulator
     }
 
     /**
-     * @throws Exception
      * @throws ImageManipulatorException
      */
     public function rotate(float $angle): void
