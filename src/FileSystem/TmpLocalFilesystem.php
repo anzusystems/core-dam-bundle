@@ -28,6 +28,7 @@ final class TmpLocalFilesystem extends LocalFilesystem
                 $this->delete($path);
             }
         }
+        $this->paths = [];
     }
 
     public function getTmpFileName(?string $extension = null): string

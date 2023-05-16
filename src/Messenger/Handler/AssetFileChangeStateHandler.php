@@ -73,8 +73,8 @@ final class AssetFileChangeStateHandler
     }
 
     /**
+     * @throws FilesystemException
      * @throws SerializerException
-     * @throws RuntimeException
      */
     private function handleAssetFile(AbstractAssetFileMessage $message): void
     {
@@ -108,9 +108,12 @@ final class AssetFileChangeStateHandler
                 ),
                 $e
             );
+            $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);
         }
+
+        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
     }
 
     /**
