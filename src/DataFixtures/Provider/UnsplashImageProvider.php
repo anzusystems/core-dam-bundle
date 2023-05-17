@@ -9,13 +9,15 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\RequestedUnsplashImage;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class UnsplashImageProvider
 {
     use OutputUtilTrait;
+    use FileHelperTrait;
+
     private const URL_TEMPLATE = 'https://source.unsplash.com/featured/%dx%d?%s';
 
     public function __construct(
@@ -37,7 +39,7 @@ final class UnsplashImageProvider
 
         $fixturesPath = $this->nameGenerator->alternatePath(
             originPath: $file->getAdapterPath(),
-            extension: FileHelper::guessExtension((string) $file->getMimeType())
+            extension: $this->fileHelper->guessExtension((string) $file->getMimeType())
         );
 
         $this->fileSystemProvider->getFixturesFileSystem()

@@ -31,6 +31,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -39,6 +40,8 @@ use Doctrine\ORM\NonUniqueResultException;
  */
 abstract class AssetFileFactory
 {
+    use FileHelperTrait;
+
     /**
      * @var AssetFileManager<T>
      */
@@ -98,23 +101,24 @@ abstract class AssetFileFactory
     public function createBlankAssetFile(AdapterFile $file, AssetLicence $licence, ?string $id = null): AssetFile
     {
         $assetFile = null;
+        $mimeType = $this->fileHelper->guessMime((string) $file->getRealPath(), true);
 
-        if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {
+        if (in_array($mimeType, ImageMimeTypes::values(), true)) {
             $assetFile = $this->createBlankImage($licence, $id);
         }
-        if (in_array($file->getMimeType(), AudioMimeTypes::values(), true)) {
+        if (in_array($mimeType, AudioMimeTypes::values(), true)) {
             $assetFile = $this->createBlankAudio($licence, $id);
         }
-        if (in_array($file->getMimeType(), DocumentMimeTypes::values(), true)) {
+        if (in_array($mimeType, DocumentMimeTypes::values(), true)) {
             $assetFile = $this->createBlankDocument($licence, $id);
         }
-        if (in_array($file->getMimeType(), VideoMimeTypes::values(), true)) {
+        if (in_array($mimeType, VideoMimeTypes::values(), true)) {
             $assetFile = $this->createBlankVideo($licence, $id);
         }
 
         /** @psalm-var T|null $assetFile */
         if (null === $assetFile) {
-            throw new DomainException(sprintf('File with mime type (%s) cannot be created', $file->getMimeType()));
+            throw new DomainException(sprintf('File with mime type (%s) cannot be created', $mimeType));
         }
 
         return $this->assetFileManager->create($assetFile, false);

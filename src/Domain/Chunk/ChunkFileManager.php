@@ -9,11 +9,14 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class ChunkFileManager extends ChunkManager
 {
+    use FileHelperTrait;
+
     public function __construct(
         private readonly NameGenerator $nameGenerator,
         private readonly FileSystemProvider $fileSystemProvider,
@@ -30,7 +33,7 @@ final class ChunkFileManager extends ChunkManager
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($chunk);
 
         $chunk
-            ->setMimeType((string) $file->getMimeType())
+            ->setMimeType($this->fileHelper->guessMime((string) $file->getRealPath()))
             ->setFilePath($path->getRelativePath())
         ;
 

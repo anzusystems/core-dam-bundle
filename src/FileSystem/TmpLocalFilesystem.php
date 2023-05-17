@@ -25,7 +25,7 @@ final class TmpLocalFilesystem extends LocalFilesystem
     {
         foreach ($this->paths as $path) {
             if ($this->fileExists($path)) {
-                $this->delete($path);
+                //                $this->delete($path);
             }
         }
         $this->paths = [];

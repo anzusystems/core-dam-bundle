@@ -33,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
@@ -46,6 +47,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+    use FileHelperTrait;
 
     protected AssetFileStatusManager $assetStatusManager;
     protected AssetFileMessageDispatcher $assetFileMessageDispatcher;
@@ -294,7 +296,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
     protected function supportsMimeType(AssetFile $assetFile, AdapterFile $file): bool
     {
-        $mimeType = (string) $file->getMimeType();
+        $mimeType = $this->fileHelper->guessMime(
+            path: (string) $file->getRealPath(),
+            useFfmpeg: true
+        );
 
         return match ($assetFile->getAsset()->getAttributes()->getAssetType()) {
             AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
