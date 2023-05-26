@@ -10,11 +10,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\DistributionCategory;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
-use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFlagsAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -150,17 +148,5 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     public function getMainFile(): ?AssetFile
     {
         return $this->asset->getMainFile();
-    }
-
-    #[Serialize]
-    public function getPodcasts(): array
-    {
-        if ($this->asset->getAttributes()->getAssetType()->is(AssetType::Audio)) {
-            return $this->asset->getEpisodes()->map(
-                fn (PodcastEpisode $episode): string => (string) $episode->getPodcast()->getId()
-            )->getValues();
-        }
-
-        return [];
     }
 }

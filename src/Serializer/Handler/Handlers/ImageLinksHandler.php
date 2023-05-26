@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
@@ -36,34 +35,35 @@ class ImageLinksHandler extends AbstractHandler
         if (null === $value) {
             return null;
         }
-        $type = ImageCropTag::tryFrom((string) $metadata->customType);
-        if (null === $type) {
-            throw new SerializerException(
-                sprintf('(%s) should by provided as type', ImageCropTag::class)
-            );
-        }
 
         if (false === ($value instanceof ImageFile)) {
             throw new SerializerException(sprintf('Value should be instance of (%s)', ImageFile::class));
         }
 
-        return $this->getImageLinkUrl($value, $type);
+        return $this->getImageLinkUrl($value, explode(',', $metadata->customType));
     }
 
-    public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
+    /**
+     * @param string[] $tags
+     */
+    public function getImageLinkUrl(ImageFile $imageFile, array $tags): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return [];
         }
 
-        $sizeList = $this->configurationProvider->getImageAdminSizeList($cropTag->toString());
-        if (empty($sizeList)) {
-            return [];
+        $res = [];
+        foreach ($tags as $tag) {
+            $sizeList = $this->configurationProvider->getImageAdminSizeList($tag);
+
+            if (empty($sizeList)) {
+                continue;
+            }
+
+            $res[$this->getKey($tag)] = $this->serializeImageCrop($imageFile, $sizeList[array_key_first($sizeList)]);
         }
 
-        return [
-            $this->getKey($cropTag) => $this->serializeImageCrop($imageFile, $sizeList[array_key_first($sizeList)]),
-        ];
+        return $res;
     }
 
     /**
@@ -74,9 +74,9 @@ class ImageLinksHandler extends AbstractHandler
         throw new SerializerException('deserialize_not_supported');
     }
 
-    protected function getKey(ImageCropTag $cropTag): string
+    protected function getKey(string $tag): string
     {
-        return self::LINKS_TYPE . '_' . $cropTag->toString();
+        return self::LINKS_TYPE . '_' . $tag;
     }
 
     protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array

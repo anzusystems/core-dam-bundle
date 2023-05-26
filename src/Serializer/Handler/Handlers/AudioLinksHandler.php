@@ -42,7 +42,7 @@ final class AudioLinksHandler extends AbstractHandler
         $links = [];
         $imageFile = $this->getImagePreview($value);
         if ($imageFile) {
-            $links = $this->imageLinksHandler->getImageLinkUrl($imageFile, ImageCropTag::List);
+            $links = $this->imageLinksHandler->getImageLinkUrl($imageFile, [ImageCropTag::LIST, ImageCropTag::TABLE]);
         }
         if ($value->getAudioPublicLink()->isPublic()) {
             $links[self::LINKS_TYPE] = $this->serializeImagePublicLink($value);

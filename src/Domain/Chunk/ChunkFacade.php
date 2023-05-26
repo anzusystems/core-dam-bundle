@@ -46,6 +46,11 @@ final class ChunkFacade
 
         $uploadedSize = (int) $uploadedFile->getSize();
 
+        //        if (1 === rand(1, 5))
+        //        {
+        //            throw new HttpException(500);
+        //        }
+
         try {
             $this->chunkManager->beginTransaction();
             $this->chunkFileManager->saveChunk($chunk, $uploadedFile);

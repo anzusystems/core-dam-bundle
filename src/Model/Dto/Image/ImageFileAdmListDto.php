@@ -71,7 +71,7 @@ class ImageFileAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST . ',' . ImageCropTag::TABLE)]
     public function getLinks(): ImageFile
     {
         return $this->image;

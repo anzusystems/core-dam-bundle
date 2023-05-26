@@ -69,7 +69,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->video->getAsset();
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST . ',' . ImageCropTag::TABLE)]
     public function getLinks(): ?AssetFile
     {
         return $this->video->getImagePreview()?->getImageFile();

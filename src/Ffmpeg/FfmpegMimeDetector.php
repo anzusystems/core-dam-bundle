@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Ffmpeg;
 
 use FFMpeg\FFProbe;
 use FFMpeg\FFProbe\DataMapping\Stream;
+use Throwable;
 
 final class FfmpegMimeDetector
 {
@@ -17,12 +18,16 @@ final class FfmpegMimeDetector
 
     public function detectMime(string $path): ?string
     {
-        $streams = FFProbe::create()->streams($path);
-        $videoStream = $streams->videos()->first();
-        $audioStream = $streams->audios()->first();
+        try {
+            $streams = FFProbe::create()->streams($path);
+            $videoStream = $streams->videos()->first();
+            $audioStream = $streams->audios()->first();
 
-        if (null === $videoStream && $audioStream instanceof Stream) {
-            return $this->detectAudioMime($audioStream);
+            if (null === $videoStream && $audioStream instanceof Stream) {
+                return $this->detectAudioMime($audioStream);
+            }
+        } catch (Throwable) {
+            return null;
         }
 
         return null;

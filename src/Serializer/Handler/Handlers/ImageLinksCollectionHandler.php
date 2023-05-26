@@ -6,23 +6,25 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 
 final class ImageLinksCollectionHandler extends ImageLinksHandler
 {
-    public function getImageLinkUrl(ImageFile $imageFile, ImageCropTag $cropTag): array
+    public function getImageLinkUrl(ImageFile $imageFile, array $tags): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return [];
         }
 
-        $links = [];
-        foreach ($this->configurationProvider->getImageAdminSizeList($cropTag->toString()) as $allowItem) {
-            $links[] = $this->serializeImageCrop($imageFile, $allowItem);
+        $res = [];
+        foreach ($tags as $tag) {
+            $links = [];
+            foreach ($this->configurationProvider->getImageAdminSizeList($tag) as $allowItem) {
+                $links[] = $this->serializeImageCrop($imageFile, $allowItem);
+            }
+
+            $res[$this->getKey($tag)] = $links;
         }
 
-        return [
-            $this->getKey($cropTag) => $links,
-        ];
+        return $res;
     }
 }
