@@ -66,12 +66,16 @@ abstract class AssetFileFactory
     /**
      * @throws SerializerException
      */
-    public function createAndProcessFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
-    {
+    public function createAndProcessFromFile(
+        AdapterFile $file,
+        AssetLicence $assetLicence,
+        bool $generatedBySystem = false,
+    ): AssetFile {
         $imageFile = $this->createFromFile(
             file: $file,
             assetLicence: $assetLicence,
         );
+        $imageFile->getAsset()->getAssetFlags()->setGeneratedBySystem($generatedBySystem);
         $imageFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->imageStatusFacade->storeAndProcess($imageFile, $file);
 
