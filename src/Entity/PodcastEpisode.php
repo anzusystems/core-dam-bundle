@@ -22,7 +22,6 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
@@ -191,7 +190,7 @@ class PodcastEpisode implements
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
     public function getLinks(): ?AssetFile
     {
         return $this->getImagePreview()?->getImageFile();

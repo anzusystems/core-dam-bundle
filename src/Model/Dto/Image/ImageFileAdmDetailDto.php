@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata\AssetFileMetadataAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Embeds\ImageAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
@@ -71,7 +70,7 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::DETAIL)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_DETAIL)]
     public function getLinks(): ImageFile
     {
         return $this->image;

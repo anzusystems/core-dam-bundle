@@ -13,8 +13,8 @@ use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFlagsAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\Collection;
@@ -144,7 +144,7 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->asset->getDistributionCategory();
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::DETAIL)]
+    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_DETAIL)]
     public function getMainFile(): ?AssetFile
     {
         return $this->asset->getMainFile();

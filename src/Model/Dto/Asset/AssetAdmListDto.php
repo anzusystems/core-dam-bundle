@@ -12,8 +12,8 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 class AssetAdmListDto extends AbstractEntityDto
@@ -48,7 +48,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_LIST)]
     public function getMainFile(): ?AssetFile
     {
         return $this->asset->getMainFile();

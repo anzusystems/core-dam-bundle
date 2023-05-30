@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -69,7 +68,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->video->getAsset();
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST . ',' . ImageCropTag::TABLE)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::LIST_LINKS_TAGS)]
     public function getLinks(): ?AssetFile
     {
         return $this->video->getImagePreview()?->getImageFile();

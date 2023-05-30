@@ -20,7 +20,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
+use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -38,11 +38,11 @@ final class AssetFileHandler extends AbstractHandler
             return null;
         }
 
-        $type = ImageCropTag::tryFrom((string) $metadata->customType);
+        $type = ApiViewType::tryFrom((string) $metadata->customType);
 
         if (null === $type) {
             throw new SerializerException(
-                sprintf('(%s) should by provided as type', ImageCropTag::class)
+                sprintf('(%s) should by provided as type', ApiViewType::class)
             );
         }
 
@@ -66,7 +66,7 @@ final class AssetFileHandler extends AbstractHandler
         throw new SerializerException('deserialize_not_supported');
     }
 
-    public function getAssetFileDecorator(AssetFile $assetFile, ImageCropTag $type): AbstractEntityDto
+    public function getAssetFileDecorator(AssetFile $assetFile, ApiViewType $type): AbstractEntityDto
     {
         if ($assetFile instanceof ImageFile) {
             return $this->getImageDecorator($assetFile, $type);
@@ -84,39 +84,35 @@ final class AssetFileHandler extends AbstractHandler
         throw new DomainException('Not supported');
     }
 
-    private function getImageDecorator(ImageFile $imageFile, ImageCropTag $type): AbstractEntityDto
+    private function getImageDecorator(ImageFile $imageFile, ApiViewType $type): AbstractEntityDto
     {
         return match ($type) {
-            ImageCropTag::List => ImageFileAdmListDto::getInstance($imageFile),
-            ImageCropTag::Detail => ImageFileAdmDetailDto::getInstance($imageFile),
-            ImageCropTag::RoiExample => throw new DomainException('Not supported'),
+            ApiViewType::List => ImageFileAdmListDto::getInstance($imageFile),
+            ApiViewType::Detail => ImageFileAdmDetailDto::getInstance($imageFile),
         };
     }
 
-    private function getAudioDecorator(AudioFile $audioFile, ImageCropTag $type): AbstractEntityDto
+    private function getAudioDecorator(AudioFile $audioFile, ApiViewType $type): AbstractEntityDto
     {
         return match ($type) {
-            ImageCropTag::List => AudioFileAdmListDto::getInstance($audioFile),
-            ImageCropTag::Detail => AudioFileAdmDetailDto::getInstance($audioFile),
-            ImageCropTag::RoiExample => throw new DomainException('Not supported'),
+            ApiViewType::List => AudioFileAdmListDto::getInstance($audioFile),
+            ApiViewType::Detail => AudioFileAdmDetailDto::getInstance($audioFile),
         };
     }
 
-    private function getVideoDecorator(VideoFile $videoFile, ImageCropTag $type): AbstractEntityDto
+    private function getVideoDecorator(VideoFile $videoFile, ApiViewType $type): AbstractEntityDto
     {
         return match ($type) {
-            ImageCropTag::List => VideoFileAdmListDto::getInstance($videoFile),
-            ImageCropTag::Detail => VideoFileAdmDetailDto::getInstance($videoFile),
-            ImageCropTag::RoiExample => throw new DomainException('Not supported'),
+            ApiViewType::List => VideoFileAdmListDto::getInstance($videoFile),
+            ApiViewType::Detail => VideoFileAdmDetailDto::getInstance($videoFile),
         };
     }
 
-    private function getDocumentDecorator(DocumentFile $documentFile, ImageCropTag $type): AbstractEntityDto
+    private function getDocumentDecorator(DocumentFile $documentFile, ApiViewType $type): AbstractEntityDto
     {
         return match ($type) {
-            ImageCropTag::List => DocumentFileAdmListDto::getInstance($documentFile),
-            ImageCropTag::Detail => DocumentFileAdmDetailDto::getInstance($documentFile),
-            ImageCropTag::RoiExample => throw new DomainException('Not supported'),
+            ApiViewType::List => DocumentFileAdmListDto::getInstance($documentFile),
+            ApiViewType::Detail => DocumentFileAdmDetailDto::getInstance($documentFile),
         };
     }
 }

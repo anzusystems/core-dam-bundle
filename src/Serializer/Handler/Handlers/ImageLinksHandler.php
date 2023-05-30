@@ -17,6 +17,11 @@ use Doctrine\ORM\NonUniqueResultException;
 
 class ImageLinksHandler extends AbstractHandler
 {
+    public const TAG_LIST = 'list';
+    public const TAG_DETAIL = 'detail';
+    public const TAG_TABLE = 'table';
+    public const TAG_ROI_EXAMPLE = 'roi_example';
+    public const LIST_LINKS_TAGS = self::TAG_LIST . ',' . self::TAG_TABLE;
     private const LINKS_TYPE = 'image';
 
     public function __construct(
@@ -32,7 +37,7 @@ class ImageLinksHandler extends AbstractHandler
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
     {
-        if (null === $value) {
+        if (null === $value || null === $metadata->customType) {
             return null;
         }
 

@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\RegionOfInterest;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksCollectionHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -102,7 +102,7 @@ final class RegionOfInterestAdmDetailDto extends RegionOfInterestAdmListDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksCollectionHandler::class, type: ImageCropTag::ROI_EXAMPLE)]
+    #[Serialize(handler: ImageLinksCollectionHandler::class, type: ImageLinksHandler::TAG_ROI_EXAMPLE)]
     public function getLinks(): ImageFile
     {
         return $this->image;
