@@ -48,7 +48,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
             sprintf(
                 'Disptaching event (%s) to user id (%s)',
                 self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
-                (int) $event->getAsset()->getNotifyTo()->getId()
+                (int) $event->getAsset()->getNotifyTo()?->getId()
             )
         );
 
