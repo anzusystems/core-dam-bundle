@@ -137,6 +137,14 @@ class Distribution implements
         return $this;
     }
 
+    public function addBlockedBy(self $distribution): static
+    {
+        $this->blockedBy->add($distribution);
+        $distribution->blocks->add($this);
+
+        return $this;
+    }
+
     public function getStatus(): DistributionProcessStatus
     {
         return $this->status;
