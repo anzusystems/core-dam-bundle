@@ -43,10 +43,6 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
      */
     public function notifyAssetFileChanged(AssetFileChangeStateEvent $event): void
     {
-        if (null === $event->getAsset()->getNotifyTo()) {
-            return;
-        }
-
         $this->damLogger->info(
             '_Notification_',
             sprintf(
@@ -55,6 +51,10 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
                 (int) $event->getAsset()->getNotifyTo()->getId()
             )
         );
+
+        if (null === $event->getAsset()->getNotifyTo()) {
+            return;
+        }
 
         $this->notify(
             [(int) $event->getAsset()->getNotifyTo()->getId()],
