@@ -43,18 +43,19 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
      */
     public function notifyAssetFileChanged(AssetFileChangeStateEvent $event): void
     {
-        $this->damLogger->info(
-            '_Notification_',
-            sprintf(
-                'Disptaching event (%s) to user id (%s)',
-                self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
-                (int) $event->getAsset()->getNotifyTo()?->getId()
-            )
-        );
-
         if (null === $event->getAsset()->getNotifyTo()) {
             return;
         }
+
+        $this->damLogger->info(
+            '_Notification_',
+            sprintf(
+                'Disptaching event (%s) to user id (%s) for asset id (%s)',
+                self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
+                (int) $event->getAsset()->getNotifyTo()->getId(),
+                (string) $event->getAsset()->getId()
+            )
+        );
 
         $this->notify(
             [(int) $event->getAsset()->getNotifyTo()->getId()],
