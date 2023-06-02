@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 
-final class ImageLinksCollectionHandler extends ImageLinksHandler
+final class ImageLinksManyTagsHandler extends ImageLinksHandler
 {
     public function getImageLinkUrl(ImageFile $imageFile, array $tags): array
     {

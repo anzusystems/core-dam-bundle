@@ -186,4 +186,10 @@ class Podcast implements
     {
         return $this->getImagePreview()?->getImageFile();
     }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    public function getAltLinks(): ?AssetFile
+    {
+        return $this->getAltImage()?->getImageFile();
+    }
 }
