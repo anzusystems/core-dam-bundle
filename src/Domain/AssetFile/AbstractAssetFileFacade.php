@@ -42,7 +42,7 @@ abstract class AbstractAssetFileFacade
     use IndexManagerAwareTrait;
 
     private const DUPLICATE_FILES_DELETE_MODIFIER = '-1 week';
-    private const DUPLICATE_FILES_DELETE_LIMIT = 100;
+    private const DUPLICATE_FILES_DELETE_LIMIT = 50;
 
     protected AssetManager $assetManager;
     protected AssetFactory $assetFactory;
