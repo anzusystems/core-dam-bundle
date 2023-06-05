@@ -2,17 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Helper;
+namespace AnzuSystems\CoreDamBundle\FileSystem;
 
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use Symfony\Component\Mime\MimeTypes;
+use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegMimeDetector;
+use Symfony\Component\Mime\MimeTypesInterface;
 
-final class FileHelper
+final readonly class MimeGuesser
 {
-    public static function guessExtension(string $mimeType): string
+    public function __construct(
+        private MimeTypesInterface $mimeTypes,
+        private FfmpegMimeDetector $ffmpegMimeDetector,
+    ) {
+    }
+
+    public function guessExtension(string $mimeType): string
     {
-        $extensions = MimeTypes::getDefault()->getExtensions($mimeType);
+        $extensions = $this->mimeTypes->getExtensions($mimeType);
+
         if (isset($extensions[0])) {
             return $extensions[0];
         }
@@ -20,9 +28,24 @@ final class FileHelper
         throw new InvalidArgumentException(sprintf('Can not guess extension for mime type (%s)', $mimeType));
     }
 
-    public static function guessMimeType(string $extension): ?string
+    public function guessMime(string $path, bool $useFfmpeg = false): string
     {
-        return MimeTypes::getDefault()->guessMimeType($extension);
+        $mimeType = null;
+        if ($useFfmpeg) {
+            $mimeType = $this->ffmpegMimeDetector->detectMime($path);
+        }
+
+        if ($mimeType) {
+            return $mimeType;
+        }
+
+        $mimeType = $this->mimeTypes->guessMimeType($path);
+
+        if (null === $mimeType) {
+            throw new InvalidArgumentException(sprintf('Can not guess mime type for file (%s)', $path));
+        }
+
+        return $mimeType;
     }
 
     public static function checksumFromPath(string $filePath): string

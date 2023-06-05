@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
  * @method JwDistribution|null find($id, $lockMode = null, $lockVersion = null)
  * @method JwDistribution|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class JwDistributionRepository extends AbstractAnzuRepository
+final class JwDistributionRepository extends DistributionRepository
 {
     protected function getEntityClass(): string
     {

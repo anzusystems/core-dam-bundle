@@ -23,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
@@ -77,7 +78,7 @@ final class AssetController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/licence/{assetLicence}/search', name: 'search_by_licence', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmDetailDto::class])]
+    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
     public function searchByLicence(AssetLicence $assetLicence, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
@@ -94,7 +95,7 @@ final class AssetController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/ext-system/{extSystem}/search', name: 'search_by_ext_system', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmDetailDto::class])]
+    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
     public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);

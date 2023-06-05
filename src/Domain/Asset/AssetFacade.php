@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -15,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\ReadableCollection;
@@ -28,6 +30,9 @@ class AssetFacade
     use IndexManagerAwareTrait;
     use ValidatorAwareTrait;
 
+    private const UNFINISHED_UPLOADS_DELETE_MODIFIER = '-1 week';
+    private const UNFINISHED_UPLOADS_DELETE_LIMIT = 100;
+
     public function __construct(
         private readonly AssetManager $assetManager,
         private readonly AssetFactory $assetFactory,
@@ -36,6 +41,7 @@ class AssetFacade
         private readonly AssetFileManagerProvider $assetFileManagerProvider,
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
 
@@ -82,6 +88,18 @@ class AssetFacade
 
             throw new RuntimeException('asset_create_failed', 0, $exception);
         }
+    }
+
+    public function deleteUnfinishedUploads(): int
+    {
+        $dateTime = App::getAppDate()->modify(self::UNFINISHED_UPLOADS_DELETE_MODIFIER);
+        $assets = $this->assetRepository->findToDelete($dateTime, self::UNFINISHED_UPLOADS_DELETE_LIMIT);
+
+        foreach ($assets as $asset) {
+            $this->toDeleting($asset);
+        }
+
+        return $assets->count();
     }
 
     public function toDeleting(Asset $asset): void

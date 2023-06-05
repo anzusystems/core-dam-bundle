@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
+namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 
+use AnzuSystems\CoreDamBundle\Distribution\Modules\AbstractCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 

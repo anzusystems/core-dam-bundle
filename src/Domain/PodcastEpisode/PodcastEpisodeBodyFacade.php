@@ -13,13 +13,13 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguratio
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use InvalidArgumentException;
 
-final class PodcastEpisodeBodyFacade
+final readonly class PodcastEpisodeBodyFacade
 {
     public function __construct(
-        private readonly PodcastEpisodeManager $podcastManager,
-        private readonly AssetTextsWriter $assetTextsWriter,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
-        private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
+        private PodcastEpisodeManager $podcastManager,
+        private AssetTextsWriter $assetTextsWriter,
+        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private PodcastEpisodeRepository $podcastEpisodeRepository,
     ) {
     }
 
@@ -42,7 +42,6 @@ final class PodcastEpisodeBodyFacade
             to: $episode,
             config: $config->getPodcastEpisodeEntityMap()
         );
-
         $this->setNumbers($podcast, $episode);
 
         return $episode;

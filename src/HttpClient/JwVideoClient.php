@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaGetDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaUploadDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoThumbnail;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadLinks;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -28,7 +29,7 @@ final class JwVideoClient implements LoggerAwareInterface
     use SerializerAwareTrait;
     use LoggerAwareRequest;
 
-    private const CHUNK_SIZE = 50 * 1_024 * 1_024;
+    private const CHUNK_SIZE = 100 * 1_024 * 1_024;
     private const UPLOAD_TIMEOUT = 3_600;
     private const UPLOAD_DURATION = 3_600;
 
@@ -38,6 +39,96 @@ final class JwVideoClient implements LoggerAwareInterface
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
         private readonly DamLogger $damLogger,
     ) {
+    }
+
+    public function createThumbnail(JwDistributionServiceConfiguration $configuration, string $imageUrl, string $jwId): JwVideoThumbnail
+    {
+        $response = $this->loggedRequest(
+            client: $this->jwPlayerApiClient,
+            message: '_JwVideoDistribution_ create thumbnail',
+            url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/",
+            method: Request::METHOD_POST,
+            headers: [
+                'Authorization' => "Bearer {$configuration->getSecretV2()}",
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+            json: [
+                'relationships' => [
+                    'media' => [
+                        [
+                            'id' => $jwId,
+                        ],
+                    ],
+                ],
+                'upload' => [
+                    'method' => 'fetch',
+                    'thumbnail_type' => 'static',
+                    'download_url' => $imageUrl,
+                ],
+            ]
+        );
+
+        if ($response->hasError()) {
+            throw new RuntimeException('Create thumbnail failed');
+        }
+
+        return $this->serializer->deserialize($response->getContent(), JwVideoThumbnail::class);
+    }
+
+    /**
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function getThumbnail(JwDistributionServiceConfiguration $configuration, string $thumbnailId): JwVideoThumbnail
+    {
+        $response = $this->loggedRequest(
+            client: $this->jwPlayerApiClient,
+            message: '_JwVideoDistribution_ get thumbnail',
+            url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
+            headers: [
+                'Authorization' => "Bearer {$configuration->getSecretV2()}",
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+        );
+
+        if ($response->hasError()) {
+            throw new RuntimeException('Get thumbnail failed');
+        }
+
+        return $this->serializer->deserialize($response->getContent(), JwVideoThumbnail::class);
+    }
+
+    /**
+     * @throws JsonException
+     */
+    public function setPoster(JwDistributionServiceConfiguration $configuration, string $thumbnailId): void
+    {
+        $response = $this->loggedRequest(
+            client: $this->jwPlayerApiClient,
+            message: '_JwVideoDistribution_ set poster',
+            url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
+            method: Request::METHOD_PATCH,
+            headers: [
+                'Authorization' => "Bearer {$configuration->getSecretV2()}",
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+            json: [
+                'relationships' => [
+                    'media' => [
+                        [
+                            'is_poster' => true,
+                        ],
+                    ],
+                ],
+            ]
+        );
+
+        if ($response->hasError()) {
+            throw new RuntimeException('Set poster failed');
+        }
     }
 
     /**
@@ -53,7 +144,7 @@ final class JwVideoClient implements LoggerAwareInterface
 
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] create video object',
+            message: '_JwVideoDistribution_ create video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media",
             method: Request::METHOD_POST,
             headers: [
@@ -148,7 +239,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '[JwVideoDistribution] get video object',
+            message: '_JwVideoDistribution_ get video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media/{$distribution->getExtId()}/",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",

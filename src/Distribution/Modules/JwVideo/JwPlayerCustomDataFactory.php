@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
+namespace AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo;
 
-use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
+use AnzuSystems\CoreDamBundle\Distribution\Modules\AbstractCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 
 final class JwPlayerCustomDataFactory extends AbstractCustomDataFactory

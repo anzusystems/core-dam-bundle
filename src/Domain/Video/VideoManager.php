@@ -26,7 +26,11 @@ final class VideoManager extends AssetFileManager
     public function update(VideoFile $video, VideoAdmUpdateDto $newVideo, bool $flush = true): VideoFile
     {
         $this->trackModification($video);
-        $this->imagePreviewManager->setImagePreviewRelation($video, $newVideo);
+
+        $video->setImagePreview(
+            $this->imagePreviewManager->getNewImagePreview($video->getImagePreview(), $newVideo->getImagePreview())
+        );
+
         $this->flush($flush);
 
         return $video;

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\ImagePreview;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
 
 final class ImagePreviewManager extends AbstractManager
@@ -63,37 +62,34 @@ final class ImagePreviewManager extends AbstractManager
         }
     }
 
-    public function setImagePreviewRelation(
-        ImagePreviewableInterface $imagePreviewable,
-        ImagePreviewableInterface $newImagePreviewable
-    ): void {
-        if ($imagePreviewable->getImagePreview() && $newImagePreviewable->getImagePreview()) {
+    public function getNewImagePreview(?ImagePreview $oldImagePreview, ?ImagePreview $newImagePreview): ?ImagePreview
+    {
+        if ($oldImagePreview && $newImagePreview) {
             $this->update(
-                imagPreview: $imagePreviewable->getImagePreview(),
-                newImagePreview: $newImagePreviewable->getImagePreview(),
+                imagPreview: $oldImagePreview,
+                newImagePreview: $newImagePreview,
                 flush: false
             );
 
-            return;
+            return $oldImagePreview;
         }
 
-        if ($imagePreviewable->getImagePreview() && null === $newImagePreviewable->getImagePreview()) {
-            $imagePreview = $imagePreviewable->getImagePreview();
-            $imagePreviewable->setImagePreview(null);
+        if ($oldImagePreview && null === $newImagePreview) {
+            $imagePreview = $oldImagePreview;
             $this->delete($imagePreview);
 
-            return;
+            return null;
         }
 
-        $imagePreview = $newImagePreviewable->getImagePreview();
-        if (null === $imagePreview) {
-            return;
+        if (null === $oldImagePreview && $newImagePreview) {
+            $this->create(
+                imagePreview: $newImagePreview,
+                flush: false
+            );
+
+            return $newImagePreview;
         }
 
-        $imagePreviewable->setImagePreview($imagePreview);
-        $this->create(
-            imagePreview: $imagePreview,
-            flush: false
-        );
+        return null;
     }
 }

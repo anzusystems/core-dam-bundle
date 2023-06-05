@@ -8,9 +8,9 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Tests\ApiClient;
@@ -60,7 +60,7 @@ abstract class AbstractAssetFileApiController extends AbstractApiController
         int $expectedStatusCode,
         ?array $body = null,
     ): Response {
-        $checksum = FileHelper::checksumFromPath((string)$file->getRealPath());
+        $checksum = MimeGuesser::checksumFromPath((string)$file->getRealPath());
         $response = $apiClient->post(
             $assetUrl->getAddToSlotPath($assetId, $position),
             $body ?: [
@@ -91,7 +91,7 @@ abstract class AbstractAssetFileApiController extends AbstractApiController
         int $expectedStatusCode,
         ?array $body = null,
     ): Response {
-        $checksum = FileHelper::checksumFromPath((string)$file->getRealPath());
+        $checksum = MimeGuesser::checksumFromPath((string)$file->getRealPath());
         $response = $apiClient->post(
             $assetUrl->getCreatePath(),
             $body ?: [
@@ -151,7 +151,7 @@ abstract class AbstractAssetFileApiController extends AbstractApiController
         string $assetId,
         int $expectedStatusCode,
     ): Response {
-        $checksum = FileHelper::checksumFromPath((string)$file->getRealPath());
+        $checksum = MimeGuesser::checksumFromPath((string)$file->getRealPath());
         $response = $apiClient->patch(
             $assetUrl->getFinishUploadPath($assetId),
             [

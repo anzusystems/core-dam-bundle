@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
@@ -57,6 +56,14 @@ class Podcast implements
     #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
+    #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    #[Serialize]
+    #[Assert\Valid]
+    #[AppAssert\EqualLicence]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
+    protected ?ImagePreview $altImage;
+
     #[ORM\Embedded(class: PodcastTexts::class)]
     #[Serialize]
     #[Assert\Valid]
@@ -81,7 +88,20 @@ class Podcast implements
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
         $this->setImagePreview(null);
+        $this->setAltImage(null);
         $this->setDates(new PodcastDates());
+    }
+
+    public function getAltImage(): ?ImagePreview
+    {
+        return $this->altImage;
+    }
+
+    public function setAltImage(?ImagePreview $altImage): self
+    {
+        $this->altImage = $altImage;
+
+        return $this;
     }
 
     public function getImagePreview(): ?ImagePreview
@@ -161,9 +181,15 @@ class Podcast implements
         return $this->licence->getExtSystem();
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
     public function getLinks(): ?AssetFile
     {
         return $this->getImagePreview()?->getImageFile();
+    }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    public function getAltLinks(): ?AssetFile
+    {
+        return $this->getAltImage()?->getImageFile();
     }
 }

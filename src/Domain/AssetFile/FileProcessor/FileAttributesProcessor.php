@@ -6,16 +6,19 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
+use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
-final readonly class FileAttributesProcessor
+final class FileAttributesProcessor
 {
+    use FileHelperTrait;
+
     public function __construct(
-        private DamLogger $damLogger
+        private readonly DamLogger $damLogger
     ) {
     }
 
@@ -25,7 +28,7 @@ final readonly class FileAttributesProcessor
      */
     public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $checksum = FileHelper::checksumFromPath($file->getRealPath());
+        $checksum = MimeGuesser::checksumFromPath($file->getRealPath());
 
         if (false === (empty($assetFile->getAssetAttributes()->getChecksum())) &&
             false === ($checksum === $assetFile->getAssetAttributes()->getChecksum())
@@ -43,7 +46,12 @@ final readonly class FileAttributesProcessor
         }
 
         $assetFile->getAssetAttributes()
-            ->setMimeType((string) $file->getMimeType())
+            ->setMimeType(
+                $this->fileHelper->guessMime(
+                    path: (string) $file->getRealPath(),
+                    useFfmpeg: true
+                )
+            )
             ->setSize($file->getSize())
             ->setChecksum($checksum);
 

@@ -6,12 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 class AssetAdmListDto extends AbstractEntityDto
@@ -46,7 +48,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_LIST)]
     public function getMainFile(): ?AssetFile
     {
         return $this->asset->getMainFile();
@@ -89,5 +91,17 @@ class AssetAdmListDto extends AbstractEntityDto
         $this->assetFileProperties = $assetFileProperties;
 
         return $this;
+    }
+
+    #[Serialize]
+    public function getPodcasts(): array
+    {
+        if ($this->asset->getAttributes()->getAssetType()->is(AssetType::Audio)) {
+            return $this->asset->getEpisodes()->map(
+                fn (PodcastEpisode $episode): string => (string) $episode->getPodcast()->getId()
+            )->getValues();
+        }
+
+        return [];
     }
 }

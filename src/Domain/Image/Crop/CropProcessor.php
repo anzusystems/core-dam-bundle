@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Image\Filter\AutoRotateFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\CropFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\FilterStack;
@@ -17,10 +16,13 @@ use AnzuSystems\CoreDamBundle\Image\Filter\QualityFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\ResizeFilter;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class CropProcessor
 {
+    use FileHelperTrait;
+
     public const DEFAULT_MIME_TYPE = 'image/jpeg';
 
     public function __construct(
@@ -68,7 +70,7 @@ final class CropProcessor
             ])
         );
 
-        $content = $this->imageManipulator->getContent(FileHelper::guessExtension(self::DEFAULT_MIME_TYPE));
+        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension(self::DEFAULT_MIME_TYPE));
         $this->cropCache->store($image, $imageCrop, $content);
 
         return $content;

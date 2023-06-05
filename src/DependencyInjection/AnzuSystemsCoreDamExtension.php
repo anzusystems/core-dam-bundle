@@ -22,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\JwVideoThumbnailPosterMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
@@ -366,6 +367,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     AssetFileMetadataProcessMessage::class => $assetFileMetadataProcessTopic,
                     DistributeMessage::class => $distributionTopic,
                     DistributionRemoteProcessingCheckMessage::class => $distributionRemoteProcessedCheckTopic,
+                    JwVideoThumbnailPosterMessage::class => $distributionRemoteProcessedCheckTopic,
                     AssetRefreshPropertiesMessage::class => $assetPropertyRefreshTopic,
                 ],
             ],

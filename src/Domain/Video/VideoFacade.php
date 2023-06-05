@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -16,9 +16,9 @@ use RuntimeException;
 use Throwable;
 
 /**
- * @template-extends AssetFileFacade<VideoFile>
+ * @template-extends AbstractAssetFileFacade<VideoFile>
  */
-final class VideoFacade extends AssetFileFacade
+final class VideoFacade extends AbstractAssetFileFacade
 {
     public function __construct(
         private readonly VideoManager $videoManager,

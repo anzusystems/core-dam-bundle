@@ -6,14 +6,15 @@ namespace AnzuSystems\CoreDamBundle\Domain\Audio;
 
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use League\Flysystem\FilesystemException;
 
 final class AudioPublicManager
 {
     use IndexManagerAwareTrait;
+    use FileHelperTrait;
 
     public function __construct(
         private readonly AudioManager $audioManager,
@@ -82,7 +83,7 @@ final class AudioPublicManager
             '%s/%s.%s',
             $audio->getId(),
             $dto->getSlug(),
-            FileHelper::guessExtension($audio->getAssetAttributes()->getMimeType())
+            $this->fileHelper->guessExtension($audio->getAssetAttributes()->getMimeType())
         );
 
         $audio->getAudioPublicLink()

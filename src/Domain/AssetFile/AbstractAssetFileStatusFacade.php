@@ -22,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -33,7 +34,9 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
@@ -46,6 +49,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+    use FileHelperTrait;
+    use MessageBusAwareTrait;
 
     protected AssetFileStatusManager $assetStatusManager;
     protected AssetFileMessageDispatcher $assetFileMessageDispatcher;
@@ -278,10 +283,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $this->metadataProcessor->process($assetFile, $file);
             }
             $this->assetStatusManager->toProcessed($assetFile);
-            $this->assetManager->updateExisting($assetFile->getAsset());
-            $this->indexManager->index($assetFile->getAsset());
-
             $this->assetManager->commit();
+            $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
         } catch (Throwable $exception) {
             $this->assetManager->rollback();
 
@@ -294,7 +297,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
     protected function supportsMimeType(AssetFile $assetFile, AdapterFile $file): bool
     {
-        $mimeType = (string) $file->getMimeType();
+        $mimeType = $this->fileHelper->guessMime(
+            path: (string) $file->getRealPath(),
+            useFfmpeg: true
+        );
 
         return match ($assetFile->getAsset()->getAttributes()->getAssetType()) {
             AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
