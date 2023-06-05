@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwPlayerCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
@@ -27,6 +28,8 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
     RemoteProcessingDistributionModuleInterface,
     PreviewProvidableModuleInterface
 {
+    private const REMOTE_PROCESS_WAIT_TRESHOLD = '+1 hour';
+
     public function __construct(
         private readonly JwVideoClient $jwVideoClient,
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
@@ -88,6 +91,11 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         }
         if ($video->getStatus()->is(JwMediaStatus::Failed)) {
             throw new RemoteProcessingFailedException(message: (string) $video->getErrorMessage());
+        }
+
+        $waitUntilDatetime = App::getAppDate()->modify(self::REMOTE_PROCESS_WAIT_TRESHOLD);
+        if ($waitUntilDatetime < App::getAppDate()) {
+            throw new RemoteProcessingFailedException(message: 'Remote processing too long.');
         }
 
         throw new RemoteProcessingWaitingException();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
@@ -20,9 +20,9 @@ use RuntimeException;
 use Throwable;
 
 /**
- * @template-extends AssetFileFacade<ImageFile>
+ * @template-extends AbstractAssetFileFacade<ImageFile>
  */
-final class ImageFacade extends AssetFileFacade
+final class ImageFacade extends AbstractAssetFileFacade
 {
     use EventDispatcherAwareTrait;
 

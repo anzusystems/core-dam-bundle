@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
-use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -16,7 +16,7 @@ use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\QueryBuilder;
 
 /**
- * @template T of BaseIdentifiableInterface
+ * @template T of AssetFile
  *
  * @method AssetFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method AssetFile|null findOneBy(array $criteria, array $orderBy = null)
@@ -75,5 +75,22 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
         return $this->createQueryBuilder('entity')
             ->andWhere('IDENTITY(entity.asset) = :assetId')
             ->setParameter('assetId', $assetId);
+    }
+
+    /**
+     * @return Collection<int, T>
+     */
+    public function findToDelete(DateTimeInterface $createdAtUntil, int $limit): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->andWhere('entity.assetAttributes.status in (:statuses)')
+                ->andWhere('entity.createdAt < :createdAtUntil')
+                ->setParameter('statuses', [AssetFileProcessStatus::Duplicate, AssetFileProcessStatus::Failed])
+                ->setParameter('createdAtUntil', $createdAtUntil->format(DATE_ATOM))
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
     }
 }

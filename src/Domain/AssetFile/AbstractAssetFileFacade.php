@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
@@ -35,10 +36,13 @@ use Throwable;
 /**
  * @template T of AssetFile
  */
-abstract class AssetFileFacade
+abstract class AbstractAssetFileFacade
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+
+    private const DUPLICATE_FILES_DELETE_MODIFIER = '-1 week';
+    private const DUPLICATE_FILES_DELETE_LIMIT = 100;
 
     protected AssetManager $assetManager;
     protected AssetFactory $assetFactory;
@@ -161,6 +165,19 @@ abstract class AssetFileFacade
         $this->messageBus->dispatch(new VideoFileChangeStateMessage($assetFile));
 
         return $assetFile;
+    }
+
+    public function deleteFailedAndDuplicates(): int
+    {
+        $dateTime = App::getAppDate()->modify(self::DUPLICATE_FILES_DELETE_MODIFIER);
+        $assetFiles = $this->getRepository()->findToDelete($dateTime, self::DUPLICATE_FILES_DELETE_LIMIT);
+
+        foreach ($assetFiles as $files) {
+            /** @psalm-suppress InvalidArgument */
+            $this->delete($files);
+        }
+
+        return $assetFiles->count();
     }
 
     /**

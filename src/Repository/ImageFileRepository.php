@@ -9,8 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @extends AbstractAnzuRepository<ImageFile>
- *
+ * @template-extends AbstractAnzuRepository<ImageFile>
  * @method ImageFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method ImageFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method ImageFile|null findProcessedById(string $id)
