@@ -26,12 +26,10 @@ final class AssetFileStorageOperator
      */
     public function save(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $mimeType = $this->fileHelper->guessMime(
-            path: (string) $file->getRealPath(),
-            useFfmpeg: true
+        $path = $this->nameGenerator->generatePath(
+            $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType()),
+            true
         );
-
-        $path = $this->nameGenerator->generatePath($this->fileHelper->guessExtension($mimeType), true);
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($assetFile);
 
         $fileSystem->writeStream(
@@ -40,8 +38,7 @@ final class AssetFileStorageOperator
         );
 
         $assetFile->getAssetAttributes()
-            ->setFilePath($path->getRelativePath())
-            ->setMimeType($mimeType);
+            ->setFilePath($path->getRelativePath());
 
         return $assetFile;
     }

@@ -10,6 +10,11 @@ use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
+use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
+use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
@@ -26,7 +31,7 @@ final class FileAttributesProcessor
      * @throws SerializerException
      * @throws AssetFileProcessFailed
      */
-    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
+    public function processChecksum(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $checksum = MimeGuesser::checksumFromPath($file->getRealPath());
 
@@ -46,15 +51,52 @@ final class FileAttributesProcessor
         }
 
         $assetFile->getAssetAttributes()
-            ->setMimeType(
-                $this->fileHelper->guessMime(
-                    path: (string) $file->getRealPath(),
-                    useFfmpeg: true
-                )
-            )
-            ->setSize($file->getSize())
             ->setChecksum($checksum);
 
         return $assetFile;
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws AssetFileProcessFailed
+     */
+    public function processAttributes(AssetFile $assetFile, AdapterFile $file): AssetFile
+    {
+        $assetType = $assetFile->getAsset()->getAttributes()->getAssetType();
+        // At this moment, ffmpeg guesser is used only for Audio m4a type
+        $mimeType = $this->fileHelper->guessMime(
+            path: (string) $file->getRealPath(),
+            useFfmpeg: $assetType->is(AssetType::Audio)
+        );
+
+        if (false === $this->supportsMimeType($assetType, $mimeType)) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
+                sprintf(
+                    'Invalid mime (%s) for type (%s). AssetFileId (%s)',
+                    $mimeType,
+                    $assetType->toString(),
+                    $assetFile->getId()
+                )
+            );
+
+            throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
+        }
+
+        $assetFile->getAssetAttributes()
+            ->setMimeType($mimeType)
+            ->setSize($file->getSize());
+
+        return $assetFile;
+    }
+
+    protected function supportsMimeType(AssetType $assetType, string $mimeType): bool
+    {
+        return match ($assetType) {
+            AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
+            AssetType::Video => in_array($mimeType, VideoMimeTypes::CHOICES, true),
+            AssetType::Audio => in_array($mimeType, AudioMimeTypes::CHOICES, true),
+            AssetType::Document => in_array($mimeType, DocumentMimeTypes::CHOICES, true),
+        };
     }
 }

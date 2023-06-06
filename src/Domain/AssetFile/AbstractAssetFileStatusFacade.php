@@ -28,11 +28,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
@@ -245,11 +240,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     {
         $file = $file ?: $this->createFile($assetFile);
 
-        if (false === $this->supportsMimeType($assetFile, $file)) {
-            throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
-        }
-
-        $this->fileAttributesPostProcessor->process($assetFile, $file);
+        $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
+        $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
         $this->checkDuplicate($assetFile);
 
         try {
@@ -293,21 +285,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
         return $assetFile;
-    }
-
-    protected function supportsMimeType(AssetFile $assetFile, AdapterFile $file): bool
-    {
-        $mimeType = $this->fileHelper->guessMime(
-            path: (string) $file->getRealPath(),
-            useFfmpeg: true
-        );
-
-        return match ($assetFile->getAsset()->getAttributes()->getAssetType()) {
-            AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
-            AssetType::Video => in_array($mimeType, VideoMimeTypes::CHOICES, true),
-            AssetType::Audio => in_array($mimeType, AudioMimeTypes::CHOICES, true),
-            AssetType::Document => in_array($mimeType, DocumentMimeTypes::CHOICES, true),
-        };
     }
 
     /**
