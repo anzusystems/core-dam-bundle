@@ -93,7 +93,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
             throw new RemoteProcessingFailedException(message: (string) $video->getErrorMessage());
         }
 
-        $waitUntilDatetime = App::getAppDate()->modify(self::REMOTE_PROCESS_WAIT_TRESHOLD);
+        $waitUntilDatetime = $distribution->getModifiedAt()->modify(self::REMOTE_PROCESS_WAIT_TRESHOLD);
         if ($waitUntilDatetime < App::getAppDate()) {
             throw new RemoteProcessingFailedException(message: 'Remote processing too long.');
         }
