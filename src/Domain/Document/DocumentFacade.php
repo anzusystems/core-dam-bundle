@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Document;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
@@ -28,7 +28,7 @@ final class DocumentFacade extends AbstractAssetFileFacade
         return $this->documentManager;
     }
 
-    protected function getFactory(): AssetFileFactory
+    protected function getFactory(): AbstractAssetFileFactory
     {
         return $this->documentFactory;
     }

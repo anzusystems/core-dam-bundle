@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -13,9 +13,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
 /**
- * @extends AssetFileFactory<ImageFile>
+ * @extends AbstractAssetFileFactory<ImageFile>
  */
-final class ImageFactory extends AssetFileFactory
+final class ImageFactory extends AbstractAssetFileFactory
 {
     /**
      * @param ImageAdmCreateDto $createDto

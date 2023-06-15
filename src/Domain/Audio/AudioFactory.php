@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Audio;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
@@ -13,9 +13,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
 /**
- * @extends AssetFileFactory<AudioFile>
+ * @extends AbstractAssetFileFactory<AudioFile>
  */
-final class AudioFactory extends AssetFileFactory
+final class AudioFactory extends AbstractAssetFileFactory
 {
     /**
      * @param AudioAdmCreateDto $createDto

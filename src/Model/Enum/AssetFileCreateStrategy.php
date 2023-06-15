@@ -12,6 +12,7 @@ enum AssetFileCreateStrategy: string implements EnumInterface
     case Chunk = 'chunk';
     case ExternalProvider = 'external_provider';
     case Download = 'download';
+    case Storage = 'storage';
 
     public const Default = self::Chunk;
 }

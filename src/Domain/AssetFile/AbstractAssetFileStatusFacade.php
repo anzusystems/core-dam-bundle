@@ -327,6 +327,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             AssetFileCreateStrategy::ExternalProvider => $this->externalProviderFileFactory->downloadFile(
                 $assetFile->getAssetAttributes()->getOriginExternalProvider()
             ),
+            AssetFileCreateStrategy::Storage => $this->fileFactory->createFromStorage($assetFile),
         };
     }
 }

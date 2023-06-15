@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginExternalProviderType;
+use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginStorageType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -39,6 +41,9 @@ class AssetFileAttributes
     #[ORM\Column(type: OriginExternalProviderType::NAME, nullable: true)]
     private ?OriginExternalProvider $originExternalProvider = null;
 
+    #[ORM\Column(type: OriginStorageType::NAME, nullable: true)]
+    private ?OriginStorage $originStorage = null;
+
     #[ORM\Column(enumType: AssetFileProcessStatus::class)]
     private AssetFileProcessStatus $status;
 
@@ -58,6 +63,7 @@ class AssetFileAttributes
         $this->setOriginAssetId('');
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
+        $this->setOriginStorage(null);
         $this->setSize(0);
         $this->setFailReason(AssetFileFailedType::None);
         $this->setCreateStrategy(AssetFileCreateStrategy::Default);
@@ -191,6 +197,18 @@ class AssetFileAttributes
     public function setCreateStrategy(AssetFileCreateStrategy $createStrategy): self
     {
         $this->createStrategy = $createStrategy;
+
+        return $this;
+    }
+
+    public function getOriginStorage(): ?OriginStorage
+    {
+        return $this->originStorage;
+    }
+
+    public function setOriginStorage(?OriginStorage $originStorage): self
+    {
+        $this->originStorage = $originStorage;
 
         return $this;
     }

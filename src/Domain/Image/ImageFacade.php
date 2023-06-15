@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropCache;
@@ -68,7 +68,7 @@ final class ImageFacade extends AbstractAssetFileFacade
         return $this->imageManager;
     }
 
-    protected function getFactory(): AssetFileFactory
+    protected function getFactory(): AbstractAssetFileFactory
     {
         return $this->imageFactory;
     }

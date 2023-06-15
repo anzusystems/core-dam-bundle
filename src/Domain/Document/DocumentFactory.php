@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Document;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
@@ -12,9 +12,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
 
 /**
- * @extends AssetFileFactory<DocumentFile>
+ * @extends AbstractAssetFileFactory<DocumentFile>
  */
-final class DocumentFactory extends AssetFileFactory
+final class DocumentFactory extends AbstractAssetFileFactory
 {
     /**
      * @param DocumentAdmCreateDto $createDto
