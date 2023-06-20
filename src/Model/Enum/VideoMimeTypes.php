@@ -31,13 +31,13 @@ enum VideoMimeTypes: string implements EnumInterface
     private const MIME_WMW = 'video/x-ms-wmv';
     private const MIME_WMW_ASF = 'video/x-ms-asf';
 
-    case mimeMp4 = self::MIME_MP4;
-    case mimeXFlv = self::MIME_FLV;
-    case mime3gp = self::MIME_3GP;
-    case mimeXMsVideo = self::MIME_X_MSVIDEO;
-    case mimeMsVideo = self::MIME_MS_VIDEO;
-    case mimeAvi = self::MIME_AVI;
-    case mimeMov = self::MIME_MOV;
-    case mimeWmw = self::MIME_WMW;
-    case mimeAsf = self::MIME_WMW_ASF;
+    case MimeMp4 = self::MIME_MP4;
+    case MimeXFlv = self::MIME_FLV;
+    case Mime3gp = self::MIME_3GP;
+    case MimeXMsVideo = self::MIME_X_MSVIDEO;
+    case MimeMsVideo = self::MIME_MS_VIDEO;
+    case MimeAvi = self::MIME_AVI;
+    case MimeMov = self::MIME_MOV;
+    case MimeWmw = self::MIME_WMW;
+    case MimeAsf = self::MIME_WMW_ASF;
 }

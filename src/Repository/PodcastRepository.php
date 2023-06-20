@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\NonUniqueResultException;
 
 /**
  * @extends AbstractAnzuRepository<Podcast>
@@ -17,18 +17,26 @@ use Doctrine\Common\Collections\Collection;
  */
 final class PodcastRepository extends AbstractAnzuRepository
 {
-    public function findAllToImport(): Collection
+    /**
+     * @throws NonUniqueResultException
+     */
+    public function findOneFrom(?string $idFrom = null, ?PodcastImportMode $mode = null): ?Podcast
     {
-        return new ArrayCollection(
-            $this->findBy(
-                [
-                    'attributes.mode' => array_map(
-                        fn (PodcastImportMode $mode): string => $mode->toString(),
-                        PodcastImportMode::getAllImportModes()
-                    ),
-                ]
-            )
-        );
+        $qb = $this->createQueryBuilder('entity')
+            ->setMaxResults(1)
+            ->orderBy('entity.id', Criteria::ASC);
+
+        if ($mode) {
+            $qb->andWhere('entity.attributes.mode = :mode')
+                ->setParameter('mode', $mode->toString());
+        }
+        if ($idFrom) {
+            $qb->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom)
+            ;
+        }
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 
     protected function getEntityClass(): string

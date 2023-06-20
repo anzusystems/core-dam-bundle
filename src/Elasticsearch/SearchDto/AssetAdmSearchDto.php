@@ -23,6 +23,10 @@ final class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $assetIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $podcastIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
@@ -61,12 +65,32 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     protected ?bool $visible = null;
 
     #[Serialize]
+    protected ?bool $generatedBySystem = null;
+
+    #[Serialize]
     protected ?bool $inPodcast = null;
+
+    #[Serialize]
+    protected ?bool $fromRss = null;
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $slotNames = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $distributedInServices = [];
 
     /**
      * @var array<int, AssetLicence>
      */
     protected array $licences = [];
+
+    #[Serialize]
+    private ?int $shortestDimensionFrom = null;
+
+    #[Serialize]
+    private ?int $shortestDimensionUntil = null;
 
     #[Serialize]
     private ?int $pixelSizeFrom = null;
@@ -119,6 +143,12 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     private ?int $bitrateUntil = null;
 
     #[Serialize]
+    private ?int $slotsCountFrom = null;
+
+    #[Serialize]
+    private ?int $slotsCountUntil = null;
+
+    #[Serialize]
     private ?DateTimeImmutable $createdAtFrom = null;
 
     #[Serialize]
@@ -127,6 +157,18 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function getIndexName(): string
     {
         return Asset::getResourceName();
+    }
+
+    public function getAssetIds(): array
+    {
+        return $this->assetIds;
+    }
+
+    public function setAssetIds(array $assetIds): self
+    {
+        $this->assetIds = $assetIds;
+
+        return $this;
     }
 
     public function getText(): string
@@ -485,6 +527,102 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setCreatedAtUntil(?DateTimeImmutable $createdAtUntil): self
     {
         $this->createdAtUntil = $createdAtUntil;
+
+        return $this;
+    }
+
+    public function isGeneratedBySystem(): ?bool
+    {
+        return $this->generatedBySystem;
+    }
+
+    public function setGeneratedBySystem(?bool $generatedBySystem): self
+    {
+        $this->generatedBySystem = $generatedBySystem;
+
+        return $this;
+    }
+
+    public function isFromRss(): ?bool
+    {
+        return $this->fromRss;
+    }
+
+    public function setFromRss(?bool $fromRss): self
+    {
+        $this->fromRss = $fromRss;
+
+        return $this;
+    }
+
+    public function getShortestDimensionFrom(): ?int
+    {
+        return $this->shortestDimensionFrom;
+    }
+
+    public function setShortestDimensionFrom(?int $shortestDimensionFrom): self
+    {
+        $this->shortestDimensionFrom = $shortestDimensionFrom;
+
+        return $this;
+    }
+
+    public function getShortestDimensionUntil(): ?int
+    {
+        return $this->shortestDimensionUntil;
+    }
+
+    public function setShortestDimensionUntil(?int $shortestDimensionUntil): self
+    {
+        $this->shortestDimensionUntil = $shortestDimensionUntil;
+
+        return $this;
+    }
+
+    public function getSlotNames(): array
+    {
+        return $this->slotNames;
+    }
+
+    public function setSlotNames(array $slotNames): self
+    {
+        $this->slotNames = $slotNames;
+
+        return $this;
+    }
+
+    public function getDistributedInServices(): array
+    {
+        return $this->distributedInServices;
+    }
+
+    public function setDistributedInServices(array $distributedInServices): self
+    {
+        $this->distributedInServices = $distributedInServices;
+
+        return $this;
+    }
+
+    public function getSlotsCountFrom(): ?int
+    {
+        return $this->slotsCountFrom;
+    }
+
+    public function setSlotsCountFrom(?int $slotsCountFrom): self
+    {
+        $this->slotsCountFrom = $slotsCountFrom;
+
+        return $this;
+    }
+
+    public function getSlotsCountUntil(): ?int
+    {
+        return $this->slotsCountUntil;
+    }
+
+    public function setSlotsCountUntil(?int $slotsCountUntil): self
+    {
+        $this->slotsCountUntil = $slotsCountUntil;
 
         return $this;
     }

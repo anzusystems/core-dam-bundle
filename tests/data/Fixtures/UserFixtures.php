@@ -6,8 +6,10 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Data\Fixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -18,6 +20,8 @@ final class UserFixtures extends AbstractFixtures
 {
     public function __construct(
         private readonly UserManager $userManager,
+        private readonly AssetLicenceFixtures $assetLicenceFixtures,
+        private readonly BaseAssetLicenceFixtures $baseAssetLicenceFixtures,
     ) {
     }
 
@@ -26,14 +30,18 @@ final class UserFixtures extends AbstractFixtures
         return User::class;
     }
 
-    public static function getPriority(): int
+    public static function getDependencies(): array
     {
-        return ExtSystemFixtures::getPriority() + 1;
+        return [AssetLicenceFixtures::class, BaseAssetLicenceFixtures::class];
+    }
+
+    public function useCustomId(): bool
+    {
+        return true;
     }
 
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var User $user */
         foreach ($progressBar->iterate($this->getData()) as $user) {
             $this->userManager->create($user);
@@ -42,13 +50,23 @@ final class UserFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        $licenceBlog = $this->assetLicenceFixtures->getOneFromRegistry(AssetLicenceFixtures::LICENCE_ID);
+        $licenceCms = $this->baseAssetLicenceFixtures->getOneFromRegistry(BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
         yield (new User())
-            ->setId(User::ID_ADMIN)
-            ->setRoles([User::ROLE_ADMIN])
+            ->setId(User::ID_BLOG_USER)
+            ->setEmail('blog_user@anzusystems.sk')
+            ->setAssetLicences(new ArrayCollection([$licenceCms, $licenceBlog]))
+            ->setUserToExtSystems(new ArrayCollection([$licenceCms->getExtSystem(), $licenceBlog->getExtSystem()]))
+            ->setEnabled(true)
         ;
+
         yield (new User())
-            ->setId(User::ID_CONSOLE);
-        yield (new User())
-            ->setId(User::ID_ANONYMOUS);
+            ->setId(User::ID_CMS_USER)
+            ->setEmail('cms_user@anzusystems.sk')
+            ->setAssetLicences(new ArrayCollection([$licenceCms]))
+            ->setUserToExtSystems(new ArrayCollection([$licenceCms->getExtSystem()]))
+            ->setEnabled(true)
+        ;
     }
 }

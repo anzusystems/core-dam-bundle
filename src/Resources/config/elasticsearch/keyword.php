@@ -19,6 +19,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'name' => [
                     'type' => 'search_as_you_type',
                 ],
+                'createdAt' => [
+                    'type' => 'date',
+                ],
             ]
         );
 };

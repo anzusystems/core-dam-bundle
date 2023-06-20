@@ -10,7 +10,7 @@ final class VideoUrl extends AbstractAssetFileUrl
 {
     public function getCreatePath(): string
     {
-        return "/api/adm/v{$this->version}/video/licence/1";
+        return "/api/adm/v{$this->version}/video/licence/{$this->licenceId}";
     }
 
     public function getCreateChunkPath(string $assetId): string
@@ -28,9 +28,19 @@ final class VideoUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/video/{$assetId}";
     }
 
-    public function getAddToPositionPath(string $assetId, string $position): string
+    public function getAddToSlotPath(string $assetId, string $slotName): string
     {
-        return "/api/adm/v{$this->version}/video/asset/{$assetId}/position/$position";
+        return "/api/adm/v{$this->version}/video/asset/{$assetId}/slot-name/$slotName";
+    }
+
+    public function setToSlot(string $assetId, string $assetFileId, string $position): string
+    {
+        return "/api/adm/v{$this->version}/video/{$assetFileId}/asset/{$assetId}/slot-name/{$position}";
+    }
+
+    public function setMainFilePath(string $assetId, string $imageId): string
+    {
+        return "/api/adm/v{$this->version}/video/{$imageId}/asset/{$assetId}/main";
     }
 
     public function getSerializeClassString(): string

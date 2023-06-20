@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
+use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionRequirementStrategy;
 
 final class ExtSystemAssetTypeDistributionRequirementConfiguration
@@ -34,14 +35,17 @@ final class ExtSystemAssetTypeDistributionRequirementConfiguration
             $config[self::TITLE_KEY] ?? '',
             $config[self::BLOCKED_BY_KEY] ?? [],
             ExtSystemAssetTypeDistributionRequirementCategorySelectConfiguration::getFromArrayConfiguration($config[self::CATEGORY_SELECT_KEY] ?? []),
-            DistributionRequirementStrategy::tryFrom($config[self::STRATEGY_KEY]),
+            DistributionRequirementStrategy::from($config[self::STRATEGY_KEY]),
             $config[self::REQUIRED_AUTH_KEY] ?? false,
-            $config[self::DISTRIBUTION_METADATA_MAP] ?? [],
+            array_map(
+                fn (array $episodeMapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($episodeMapConfig),
+                $config[self::DISTRIBUTION_METADATA_MAP] ?? []
+            )
         );
     }
 
     /**
-     * @return array<string, string[]>
+     * @return array<int, TextsWriterConfiguration>
      */
     public function getMetadataMap(): array
     {

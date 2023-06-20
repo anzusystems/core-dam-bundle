@@ -9,10 +9,11 @@ use AnzuSystems\CoreDamBundle\Event\DistributionStatusEvent;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-final class DistributionStatusManager extends DistributionManager
+final class DistributionStatusManager
 {
     public function __construct(
         private readonly EventDispatcherInterface $dispatcher,
+        private readonly DistributionManagerProvider $managerProvider,
     ) {
     }
 
@@ -39,7 +40,7 @@ final class DistributionStatusManager extends DistributionManager
     private function setStatus(Distribution $distribution, DistributionProcessStatus $status): Distribution
     {
         $distribution->setStatus($status);
-        $this->updateExisting($distribution);
+        $this->managerProvider->get($distribution::class)->updateExisting($distribution);
 
         $this->dispatcher->dispatch(
             new DistributionStatusEvent(

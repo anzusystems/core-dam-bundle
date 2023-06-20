@@ -17,7 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
  */
 final class AssetLicenceRepository extends AbstractAnzuRepository
 {
-    public function findOneByExtSystemAndExtId(ExtSystem $extSystem, string $extId): AssetLicence
+    public function findOneByExtSystemAndExtId(ExtSystem $extSystem, string $extId): ?AssetLicence
     {
         return $this->findOneBy([
             'extSystem' => $extSystem,

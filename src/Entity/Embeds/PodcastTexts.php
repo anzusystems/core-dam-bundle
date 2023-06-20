@@ -13,10 +13,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastTexts
 {
-    public const TITLE_LENGTH = 100;
+    public const TITLE_LENGTH = 255;
     public const DESCRIPTION_LENGTH = 2_000;
 
-    #[ORM\Column(type: Types::STRING, length: 128)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(max: self::TITLE_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     #[Serialize]

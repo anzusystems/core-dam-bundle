@@ -9,14 +9,14 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 trait UuidIdentityDtoTrait
 {
     #[Serialize]
-    protected string $id;
+    protected string $id = '';
 
     public function getId(): string
     {
         return $this->id;
     }
 
-    public function setId(string $id): self
+    public function setId(string $id): static
     {
         $this->id = $id;
 

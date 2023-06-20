@@ -27,6 +27,17 @@ final class TokenStorage
     /**
      * @throws InvalidArgumentException
      */
+    public function clearTokens(string $serviceId): void
+    {
+        $this->coreDamBundleYoutubeCache->deleteItems([
+            $this->getRefreshTokenName($serviceId),
+            $this->getAccessTokenName($serviceId),
+        ]);
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
     public function storeAccessToken(AccessTokenDto $accessToken): AccessTokenDto
     {
         $item = $this->coreDamBundleYoutubeCache->getItem(

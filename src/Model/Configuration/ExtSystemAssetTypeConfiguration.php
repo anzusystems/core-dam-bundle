@@ -13,7 +13,7 @@ class ExtSystemAssetTypeConfiguration
     public const TITLE_CONFIG_KEY = 'title';
     public const CHUNK_STORAGE_NAME_KEY = 'chunk_storage_name';
     public const MIME_TYPES = 'mime_types';
-    public const FILE_VERSIONS_KEY = 'file_versions';
+    public const FILE_SLOTS_KEY = 'file_slots';
     public const SIZE_LIMIT_KEY = 'size_limit';
     public const CUSTOM_METADATA_PINNED_AMOUNT = 'custom_metadata_pinned_amount';
     public const KEYWORDS_KEY = 'keywords';
@@ -30,7 +30,7 @@ class ExtSystemAssetTypeConfiguration
         private readonly int $sizeLimit,
         private readonly int $customMetadataPinnedAmount,
         private readonly array $assetExternalProvidersMap,
-        private readonly ExtSystemAssetTypeFileVersionsConfiguration $fileVersions,
+        private readonly ExtSystemAssetTypeSlotsConfiguration $slots,
         private readonly ExtSystemAssetTypeExifMetadataConfiguration $keywords,
         private readonly ExtSystemAssetTypeExifMetadataConfiguration $authors,
         private readonly ExtSystemAssetTypeDistributionConfiguration $distribution,
@@ -51,8 +51,8 @@ class ExtSystemAssetTypeConfiguration
                 fn (array $episodeMapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($episodeMapConfig),
                 $config[self::ASSET_EXTERNAL_PROVIDERS_MAP_KEY] ?? []
             ),
-            ExtSystemAssetTypeFileVersionsConfiguration::getFromArrayConfiguration(
-                $config[self::FILE_VERSIONS_KEY] ?? []
+            ExtSystemAssetTypeSlotsConfiguration::getFromArrayConfiguration(
+                $config[self::FILE_SLOTS_KEY] ?? []
             ),
             ExtSystemAssetTypeExifMetadataConfiguration::getFromArrayConfiguration(
                 $config[self::KEYWORDS_KEY] ?? []
@@ -96,9 +96,9 @@ class ExtSystemAssetTypeConfiguration
         return $this->mimeTypes;
     }
 
-    public function getFileVersions(): ExtSystemAssetTypeFileVersionsConfiguration
+    public function getSlots(): ExtSystemAssetTypeSlotsConfiguration
     {
-        return $this->fileVersions;
+        return $this->slots;
     }
 
     public function getKeywords(): ExtSystemAssetTypeExifMetadataConfiguration

@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Exception\Handler;
 
 use AnzuSystems\CommonBundle\Exception\Handler\ExceptionHandlerInterface;
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Exception\AssetFileVersionUsedException;
+use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Throwable;
@@ -30,6 +30,6 @@ final class ForbiddenOperationExceptionHandler implements ExceptionHandlerInterf
 
     public function getSupportedExceptionClasses(): array
     {
-        return [ForbiddenOperationException::class, AssetFileVersionUsedException::class];
+        return [ForbiddenOperationException::class, AssetSlotUsedException::class];
     }
 }

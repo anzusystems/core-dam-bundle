@@ -8,6 +8,8 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Helper\ImageHelper;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use InvalidArgumentException;
 
 final class DefaultRegionOfInterestFactory
 {
@@ -31,6 +33,9 @@ final class DefaultRegionOfInterestFactory
     public function recalculateRoi(ImageFile $image, RegionOfInterest $roi): RegionOfInterest
     {
         $configuration = $this->configurationProvider->getExtSystemConfigurationByAssetFile($image);
+        if (false === ($configuration instanceof ExtSystemImageTypeConfiguration)) {
+            throw new InvalidArgumentException('Asset type must be a type of image');
+        }
 
         $imageAttributes = $image->getImageAttributes();
         $defaultRoiRatio = ImageHelper::getAspectRatio(
@@ -71,7 +76,7 @@ final class DefaultRegionOfInterestFactory
         return $roi
             ->setPointX($pointX)
             ->setPointY($pointY)
-            ->setPercentageWidth(round($widthPercentage, self::ROI_PERCENTAGE_DECIMAL_PLACES))
-            ->setPercentageHeight(round($heightPercentage, self::ROI_PERCENTAGE_DECIMAL_PLACES));
+            ->setPercentageWidth(floor(($widthPercentage * 100)) / 100)
+            ->setPercentageHeight(floor(($heightPercentage * 100)) / 100);
     }
 }

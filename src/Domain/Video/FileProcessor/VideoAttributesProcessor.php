@@ -8,12 +8,12 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 
 final class VideoAttributesProcessor
 {
     public function __construct(
-        private readonly FfmpegService $ffmpegService
+        private readonly FfmpegService $ffmpegService,
     ) {
     }
 
@@ -22,7 +22,7 @@ final class VideoAttributesProcessor
      *
      * @throws FfmpegException
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $this->ffmpegService->populateVideoParams($assetFile, $file);
 

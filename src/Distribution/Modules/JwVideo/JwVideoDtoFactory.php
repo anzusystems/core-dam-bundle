@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo;
 
-use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionDtoFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
@@ -12,11 +11,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaUploadDto;
 
 final class JwVideoDtoFactory extends AbstractDistributionDtoFactory
 {
-    use SerializerAwareTrait;
-
-    private const JSON_FORMAT = 'json';
-    private const DEFAULT_EVENTS = ['media_available'];
-
     public function createVideoDtoFromJwVideo(AssetFile $assetFile, JwDistribution $jwDistribution): JwVideoMediaUploadDto
     {
         $jwVideoDto = new JwVideoMediaUploadDto();
@@ -35,9 +29,9 @@ final class JwVideoDtoFactory extends AbstractDistributionDtoFactory
         return $jwVideoDto;
     }
 
-    public function createThumbnailUrl(JwDistribution $jwDistribution, ?int $width = null): string
+    public function createThumbnailUrl(string $id, ?int $width = null): string
     {
-        $url = "https://cdn.jwplayer.com/v2/media/{$jwDistribution->getExtId()}/poster.jpg";
+        $url = "https://cdn.jwplayer.com/v2/media/{$id}/poster.jpg";
         if ($width) {
             $url .= "?width={$width}";
         }

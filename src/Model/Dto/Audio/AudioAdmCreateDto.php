@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class AudioAdmCreateDto extends AssetFileAdmCreateDto
 {
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Choice(choices: AudioMimeTypes::CHOICES, message: ValidationException::ERROR_FIELD_INVALID)]
     protected string $mimeType;
 

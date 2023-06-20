@@ -25,7 +25,7 @@ class Chunk implements UuidIdentifiableInterface, FileSystemStorableInterface, A
     private AssetFile $assetFile;
 
     #[Serialize]
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(type: Types::BIGINT)]
     private int $offset;
 
     #[Serialize]

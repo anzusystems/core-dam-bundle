@@ -91,6 +91,11 @@ abstract class DamUser extends AnzuUser
         return $this->assetLicences;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, AssetLicence> $assetLicences
+     */
     public function setAssetLicences(Collection $assetLicences): static
     {
         $this->assetLicences = $assetLicences;
@@ -106,6 +111,11 @@ abstract class DamUser extends AnzuUser
         return $this->adminToExtSystems;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, ExtSystem> $adminToExtSystems
+     */
     public function setAdminToExtSystems(Collection $adminToExtSystems): static
     {
         $this->adminToExtSystems = $adminToExtSystems;
@@ -121,15 +131,15 @@ abstract class DamUser extends AnzuUser
         return $this->userToExtSystems;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, ExtSystem> $userToExtSystems
+     */
     public function setUserToExtSystems(Collection $userToExtSystems): self
     {
         $this->userToExtSystems = $userToExtSystems;
 
         return $this;
     }
-
-    /**
-     * @return array<string, int>
-     */
-    abstract public function getResolvedPermissions(): array;
 }

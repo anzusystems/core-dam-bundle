@@ -5,39 +5,48 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\ExternalProviderFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\FileAttributesProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\MetadataProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Throwable;
 
 abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 {
+    use ValidatorAwareTrait;
+    use IndexManagerAwareTrait;
+    use FileHelperTrait;
+    use MessageBusAwareTrait;
+
     protected AssetFileStatusManager $assetStatusManager;
     protected AssetFileMessageDispatcher $assetFileMessageDispatcher;
     protected FileFactory $fileFactory;
@@ -45,12 +54,20 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected AssetFileEventDispatcher $assetFileEventDispatcher;
     protected FileAttributesProcessor $fileAttributesPostProcessor;
     protected AssetFileRepository $assetFileRepository;
-    protected IndexManager $indexManager;
     protected MetadataProcessor $metadataProcessor;
-    protected EntityValidator $entityValidator;
     protected AssetTextsProcessor $displayTitleProcessor;
     protected ExternalProviderFileFactory $externalProviderFileFactory;
     protected UrlFileFactory $urlFileFactory;
+    protected AssetManager $assetManager;
+    protected DamLogger $damLogger;
+    protected AssetFileCounter $assetFileCounter;
+    protected ChunkFileManager $chunkFileManager;
+
+    #[Required]
+    public function setAssetFileCounter(AssetFileCounter $assetFileCounter): void
+    {
+        $this->assetFileCounter = $assetFileCounter;
+    }
 
     #[Required]
     public function setUrlFileFactory(UrlFileFactory $urlFileFactory): void
@@ -62,12 +79,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     public function setDisplayTitleProcessor(AssetTextsProcessor $displayTitleProcessor): void
     {
         $this->displayTitleProcessor = $displayTitleProcessor;
-    }
-
-    #[Required]
-    public function setEntityValidator(EntityValidator $entityValidator): void
-    {
-        $this->entityValidator = $entityValidator;
     }
 
     #[Required]
@@ -136,15 +147,36 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->externalProviderFileFactory = $externalProviderFileFactory;
     }
 
+    #[Required]
+    public function setAssetManager(AssetManager $assetManager): void
+    {
+        $this->assetManager = $assetManager;
+    }
+
+    #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
+    }
+
+    #[Required]
+    public function setChunkFileManager(ChunkFileManager $chunkFileManager): void
+    {
+        $this->chunkFileManager = $chunkFileManager;
+    }
+
     /**
+     * @throws SerializerException
      * @throws ValidationException
+     * @throws InvalidArgumentException
      */
     public function finishUpload(AssetAdmFinishDto $assetFinishDto, AssetFile $assetFile): AssetFile
     {
         $this->validateFullyUploaded($assetFile);
-        $this->entityValidator->validateDto($assetFinishDto);
-        $this->assetStatusManager->setNotifyTo($assetFile);
+        $this->validator->validate($assetFinishDto);
+        $assetFile->getAssetAttributes()->setChecksum($assetFinishDto->getChecksum());
         $this->assetStatusManager->toUploaded($assetFile);
+
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         $this->assetFileMessageDispatcher->dispatchAssetFileChangeState($assetFile);
 
@@ -152,28 +184,43 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     }
 
     /**
-     * @throws FilesystemException
-     * @throws NonUniqueResultException
      * @throws SerializerException
-     * @throws TransportExceptionInterface
      */
-    public function storeAndProcess(AssetFile $assetFile, ?File $file = null): AssetFile
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null): AssetFile
     {
         try {
-            $file = $this->store($assetFile, $file);
+            if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
+                $file = $this->store($assetFile, $file);
+            }
+            if (null === $file) {
+                throw new RuntimeException(sprintf('AssetFile (%s) cant be processed without file', $assetFile->getId()));
+            }
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored)) {
+                $this->chunkFileManager->clearChunks($assetFile);
                 $this->process($assetFile, $file);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
+            $this->assetFileEventDispatcher->dispatchDuplicatePreFlush(
+                assetFile: $assetFile,
+                originAssetFile: $duplicateAssetFileException->getOldAsset()
+            );
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
             $this->assetStatusManager->toFailed(
-                $assetFileProcessFailed->getAssetFile(),
-                $assetFileProcessFailed->getAssetFileFailedType()
+                $assetFile,
+                $assetFileProcessFailed->getAssetFileFailedType(),
+                $assetFileProcessFailed
+            );
+            $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+        } catch (Throwable $exception) {
+            $this->assetStatusManager->toFailed(
+                $assetFile,
+                AssetFileFailedType::Unknown,
+                $exception
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         }
@@ -187,22 +234,27 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws NonUniqueResultException
      * @throws AssetFileProcessFailed
      * @throws TransportExceptionInterface
+     * @throws Throwable
      */
-    public function store(AssetFile $assetFile, ?File $file = null): File
+    public function store(AssetFile $assetFile, ?AdapterFile $file = null): AdapterFile
     {
-        $this->assetStatusManager->toStoring($assetFile);
-        $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         $file = $file ?: $this->createFile($assetFile);
 
-        if (false === $this->supportsMimeType($assetFile, $file)) {
-            throw new AssetFileProcessFailed($assetFile, AssetFileFailedType::InvalidMimeType);
+        $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
+        $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
+        $this->checkDuplicate($assetFile);
+
+        try {
+            $this->assetManager->beginTransaction();
+            $this->assetFileStorageOperator->save($assetFile, $file);
+            $this->assetStatusManager->toStored($assetFile);
+            $this->assetManager->commit();
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
+
+            throw $exception;
         }
 
-        $this->fileAttributesPostProcessor->process($assetFile, $file);
-        $this->checkDuplicate($assetFile);
-        $this->assetFileStorageOperator->save($assetFile, $file);
-
-        $this->assetStatusManager->toStored($assetFile);
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
         return $file;
@@ -211,44 +263,34 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * @throws NonUniqueResultException
      * @throws SerializerException
+     * @throws Throwable
      */
-    public function process(AssetFile $assetFile, File $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $this->assetStatusManager->toProcessing($assetFile);
-        $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+        try {
+            $this->assetManager->beginTransaction();
 
-        $this->processAssetFile($assetFile, $file);
+            $this->processAssetFile($assetFile, $file);
+            if (false === $assetFile->getFlags()->isProcessedMetadata()) {
+                $this->metadataProcessor->process($assetFile, $file);
+            }
+            $this->assetStatusManager->toProcessed($assetFile);
+            $this->assetManager->commit();
+            $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
+        } catch (Throwable $exception) {
+            $this->assetManager->rollback();
 
-        $assetFile->getAsset()->getAsset()->getAttributes()->setStatus(AssetStatus::WithFile);
-        if (false === $assetFile->getFlags()->isProcessedMetadata()) {
-            $this->metadataProcessor->process($assetFile, $file);
+            throw $exception;
         }
-        $this->displayTitleProcessor->updateAssetFileDisplayTitle($assetFile);
-
-        $this->assetStatusManager->toProcessed($assetFile);
-        $this->indexManager->index($assetFile->getAsset()->getAsset());
-
         $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
 
         return $assetFile;
     }
 
-    protected function supportsMimeType(AssetFile $assetFile, File $file): bool
-    {
-        $mimeType = (string) $file->getMimeType();
-
-        return match ($assetFile->getAsset()->getAsset()->getAttributes()->getAssetType()) {
-            AssetType::Image => in_array($mimeType, ImageMimeTypes::CHOICES, true),
-            AssetType::Video => in_array($mimeType, VideoMimeTypes::CHOICES, true),
-            AssetType::Audio => in_array($mimeType, AudioMimeTypes::CHOICES, true),
-            AssetType::Document => in_array($mimeType, DocumentMimeTypes::CHOICES, true),
-        };
-    }
-
     /**
      * Concrete AssetFile processing (Image, Audio, ...)
      */
-    abstract protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile;
+    abstract protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile;
 
     /**
      * @throws DuplicateAssetFileException
@@ -258,11 +300,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
     /**
      * @throws ForbiddenOperationException
+     * @throws InvalidArgumentException
      */
     private function validateFullyUploaded(AssetFile $assetFile): void
     {
         if (
-            $assetFile->getAssetAttributes()->getUploadedSize() === $assetFile->getAssetAttributes()->getSize()
+            $this->assetFileCounter->getUploadedSize($assetFile) === $assetFile->getAssetAttributes()->getSize()
         ) {
             return;
         }
@@ -271,10 +314,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     }
 
     /**
+     * @throws AssetFileProcessFailed
      * @throws FilesystemException
-     * @throws TransportExceptionInterface
+     *
+     * @psalm-suppress PossiblyNullArgument
      */
-    private function createFile(AssetFile $assetFile): File
+    private function createFile(AssetFile $assetFile): AdapterFile
     {
         return match ($assetFile->getAssetAttributes()->getCreateStrategy()) {
             AssetFileCreateStrategy::Chunk => $this->fileFactory->createFromChunks($assetFile),

@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Configuration\YoutubeDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\YoutubeVideoPrivacy;
-use DateTime;
+use DateTimeInterface;
 use Google_Service_YouTube_Video;
 use Google_Service_YouTube_VideoSnippet;
 use Google_Service_YouTube_VideoStatus;
@@ -55,6 +55,10 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
 
         $maxPixels = 0;
         foreach ($video->getSnippet()->getThumbnails() as $item) {
+            if (null === $item) {
+                continue;
+            }
+
             $pixels = $item->getWidth() * $item->getWidth();
             if ($pixels > $maxPixels) {
                 $youtubeVideoDto->setThumbnailUrl($item->getUrl());
@@ -75,8 +79,8 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         $status->setMadeForKids($distribution->getFlags()->isForKids());
         $status->setSelfDeclaredMadeForKids($distribution->getFlags()->isForKids());
 
-        if ($distribution->getPrivacy()->is(YoutubeVideoPrivacy::dynamic)) {
-            $status->setPublishAt($distribution->getPublishAt()->format(DateTime::ATOM));
+        if ($distribution->getPrivacy()->is(YoutubeVideoPrivacy::Dynamic)) {
+            $status->setPublishAt($distribution->getPublishAt()?->format(DateTimeInterface::ATOM));
 
             return $status;
         }

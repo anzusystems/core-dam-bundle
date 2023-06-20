@@ -11,12 +11,11 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -29,7 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(fields: ['name'])]
 #[ORM\UniqueConstraint(fields: ['extSystem', 'extId'])]
 #[ORM\Index(fields: ['name'])]
-#[UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
+#[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
 class AssetLicence implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, AssetLicenceInterface, ExtSystemInterface
 {
     use IdentityTrait;
@@ -52,6 +51,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[ORM\ManyToOne(targetEntity: ExtSystem::class, inversedBy: 'licences')]
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     private ExtSystem $extSystem;
 
     /**
@@ -61,6 +61,10 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private string $extId;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $limitedFiles;
 
     /**
      * List of users who belongs to licence.
@@ -74,6 +78,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setExtSystem(new ExtSystem());
         $this->setExtId('');
         $this->setUsers(new ArrayCollection());
+        $this->setLimitedFiles(false);
     }
 
     public function getName(): string
@@ -113,6 +118,23 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setExtId(string $extId): self
     {
         $this->extId = $extId;
+
+        return $this;
+    }
+
+    public function isLimitedFiles(): bool
+    {
+        return $this->limitedFiles;
+    }
+
+    public function isNotLimitedFiles(): bool
+    {
+        return false === $this->isLimitedFiles();
+    }
+
+    public function setLimitedFiles(bool $limitedFiles): self
+    {
+        $this->limitedFiles = $limitedFiles;
 
         return $this;
     }

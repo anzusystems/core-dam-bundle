@@ -4,28 +4,44 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeApiClient;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
+use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeCustomDataFactory;
+use AnzuSystems\CoreDamBundle\Distribution\PreviewProvidableModuleInterface;
 use AnzuSystems\CoreDamBundle\Distribution\RemoteProcessingDistributionModuleInterface;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Exception;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
-use RedisException;
 
-final class YoutubeDistributionModule extends AbstractDistributionModule implements RemoteProcessingDistributionModuleInterface
+final class YoutubeDistributionModule extends AbstractDistributionModule implements
+    RemoteProcessingDistributionModuleInterface,
+    PreviewProvidableModuleInterface
 {
+    private const YOUTUBE_DISTRIBUTION_TAG = 'youtube_distribution';
+
     public function __construct(
         private readonly YoutubeApiClient $client,
         private readonly YoutubeAuthenticator $authenticator,
+        private readonly DamLogger $logger,
+        private readonly YoutubeCustomDataFactory $youtubeCustomDataFactory,
+        private readonly ConfigurationProvider $configurationProvider,
+        private readonly CropFacade $cropFacade,
     ) {
     }
 
@@ -40,17 +56,23 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     /**
      * @param YoutubeDistribution $distribution
      *
-     * @throws SerializerException
      * @throws Exception
      * @throws FilesystemException
-     * @throws RedisException
+     * @throws InvalidArgumentException
+     * @throws SerializerException
      */
     public function distribute(Distribution $distribution): void
     {
+        /** @var VideoFile $assetFile */
         $assetFile = $this->assetFileRepository->find($distribution->getAssetFileId());
-        if (null === $assetFile) {
+        if (false === ($assetFile instanceof VideoFile)) {
             return;
         }
+
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Prepare YT distribution for asset id (%s)', $assetFile->getId()));
+
+        $file = $this->getLocalFileCopy($assetFile);
+        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT Local file copy prepared (%s)', $assetFile->getId()));
 
         $video = $this->client->distribute(
             assetFile: $assetFile,
@@ -58,18 +80,11 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             configuration: $this->distributionConfigurationProvider->getYoutubeDistributionService(
                 $distribution->getDistributionService()
             ),
-            file: $this->getLocalFileCopy($assetFile)
+            file: $file
         );
 
         if ($video) {
             $distribution->setExtId($video->getId());
-            if (false === empty($distribution->getPlaylist())) {
-                $this->client->setPlaylist(
-                    distributionService: $distribution->getDistributionService(),
-                    videoId: $distribution->getExtId(),
-                    playlistId: $distribution->getPlaylist()
-                );
-            }
 
             return;
         }
@@ -85,7 +100,11 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     }
 
     /**
+     * @param YoutubeDistribution $distribution
+     *
      * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws SerializerException
      */
     public function checkDistributionStatus(Distribution $distribution): void
     {
@@ -97,11 +116,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         }
 
         if (YoutubeVideoDto::UPLOAD_STATUS_PROCESSED === $video->getUploadStatus()) {
-            $distribution->setDistributionData([
-                YoutubeDistribution::THUMBNAIL_WIDTH => $video->getThumbnailWidth(),
-                YoutubeDistribution::THUMBNAIL_HEIGHT => $video->getThumbnailHeight(),
-                YoutubeDistribution::THUMBNAIL_DATA => $video->getThumbnailUrl(),
-            ]);
+            $distribution->setDistributionData($this->youtubeCustomDataFactory->createDistributionData($video));
+            $this->updatePreviewAndPlaylist($distribution);
 
             return;
         }
@@ -112,5 +128,74 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     public static function supportsDistributionResourceName(): string
     {
         return YoutubeDistribution::getResourceName();
+    }
+
+    public function getPreviewLink(Distribution $distribution): ?string
+    {
+        if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
+            return $this->youtubeCustomDataFactory->getUrl($distribution);
+        }
+
+        return null;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * @throws SerializerException
+     * @throws Exception
+     */
+    private function updatePreviewAndPlaylist(YoutubeDistribution $distribution): void
+    {
+        if (false === empty($distribution->getPlaylist())) {
+            $this->logger->info(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('YT setting playlist for asset id (%s)', $distribution->getAssetFileId())
+            );
+
+            $this->client->setPlaylist(
+                distributionService: $distribution->getDistributionService(),
+                videoId: $distribution->getExtId(),
+                playlistId: $distribution->getPlaylist()
+            );
+        }
+
+        $this->setThumbnail($distribution);
+    }
+
+    private function setThumbnail(YoutubeDistribution $distribution): void
+    {
+        /** @var VideoFile $video */
+        $video = $this->assetFileRepository->find($distribution->getAssetFileId());
+        if (false === ($video instanceof VideoFile)) {
+            return;
+        }
+
+        $imageFile = $video->getImagePreview()?->getImageFile();
+        if (null === $imageFile) {
+            return;
+        }
+
+        $cropItem = $this->configurationProvider->getFirstCropAllowItemByTag(self::YOUTUBE_DISTRIBUTION_TAG);
+        if (null === $cropItem) {
+            $this->logger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('Youtube thumbnail update failed, crop allow item with tag (%s) not found', self::YOUTUBE_DISTRIBUTION_TAG)
+            );
+
+            return;
+        }
+
+        $this->client->setThumbnail(
+            distributionService: $distribution->getDistributionService(),
+            distributionId: $distribution->getExtId(),
+            imageData: $this->cropFacade->applyCropPayloadToDefaultRoi(
+                image: $imageFile,
+                cropPayload: (new RequestedCropDto())
+                    ->setRoi(App::ZERO)
+                    ->setRequestHeight($cropItem->getHeight())
+                    ->setRequestWidth($cropItem->getWidth()),
+                validate: false
+            )
+        );
     }
 }

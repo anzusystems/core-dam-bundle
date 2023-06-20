@@ -9,4 +9,5 @@ use AnzuSystems\CommonBundle\Exception\ValidationException as BaseValidationExce
 class ValidationException extends BaseValidationException
 {
     public const ERROR_INVALID_KEY = 'error_invalid_key';
+    public const ERROR_INVALID_LICENCE = 'error_invalid_licence';
 }

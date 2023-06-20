@@ -8,11 +8,16 @@ use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
+use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Model\Dto\Traits\TimeTrackingDtoTrait;
 use AnzuSystems\CoreDamBundle\Model\Dto\Traits\UserTrackingDtoTrait;
 use AnzuSystems\CoreDamBundle\Model\Dto\Traits\UuidIdentityDtoTrait;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
+/**
+ * @method DamUser getCreatedBy()
+ * @method DamUser getModifiedBy()
+ */
 abstract class AbstractEntityDto
 {
     use UuidIdentityDtoTrait;
@@ -27,7 +32,7 @@ abstract class AbstractEntityDto
         $entityDto = (new static());
 
         if ($entity instanceof UuidIdentifiableInterface) {
-            $entityDto->setId($entity->getId());
+            $entityDto->setId((string) $entity->getId());
         }
         if ($entity instanceof TimeTrackingInterface) {
             $entityDto
@@ -39,8 +44,16 @@ abstract class AbstractEntityDto
                 ->setCreatedBy($entity->getCreatedBy())
                 ->setModifiedBy($entity->getModifiedBy());
         }
+        $entityDto->resourceName = $entity::class;
 
         return $entityDto;
+    }
+
+    public function setResourceName(string $resourceName): static
+    {
+        $this->resourceName = $resourceName;
+
+        return $this;
     }
 
     #[Serialize(serializedName: '_resourceName')]

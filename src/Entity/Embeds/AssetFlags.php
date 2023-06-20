@@ -17,6 +17,9 @@ class AssetFlags
     private bool $visible;
 
     #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $generatedBySystem;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
     private bool $autocompletedMetadata;
 
     #[ORM\Column(type: Types::BOOLEAN)]
@@ -28,6 +31,19 @@ class AssetFlags
         $this->setDescribed(false);
         $this->setAutoDeleteUnprocessed(true);
         $this->setAutocompletedMetadata(false);
+        $this->setGeneratedBySystem(false);
+    }
+
+    public function isGeneratedBySystem(): bool
+    {
+        return $this->generatedBySystem;
+    }
+
+    public function setGeneratedBySystem(bool $generatedBySystem): self
+    {
+        $this->generatedBySystem = $generatedBySystem;
+
+        return $this;
     }
 
     public function isAutoDeleteUnprocessed(): bool

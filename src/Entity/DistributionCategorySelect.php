@@ -10,12 +10,11 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\DistributionCategorySelectRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -27,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DistributionCategorySelectRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_extSystem_serviceSlug_type', fields: ['extSystem', 'serviceSlug', 'type'])]
-#[AppAssert\UniqueEntity(fields: ['extSystem', 'serviceSlug', 'type'])]
+#[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'serviceSlug', 'type'])]
 class DistributionCategorySelect implements TimeTrackingInterface, UserTrackingInterface, UuidIdentifiableInterface, ExtSystemInterface
 {
     use UuidIdentityTrait;
@@ -107,6 +106,9 @@ class DistributionCategorySelect implements TimeTrackingInterface, UserTrackingI
         return $this->options;
     }
 
+    /**
+     * @param Collection<int, DistributionCategoryOption> $options
+     */
     public function setOptions(Collection $options): self
     {
         $this->options = $options;

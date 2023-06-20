@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 
 final class OptimalResizeFactory extends AbstractManager
@@ -37,36 +37,39 @@ final class OptimalResizeFactory extends AbstractManager
      * @throws ImageManipulatorException
      * @throws FilesystemExceptionAlias
      */
-    public function createMainCrop(ImageFile $asset, File $file): void
+    public function createMainCrop(ImageFile $asset, AdapterFile $file): ImageFileOptimalResize
     {
-        $resize = $this->createCrop(
-            $asset,
-            $file,
-            max($asset->getImageAttributes()->getWidth(), $asset->getImageAttributes()->getHeight())
-        );
-        $resize->setOriginal(true);
+        [$width, $height] = getimagesize($file->getRealPath());
+
+        return $this->createCrop(
+            imageFile: $asset,
+            file: $file,
+            size: max($width, $height)
+        )
+            ->setOriginal(true);
     }
 
     /**
      * @throws ImageManipulatorException
      * @throws FilesystemExceptionAlias
      */
-    public function createCrop(ImageFile $imageFile, File $file, int $size): ImageFileOptimalResize
+    public function createCrop(ImageFile $imageFile, AdapterFile $file, int $size): ImageFileOptimalResize
     {
         $optimalResize = new ImageFileOptimalResize();
-
-        $tmpPath = $this->nameGenerator->generatePath(AbstractImageController::CROP_EXTENSION)->getRelativePath();
-        $storagePath = $this->createOptimalCropPath($imageFile, $size, $imageFile->getImageAttributes()->getRotation());
-
-        $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();
-        $assetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($imageFile);
-
+        // load file to Visp
         $this->imageManipulator->loadThumbnail($file->getRealPath(), $size);
         $this->imageManipulator->autorotate();
 
-        $tmpFilesystem->ensureDirectory($tmpPath);
-        $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($tmpPath), false);
+        // Prepare path and folder for Visp to write crop file
+        $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();
+        $tmpPath = $tmpFilesystem->getTmpFileName(AbstractImageController::CROP_EXTENSION);
 
+        $tmpFilesystem->ensureDirectory($tmpPath);
+        // Write rotated crop file
+        $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($tmpPath), false);
+        // Write file to target storage
+        $assetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($imageFile);
+        $storagePath = $this->createOptimalCropPath($imageFile, $size, $imageFile->getImageAttributes()->getRotation());
         $assetFileSystem->writeStream($storagePath, $tmpFilesystem->readStream($tmpPath));
 
         $optimalResize

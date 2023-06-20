@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -18,11 +19,12 @@ use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * @extends AbstractFixtures<VideoFile>
+ * @extends AbstractAssetFileFixtures<VideoFile>
  */
 final class VideoFixtures extends AbstractAssetFileFixtures
 {
     public const VIDEO_ID_1 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabe';
+    public const VIDEO_ID_2 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabc';
 
     public function __construct(
         private readonly VideoManager $videoManager,
@@ -40,7 +42,6 @@ final class VideoFixtures extends AbstractAssetFileFixtures
     {
         return [
             AssetLicenceFixtures::class,
-            CustomFormElementFixtures::class,
             AuthorFixtures::class,
             KeywordFixtures::class,
         ];
@@ -51,9 +52,13 @@ final class VideoFixtures extends AbstractAssetFileFixtures
         return VideoFile::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var VideoFile $video */
         foreach ($progressBar->iterate($this->getData()) as $video) {
             $video = $this->videoManager->create($video);
@@ -65,6 +70,7 @@ final class VideoFixtures extends AbstractAssetFileFixtures
     private function getData(): Generator
     {
         $fileSystem = $this->fileSystemProvider->createLocalFilesystem(self::DATA_PATH);
+        /** @var AssetLicence $licence */
         $licence = $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $file = $this->getFile($fileSystem, 'video_fixtures_sample.mp4');
@@ -74,17 +80,20 @@ final class VideoFixtures extends AbstractAssetFileFixtures
             self::VIDEO_ID_1
         );
 
-        $asset = $video->getAsset()->getAsset();
+        $asset = $video->getAsset();
+        $asset->getAssetFlags()->setDescribed(true);
         $asset->getMetadata()->setCustomData([
             'title' => 'Video title',
             'headline' => 'Custom headline title',
             'description' => 'Custom video description',
         ]);
-        $asset->setKeywords(new ArrayCollection([
+        /** @var ArrayCollection<int, Keyword> $keywords */
+        $keywords = new ArrayCollection([
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_1),
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_2),
             $this->keywordFixtures->getOneFromRegistry(KeywordFixtures::KEYWORD_3),
-        ]));
+        ]);
+        $asset->setKeywords($keywords);
 
         $asset->setAuthors(new ArrayCollection([
             $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_1),
@@ -97,6 +106,18 @@ final class VideoFixtures extends AbstractAssetFileFixtures
                 'name' => 'Publicistika',
             ])
         );
+        $video->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($video)->storeAndProcess($video, $file);
+
+        yield $video;
+
+        $file = $this->getFile($fileSystem, 'video_fixtures_sample_2.mp4');
+        $video = $this->videoFactory->createFromFile(
+            $file,
+            $licence,
+            self::VIDEO_ID_2
+        );
+        $video->getAsset()->getAssetFlags()->setDescribed(true);
         $video->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($video)->storeAndProcess($video, $file);
 

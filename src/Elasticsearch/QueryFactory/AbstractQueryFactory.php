@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractQueryFactory implements QueryFactoryInterface
 {
-    private readonly IndexSettings $indexSettings;
+    private IndexSettings $indexSettings;
 
     #[Required]
     public function setIndexSettings(IndexSettings $indexSettings): void
@@ -34,7 +34,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
                 ],
                 'from' => $searchDto->getOffset(),
                 'size' => $searchDto->getLimit(),
-                'sort' => $searchDto->getOrder() ?: ['_score'],
+                'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
             ],
         ];
     }

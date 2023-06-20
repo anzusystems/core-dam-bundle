@@ -14,7 +14,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 /**
  * @extends AbstractFixtures<Author>
  */
-final class AuthorFixtures extends AbstractAssetFileFixtures
+final class AuthorFixtures extends AbstractFixtures
 {
     public const AUTHOR_1 = '690fd785-84b1-4d3b-abdf-b986ed53c317';
     public const AUTHOR_2 = '19a0dba5-459b-422e-ac8e-a3c1cbd20d36';
@@ -30,19 +30,23 @@ final class AuthorFixtures extends AbstractAssetFileFixtures
         return Author::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var Author $author */
         foreach ($progressBar->iterate($this->getData()) as $author) {
             $author = $this->manager->create($author);
-
             $this->addToRegistry($author, (string) $author->getId());
         }
     }
 
     private function getData(): Generator
     {
+        /** @var ExtSystem $cmsExtSystem */
         $cmsExtSystem = $this->entityManager->find(
             ExtSystem::class,
             1

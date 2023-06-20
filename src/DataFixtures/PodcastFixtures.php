@@ -5,25 +5,39 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
  * @extends AbstractFixtures<Podcast>
  */
-final class PodcastFixtures extends AbstractAssetFileFixtures
+final class PodcastFixtures extends AbstractFixtures
 {
-    public const PODCAST_1 = '8fe7196e-1480-41b6-b0b3-1c73c79f3452';
-    public const PODCAST_2 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
+    public const PODCAST_1 = '5edeb44d-c64b-4357-957d-688d9cf7e63a';
+    public const PODCAST_2 = '8fe7196e-1480-41b6-b0b3-1c73c79f3452';
+    public const PODCAST_3 = '5edeb44d-c64b-4357-957d-688d9cf7e62a';
+    public const PODCAST_4 = '5edeb44e-c64b-4357-957d-688d9cf7e62a';
 
     public function __construct(
-        private readonly PodcastManager $podcastManager
+        private readonly PodcastManager $podcastManager,
+        private readonly ImageFileRepository $imageFileRepository,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
     ) {
+    }
+
+    public static function getDependencies(): array
+    {
+        return [
+            ImageFixtures::class,
+        ];
     }
 
     public static function getIndexKey(): string
@@ -31,9 +45,13 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
         return Podcast::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var Podcast $podcast */
         foreach ($progressBar->iterate($this->getData()) as $podcast) {
             $podcast = $this->podcastManager->create($podcast);
@@ -43,32 +61,66 @@ final class PodcastFixtures extends AbstractAssetFileFixtures
 
     private function getData(): Generator
     {
-        $licence = $this->entityManager->find(AssetLicence::class, 1);
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        /** @var ImageFile $imageFile */
+        $imageFile = $this->imageFileRepository->find(ImageFixtures::IMAGE_ID_1_2);
 
-        yield (new Podcast())
+        $podcast = (new Podcast())
             ->setId(self::PODCAST_1)
             ->setTexts(
                 (new PodcastTexts())
-                    ->setTitle('This American Life')
+                    ->setTitle('Dobré ráno')
             )
             ->setAttributes(
                 (new PodcastAttributes())
-                    ->setRssUrl('https://www.thisamericanlife.org/podcast/rss.xml')
+                    ->setRssUrl('https://anchor.fm/s/8a651488/podcast/rss')
             )
-            ->setLicence($licence)
-        ;
+            ->setLicence($licence);
+
+        $podcast->setImagePreview(
+            $this->imagePreviewFactory->createFromImageFile(
+                imageFile: $imageFile,
+                flush: false
+            )
+        );
+
+        yield $podcast;
 
         yield (new Podcast())
             ->setId(self::PODCAST_2)
             ->setTexts(
                 (new PodcastTexts())
-                    ->setTitle('Vedator')
+                    ->setTitle('Klik')
             )
             ->setAttributes(
                 (new PodcastAttributes())
-                    ->setRssUrl('https://feed.podbean.com/vedatorskypodcast/feed.xml')
+                    ->setRssUrl('https://anchor.fm/s/4d8e8b48/podcast/rss')
             )
-            ->setLicence($licence)
-        ;
+            ->setLicence($licence);
+
+        yield (new Podcast())
+            ->setId(self::PODCAST_3)
+            ->setTexts(
+                (new PodcastTexts())
+                    ->setTitle('Rozprávky SME')
+            )
+            ->setAttributes(
+                (new PodcastAttributes())
+                    ->setRssUrl('https://anchor.fm/s/7758ecd4/podcast/rss')
+            )
+            ->setLicence($licence);
+
+        yield (new Podcast())
+            ->setId(self::PODCAST_4)
+            ->setTexts(
+                (new PodcastTexts())
+                    ->setTitle('Test feed')
+            )
+            ->setAttributes(
+                (new PodcastAttributes())
+                    ->setRssUrl('https://anchor.fm/s/db2e247c/podcast/rss')
+            )
+            ->setLicence($licence);
     }
 }

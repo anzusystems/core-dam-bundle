@@ -28,6 +28,7 @@ final class RegionOfInterestRepository extends AbstractAnzuRepository
             ->andWhere('entity.position = :roiPosition')
             ->setParameter('imageId', $assetId)
             ->setParameter('roiPosition', $roiPosition)
+            ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult()
         ;

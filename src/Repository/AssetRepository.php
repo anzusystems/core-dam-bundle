@@ -7,8 +7,12 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends AbstractAnzuRepository<Asset>
@@ -32,6 +36,25 @@ final class AssetRepository extends AbstractAnzuRepository
         );
     }
 
+    /**
+     * @return Collection<int, Asset>
+     */
+    public function findToDelete(DateTimeInterface $createdAtUntil, int $limit): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->andWhere('entity.assetFlags.autoDeleteUnprocessed = :true')
+                ->andWhere('entity.attributes.status = :draftStatus')
+                ->andWhere('entity.createdAt < :createdAtUntil')
+                ->setParameter('true', true)
+                ->setParameter('draftStatus', AssetStatus::DRAFT)
+                ->setParameter('createdAtUntil', $createdAtUntil->format(DATE_ATOM))
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     public function findByExtSystemAndIds(ExtSystem $extSystem, array $ids): Collection
     {
         return new ArrayCollection(
@@ -44,6 +67,35 @@ final class AssetRepository extends AbstractAnzuRepository
                 ->getQuery()
                 ->getResult()
         );
+    }
+
+    public function geAllByLicenceIds(array $licenceIds, int $limit, ?string $idFrom = null): Collection
+    {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->where('IDENTITY(entity.licence) in (:licenceIds)')
+            ->setParameter('licenceIds', $licenceIds);
+
+        if (is_string($idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder
+                ->setMaxResults($limit)
+                ->orderBy('entity.id', Criteria::ASC)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
+    {
+        return $queryBuilder
+            ->innerJoin('entity.licence', 'licence')
+            ->andWhere('IDENTITY(licence.extSystem) = :extSystemId')
+            ->setParameter('extSystemId', $extSystemId);
     }
 
     protected function getEntityClass(): string

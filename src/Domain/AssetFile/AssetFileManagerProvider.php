@@ -24,7 +24,7 @@ class AssetFileManagerProvider extends AbstractManager
 
     public function getManager(AssetFile $assetFile): AssetFileManager
     {
-        return match ($assetFile->getAsset()->getAsset()->getAttributes()->getAssetType()) {
+        return match ($assetFile->getAssetType()) {
             AssetType::Image => $this->imageManager,
             AssetType::Video => $this->videoManager,
             AssetType::Audio => $this->audioManager,

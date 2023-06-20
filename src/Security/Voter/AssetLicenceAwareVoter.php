@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Security\Voter;
 
+use AnzuSystems\CommonBundle\Security\Voter\AbstractVoter;
+use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -13,19 +15,26 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
  */
 final class AssetLicenceAwareVoter extends AbstractVoter
 {
-    public function resolveAllow(string $attribute, mixed $subject, DamUser $user): bool
+    /**
+     * @param DamUser $user
+     */
+    protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
     {
+        if (false === parent::permissionVote($attribute, $subject, $user)) {
+            return false;
+        }
+
         if (false === ($subject instanceof AssetLicenceInterface)) {
             return false;
         }
 
         $assetLicence = $subject->getLicence();
 
-        if ($user->getAssetLicences()->containsKey($assetLicence->getId())) {
+        if ($user->getAssetLicences()->containsKey((int) $assetLicence->getId())) {
             return true;
         }
 
-        return $user->getAdminToExtSystems()->containsKey($assetLicence->getExtSystem()->getId());
+        return $user->getAdminToExtSystems()->containsKey((int) $assetLicence->getExtSystem()->getId());
     }
 
     protected function getSupportedPermissions(): array

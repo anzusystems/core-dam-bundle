@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
+use AnzuSystems\Contracts\Exception\AnzuException;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetAuthorForExternalProviderAssigner;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -19,7 +22,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\AssetExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -28,33 +31,108 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DocumentMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\VideoMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 
+/**
+ * @template T of AssetFile
+ */
 abstract class AssetFileFactory
 {
+    use FileHelperTrait;
+
+    /**
+     * @var AssetFileManager<T>
+     */
+    protected readonly AssetFileManager $assetFileManager;
+
+    /**
+     * @param AssetFileManager<T> $assetFileManager
+     */
     public function __construct(
-        private readonly AssetFactory $assetFactory,
-        private readonly AssetFileManager $assetFileManager,
-        private readonly AssetFileMetadataManager $assetFileMetadataManager,
-        private readonly AssetTextsWriter $textsWriter,
-        private readonly AssetTextsProcessor $assetTextsProcessor,
-        private readonly ExtSystemConfigurationProvider $configurationProvider,
+        protected readonly AssetFactory $assetFactory,
+        protected readonly AssetManager $assetManager,
+        protected readonly AssetFileMetadataManager $assetFileMetadataManager,
+        protected readonly AssetTextsWriter $textsWriter,
+        protected readonly ExtSystemConfigurationProvider $configurationProvider,
+        protected readonly ImageStatusFacade $imageStatusFacade,
+        protected readonly AssetAuthorForExternalProviderAssigner $authorForExternalProviderAssigner,
+        AssetFileManager $assetFileManager,
     ) {
+        $this->assetFileManager = $assetFileManager;
     }
 
     /**
+     * @throws SerializerException
+     */
+    public function createAndProcessFromFile(
+        AdapterFile $file,
+        AssetLicence $assetLicence,
+        bool $generatedBySystem = false,
+    ): AssetFile {
+        $imageFile = $this->createFromFile(
+            file: $file,
+            assetLicence: $assetLicence,
+        );
+        $imageFile->getAsset()->getAssetFlags()->setGeneratedBySystem($generatedBySystem);
+        $imageFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->imageStatusFacade->storeAndProcess($imageFile, $file);
+
+        return $imageFile;
+    }
+
+    /**
+     * @return T
+     *
      * @throws DomainException
      */
-    public function createFromFile(File $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
+    public function createFromFile(AdapterFile $file, AssetLicence $assetLicence, ?string $id = null): AssetFile
     {
         $assetFile = $this->createBlankAssetFile($file, $assetLicence, $id);
-        $this->assetFactory->createForAssetFile($assetFile, $assetLicence);
+        $this->assetFactory->createForAssetFile(
+            assetFile: $assetFile,
+            assetLicence: $assetLicence,
+            id: $id
+        );
+
+        return $assetFile;
+    }
+
+    /**
+     * @return T
+     */
+    public function createBlankAssetFile(AdapterFile $file, AssetLicence $licence, ?string $id = null): AssetFile
+    {
+        $assetFile = null;
+        $mimeType = $this->fileHelper->guessMime((string) $file->getRealPath(), true);
+
+        if (in_array($mimeType, ImageMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankImage($licence, $id);
+        }
+        if (in_array($mimeType, AudioMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankAudio($licence, $id);
+        }
+        if (in_array($mimeType, DocumentMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankDocument($licence, $id);
+        }
+        if (in_array($mimeType, VideoMimeTypes::values(), true)) {
+            $assetFile = $this->createBlankVideo($licence, $id);
+        }
+
+        /** @psalm-var T|null $assetFile */
+        if (null === $assetFile) {
+            throw new DomainException(sprintf('File with mime type (%s) cannot be created', $mimeType));
+        }
 
         return $this->assetFileManager->create($assetFile, false);
     }
 
     /**
+     * @return T
+     *
      * @throws NonUniqueResultException
+     * @throws AnzuException
      */
     public function createFromExternalProvider(
         string $providerName,
@@ -68,10 +146,16 @@ abstract class AssetFileFactory
             to: $asset,
             config: $this->configurationProvider->getExtSystemConfigurationByAsset($asset)->getAssetExternalProvidersMap()
         );
-        $this->assetTextsProcessor->updateAssetDisplayTitle($asset);
+        $this->authorForExternalProviderAssigner->assign($asset, $providerName);
+        $this->assetManager->updateExisting($asset, false);
 
         return $this->assetFileManager->create($assetFile, false);
     }
+
+    /**
+     * @return T
+     */
+    abstract public function createFromAdmDto(AssetLicence $licence, AssetFileAdmCreateDto $createDto): AssetFile;
 
     protected function createBlankImage(AssetLicence $licence, ?string $id = null): ImageFile
     {
@@ -121,8 +205,9 @@ abstract class AssetFileFactory
         ;
     }
 
-    abstract protected function createFromAdmDto(AssetLicence $licence, AssetFileAdmCreateDto $createDto): AssetFile;
-
+    /**
+     * @return T
+     */
     private function createAssetFileForExternalProvider(
         string $providerName,
         AssetExternalProviderDto $assetDto,
@@ -143,25 +228,8 @@ abstract class AssetFileFactory
             ->setOriginUrl($assetDto->getUrl())
             ->setOriginExternalProvider(new OriginExternalProvider($providerName, $assetDto->getId()))
         ;
+        /** @psalm-var T $assetFile */
 
         return $assetFile;
-    }
-
-    private function createBlankAssetFile(File $file, AssetLicence $licence, ?string $id = null): AssetFile
-    {
-        if (in_array($file->getMimeType(), ImageMimeTypes::values(), true)) {
-            return $this->createBlankImage($licence, $id);
-        }
-        if (in_array($file->getMimeType(), AudioMimeTypes::values(), true)) {
-            return $this->createBlankAudio($licence, $id);
-        }
-        if (in_array($file->getMimeType(), DocumentMimeTypes::values(), true)) {
-            return $this->createBlankDocument($licence, $id);
-        }
-        if (in_array($file->getMimeType(), VideoMimeTypes::values(), true)) {
-            return $this->createBlankVideo($licence, $id);
-        }
-
-        throw new DomainException(sprintf('File with mime type (%s) cannot be created', $file->getMimeType()));
     }
 }

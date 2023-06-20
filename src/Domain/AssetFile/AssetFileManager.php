@@ -5,31 +5,39 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetHasFile\AssetHasFileManager;
-use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
+use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use Symfony\Contracts\Service\Attribute\Required;
 
+/**
+ * @template T of AssetFile
+ */
 class AssetFileManager extends AbstractManager
 {
     use FileStashAwareTrait;
 
-    protected AssetHasFileManager $assetHasFileManager;
-    protected ChunkManager $chunkManager;
+    protected AssetSlotManager $assetSlotManager;
+    protected ChunkFileManager $chunkFileManager;
 
     #[Required]
-    public function setAssetHasFileManager(AssetHasFileManager $assetHasFileManager): void
+    public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
     {
-        $this->assetHasFileManager = $assetHasFileManager;
+        $this->assetSlotManager = $assetSlotManager;
     }
 
     #[Required]
-    public function setChunkManager(ChunkManager $chunkManager): void
+    public function setChunkFileManager(ChunkFileManager $chunkFileManager): void
     {
-        $this->chunkManager = $chunkManager;
+        $this->chunkFileManager = $chunkFileManager;
     }
 
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
     public function updateExisting(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->trackModification($assetFile);
@@ -38,6 +46,11 @@ class AssetFileManager extends AbstractManager
         return $assetFile;
     }
 
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->trackCreation($assetFile);
@@ -47,10 +60,16 @@ class AssetFileManager extends AbstractManager
         return $assetFile;
     }
 
+    /**
+     * @param T $assetFile
+     */
     public function delete(AssetFile $assetFile, bool $flush = true): bool
     {
-        $this->assetHasFileManager->delete($assetFile->getAsset(), false);
-        $this->chunkManager->deleteByAsset($assetFile);
+        foreach ($assetFile->getSlots() as $slot) {
+            $this->assetSlotManager->delete($slot, false);
+        }
+
+        $this->chunkFileManager->clearChunks($assetFile, false);
         $this->deleteAssetFileRelations($assetFile);
         if (false === empty($assetFile->getAssetAttributes()->getFilePath())) {
             $this->fileStash->add($assetFile);
@@ -61,6 +80,9 @@ class AssetFileManager extends AbstractManager
         return true;
     }
 
+    /**
+     * @param T $assetFile
+     */
     protected function deleteAssetFileRelations(AssetFile $assetFile): void
     {
     }

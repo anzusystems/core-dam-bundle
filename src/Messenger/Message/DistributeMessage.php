@@ -13,7 +13,7 @@ final class DistributeMessage
     public function __construct(
         Distribution $distribution,
     ) {
-        $this->distributionId = $distribution->getId();
+        $this->distributionId = (string) $distribution->getId();
     }
 
     public function getDistributionId(): string

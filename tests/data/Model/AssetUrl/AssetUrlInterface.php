@@ -10,6 +10,8 @@ interface AssetUrlInterface
     public function getCreateChunkPath(string $assetId): string;
     public function getFinishUploadPath(string $assetId): string;
     public function getSingleAssetPath(string $assetId): string;
-    public function getAddToPositionPath(string $assetId, string $position): string;
+    public function getAddToSlotPath(string $assetId, string $slotName): string;
+    public function setToSlot(string $assetId, string $assetFileId, string $position): string;
+    public function setMainFilePath(string $assetId, string $imageId): string;
     public function getSerializeClassString(): string;
 }

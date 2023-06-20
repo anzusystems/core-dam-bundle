@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Model\Attributes\ArrayStringParam;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
@@ -19,20 +20,20 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\AssetAdmRepositoryDecorator;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\ArrayStringParamConverter;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\CollectionParamConverter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -60,9 +61,8 @@ final class AssetController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
-    #[ParamConverter('assetDto', converter: SerializerParamConverter::class)]
     #[OARequest(AssetAdmCreateDto::class), OAResponseCreated(AssetAdmDetailDto::class), OAResponseValidation]
-    public function create(AssetAdmCreateDto $assetDto, AssetLicence $assetLicence): JsonResponse
+    public function create(#[SerializeParam] AssetAdmCreateDto $assetDto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $assetLicence);
@@ -78,9 +78,8 @@ final class AssetController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/licence/{assetLicence}/search', name: 'search_by_licence', methods: [Request::METHOD_GET])]
-    #[ParamConverter('searchDto', converter: SerializerParamConverter::class)]
-    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmDetailDto::class])]
-    public function searchByLicence(AssetLicence $assetLicence, AssetAdmSearchDto $searchDto): JsonResponse
+    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
+    public function searchByLicence(AssetLicence $assetLicence, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
@@ -96,9 +95,8 @@ final class AssetController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/ext-system/{extSystem}/search', name: 'search_by_ext_system', methods: [Request::METHOD_GET])]
-    #[ParamConverter('searchDto', converter: SerializerParamConverter::class)]
-    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmDetailDto::class])]
-    public function searchByExtSystem(ExtSystem $extSystem, AssetAdmSearchDto $searchDto): JsonResponse
+    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
+    public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);
 
@@ -108,9 +106,10 @@ final class AssetController extends AbstractApiController
     }
 
     #[Route('/licence/{assetLicence}/ids/{ids}', name: 'get_by_licence_and_ids', methods: [Request::METHOD_GET])]
-    #[ParamConverter('ids', options: [ArrayStringParamConverter::ITEMS_LIMIT => self::IDS_LIMIT], converter: ArrayStringParamConverter::class)]
-    public function getByLicenceAndIds(AssetLicence $assetLicence, array $ids): JsonResponse
-    {
+    public function getByLicenceAndIds(
+        AssetLicence $assetLicence,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)] array $ids,
+    ): JsonResponse {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
 
         return $this->okResponse(
@@ -119,9 +118,10 @@ final class AssetController extends AbstractApiController
     }
 
     #[Route('/ext-system/{extSystem}/ids/{ids}', name: 'get_by_ext_system_and_ids', methods: [Request::METHOD_GET])]
-    #[ParamConverter('ids', options: [ArrayStringParamConverter::ITEMS_LIMIT => self::IDS_LIMIT], converter: ArrayStringParamConverter::class)]
-    public function getByExtSystemAndIds(ExtSystem $extSystem, array $ids): JsonResponse
-    {
+    public function getByExtSystemAndIds(
+        ExtSystem $extSystem,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT, itemNormalizer: 'intval')] array $ids,
+    ): JsonResponse {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);
 
         return $this->okResponse(
@@ -149,14 +149,31 @@ final class AssetController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route(path: '/metadata-bulk-update', name: 'metadata_bulk_update', methods: [Request::METHOD_PATCH])]
-    #[ParamConverter('list', class: FormProvidableMetadataBulkUpdateDto::class, converter: CollectionParamConverter::class)]
     #[OARequest([FormProvidableMetadataBulkUpdateDto::class]), OAResponse([FormProvidableMetadataBulkUpdateDto::class]), OAResponseValidation]
-    public function metadataBulkUpdate(Collection $list): JsonResponse
+    public function metadataBulkUpdate(#[SerializeIterableParam(type: FormProvidableMetadataBulkUpdateDto::class)] Collection $list): JsonResponse
     {
         App::throwOnReadOnlyMode();
 
         return $this->okResponse(
             $this->assetMetadataBulkFacade->bulkUpdate($list)
+        );
+    }
+
+    /**
+     * Update item.
+     *
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{asset}', name: 'update', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('author'), OARequest(AssetAdmUpdateDto::class), OAResponse(AssetAdmUpdateDto::class), OAResponseValidation]
+    public function update(Asset $asset, #[SerializeParam] AssetAdmUpdateDto $newAssetDto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+
+        return $this->okResponse(
+            AssetAdmUpdateDto::getInstance($this->assetFacade->update($asset, $newAssetDto))
         );
     }
 

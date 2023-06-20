@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexBuilder;
+use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
+use Doctrine\ORM\NonUniqueResultException;
+use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -18,12 +21,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class ElasticManagerCommand extends Command
 {
-    private const ARG_INDEX_NAME = 'indexName';
-    private const ARG_ID_FROM = 'idFrom';
-    private const ARG_ID_UNTIL = 'idUntil';
-    private const OPT_NO_DROP = 'no-drop';
-    private const OPT_BATCH = 'batch';
-
     public function __construct(
         private readonly IndexBuilder $indexBuilder,
     ) {
@@ -34,46 +31,48 @@ final class ElasticManagerCommand extends Command
     {
         $this
             ->addArgument(
-                self::ARG_INDEX_NAME,
+                RebuildIndexConfig::ARG_INDEX_NAME,
                 InputArgument::REQUIRED,
                 'Index name to rebuild.'
-            )->addArgument(
-                self::ARG_ID_FROM,
-                InputArgument::OPTIONAL,
-                'First ID of entity to start processing from.',
-                '0'
-            )->addArgument(
-                self::ARG_ID_UNTIL,
-                InputArgument::OPTIONAL,
-                'Last ID of entity to finish processing.',
-                '0'
             )->addOption(
-                self::OPT_NO_DROP,
+                RebuildIndexConfig::OPT_EXT_SYSTEM,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Ext system slug for which should be an entity rebuilt.'
+            )->addOption(
+                RebuildIndexConfig::OPT_ID_FROM,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'First ID of entity to start processing from.',
+            )->addOption(
+                RebuildIndexConfig::OPT_ID_UNTIL,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Last ID of entity to finish processing.',
+            )->addOption(
+                RebuildIndexConfig::OPT_NO_DROP,
                 null,
                 InputOption::VALUE_NONE,
                 'If this option is set, the index will not be dropped.'
             )->addOption(
-                self::OPT_BATCH,
+                RebuildIndexConfig::OPT_BATCH,
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Batch size for processing.',
-                '500'
+                500
             )
         ;
     }
 
+    /**
+     * @throws ElasticsearchException
+     * @throws NonUniqueResultException
+     */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $idFrom = $input->getArgument(self::ARG_ID_FROM);
-        $idUntil = $input->getArgument(self::ARG_ID_UNTIL);
+        $config = RebuildIndexConfig::createFromInput($input);
 
-        $this->indexBuilder->rebuildIndex(
-            (string) $input->getArgument(self::ARG_INDEX_NAME),
-            (bool) $input->getOption(self::OPT_NO_DROP),
-            (int) $input->getOption(self::OPT_BATCH),
-            is_numeric($idFrom) ? (int) $idFrom : (string) $idFrom,
-            is_numeric($idUntil) ? (int) $idUntil : (string) $idUntil,
-        );
+        $this->indexBuilder->rebuildIndex($config);
 
         return Command::SUCCESS;
     }

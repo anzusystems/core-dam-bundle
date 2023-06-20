@@ -9,15 +9,16 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionFailReason;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -48,7 +49,7 @@ class Distribution implements
     #[ORM\Column(type: Types::STRING, length: 36)]
     protected string $assetId;
 
-    #[ORM\Column(type: Types::STRING, length: 128)]
+    #[ORM\Column(type: Types::STRING, length: 512)]
     protected string $extId;
 
     #[ORM\Column(type: Types::STRING, length: 128)]
@@ -76,6 +77,10 @@ class Distribution implements
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $distributionData;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Serialize]
+    protected ?DateTimeImmutable $publishAt;
+
     public function __construct()
     {
         $this->setAssetId('');
@@ -87,6 +92,19 @@ class Distribution implements
         $this->setExtId('');
         $this->setDistributionData([]);
         $this->setFailReason(DistributionFailReason::None);
+        $this->setPublishAt(null);
+    }
+
+    public function getPublishAt(): ?DateTimeImmutable
+    {
+        return $this->publishAt;
+    }
+
+    public function setPublishAt(?DateTimeImmutable $publishAt): static
+    {
+        $this->publishAt = $publishAt;
+
+        return $this;
     }
 
     /**
@@ -97,7 +115,7 @@ class Distribution implements
         return $this->blocks;
     }
 
-    public function setBlocks(Collection $blocks): self
+    public function setBlocks(Collection $blocks): static
     {
         $this->blocks = $blocks;
 
@@ -112,9 +130,17 @@ class Distribution implements
         return $this->blockedBy;
     }
 
-    public function setBlockedBy(Collection $blockedBy): self
+    public function setBlockedBy(Collection $blockedBy): static
     {
         $this->blockedBy = $blockedBy;
+
+        return $this;
+    }
+
+    public function addBlockedBy(self $distribution): static
+    {
+        $this->blockedBy->add($distribution);
+        $distribution->blocks->add($this);
 
         return $this;
     }
@@ -124,7 +150,7 @@ class Distribution implements
         return $this->status;
     }
 
-    public function setStatus(DistributionProcessStatus $status): self
+    public function setStatus(DistributionProcessStatus $status): static
     {
         $this->status = $status;
 
@@ -136,7 +162,7 @@ class Distribution implements
         return $this->distributionService;
     }
 
-    public function setDistributionService(string $distributionService): self
+    public function setDistributionService(string $distributionService): static
     {
         $this->distributionService = $distributionService;
 
@@ -149,7 +175,7 @@ class Distribution implements
         return $this->assetFileId;
     }
 
-    public function setAssetFileId(string $assetFileId): self
+    public function setAssetFileId(string $assetFileId): static
     {
         $this->assetFileId = $assetFileId;
 
@@ -162,7 +188,7 @@ class Distribution implements
         return $this->assetId;
     }
 
-    public function setAssetId(string $assetId): self
+    public function setAssetId(string $assetId): static
     {
         $this->assetId = $assetId;
 
@@ -175,7 +201,7 @@ class Distribution implements
         return $this->extId;
     }
 
-    public function setExtId(string $extId): self
+    public function setExtId(string $extId): static
     {
         $this->extId = $extId;
 
@@ -187,7 +213,7 @@ class Distribution implements
         return $this->distributionData;
     }
 
-    public function setDistributionData(array $distributionData): self
+    public function setDistributionData(array $distributionData): static
     {
         $this->distributionData = $distributionData;
 
@@ -199,7 +225,7 @@ class Distribution implements
         return $this->failReason;
     }
 
-    public function setFailReason(DistributionFailReason $failReason): self
+    public function setFailReason(DistributionFailReason $failReason): static
     {
         $this->failReason = $failReason;
 

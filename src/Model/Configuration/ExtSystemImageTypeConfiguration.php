@@ -6,20 +6,52 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfiguration
 {
+    public const PUBLIC_DOMAIN_KEY = 'public_domain';
+    public const ADMIN_DOMAIN_KEY = 'admin_domain';
     public const ROI_WIDTH_KEY = 'roi_width';
     public const ROI_HEIGHT_KEY = 'roi_height';
     public const CROP_STORAGE_NAME = 'crop_storage_name';
+    public const NOT_FOUND_IMAGE_ID = 'not_found_image_id';
 
     private int $roiWidth;
     private int $roiHeight;
     private string $cropStorageName;
+    private string $publicDomain;
+    private string $adminDomain;
+    private string $notFoundImageId;
 
     public static function getFromArrayConfiguration(array $config): static
     {
         return parent::getFromArrayConfiguration($config)
+            ->setAdminDomain($config[self::ADMIN_DOMAIN_KEY] ?? '')
+            ->setPublicDomain($config[self::PUBLIC_DOMAIN_KEY] ?? '')
             ->setRoiWidth($config[self::ROI_WIDTH_KEY] ?? 0)
             ->setRoiHeight($config[self::ROI_HEIGHT_KEY] ?? 0)
             ->setCropStorageName($config[self::CROP_STORAGE_NAME] ?? '');
+    }
+
+    public function getPublicDomain(): string
+    {
+        return $this->publicDomain;
+    }
+
+    public function setPublicDomain(string $publicDomain): self
+    {
+        $this->publicDomain = $publicDomain;
+
+        return $this;
+    }
+
+    public function getAdminDomain(): string
+    {
+        return $this->adminDomain;
+    }
+
+    public function setAdminDomain(string $adminDomain): self
+    {
+        $this->adminDomain = $adminDomain;
+
+        return $this;
     }
 
     public function getCropStorageName(): string
@@ -54,6 +86,18 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setRoiHeight(int $roiHeight): self
     {
         $this->roiHeight = $roiHeight;
+
+        return $this;
+    }
+
+    public function getNotFoundImageId(): string
+    {
+        return $this->notFoundImageId;
+    }
+
+    public function setNotFoundImageId(string $notFoundImageId): self
+    {
+        $this->notFoundImageId = $notFoundImageId;
 
         return $this;
     }

@@ -17,11 +17,13 @@ final class DamLogger
     public const NAMESPACE_ELASTICSEARCH = 'ElasticSearch';
     public const NAMESPACE_EXIFTOOL = 'Exiftool';
     public const NAMESPACE_ASSET_CHANGE_STATE = 'AssetChangeState';
+    public const NAMESPACE_ASSET_PROPERTY_REFRESHER = 'AssetPropertyRefresher';
     public const NAMESPACE_ASSET_FILE_CHANGE_STATE = 'AssetFileChangeState';
     public const NAMESPACE_DISTRIBUTION = 'Distribution';
     public const NAMESPACE_ASSET_EXTERNAL_PROVIDER = 'AssetExternalProvider';
     public const NAMESPACE_PODCAST_RSS_IMPORT = 'PodcastRssImport';
     public const NAMESPACE_VISP = 'Visp';
+    public const NAMESPACE_ASSET_FILE_PROCESS = 'AssetFileProcess';
 
     public function __construct(
         private readonly LoggerInterface $appLogger,
@@ -41,7 +43,7 @@ final class DamLogger
             $context->setError($exception->getMessage());
         }
 
-        $this->appLogger->error("[{$namespace}] {$message}", $this->serializer->toArray($context));
+        $this->appLogger->error("_{$namespace}_ {$message}", $this->serializer->toArray($context));
     }
 
     /**
@@ -53,6 +55,18 @@ final class DamLogger
         $context->setContent($content);
         $context->setParams($params);
 
-        $this->appLogger->info("[{$namespace}] {$message}", $this->serializer->toArray($context));
+        $this->appLogger->info("_{$namespace}_ {$message}", $this->serializer->toArray($context));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function warning(string $namespace, string $message = '', string $content = '', array $params = []): void
+    {
+        $context = $this->contextFactory->buildBaseContext();
+        $context->setContent($content);
+        $context->setParams($params);
+
+        $this->appLogger->warning("_{$namespace}_ {$message}", $this->serializer->toArray($context));
     }
 }

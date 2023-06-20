@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\DocumentFileRepository;
 
 /**
@@ -27,14 +27,17 @@ final class DocumentStatusFacade extends AbstractAssetFileStatusFacade
         return DocumentFile::class;
     }
 
-    protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile
+    protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         return $assetFile;
     }
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->documentFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->documentFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }

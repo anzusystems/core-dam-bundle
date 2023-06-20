@@ -15,12 +15,12 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
 #[AsMessageHandler]
-final class AssetChangeStateHandler
+final readonly class AssetChangeStateHandler
 {
     public function __construct(
-        private readonly AssetRepository $assetRepository,
-        private readonly AssetFacade $assetFacade,
-        private readonly DamLogger $damLogger,
+        private AssetRepository $assetRepository,
+        private AssetFacade $assetFacade,
+        private DamLogger $damLogger,
     ) {
     }
 
@@ -43,7 +43,7 @@ final class AssetChangeStateHandler
                     DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
                     sprintf(
                         'Asset (%s) change state to (%s) not suitable for handle',
-                        $asset->getId(),
+                        (string) $asset->getId(),
                         $asset->getAttributes()->getStatus()->toString()
                     ),
                 )
@@ -53,7 +53,7 @@ final class AssetChangeStateHandler
                 DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
                 sprintf(
                     'Asset (%s) change state to (%s) failed',
-                    $asset->getId(),
+                    (string) $asset->getId(),
                     $asset->getAttributes()->getStatus()->toString()
                 ),
                 $e

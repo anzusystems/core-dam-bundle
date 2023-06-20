@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -26,8 +25,11 @@ class ImageFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(ImageFile $image): static
     {
-        return parent::getBaseInstance($image)
-            ->setAsset($image->getAsset()->getAsset())
+        /** @psalm-var ImageFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($image);
+
+        return $parent
+            ->setAsset($image->getAsset())
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($image->getAssetAttributes()))
             ->setImage($image);
     }
@@ -68,7 +70,7 @@ class ImageFileAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageCropTag::LIST)]
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::LIST_LINKS_TAGS)]
     public function getLinks(): ImageFile
     {
         return $this->image;

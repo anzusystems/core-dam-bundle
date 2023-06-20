@@ -11,9 +11,10 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGeneratorInterface;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileMetadataProcessHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
-use AnzuSystems\CoreDamBundle\Request\ParamConverter\AssetExternalProviderApiParamConverter;
-use Elasticsearch\Client;
-use Elasticsearch\ClientBuilder;
+use AnzuSystems\CoreDamBundle\Util\Slugger;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 return static function (ContainerConfigurator $configurator): void {
     $services = $configurator->services();
@@ -24,7 +25,12 @@ return static function (ContainerConfigurator $configurator): void {
         ->parameters()
         ->set('elastic_client_config', [
             'hosts' => env('ELASTIC_HOSTS')->json(),
+            'basicAuthentication' => [
+                'username' => env('ELASTIC_USERNAME')->string(),
+                'password' => env('ELASTIC_PASSWORD')->string(),
+            ],
         ])
+        ->set('app_cache_proxy_enabled', true)
         ->set('elastic_index_settings', [
             'asset' => param('anzu_systems.dam_bundle.index_asset'),
             'keyword' => param('anzu_systems.dam_bundle.index_keyword'),
@@ -46,6 +52,8 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$domains', param('anzu_systems.dam_bundle.domains'))
         ->bind('$taggedAllowList', param('anzu_systems.dam_bundle.tagged_allow_list'))
         ->bind('$domainAllowList', param('anzu_systems.dam_bundle.domain_allow_list'))
+        ->bind('$domainAllowMap', param('anzu_systems.dam_bundle.crop_allow_map'))
+        ->bind('$extSystemAllowListMap', param('anzu_systems.dam_bundle.ext_system_allow_list_map'))
         ->bind('$domainNames', param('anzu_systems.dam_bundle.domain_names'))
         ->bind('$exifCommonMetadata', param('anzu_systems.dam_bundle.common_metadata'))
         ->bind('$exifImageMetadata', param('anzu_systems.dam_bundle.image_metadata'))
@@ -63,6 +71,7 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(FileNameGeneratorInterface::class . ' $fileNameGenerator', FileNameGenerator::class);
     $services->set(DirectoryNamGeneratorInterface::class . ' $directoryNameGenerator', DirectoryNameGenerator::class);
+    $services->set(SluggerInterface::class . ' $slugger', Slugger::class);
 
     $services->set(AssetFileMetadataProcessHandler::class)
         ->tag('messenger.message_handler', ['handler' => DistributionRemoteProcessingCheckMessage::class])
@@ -77,9 +86,5 @@ return static function (ContainerConfigurator $configurator): void {
     $services
         ->set(IndexBuilder::class)
         ->arg('$indexMappings', param('elastic_index_settings'))
-    ;
-
-    $services->set(AssetExternalProviderApiParamConverter::class)
-        ->tag('request.param_converter', ['priority' => false, 'converter' => AssetExternalProviderApiParamConverter::class])
     ;
 };

@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -16,10 +17,11 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class AssetLicenceFixtures extends AbstractFixtures
 {
-    public const DEFAULT_LICENCE_ID = 1;
+    public const DEFAULT_LICENCE_ID = 100_000;
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
+        private readonly AssetLicenceRepository $assetLicenceRepository,
     ) {
     }
 
@@ -28,9 +30,13 @@ final class AssetLicenceFixtures extends AbstractFixtures
         return AssetLicence::class;
     }
 
+    public function useCustomId(): bool
+    {
+        return true;
+    }
+
     public function load(ProgressBar $progressBar): void
     {
-        $this->configureAssignedGenerator();
         /** @var AssetLicence $assetLicence */
         foreach ($progressBar->iterate($this->getData()) as $assetLicence) {
             $assetLicence = $this->assetLicenceManager->create($assetLicence);
@@ -40,6 +46,12 @@ final class AssetLicenceFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
+        $existingLicence = $this->assetLicenceRepository->find(self::DEFAULT_LICENCE_ID);
+        if ($existingLicence) {
+            return;
+        }
+
+        /** @var ExtSystem $cmsExtSystem */
         $cmsExtSystem = $this->entityManager->find(
             ExtSystem::class,
             1

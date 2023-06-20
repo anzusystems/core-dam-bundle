@@ -20,7 +20,7 @@ final class UploadAssetFromExternalProviderValidator extends ConstraintValidator
     ) {
     }
 
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof UploadAssetFromExternalProviderDto)) {
             throw new UnexpectedTypeException($constraint, UploadAssetFromExternalProviderDto::class);

@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Event\AssetFileChangeStateEvent;
 use AnzuSystems\CoreDamBundle\Event\AssetFileDeleteEvent;
 use AnzuSystems\CoreDamBundle\Event\MetadataProcessedEvent;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AsseFileAdmNotificationDecorator;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileStatusAdmNotificationDecorator;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -15,9 +16,15 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 final class AssetFileNotificationDispatcher extends AbstractNotificationDispatcher
 {
     use SerializerAwareTrait;
+
     private const EVENT_NAME_PREFIX = 'asset_file_';
     private const EVENT_METADATA_PROCESSED_NAME = 'asset_metadata_processed';
     private const EVENT_ASSET_FILE_DELETED_NAME = 'asset_file_deleted';
+
+    public function __construct(
+        private readonly DamLogger $damLogger,
+    ) {
+    }
 
     /**
      * @throws SerializerException
@@ -25,7 +32,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
     public function notifyAssetFileDeleted(AssetFileDeleteEvent $event): void
     {
         $this->notify(
-            [$event->getDeletedBy()->getId()],
+            [(int) $event->getDeletedBy()->getId()],
             self::EVENT_ASSET_FILE_DELETED_NAME,
             AsseFileAdmNotificationDecorator::getBaseInstance($event->getDeleteAssetId(), $event->getDeleteId())
         );
@@ -39,8 +46,19 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
         if (null === $event->getAsset()->getNotifyTo()) {
             return;
         }
+
+        $this->damLogger->info(
+            '_Notification_',
+            sprintf(
+                'Disptaching event (%s) to user id (%s) for asset id (%s)',
+                self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
+                (int) $event->getAsset()->getNotifyTo()->getId(),
+                (string) $event->getAsset()->getId()
+            )
+        );
+
         $this->notify(
-            [$event->getAsset()->getNotifyTo()->getId()],
+            [(int) $event->getAsset()->getNotifyTo()->getId()],
             self::EVENT_NAME_PREFIX . $event->getAsset()->getAssetAttributes()->getStatus()->toString(),
             AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
         );
@@ -55,7 +73,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
             return;
         }
         $this->notify(
-            [$event->getAsset()->getNotifyTo()->getId()],
+            [(int) $event->getAsset()->getNotifyTo()->getId()],
             self::EVENT_METADATA_PROCESSED_NAME,
             AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
         );

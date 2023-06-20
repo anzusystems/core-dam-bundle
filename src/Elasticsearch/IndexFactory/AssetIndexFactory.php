@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileVersionProvider;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Elasticsearch\CustomData\AssetMetadataCustomData;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
+use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\ClosestColorProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
 use Doctrine\ORM\NonUniqueResultException;
@@ -21,7 +24,6 @@ final class AssetIndexFactory implements IndexFactoryInterface
 {
     public function __construct(
         private readonly AssetMetadataCustomData $assetMetadataCustomData,
-        private readonly AssetFileVersionProvider $assetFileVersionProvider,
         private readonly ClosestColorProvider $closestColorProvider,
     ) {
     }
@@ -38,59 +40,74 @@ final class AssetIndexFactory implements IndexFactoryInterface
      */
     public function buildFromEntity(ExtSystemIndexableInterface $entity): array
     {
+        $gcd = Math::getGreatestCommonDivisor(
+            $entity->getAssetFileProperties()->getWidth(),
+            $entity->getAssetFileProperties()->getHeight(),
+        );
+
         return [
             'id' => $entity->getId(),
+            'fileIds' => array_values(CollectionHelper::traversableToIds(
+                $entity->getSlots(),
+                fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
+            )),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),
             'visible' => $entity->getAssetFlags()->isVisible(),
+            'slotsCount' => count($entity->getAssetFileProperties()->getSlotNames()),
+            'generatedBySystem' => $entity->getAssetFlags()->isGeneratedBySystem(),
             'modifiedAt' => $entity->getModifiedAt()->getTimestamp(),
             'createdAt' => $entity->getCreatedAt()->getTimestamp(),
             'licence' => $entity->getLicence()->getId(),
+            'distributedInServices' => array_values($entity->getAssetFileProperties()->getDistributesInServices()),
+            'slotNames' => array_values($entity->getAssetFileProperties()->getSlotNames()),
+            'fromRss' => $entity->getAssetFileProperties()->isFromRss(),
+            'pixelSize' => $entity->getAssetFileProperties()->getWidth() * $entity->getAssetFileProperties()->getHeight(),
+            'width' => $entity->getAssetFileProperties()->getWidth(),
+            'height' => $entity->getAssetFileProperties()->getHeight(),
+            'ratioWidth' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getWidth() / $gcd) : App::ZERO,
+            'ratioHeight' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getHeight() / $gcd) : App::ZERO,
             ...$this->assetMetadataCustomData->buildFromEntity($entity),
             ...$this->getSpecificAssetFields($entity),
         ];
     }
 
-    /**
-     * @throws NonUniqueResultException
-     */
     private function getSpecificAssetFields(Asset $entity): array
     {
-        $defaultFile = $this->assetFileVersionProvider->getDefaultFile($entity);
-
-        if (null === $defaultFile) {
+        $mainFile = $entity->getMainFile();
+        if (null === $mainFile) {
             return [];
         }
 
         $fields = [
-            'originFileName' => $defaultFile->getAssetAttributes()->getOriginFileName(),
-            'mimeType' => $defaultFile->getAssetAttributes()->getMimeType(),
-            'size' => $defaultFile->getAssetAttributes()->getSize(),
+            'originFileName' => $mainFile->getAssetAttributes()->getOriginFileName(),
+            'mimeType' => $mainFile->getAssetAttributes()->getMimeType(),
+            'size' => $mainFile->getAssetAttributes()->getSize(),
         ];
 
-        if ($defaultFile instanceof ImageFile) {
+        if ($mainFile instanceof ImageFile) {
             return [
                 ...$fields,
-                ...$this->getImageFields($defaultFile),
+                ...$this->getImageFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof VideoFile) {
+        if ($mainFile instanceof VideoFile) {
             return [
                 ...$fields,
-                ...$this->getVideoFields($defaultFile),
+                ...$this->getVideoFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof AudioFile) {
+        if ($mainFile instanceof AudioFile) {
             return [
                 ...$fields,
-                ...$this->getAudioFields($defaultFile),
+                ...$this->getAudioFields($mainFile),
             ];
         }
-        if ($defaultFile instanceof DocumentFile) {
+        if ($mainFile instanceof DocumentFile) {
             return [
                 ...$fields,
-                ...$this->getDocumentFields($defaultFile),
+                ...$this->getDocumentFields($mainFile),
             ];
         }
 
@@ -100,16 +117,11 @@ final class AssetIndexFactory implements IndexFactoryInterface
     private function getImageFields(ImageFile $imageFile): array
     {
         return [
-            'ratioWidth' => $imageFile->getImageAttributes()->getRatioWidth(),
-            'ratioHeight' => $imageFile->getImageAttributes()->getRatioHeight(),
-            'width' => $imageFile->getImageAttributes()->getWidth(),
-            'height' => $imageFile->getImageAttributes()->getHeight(),
             'rotation' => $imageFile->getImageAttributes()->getRotation(),
             'mostDominantColor' => $imageFile->getImageAttributes()->getMostDominantColor()->toString(),
             'closestMostDominantColor' => $this->closestColorProvider->provideClosestColor(
                 $imageFile->getImageAttributes()->getMostDominantColor()
             )->toString(),
-            'pixelSize' => $imageFile->getImageAttributes()->getWidth() * $imageFile->getImageAttributes()->getHeight(),
             'orientation' => ImageOrientation::fromImage($imageFile)->toString(),
         ];
     }
@@ -124,16 +136,12 @@ final class AssetIndexFactory implements IndexFactoryInterface
     private function getVideoFields(VideoFile $videoFile): array
     {
         return [
-            'width' => $videoFile->getAttributes()->getWidth(),
-            'height' => $videoFile->getAttributes()->getHeight(),
             'rotation' => $videoFile->getAttributes()->getRotation(),
             'duration' => $videoFile->getAttributes()->getDuration(),
-            'pixelSize' => $videoFile->getAttributes()->getWidth() * $videoFile->getAttributes()->getHeight(),
             'orientation' => ImageOrientation::fromVideo($videoFile)->toString(),
             'codecName' => $videoFile->getAttributes()->getCodecName(),
             'bitrate' => $videoFile->getAttributes()->getBitrate(),
-            'ratioWidth' => $videoFile->getAttributes()->getRatioWidth(),
-            'ratioHeight' => $videoFile->getAttributes()->getRatioHeight(),
+
         ];
     }
 
@@ -152,7 +160,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
 
     private function getPodcastIds(AudioFile $audioFile): array
     {
-        return $audioFile->getAsset()->getAsset()->getEpisodes()->map(
+        return $audioFile->getAsset()->getEpisodes()->map(
             fn (PodcastEpisode $podcastEpisode): string => (string) $podcastEpisode->getPodcast()->getId()
         )->getValues();
     }

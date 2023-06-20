@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class AssetAdmFinishDto
 {
     #[Serialize]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $checksum;
 

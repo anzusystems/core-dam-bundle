@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\YoutubeVideoPrivacy;
 use AnzuSystems\CoreDamBundle\Repository\YoutubeDistributionRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -19,10 +18,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[AppAssert\Youtube]
 class YoutubeDistribution extends Distribution
 {
-    public const THUMBNAIL_DATA = 'thumbnail';
-    public const THUMBNAIL_WIDTH = 'width';
-    public const THUMBNAIL_HEIGHT = 'height';
-
     #[ORM\Embedded(YoutubeTexts::class)]
     #[Assert\Valid]
     #[Serialize]
@@ -37,10 +32,6 @@ class YoutubeDistribution extends Distribution
     #[Serialize]
     private YoutubeVideoPrivacy $privacy;
 
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
-    #[Serialize]
-    private ?DateTimeImmutable $publishAt;
-
     #[ORM\Column(type: Types::STRING, length: 32)]
     private string $channelId;
 
@@ -48,32 +39,19 @@ class YoutubeDistribution extends Distribution
     #[Serialize]
     private string $playlist;
 
-    #[ORM\Column(type: Types::INTEGER)]
+    #[ORM\Column(type: Types::STRING, length: 20)]
     #[Serialize]
     private string $language;
 
     public function __construct()
     {
         parent::__construct();
-        $this->setPublishAt(null);
         $this->setChannelId('');
         $this->setPrivacy(YoutubeVideoPrivacy::Default);
         $this->setTexts(new YoutubeTexts());
         $this->setFlags(new YoutubeFlags());
         $this->setPlaylist('');
         $this->setLanguage('');
-    }
-
-    public function getPublishAt(): ?DateTimeImmutable
-    {
-        return $this->publishAt;
-    }
-
-    public function setPublishAt(?DateTimeImmutable $publishAt): self
-    {
-        $this->publishAt = $publishAt;
-
-        return $this;
     }
 
     public function getPrivacy(): YoutubeVideoPrivacy

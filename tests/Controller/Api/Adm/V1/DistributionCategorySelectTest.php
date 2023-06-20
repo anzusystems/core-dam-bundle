@@ -7,14 +7,14 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
 use AnzuSystems\CoreDamBundle\Entity\DistributionCategorySelect;
 use AnzuSystems\CoreDamBundle\Repository\DistributionCategorySelectRepository;
-use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiControllerTest;
+use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\DistributionCategorySelectUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpFoundation\Response;
 
-final class DistributionCategorySelectTest extends AbstractApiControllerTest
+final class DistributionCategorySelectTest extends AbstractApiController
 {
     /**
      * @throws SerializerException
@@ -56,7 +56,7 @@ final class DistributionCategorySelectTest extends AbstractApiControllerTest
             ApiInfiniteResponseList::class
         );
 
-        $this->assertSame(1, count($distributionCategorySelect->getData()));
+        $this->assertSame(2, count($distributionCategorySelect->getData()));
     }
 
     /**

@@ -18,7 +18,7 @@ trait TimeTrackingDtoTrait
         return $this->createdAt;
     }
 
-    public function setCreatedAt(DateTimeImmutable $createdAt): self
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
 
@@ -31,7 +31,7 @@ trait TimeTrackingDtoTrait
         return $this->modifiedAt;
     }
 
-    public function setModifiedAt(DateTimeImmutable $modifiedAt): self
+    public function setModifiedAt(DateTimeImmutable $modifiedAt): static
     {
         $this->modifiedAt = $modifiedAt;
 

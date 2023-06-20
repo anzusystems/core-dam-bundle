@@ -12,18 +12,13 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Embeddable]
 class PodcastDates
 {
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     #[Serialize]
     private ?DateTimeImmutable $importFrom;
-
-    #[ORM\Column(type: Types::DATE_IMMUTABLE)]
-    #[Serialize]
-    private ?DateTimeImmutable $importUntil;
 
     public function __construct()
     {
         $this->setImportFrom(null);
-        $this->setImportUntil(null);
     }
 
     public function getImportFrom(): ?DateTimeImmutable
@@ -34,18 +29,6 @@ class PodcastDates
     public function setImportFrom(?DateTimeImmutable $importFrom): self
     {
         $this->importFrom = $importFrom;
-
-        return $this;
-    }
-
-    public function getImportUntil(): ?DateTimeImmutable
-    {
-        return $this->importUntil;
-    }
-
-    public function setImportUntil(?DateTimeImmutable $importUntil): self
-    {
-        $this->importUntil = $importUntil;
 
         return $this;
     }

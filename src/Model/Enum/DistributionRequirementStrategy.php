@@ -9,9 +9,9 @@ enum DistributionRequirementStrategy: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case none = 'none';
-    case atLeastOne = 'at_least_one';
-    case waitForAll = 'wait_for_all';
+    case None = 'none';
+    case AtLeastOne = 'at_least_one';
+    case WaitForAll = 'wait_for_all';
 
-    public const Default = self::none;
+    public const Default = self::None;
 }

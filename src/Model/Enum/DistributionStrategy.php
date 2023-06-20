@@ -21,8 +21,8 @@ enum DistributionStrategy: string implements EnumInterface
     public const ONE_FROM_TYPE = 'one_from_type';
     public const WAIT_FOR_ALL = 'wait_for_all';
 
-    case none = self::NONE;
-    case atLeastOne = self::AT_LEAST_ONE;
-    case oneFromType = self::ONE_FROM_TYPE;
-    case waitForAll = self::WAIT_FOR_ALL;
+    case None = self::NONE;
+    case AtLeastOne = self::AT_LEAST_ONE;
+    case OneFromType = self::ONE_FROM_TYPE;
+    case WaitForAll = self::WAIT_FOR_ALL;
 }

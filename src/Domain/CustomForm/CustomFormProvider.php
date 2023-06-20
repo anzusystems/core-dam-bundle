@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetCustomFormRepository;
 use AnzuSystems\CoreDamBundle\Repository\CustomFormElementRepository;
 use AnzuSystems\CoreDamBundle\Repository\ResourceCustomFormRepository;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ReadableCollection;
 use Doctrine\ORM\NonUniqueResultException;
 
 final class CustomFormProvider extends AbstractManager
@@ -29,7 +30,7 @@ final class CustomFormProvider extends AbstractManager
     {
         return $this->customFormElementRepository->findAllAssetSearchableElementsByForms(
             $this->assetCustomFormRepository->findAllByExtSystemSlug($slug)->map(
-                fn (CustomForm $customForm): string => $customForm->getId()
+                fn (CustomForm $customForm): string => (string) $customForm->getId()
             )->getValues()
         );
     }
@@ -68,9 +69,9 @@ final class CustomFormProvider extends AbstractManager
     }
 
     /**
-     * @return Collection<int, CustomFormElement>
+     * @return ReadableCollection<int, CustomFormElement>
      */
-    public function provideFormSearchableElements(CustomForm $form): Collection
+    public function provideFormSearchableElements(CustomForm $form): ReadableCollection
     {
         return $form->getElements()->filter(
             fn (CustomFormElement $element): bool => true === $element->getAttributes()->isSearchable()

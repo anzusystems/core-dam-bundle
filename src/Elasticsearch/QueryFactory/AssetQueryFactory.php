@@ -63,6 +63,18 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
         }
+        if (false === (null === $searchDto->isFromRss())) {
+            $filter[] = ['terms' => ['fromRss' => [$searchDto->isFromRss()]]];
+        }
+        if (false === empty($searchDto->getDistributedInServices())) {
+            $filter[] = ['terms' => ['distributedInServices' => $searchDto->getDistributedInServices()]];
+        }
+        if (false === empty($searchDto->getSlotNames())) {
+            $filter[] = ['terms' => ['slotNames' => $searchDto->getSlotNames()]];
+        }
+        if (false === (null === $searchDto->isGeneratedBySystem())) {
+            $filter[] = ['terms' => ['generatedBySystem' => [$searchDto->isGeneratedBySystem()]]];
+        }
         if (false === (null === $searchDto->isInPodcast())) {
             $filter[] = ['terms' => ['inPodcast' => [$searchDto->isInPodcast()]]];
         }
@@ -90,6 +102,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === empty($searchDto->getPodcastIds())) {
             $filter[] = ['terms' => ['podcastIds' => $searchDto->getPodcastIds()]];
         }
+        if (false === empty($searchDto->getAssetIds())) {
+            $filter[] = ['terms' => ['fileIds' => $searchDto->getAssetIds()]];
+        }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
         $this->applyRangeFilter($filter, 'ratioWidth', $searchDto->getRatioWidthFrom(), $searchDto->getRatioWidthUntil());
@@ -99,11 +114,12 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'rotation', $searchDto->getRotationFrom(), $searchDto->getRotationUntil());
         $this->applyRangeFilter($filter, 'duration', $searchDto->getDurationFrom(), $searchDto->getDurationUntil());
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
+        $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
         if (false === empty($searchDto->getLicences())) {
             $filter[] = ['terms' => ['licence' => array_map(
-                fn (AssetLicence $assetLicence): int => $assetLicence->getId(),
+                fn (AssetLicence $assetLicence): int => (int) $assetLicence->getId(),
                 $searchDto->getLicences()
             )]];
         }

@@ -6,87 +6,111 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Symfony\Contracts\Service\Attribute\Required;
+use Throwable;
 
+/**
+ * @extends AssetFileManager<AssetFile>
+ */
 final class AssetFileStatusManager extends AssetFileManager
 {
-    public function toUploaded(AssetFile $assetFile): AssetFile
-    {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Uploaded);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Uploaded);
+    private DamLogger $damLogger;
 
-        return $this->updateExisting($assetFile);
+    #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
     }
 
+    /**
+     * @throws SerializerException
+     */
+    public function toUploaded(AssetFile $assetFile, bool $flush = true): AssetFile
+    {
+        return $this->changeTransition(
+            assetFile: $assetFile,
+            status: AssetFileProcessStatus::Uploaded,
+            flush: $flush
+        );
+    }
+
+    /**
+     * @throws SerializerException
+     */
     public function toStored(AssetFile $assetFile): AssetFile
     {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Stored);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Stored);
-
-        return $this->updateExisting($assetFile);
+        return $this->changeTransition($assetFile, AssetFileProcessStatus::Stored);
     }
 
+    /**
+     * @throws SerializerException
+     */
     public function toDuplicate(AssetFile $assetFile): AssetFile
     {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Duplicate);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Duplicate);
-
-        return $this->updateExisting($assetFile);
+        return $this->changeTransition($assetFile, AssetFileProcessStatus::Duplicate);
     }
 
-    public function toStoring(AssetFile $assetFile): AssetFile
-    {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Storing);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Storing);
-
-        return $this->updateExisting($assetFile);
-    }
-
-    public function toProcessing(AssetFile $assetFile): AssetFile
-    {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Processing);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Processing);
-
-        return $this->updateExisting($assetFile);
-    }
-
+    /**
+     * @throws SerializerException
+     */
     public function toProcessed(AssetFile $assetFile): AssetFile
     {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Processed);
-        $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Processed);
-
-        return $this->updateExisting($assetFile);
+        return $this->changeTransition($assetFile, AssetFileProcessStatus::Processed);
     }
 
-    public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType): AssetFile
+    /**
+     * @throws SerializerException
+     */
+    public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType, Throwable $throwable): AssetFile
     {
-        $this->validateTransition($assetFile, AssetFileProcessStatus::Failed);
+        $this->changeTransition($assetFile, AssetFileProcessStatus::Failed, $failedType);
+
+        $this->damLogger->error(
+            namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+            message: sprintf(
+                'Asset file (%s) process failed reason (%s).',
+                (string) $assetFile->getId(),
+                $failedType->toString(),
+            ),
+            exception: $throwable
+        );
+
+        return $assetFile;
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    private function changeTransition(
+        AssetFile $assetFile,
+        AssetFileProcessStatus $status,
+        ?AssetFileFailedType $failedType = null,
+        bool $flush = true
+    ): AssetFile {
+        $this->validateTransition($assetFile, $status);
         $assetFile->getAssetAttributes()
-            ->setStatus(AssetFileProcessStatus::Failed)
-            ->setFailReason($failedType);
+            ->setStatus($status)
+            ->setFailReason($failedType ?? AssetFileFailedType::None)
+        ;
 
         return $this->updateExisting($assetFile);
     }
 
     /**
+     * @throws SerializerException
      * @throws ForbiddenOperationException
      */
     private function validateTransition(AssetFile $assetFile, AssetFileProcessStatus $status): void
     {
         $allowedStatuses = match ($assetFile->getAssetAttributes()->getStatus()) {
             AssetFileProcessStatus::Uploading => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Uploaded],
-            AssetFileProcessStatus::Uploaded => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Storing],
-            AssetFileProcessStatus::Storing => [AssetFileProcessStatus::Stored],
-            AssetFileProcessStatus::Stored => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Duplicate, AssetFileProcessStatus::Processing],
+            AssetFileProcessStatus::Uploaded => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Stored, AssetFileProcessStatus::Duplicate],
+            AssetFileProcessStatus::Stored => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Processed, AssetFileProcessStatus::Duplicate],
             AssetFileProcessStatus::Duplicate => [AssetFileProcessStatus::Failed],
-            AssetFileProcessStatus::Processing => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Stored, AssetFileProcessStatus::Processed],
             AssetFileProcessStatus::Processed => [AssetFileProcessStatus::Failed],
             AssetFileProcessStatus::Failed => [],
         };
@@ -94,6 +118,16 @@ final class AssetFileStatusManager extends AssetFileManager
         if (in_array($status, $allowedStatuses, true)) {
             return;
         }
+
+        $this->damLogger->error(
+            'AssetFileProcess',
+            sprintf(
+                'Asset file (%s) failed transition from (%s) to (%s)',
+                (string) $assetFile->getId(),
+                $assetFile->getAssetAttributes()->getStatus()->toString(),
+                $status->toString(),
+            )
+        );
 
         throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
     }

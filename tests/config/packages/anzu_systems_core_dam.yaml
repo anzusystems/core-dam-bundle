@@ -1,3 +1,16 @@
+parameters:
+  display_title_config:
+    title:
+      source_property_path: 'metadata.customData[title]'
+    headline:
+      source_property_path: 'metadata.customData[headline]'
+    originFileName:
+      source_property_path: 'mainFile?.assetAttributes.originFileName'
+    id:
+      source_property_path: 'id'
+    mainFileId:
+      source_property_path: 'mainFile?.id'
+
 anzu_systems_core_dam:
   settings:
     api_domain: '%env(resolve:string:DOMAIN_CORE_DAM_API)%'
@@ -6,7 +19,8 @@ anzu_systems_core_dam:
     elastic_index_prefix: '%env(resolve:string:ELASTIC_INDEX_PREFIX)%'
     distribution_auth_redirect_url: '%env(resolve:string:DISTRIBUTION_AUTH_REDIRECT_URL)%'
     default_ext_system_id: 1
-    default_asset_licence_id: 1
+    default_asset_licence_id: 100000
+    not_found_image_id: '0d584443-2718-470a-b9b1-92d2d9c7447c'
     allow_select_ext_system: false
     allow_select_licence: false
     admin_allow_list_name: 'admin'
@@ -14,43 +28,18 @@ anzu_systems_core_dam:
     app_redis: TestRedis
     cache_redis: TestRedis
     user_auth_type: json_credentials
+    limited_asset_licence_files_count: 100
+    unsplash_api_client_host: 'https://api.unsplash.com'
+    jw_player_api_client_host: 'https://api.jwplayer.com'
     image_chunk_config:
       min_size: 5000
       max_size: 70000
     acl_check_enabled: false
   display_title:
-    image:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    audio:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    video:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
-    document:
-      - 'customData:title'
-      - 'customData:headline'
-      - 'assetTexts:title'
-      - 'assetFileAttributes:originFileName'
-      - 'asset:id'
-      - 'assetFile:id'
-      - 'assetTexts:title'
+    image: '%display_title_config%'
+    audio: '%display_title_config%'
+    video: '%display_title_config%'
+    document: '%display_title_config%'
   file_operations:
     tmp_dir_path: '%kernel.project_dir%/var/mnt/data/tmp'
     fixtures_dir_path: '%kernel.project_dir%/var/mnt/data/fixtures'
@@ -117,61 +106,121 @@ anzu_systems_core_dam:
         rgb: [ 210, 7, 151 ]
       brown:
         rgb: [ 154, 0, 5 ]
+    crop_allow_map:
+      admin:
+        crop_allow_list: admin
+        ext_system_slugs: [ blog, cms ]
+        domain: admin
+      cms_public_image:
+        crop_allow_list: web_cms
+        ext_system_slugs: [ cms ]
+        domain: web_cms
+      blog_public_image:
+        crop_allow_list: web_blog
+        ext_system_slugs: [ blog ]
+        domain: web_cms
     crop_allow_list:
       admin:
-        domains: [ admin ]
         quality_whitelist: [ ]
         crops:
           - { width: 0, height: 200, tags: ['list'] }       # admin DAM listing
           - { width: 1920, height: 0, tags: ['detail'] }    # admin DAM image crop
           - { width: 200, height: 100}    # admin DAM image crop
       web_cms:
-        domains: [ web_cms ]
         quality_whitelist: [ 90 ]
         crops:
           - { width: 800, height: 450 }   # anzu web general
           - { width: 350, height: 197 }   # anzu web box item photo
+      web_blog:
+        quality_whitelist: [ 90 ]
+        crops:
+          - { width: 300, height: 300 }
   ext_systems:
     cms:
       id: 1
       image:
         title: ['customData:title']
         custom_metadata_pinned_amount: 3
+        public_domain: web_cms
+        admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'
-        chunk_storage_name: 'cms.image'
+        chunk_storage_name: 'cms.chunk'
         size_limit: 104857600 # 100MB
         roi_width: 16
         roi_height: 9
-        file_versions:
+        file_slots:
           default: default
-          versions: [ default, free ]
+          slots: [ default, free, extra ]
       audio:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.audio'
         chunk_storage_name: 'cms.audio'
+        public_storage: 'cms.audio'
+        public_domain_name: 'localhost'
         size_limit: 104857600 # 100MB
-        file_versions:
+        file_slots:
           default: free
-          versions: [ free, paid ]
+          slots: [ free, paid, bonus ]
+        podcast_episode_entity_map:
+          title:
+            source_property_path: 'metadata.customData[title]'
+            destination_property_path: 'texts.title'
+          description:
+            source_property_path: 'metadata.customData[description]'
+            destination_property_path: 'texts.description'
       video:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
-        storage_name: 'cms.video'
+        storage_name: 'cms.chunk'
         chunk_storage_name: 'cms.video'
         size_limit: 5242880000  # 5GB
-        file_versions: ~
+        file_slots:
+          default: free
+          slots: [ free, exclusive ]
+        video_episode_entity_map:
+          title:
+            source_property_path: 'metadata.customData[title]'
+            destination_property_path: 'texts.title'
         distribution:
-          distribution_services: [ youtube_cms_main ]
+          distribution_services: [ youtube_cms_main, jw_cms_main ]
           distribution_requirements:
             youtube_cms_main:
               title: 'Youtube CMS'
               blocked_by: [ ]
               strategy: none
               distribution_metadata_map:
-                title: [ 'customData:title', 'customData:headline' ]
-                description: [ 'customData:description' ]
+                title:
+                  source_property_path: 'metadata.customData[title]'
+                  destination_property_path: 'customData[title]'
+                description:
+                  source_property_path: 'metadata.customData[description]'
+                  destination_property_path: 'customData[description]'
+              category_select:
+                enabled: true
+                required: false
+            jw_cms_main:
+              title: 'JW Player Video'
+              distribution_metadata_map:
+                title:
+                  source_property_path: 'metadata.customData[title]'
+                  destination_property_path: 'texts.title'
+                  normalizers:
+                    - { type: string, options: { empty_string: true } }
+                description:
+                  source_property_path: 'metadata.customData[description]'
+                  destination_property_path: 'texts.description'
+                  normalizers:
+                    - { type: string, options: { empty_string: true } }
+                keywords:
+                  source_property_path: 'keywords_as_string_array'
+                  destination_property_path: 'texts.keywords'
+                author:
+                  source_property_path: 'authors_as_string_array[0]'
+                  destination_property_path: 'texts.null_author'
+              blocked_by: [ ]
+              strategy: none
               category_select:
                 enabled: true
                 required: false
@@ -179,14 +228,32 @@ anzu_systems_core_dam:
         title: [ 'customData:title' ]
         custom_metadata_pinned_amount: 3
         storage_name: 'cms.document'
-        chunk_storage_name: 'cms.document'
+        chunk_storage_name: 'cms.chunk'
         size_limit: 1048576000 # 1GB
-        file_versions: ~
+        file_slots:
+          default: default
+          slots: [ default, exclusive ]
+    blog:
+      id: 4
+      image:
+        title: ['customData:title']
+        custom_metadata_pinned_amount: 3
+        storage_name: 'blog.image'
+        crop_storage_name: 'blog.crop'
+        chunk_storage_name: 'blog.chunk'
+        public_domain: web_cms
+        admin_domain: admin
+        size_limit: 20971520  # 20MB
+        roi_width: 16
+        roi_height: 9
+        file_slots:
+          default: default
+          slots: [ default, test ]
   domains:
     admin:
-      domain: '%env(resolve:string:DOMAIN_ADMIN_WEB)%'
+      domain: 'http://admin-image.anzusystems.localhost'
     web_cms:
-      domain: '%env(resolve:string:DOMAIN_CMS_WEB)%'
+      domain: 'http://image.anzusystems.localhost'
   storages:
     cms.audio:
       adapter: 'local'
@@ -212,3 +279,15 @@ anzu_systems_core_dam:
       adapter: 'local'
       options:
         directory: '%kernel.project_dir%/var/mnt/data/crop'
+    blog.image:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/image-blog'
+    blog.chunk:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/chunk-blog'
+    blog.crop:
+      adapter: 'local'
+      options:
+        directory: '%kernel.project_dir%/var/mnt/data/crop-blog'

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Security\Voter;
 
+use AnzuSystems\CommonBundle\Security\Voter\AbstractVoter;
+use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -13,8 +15,15 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
  */
 final class ExtSystemAwareVoter extends AbstractVoter
 {
-    protected function resolveAllow(string $attribute, mixed $subject, DamUser $user): bool
+    /**
+     * @param DamUser $user
+     */
+    protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
     {
+        if (false === parent::permissionVote($attribute, $subject, $user)) {
+            return false;
+        }
+
         if (null === $subject) {
             return true;
         }
@@ -23,7 +32,7 @@ final class ExtSystemAwareVoter extends AbstractVoter
             return false;
         }
 
-        $extSystemId = $subject->getExtSystem()->getId();
+        $extSystemId = (int) $subject->getExtSystem()->getId();
 
         if ($user->getAdminToExtSystems()->containsKey($extSystemId)) {
             return true;
@@ -61,6 +70,14 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_PODCAST_EPISODE_DELETE,
             DamPermissions::DAM_PODCAST_EPISODE_UPDATE,
             DamPermissions::DAM_PODCAST_EPISODE_CREATE,
+            DamPermissions::DAM_VIDEO_SHOW_VIEW,
+            DamPermissions::DAM_VIDEO_SHOW_DELETE,
+            DamPermissions::DAM_VIDEO_SHOW_UPDATE,
+            DamPermissions::DAM_VIDEO_SHOW_CREATE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_DELETE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_UPDATE,
+            DamPermissions::DAM_VIDEO_SHOW_EPISODE_CREATE,
         ];
     }
 }

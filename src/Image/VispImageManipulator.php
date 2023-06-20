@@ -13,16 +13,21 @@ use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Jcupitt\Vips\Exception;
 use Jcupitt\Vips\Image;
+use League\Flysystem\FilesystemException;
 use Throwable;
 
+/**
+ * @psalm-suppress PossiblyNullReference
+ * @psalm-suppress PossiblyNullPropertyFetch
+ */
 final class VispImageManipulator extends AbstractImageManipulator
 {
     private const N_BINS = 10;
     private const BIN_SIZE = 256;
     private const DEFAULT_QUALITY = 100;
 
-    protected ?Image $image = null;
-    protected int $quality;
+    private ?Image $image = null;
+    private int $quality;
 
     public function __construct(
         FilterProcessorStack $filterProcessorStack,
@@ -70,6 +75,7 @@ final class VispImageManipulator extends AbstractImageManipulator
             [$v, $x, $y] = $hist->maxpos();
 
             $pixel = $hist->getpoint($x, $y);
+            /** @var int $z */
             $z = array_search($v, $pixel, true);
 
             $r = ($x + 0.5) * self::BIN_SIZE / self::N_BINS;
@@ -121,13 +127,16 @@ final class VispImageManipulator extends AbstractImageManipulator
         }
     }
 
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     */
     public function getStream(string $extension)
     {
         $this->ensureImage();
 
-        $tmpFilePath = $this->nameGenerator->generatePath($extension)->getRelativePath();
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
-
+        $tmpFilePath = $fileSystem->getTmpFileName();
         $this->image->writeToFile($fileSystem->extendPath($tmpFilePath));
 
         return $fileSystem->readStream($tmpFilePath);
@@ -143,6 +152,9 @@ final class VispImageManipulator extends AbstractImageManipulator
         $this->image = $this->image->resize($scale);
     }
 
+    /**
+     * @throws ImageManipulatorException
+     */
     public function rotate(float $angle): void
     {
         $this->ensureImage();

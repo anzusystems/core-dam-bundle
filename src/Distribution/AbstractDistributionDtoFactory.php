@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDistributionDtoFactory
 {
-    private readonly DistributionCategorySelectRepository $categorySelectRepository;
+    private DistributionCategorySelectRepository $categorySelectRepository;
 
     #[Required]
     public function setCategorySelectRepository(DistributionCategorySelectRepository $categorySelectRepository): void
@@ -22,7 +22,7 @@ abstract class AbstractDistributionDtoFactory
 
     public function getSelectedOption(AssetFile $assetFile, Distribution $distribution): ?DistributionCategoryOption
     {
-        $asset = $assetFile->getAsset()->getAsset();
+        $asset = $assetFile->getAsset();
 
         $select = $this->categorySelectRepository->findOneForExtSystemService(
             $distribution->getDistributionService(),

@@ -67,14 +67,17 @@ final class PodcastRssReader
         ;
 
         $itunesXml = $channelXml->children(self::ITUNES_KEY_KEY, true);
+
         if ($itunesXml) {
             $channelItunes = (new ChannelItunes())
-                ->setImage((string) $itunesXml->image->image->attributes()?->href)
+                ->setImage((string) $itunesXml->image->attributes()?->href)
                 ->setExplicit((string) $itunesXml->explicit);
 
             foreach ($itunesXml->category as $category) {
                 $channelItunes->addCategory((string) $category->attributes()?->text);
             }
+
+            $channel->setItunes($channelItunes);
         }
 
         return $channel;
@@ -84,10 +87,15 @@ final class PodcastRssReader
      * @throws SerializerException
      * @throws Exception
      */
-    public function readItems(): Generator
+    public function readItems(?DateTimeImmutable $from = null): Generator
     {
         foreach (array_reverse($this->body->channel->xpath('item')) as $item) {
-            yield $this->readItem($item);
+            $item = $this->readItem($item);
+            if ($item->getPubDate() && $from && $from > $item->getPubDate()) {
+                continue;
+            }
+
+            yield $item;
         }
     }
 

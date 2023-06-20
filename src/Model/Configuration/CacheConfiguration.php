@@ -6,10 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class CacheConfiguration
 {
+    public const DOMAIN = 'domain';
     public const MAX_AGE = 'max_age';
     public const CACHE_TTL = 'cache_ttl';
     public const PUBLIC = 'public';
 
+    private string $domain;
     private int $maxAge;
     private int $cacheTtl;
     private bool $public;
@@ -17,9 +19,22 @@ final class CacheConfiguration
     public static function getFromArrayConfiguration(array $config): self
     {
         return (new self())
+            ->setDomain($config[self::DOMAIN] ?? '')
             ->setMaxAge($config[self::MAX_AGE] ?? 0)
             ->setCacheTtl($config[self::CACHE_TTL] ?? 0)
             ->setPublic($config[self::PUBLIC] ?? false);
+    }
+
+    public function getDomain(): string
+    {
+        return $this->domain;
+    }
+
+    public function setDomain(string $domain): self
+    {
+        $this->domain = $domain;
+
+        return $this;
     }
 
     public function getMaxAge(): int

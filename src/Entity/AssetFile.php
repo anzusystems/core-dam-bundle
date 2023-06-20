@@ -8,6 +8,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileFlags;
@@ -16,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,10 +24,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 
+/**
+ * @psalm-method DamUser getCreatedBy()
+ * @psalm-method DamUser getModifiedBy()
+ */
 #[ORM\Entity(repositoryClass: AssetFileRepository::class)]
 #[ORM\Index(fields: ['licence', 'assetAttributes.originExternalProvider'], name: 'IDX_licence_attributes_external_provider')]
 #[ORM\Index(fields: ['assetAttributes.status'], name: 'IDX_attributes_status')]
-#[ORM\Index(fields: ['assetAttributes.status', 'assetAttributes.checksum'], name: 'IDX_attributes_status_checksum')]
+#[ORM\Index(fields: ['licence', 'assetAttributes.status', 'assetAttributes.checksum'], name: 'IDX_licence_attributes_status_checksum')]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,
@@ -68,7 +72,7 @@ abstract class AssetFile implements
         $this->setFlags(new AssetFileFlags());
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         return (string) $this->getId();
     }

@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
@@ -18,11 +19,13 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadata
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
@@ -54,7 +57,7 @@ class Configuration implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    private function addTextMapperConfiguration(string $name): NodeDefinition
+    public static function addTextMapperConfiguration(string $name): NodeDefinition
     {
         return (new TreeBuilder($name))->getRootNode()
             ->useAttributeAsKey('name')
@@ -64,7 +67,7 @@ class Configuration implements ConfigurationInterface
                         ->isRequired()
                     ->end()
                     ->scalarNode(TextsWriterConfiguration::DESTINATION_PROPERTY_PATH_KEY)
-                        ->isRequired()
+                        ->defaultValue('')
                     ->end()
                     ->arrayNode(TextsWriterConfiguration::NORMALIZERS_KEY)
                         ->arrayPrototype()
@@ -94,10 +97,28 @@ class Configuration implements ConfigurationInterface
                         ->scalarNode(DistributionServiceConfiguration::TYPE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::TITLE_KEY)->isRequired()->end()
                         ->scalarNode(DistributionServiceConfiguration::MODULE_KEY)->isRequired()->end()
+                        ->scalarNode(DistributionServiceConfiguration::ICON_PATH)->defaultValue('')->end()
+                        ->arrayNode(DistributionServiceConfiguration::ALLOWED_REDISTRIBUTE_STATUSES)
+                            ->defaultValue([DistributionProcessStatus::Failed->toString()])
+                            ->scalarPrototype()->end()
+                            ->validate()
+                            ->ifTrue(function (array $values): bool {
+                                foreach ($values as $value) {
+                                    if (false === in_array($value, DistributionProcessStatus::values(), true)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
+                            })
+                            ->thenInvalid('Only values (' . implode(',', DistributionProcessStatus::values()) . ') allowed')
+                            ->end()
+                        ->end()
                         ->booleanNode(DistributionServiceConfiguration::REQUIRED_AUTH_KEY)
                             ->defaultValue(false)
                         ->end()
                         ->scalarNode(DistributionServiceConfiguration::AUTH_REDIRECT_URL_KEY)->defaultValue(null)->end()
+
                         ->booleanNode(DistributionServiceConfiguration::USE_MOCK_KEY)
                             ->defaultValue(false)
                         ->end()
@@ -136,20 +157,11 @@ class Configuration implements ConfigurationInterface
     private function addDisplayTitleSection(): NodeDefinition
     {
         return (new TreeBuilder('display_title'))->getRootNode()
-            ->children()
-                ->arrayNode(AssetType::Image->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Audio->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Document->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-                ->arrayNode(AssetType::Video->toString())
-                    ->scalarPrototype()->end()
-                ->end()
-            ->end();
+            ->append($this::addTextMapperConfiguration(AssetType::Image->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Audio->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Document->toString()))
+            ->append($this::addTextMapperConfiguration(AssetType::Video->toString()))
+        ;
     }
 
     private function addSettingsSection(): NodeDefinition
@@ -168,6 +180,14 @@ class Configuration implements ConfigurationInterface
                             ->scalarPrototype()->end()
                         ->end()
                     ->end()
+                ->end()
+                ->scalarNode(SettingsConfiguration::UNSPLASH_API_CLIENT)
+                    ->defaultValue('https://api.unsplash.com')
+                    ->isRequired()
+                ->end()
+                ->scalarNode(SettingsConfiguration::JW_PLAYER_API_CLIENT)
+                    ->defaultValue('https://api.jwplayer.com')
+                    ->isRequired()
                 ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()
@@ -223,9 +243,17 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(SettingsConfiguration::CACHE_REDIS_KEY)
                     ->isRequired()
                 ->end()
+                ->scalarNode(SettingsConfiguration::NOT_FOUND_IMAGE_ID)
+                    ->isRequired()
+                ->end()
                 ->enumNode(SettingsConfiguration::USER_AUTH_TYPE_KEY)
                     ->values(UserAuthType::values())
                     ->defaultValue(UserAuthType::Default->toString())
+                ->end()
+                ->integerNode(SettingsConfiguration::LIMITED_ASSET_LICENCE_FILES_COUNT)
+                    ->info('Number of allowed files for an asset licence with enabled limitation.')
+                    ->defaultValue(100)
+                    ->isRequired()
                 ->end()
                 ->append($this->addChunkConfiguration())
             ->end();
@@ -255,6 +283,8 @@ class Configuration implements ConfigurationInterface
                 ->performNoDeepMerging()
                 ->children()
                     ->scalarNode('adapter')->isRequired()->end()
+                    ->booleanNode('fallback_enabled')->defaultFalse()->end()
+                    ->scalarNode('fallback_storage')->defaultValue('')->end()
                     ->arrayNode('options')
                         ->variablePrototype()
                         ->end()
@@ -287,6 +317,7 @@ class Configuration implements ConfigurationInterface
             ->arrayPrototype()
                 ->children()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::TITLE_KEY)->end()
+                    ->scalarNode(ExtSystemAssetExternalProviderConfiguration::IMPORT_AUTHOR_ID)->end()
                 ->end()
             ->end();
     }
@@ -319,13 +350,7 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue(DistributionStrategy::NONE)
                                 ->isRequired()
                             ->end()
-                            ->arrayNode(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP)
-                                ->useAttributeAsKey('name')
-                                ->arrayPrototype()
-                                    ->useAttributeAsKey('name')->scalarPrototype()->end()
-                                    ->defaultValue([])
-                                ->end()
-                            ->end()
+                            ->append($this::addTextMapperConfiguration(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP))
                         ->end()
                     ->end()
                 ->end()
@@ -375,13 +400,13 @@ class Configuration implements ConfigurationInterface
                     ->end()
                     ->scalarPrototype()->end()
                 ->end()
-                ->arrayNode(ExtSystemAssetTypeConfiguration::FILE_VERSIONS_KEY)
+                ->arrayNode(ExtSystemAssetTypeConfiguration::FILE_SLOTS_KEY)
                     ->isRequired()
                     ->children()
                         ->scalarNode('default')
                             ->defaultValue('default')
                         ->end()
-                        ->arrayNode('versions')
+                        ->arrayNode('slots')
                             ->defaultValue(['default'])
                             ->scalarPrototype()->end()
                         ->end()
@@ -392,14 +417,28 @@ class Configuration implements ConfigurationInterface
         $config->append($this->addExtSystemExifMetadataSection(ExtSystemAssetTypeConfiguration::AUTHORS_KEY));
 
         if ($type->is(AssetType::Audio)) {
-            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
-            $config->append($this->addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
+            $config
+                ->scalarNode(ExtSystemAudioTypeConfiguration::AUDIO_PUBLIC_STORAGE)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(ExtSystemAudioTypeConfiguration::PUBLIC_DOMAIN_NAME)
+                    ->isRequired()
+                ->end()
+            ;
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
         }
 
-        $config->append($this->addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));
+        $config->append($this::addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));
 
         if ($type->is(AssetType::Image)) {
             $config
+                ->scalarNode(ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY)
+                    ->isRequired()
+                ->end()
                 ->scalarNode(ExtSystemImageTypeConfiguration::ROI_WIDTH_KEY)
                     ->isRequired()
                 ->end()
@@ -409,6 +448,10 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(ExtSystemImageTypeConfiguration::CROP_STORAGE_NAME)
                     ->isRequired()
                 ->end();
+        }
+
+        if ($type->is(AssetType::Video)) {
+            $config->append($this::addTextMapperConfiguration(ExtSystemVideoTypeConfiguration::VIDEO_EPISODE_ENTITY_MAP_KEY));
         }
 
         return $config->end();
@@ -516,31 +559,47 @@ class Configuration implements ConfigurationInterface
                 ->booleanNode('enable_crop_cache')
                     ->defaultTrue()
                 ->end()
-                ->arrayNode('crop_allow_list')
+                ->arrayNode('crop_allow_map')
+                    ->info('Maps crop_allow_list to ext systems and domains')
+                    ->performNoDeepMerging()
                     ->useAttributeAsKey('name')
                     ->arrayPrototype()
-                    ->children()
-                        ->arrayNode('domains')
-                            ->scalarPrototype()->end()
-                        ->end()
-                        ->arrayNode('quality_whitelist')
-                            ->scalarPrototype()->end()
-                        ->end()
-                        ->arrayNode('crops')
-                            ->arrayPrototype()
-                            ->children()
-                                ->integerNode(AllowListConfiguration::CROP_ALLOW_ITEM_WIDTH)->end()
-                                ->integerNode(AllowListConfiguration::CROP_ALLOW_ITEM_HEIGHT)->end()
-                                ->arrayNode('tags')
-                                    ->scalarPrototype()->end()
-                                ->end()
-                                ->scalarNode(AllowListConfiguration::CROP_ALLOW_ITEM_TITLE)
-                                    ->defaultValue('')
-                                ->end()
+                        ->children()
+                            ->scalarNode('crop_allow_list')
+                                ->isRequired()
                             ->end()
+                            ->scalarNode('domain')
+                                ->isRequired()
+                            ->end()
+                            ->arrayNode('ext_system_slugs')
+                                ->scalarPrototype()->end()
                             ->end()
                         ->end()
                     ->end()
+                ->end()
+                ->arrayNode('crop_allow_list')
+                    ->performNoDeepMerging()
+                    ->useAttributeAsKey('name')
+                    ->arrayPrototype()
+                        ->children()
+                            ->arrayNode(CropAllowListConfiguration::QUALITY_ALLOW_LIST)
+                                ->scalarPrototype()->end()
+                            ->end()
+                            ->arrayNode(CropAllowListConfiguration::CROPS)
+                                ->arrayPrototype()
+                                    ->children()
+                                        ->integerNode(AllowListConfiguration::CROP_ALLOW_ITEM_WIDTH)->end()
+                                        ->integerNode(AllowListConfiguration::CROP_ALLOW_ITEM_HEIGHT)->end()
+                                        ->arrayNode('tags')
+                                            ->scalarPrototype()->end()
+                                        ->end()
+                                        ->scalarNode(AllowListConfiguration::CROP_ALLOW_ITEM_TITLE)
+                                            ->defaultValue('')
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
                     ->end()
                 ->end()
             ->end();

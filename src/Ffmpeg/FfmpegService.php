@@ -8,16 +8,26 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
+use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\Math;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use FFMpeg\Coordinate\TimeCode;
 use FFMpeg\Exception\RuntimeException;
+use FFMpeg\FFMpeg;
 use FFMpeg\FFProbe;
 use FFMpeg\FFProbe\DataMapping\Stream;
+use FFMpeg\Media\Frame;
+use FFMpeg\Media\Video as FFMpegVideo;
 use Symfony\Component\HttpFoundation\File\File;
+use Throwable;
 
 final class FfmpegService
 {
+    public const FRAME_EXTENSION = 'jpeg';
+
     public function __construct(
         private readonly Exiftool $exiftool,
+        private readonly FileSystemProvider $fileSystemProvider,
     ) {
     }
 
@@ -86,6 +96,28 @@ final class FfmpegService
         return $video;
     }
 
+    /**
+     * @throws FfmpegException
+     */
+    public function getFileThumbnail(File $file, int $position): AdapterFile
+    {
+        $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
+
+        try {
+            $path = $tmpFileSystem->getTmpFileName(self::FRAME_EXTENSION);
+            $this->getFrame($file, $position)->save($tmpFileSystem->extendPath($path));
+
+            return AdapterFile::createFromBaseFile(
+                file: new File($tmpFileSystem->extendPath($path)),
+                filesystem: $tmpFileSystem
+            );
+        } catch (FfmpegException $exception) {
+            throw $exception;
+        } catch (Throwable $exception) {
+            throw new FfmpegException(previous: $exception);
+        }
+    }
+
     public function getFistVideoTrack(string $filePath): ?Stream
     {
         return FFProbe::create()
@@ -100,5 +132,22 @@ final class FfmpegService
             ->streams($filePath)
             ->audios()
             ->first();
+    }
+
+    /**
+     * @psalm-suppress UndefinedMethod
+     */
+    private function getFrame(File $file, int $position): Frame
+    {
+        $ffmpeg = FFMpeg::create();
+        $video = $ffmpeg->open($file->getRealPath());
+
+        if (false === ($video instanceof FFMpegVideo)) {
+            throw new FfmpegException(FfmpegException::ERROR_UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        return $video->frame(
+            TimeCode::fromSeconds($position)
+        );
     }
 }

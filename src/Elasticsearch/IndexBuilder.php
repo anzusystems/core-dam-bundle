@@ -8,10 +8,15 @@ use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Elasticsearch\Client;
+use Doctrine\ORM\NonUniqueResultException;
+use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\HttpFoundation\Response;
 
 final class IndexBuilder
 {
@@ -28,76 +33,119 @@ final class IndexBuilder
         private readonly array $indexMappings,
         IndexDefinitionFactory $indexDefinitionFactory,
     ) {
-        $this->indexDefinitions = $indexDefinitionFactory
-            ->buildIndexDefinitions($indexMappings);
+        $this->indexDefinitions = $indexDefinitionFactory->buildIndexDefinitions($indexMappings);
     }
 
-    public function rebuildIndex(
-        string $indexName,
-        bool $noDrop = false,
-        int $batch = 500,
-        int|string $idFrom = 0,
-        int|string $idUntil = 0,
-    ): void {
-        if (false === in_array($indexName, $this->getAvailableIndexes(), true)) {
-            $this->writeln(sprintf('ERROR: Index with name "%s" does not exist, skipping.', $indexName));
+    /**
+     * @throws ElasticsearchException
+     * @throws NonUniqueResultException
+     */
+    public function rebuildIndex(RebuildIndexConfig $config): void
+    {
+        if (false === in_array($config->getIndexName(), $this->getAvailableIndexes(), true)) {
+            $this->writeln(sprintf(
+                'ERROR: Index with name "%s" does not exist, skipping.',
+                $config->getIndexName(),
+            ));
 
             return;
         }
 
-        if (false === $noDrop) {
-            $this->dropAndCreateIndex($indexName);
+        if ($config->isDrop()) {
+            $this->dropAndCreateIndex($config);
         }
-        $this->buildIndex($indexName, $batch, $idFrom, $idUntil);
+        $this->buildIndex($config);
     }
 
-    private function dropAndCreateIndex(string $indexName): void
+    /**
+     * @throws ElasticsearchException
+     */
+    private function dropAndCreateIndex(RebuildIndexConfig $config): void
     {
-        $this->writeln(PHP_EOL . 'Recreating index <info>' . $indexName . '</info>...');
-        $this->client->indices()->delete(['index' => $this->indexSettings->getIndexPrefix($indexName) . '_*']);
+        foreach ($this->getFullIndexNamesToRebuild($config) as $indexNameFullName) {
+            $this->writeln(sprintf('Recreating index <info>%s</info>', $indexNameFullName));
 
-        foreach ($this->extSystemConfigurationProvider->getExtSystemSlugs() as $slug) {
-            $fullIndexName = $this->indexSettings->getFullIndexNameBySlug($indexName, $slug);
-
+            try {
+                $this->client->indices()->delete([
+                    'index' => $indexNameFullName,
+                ]);
+            } catch (ClientResponseException $exception) {
+                // Not found index is OK
+                if (Response::HTTP_NOT_FOUND !== $exception->getResponse()->getStatusCode()) {
+                    throw $exception;
+                }
+            }
             $this->client->indices()->create([
-                'index' => $fullIndexName,
-                'body' => $this->getIndexSettings($fullIndexName),
+                'index' => $indexNameFullName,
+                'body' => $this->getIndexSettings($indexNameFullName),
             ]);
         }
     }
 
-    private function buildIndex(string $indexName, int $batch, int|string $idFrom, int|string $idUntil): void
+    /**
+     * @throws ElasticsearchException
+     * @throws NonUniqueResultException
+     */
+    private function buildIndex(RebuildIndexConfig $config): void
     {
-        $this->writeln('Indexing <info>' . $indexName . '</info>...');
+        $this->writeln(sprintf('Indexing <info>%s</info>...', $config->getIndexName()));
 
         /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repo */
-        $repo = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($indexName));
+        $repo = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($config->getIndexName()));
 
-        $progressBar = $this->outputUtil->createProgressBar();
+        $count = $repo->getAllCountForIndexRebuild($config);
+        $progressBar = $this->outputUtil->createProgressBar($count);
         $this->configureProgressBar($progressBar);
 
-        $maxId = $idUntil ?: $repo->getMaxId();
+        if ($config->hasNotIdUntil()) {
+            $maxId = $repo->getMaxIdForIndexRebuild($config);
+            if (empty($maxId)) {
+                $this->writeln(sprintf('Skipping <info>%s</info>, nothing to index...', $config->getIndexName()));
+
+                return;
+            }
+            $config->setMaxId($maxId);
+        }
         do {
             $payload = ['body' => []];
-            foreach ($repo->getAll($idFrom, $idUntil, $batch) as $item) {
+            /** @var ExtSystemIndexableInterface $item */
+            foreach ($repo->getAllForIndexRebuild($config) as $item) {
                 $payload['body'][] = [
                     'index' => [
                         '_index' => $this->indexSettings->getFullIndexNameByEntity($item),
                         '_id' => $item->getId(),
                     ],
                 ];
-                $payload['body'][] = $this->indexFactoryProvider->getIndexFactory($this->indexSettings->getEntityClassName($indexName))->buildFromEntity($item);
+                $payload['body'][] = $this->indexFactoryProvider->getIndexFactory(
+                    $this->indexSettings->getEntityClassName($config->getIndexName())
+                )->buildFromEntity($item);
 
                 $progressBar->advance();
-                $idFrom = $item->getId();
+                $config->setLastProcessedId($item->getId());
             }
             if (false === empty($payload['body'])) {
                 $this->client->bulk($payload);
             }
             $this->entityManager->clear();
-        } while ($idFrom < $maxId);
+        } while ($config->getLastProcessedId() < $config->getResolvedMaxId());
 
         $progressBar->finish();
+        $this->writeln(PHP_EOL);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getFullIndexNamesToRebuild(RebuildIndexConfig $config): array
+    {
+        if ($config->hasExtSystemSlug()) {
+            return [$this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $config->getExtSystemSlug())];
+        }
+
+        return array_map(
+            fn (string $extSystemSlug) => $this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $extSystemSlug),
+            $this->extSystemConfigurationProvider->getExtSystemSlugs()
+        );
     }
 
     private function configureProgressBar(ProgressBar $progressBar): void

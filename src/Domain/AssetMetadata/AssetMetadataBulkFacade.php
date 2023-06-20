@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
@@ -21,14 +20,14 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
 final class AssetMetadataBulkFacade
 {
+    use ValidatorAwareTrait;
+    use IndexManagerAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $entityValidator,
         private readonly ConfigurationProvider $configurationProvider,
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AssetManager $assetManager,
-        private readonly IndexManager $indexManager,
         private readonly AccessDenier $accessDenier,
-        private readonly AssetTextsProcessor $displayTitleProcessor,
     ) {
     }
 
@@ -42,7 +41,7 @@ final class AssetMetadataBulkFacade
     public function bulkUpdate(Collection $list): Collection
     {
         $this->validateMaxBulkCount($list);
-        $this->entityValidator->validateDto($list);
+        $this->validator->validate($list);
         $updated = [];
 
         foreach ($list as $updateDto) {
@@ -57,7 +56,6 @@ final class AssetMetadataBulkFacade
             if ($updateDto->isDescribed()) {
                 $this->assetMetadataManager->removeSuggestions($updateDto->getAsset()->getMetadata(), false);
             }
-            $this->displayTitleProcessor->updateAssetDisplayTitle($asset);
         }
 
         $this->assetManager->flush();
@@ -68,6 +66,9 @@ final class AssetMetadataBulkFacade
         return new ArrayCollection($updated);
     }
 
+    /**
+     * @param Collection<int, FormProvidableMetadataBulkUpdateDto> $dtoList
+     */
     private function validateMaxBulkCount(Collection $dtoList): void
     {
         if ($dtoList->count() > $this->configurationProvider->getSettings()->getMaxBulkItemCount()) {

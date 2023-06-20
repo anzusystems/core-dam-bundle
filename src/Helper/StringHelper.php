@@ -17,8 +17,12 @@ final class StringHelper
 
     public static function normalize(string $input, StringNormalizerConfiguration $configuration): string
     {
+        if ($configuration->isTrim()) {
+            $input = trim($input);
+        }
+
         if (false === (null === $configuration->getLength())) {
-            return mb_substr($input, 0, $configuration->getLength());
+            $input = mb_substr($input, 0, $configuration->getLength());
         }
 
         return $input;

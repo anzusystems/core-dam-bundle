@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 
+use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
@@ -28,6 +29,7 @@ use Google_Service_YouTube_ResourceId;
 use Google_Service_YouTube_Video;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\File;
+use Throwable;
 
 final class YoutubeApiClient
 {
@@ -108,24 +110,51 @@ final class YoutubeApiClient
         $client = $this->clientProvider->getClient($distributionService);
         $client->setAccessToken($this->authenticator->getAccessToken($distributionService)->getAccessToken());
 
-        $resourceId = new Google_Service_YouTube_ResourceId();
-        $resourceId->setVideoId($videoId);
-        $resourceId->setKind(self::VIDEO_RESOURCE_TYPE);
-
-        $snippet = new Google_Service_YouTube_PlaylistItemSnippet();
-        $snippet->setResourceId($resourceId);
-        $snippet->setPlaylistId($playlistId);
-
-        $playlistItem = new Google_Service_YouTube_PlaylistItem();
-        $playlistItem->setSnippet($snippet);
-
         try {
+            $resourceId = new Google_Service_YouTube_ResourceId();
+            $resourceId->setVideoId($videoId);
+            $resourceId->setKind(self::VIDEO_RESOURCE_TYPE);
+
+            $snippet = new Google_Service_YouTube_PlaylistItemSnippet();
+            $snippet->setResourceId($resourceId);
+            $snippet->setPlaylistId($playlistId);
+
+            $playlistItem = new Google_Service_YouTube_PlaylistItem();
+            $playlistItem->setSnippet($snippet);
+
             $youtubeService = new Google_Service_YouTube($client);
             $response = $youtubeService->playlistItems->insert('snippet', $playlistItem);
-        } catch (Google_Service_Exception $exception) {
+        } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
                 sprintf('Youtube playlist update failed failed (%s) for ytId (%s)', $exception->getMessage(), $videoId)
+            );
+        }
+    }
+
+    /**
+     * @throws Exception
+     * @throws InvalidArgumentException
+     * @throws SerializerException
+     */
+    public function setThumbnail(
+        string $distributionService,
+        string $distributionId,
+        string $imageData,
+    ): void {
+        $client = $this->clientProvider->getClient($distributionService);
+        $client->setAccessToken($this->authenticator->getAccessToken($distributionService)->getAccessToken());
+
+        try {
+            $youtubeService = new Google_Service_YouTube($client);
+            $response = $youtubeService->thumbnails->set($distributionId, [
+                'data' => $imageData,
+                'mimeType' => CropProcessor::DEFAULT_MIME_TYPE,
+            ]);
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $distributionId)
             );
         }
     }
@@ -150,6 +179,7 @@ final class YoutubeApiClient
         $youtubeService = new Google_Service_YouTube($client);
 
         try {
+            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT asset for asset id (%s)', $assetFile->getId()));
             $insertRequest = $youtubeService->videos->insert(
                 part: 'status,snippet',
                 postBody: $video,
@@ -157,6 +187,7 @@ final class YoutubeApiClient
                     'notifySubscribers' => $distribution->getFlags()->isNotifySubscribers(),
                 ]
             );
+            /** @psalm-suppress NullArgument */
             $media = new Google_Http_MediaFileUpload(
                 client: $client,
                 request: $insertRequest,
@@ -170,11 +201,14 @@ final class YoutubeApiClient
 
             $handle = fopen($file->getRealPath(), 'rb');
 
+            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT chunks for asset id (%s)', $assetFile->getId()));
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, self::CHUNK_SIZE);
                 $status = $media->nextChunk($chunk);
 
                 if ($status instanceof Google_Service_YouTube_Video) {
+                    $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT last chunk inserted for asset id (%s), creating DTO video', $assetFile->getId()));
+
                     return $this->videoFactory->createYoutubeVideoDto($status);
                 }
             }
@@ -194,7 +228,14 @@ final class YoutubeApiClient
             }
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage())
+            );
         }
+
+        return null;
     }
 
     /**
@@ -213,7 +254,7 @@ final class YoutubeApiClient
             'id' => $id,
         ]);
 
-        /** @var Google_Service_YouTube_Video $video */
+        /** @var Google_Service_YouTube_Video|null $video */
         $video = $res->getItems()[0] ?? null;
 
         if (null === $video) {

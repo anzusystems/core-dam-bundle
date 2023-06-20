@@ -8,25 +8,23 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 
-final class FileFactory
+final readonly class FileFactory
 {
     public function __construct(
-        private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
+        private FileSystemProvider $fileSystemProvider,
     ) {
     }
 
     /**
      * @throws FilesystemException
      */
-    public function createFromChunks(AssetFile $assetFile): File
+    public function createFromChunks(AssetFile $assetFile): AdapterFile
     {
-        $path = $this->nameGenerator->generatePath();
         $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
+        $path = $fileSystem->getTmpFileName();
 
         $firstChunk = $assetFile->getChunks()->first();
         if (false === $firstChunk instanceof Chunk) {
@@ -36,14 +34,14 @@ final class FileFactory
         $chunkFileSystem = $this->fileSystemProvider->getFilesystemByStorable($firstChunk);
         foreach ($assetFile->getChunks() as $chunk) {
             $fileSystem->appendTmpStream(
-                $path->getRelativePath(),
+                $path,
                 $chunkFileSystem->read($chunk->getFilePath())
             );
         }
 
-        return new File(
-            path: $fileSystem->extendPath($path->getRelativePath()),
-            adapterPath: $path->getRelativePath(),
+        return new AdapterFile(
+            path: $fileSystem->extendPath($path),
+            adapterPath: $path,
             filesystem: $fileSystem
         );
     }

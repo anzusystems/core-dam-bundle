@@ -7,12 +7,14 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class AssetFileStorageOperator
 {
+    use FileHelperTrait;
+
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly NameGenerator $nameGenerator,
@@ -22,9 +24,12 @@ final class AssetFileStorageOperator
     /**
      * @throws FilesystemException
      */
-    public function save(AssetFile $assetFile, File $file): AssetFile
+    public function save(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        $path = $this->nameGenerator->generatePath(FileHelper::guessExtension($file->getMimeType()));
+        $path = $this->nameGenerator->generatePath(
+            $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType()),
+            true
+        );
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($assetFile);
 
         $fileSystem->writeStream(
@@ -33,8 +38,7 @@ final class AssetFileStorageOperator
         );
 
         $assetFile->getAssetAttributes()
-            ->setFilePath($path->getRelativePath())
-            ->setMimeType($file->getMimeType());
+            ->setFilePath($path->getRelativePath());
 
         return $assetFile;
     }

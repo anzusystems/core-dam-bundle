@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -25,7 +26,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ExtSystemRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_slug', columns: ['slug'])]
-#[AppAssert\UniqueEntity(fields: ['slug'])]
+#[UniqueEntity(fields: ['slug'])]
+#[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
 {
     use IdentityTrait;
@@ -59,7 +61,7 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     private Collection $licences;
 
     #[ORM\ManyToMany(targetEntity: DamUser::class, mappedBy: 'adminToExtSystems', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
-    #[Serialize(handler: EntityIdHandler::class, type: DamUser::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $adminUsers;
 
     public function __construct()
@@ -102,6 +104,11 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->licences;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, AssetLicence> $licences
+     */
     public function setLicences(Collection $licences): self
     {
         $this->licences = $licences;
@@ -117,6 +124,11 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->adminUsers;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, DamUser> $adminUsers
+     */
     public function setAdminUsers(Collection $adminUsers): self
     {
         $this->adminUsers = $adminUsers;

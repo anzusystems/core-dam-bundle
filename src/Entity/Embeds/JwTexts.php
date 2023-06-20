@@ -27,7 +27,7 @@ class JwTexts
 
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(max: 5_000, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    #[ORM\Column(type: Types::STRING, length: 256)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
     private string $author;
 
@@ -40,6 +40,7 @@ class JwTexts
         $this->setDescription('');
         $this->setTitle('');
         $this->setKeywords([]);
+        $this->setAuthor('');
     }
 
     public function getTitle(): string
@@ -62,6 +63,13 @@ class JwTexts
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function setNullAuthor(?string $author): self
+    {
+        $this->author = (string) $author;
 
         return $this;
     }

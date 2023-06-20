@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Model\Enum\PodcastEpisodeStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,8 +14,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastEpisodeAttributes
 {
-    #[ORM\Column(type: Types::STRING, length: 256)]
-    private string $extId;
+    #[ORM\Column(type: Types::STRING, length: 2_048)]
+    private string $rssUrl;
+
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    private string $rssId;
+
+    #[ORM\Column(enumType: PodcastEpisodeStatus::class)]
+    private PodcastEpisodeStatus $lastImportStatus;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true, options: ['unsigned' => true])]
     #[Assert\Range(maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX, max: 65_535)]
@@ -30,7 +37,22 @@ class PodcastEpisodeAttributes
     {
         $this->setEpisodeNumber(null);
         $this->setSeasonNumber(null);
-        $this->setExtId('');
+        $this->setLastImportStatus(PodcastEpisodeStatus::Default);
+        $this->setRssId('');
+        $this->setRssUrl('');
+    }
+
+    #[Serialize]
+    public function getLastImportStatus(): PodcastEpisodeStatus
+    {
+        return $this->lastImportStatus;
+    }
+
+    public function setLastImportStatus(PodcastEpisodeStatus $lastImportStatus): self
+    {
+        $this->lastImportStatus = $lastImportStatus;
+
+        return $this;
     }
 
     public function getSeasonNumber(): ?int
@@ -58,14 +80,27 @@ class PodcastEpisodeAttributes
     }
 
     #[Serialize]
-    public function getExtId(): string
+    public function getRssUrl(): string
     {
-        return $this->extId;
+        return $this->rssUrl;
     }
 
-    public function setExtId(string $extId): self
+    public function setRssUrl(string $rssUrl): self
     {
-        $this->extId = $extId;
+        $this->rssUrl = $rssUrl;
+
+        return $this;
+    }
+
+    #[Serialize]
+    public function getRssId(): string
+    {
+        return $this->rssId;
+    }
+
+    public function setRssId(string $rssId): self
+    {
+        $this->rssId = $rssId;
 
         return $this;
     }

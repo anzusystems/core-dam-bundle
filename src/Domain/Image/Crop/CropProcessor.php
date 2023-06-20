@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Image\Filter\AutoRotateFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\CropFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\FilterStack;
@@ -17,10 +16,13 @@ use AnzuSystems\CoreDamBundle\Image\Filter\QualityFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\ResizeFilter;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class CropProcessor
 {
+    use FileHelperTrait;
+
     public const DEFAULT_MIME_TYPE = 'image/jpeg';
 
     public function __construct(
@@ -56,6 +58,7 @@ final class CropProcessor
 
         $this->imageManipulator->applyFilterStack(
             new FilterStack([
+                new AutoRotateFilter(true),
                 new CropFilter(
                     $recalculatedCrop->getPointX(),
                     $recalculatedCrop->getPointY(),
@@ -64,11 +67,10 @@ final class CropProcessor
                 ),
                 new ResizeFilter($recalculatedCrop->getRequestWidth(), $recalculatedCrop->getRequestHeight()),
                 new QualityFilter($recalculatedCrop->getQuality()),
-                new AutoRotateFilter(true),
             ])
         );
 
-        $content = $this->imageManipulator->getContent(FileHelper::guessExtension(self::DEFAULT_MIME_TYPE));
+        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension(self::DEFAULT_MIME_TYPE));
         $this->cropCache->store($image, $imageCrop, $content);
 
         return $content;
@@ -106,13 +108,13 @@ final class CropProcessor
         $resizeRatio = $optimalResize->getWidth() / $image->getImageAttributes()->getWidth();
 
         return new ImageCropDto(
-            (int) ($imageCrop->getPointX() * $resizeRatio),
-            (int) ($imageCrop->getPointY() * $resizeRatio),
-            (int) ($imageCrop->getWidth() * $resizeRatio),
-            (int) ($imageCrop->getHeight() * $resizeRatio),
-            $imageCrop->getRequestWidth(),
-            $imageCrop->getRequestHeight(),
-            $imageCrop->getQuality(),
+            pointX: (int) ($imageCrop->getPointX() * $resizeRatio),
+            pointY: (int) ($imageCrop->getPointY() * $resizeRatio),
+            width: min((int) ($imageCrop->getWidth() * $resizeRatio), $optimalResize->getWidth()),
+            height: min((int) ($imageCrop->getHeight() * $resizeRatio), $optimalResize->getHeight()),
+            requestWidth: $imageCrop->getRequestWidth(),
+            requestHeight: $imageCrop->getRequestHeight(),
+            quality: $imageCrop->getQuality(),
         );
     }
 }

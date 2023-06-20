@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\ORM\Mapping as ORM;
@@ -25,25 +33,38 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PodcastEpisodeRepository::class)]
 #[ORM\Index(fields: ['podcast', 'position'], name: 'IDX_podcast_position')]
 #[ORM\Index(fields: ['position'], name: 'IDX_position')]
-#[ORM\Index(fields: ['texts.title', 'licenceId'], name: 'IDX_title_licence_id')]
 class PodcastEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
     TimeTrackingInterface,
     PositionableInterface,
-    ExtSystemInterface
+    ExtSystemInterface,
+    AssetLicenceInterface,
+    ImagePreviewableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
     use PositionTrait;
 
+    #[ORM\OneToOne(targetEntity: ImagePreview::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    #[Serialize]
+    #[Assert\Valid]
+    #[AppAssert\EqualLicence]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
+    protected ?ImagePreview $imagePreview;
+
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[Assert\NotNull(message: ValidationException::ERROR_FIELD_EMPTY)]
+    #[AppAssert\EqualLicence]
     private Podcast $podcast;
 
     #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\AssetProperties(assetType: AssetType::Audio)]
+    #[AppAssert\EqualLicence]
     private ?Asset $asset;
 
     #[Serialize]
@@ -56,6 +77,9 @@ class PodcastEpisode implements
     #[Assert\Valid]
     private PodcastEpisodeAttributes $attributes;
 
+    #[ORM\Embedded(class: PodcastEpisodeFlags::class)]
+    private PodcastEpisodeFlags $flags;
+
     #[Serialize]
     #[ORM\Embedded(class: PodcastEpisodeTexts::class)]
     #[Assert\Valid]
@@ -67,6 +91,20 @@ class PodcastEpisode implements
         $this->setAttributes(new PodcastEpisodeAttributes());
         $this->setTexts(new PodcastEpisodeTexts());
         $this->setAsset(null);
+        $this->setImagePreview(null);
+        $this->setFlags(new PodcastEpisodeFlags());
+    }
+
+    public function getImagePreview(): ?ImagePreview
+    {
+        return $this->imagePreview;
+    }
+
+    public function setImagePreview(?ImagePreview $imagePreview): self
+    {
+        $this->imagePreview = $imagePreview;
+
+        return $this;
     }
 
     public function getPodcast(): Podcast
@@ -129,8 +167,32 @@ class PodcastEpisode implements
         return $this;
     }
 
+    public function getLicence(): AssetLicence
+    {
+        return $this->getPodcast()->getLicence();
+    }
+
     public function getExtSystem(): ExtSystem
     {
         return $this->getPodcast()->getLicence()->getExtSystem();
+    }
+
+    #[Serialize]
+    public function getFlags(): PodcastEpisodeFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(PodcastEpisodeFlags $flags): self
+    {
+        $this->flags = $flags;
+
+        return $this;
+    }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    public function getLinks(): ?AssetFile
+    {
+        return $this->getImagePreview()?->getImageFile();
     }
 }

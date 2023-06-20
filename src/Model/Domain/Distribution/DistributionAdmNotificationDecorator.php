@@ -25,7 +25,7 @@ final class DistributionAdmNotificationDecorator
     public static function getInstance(Distribution $distribution): self
     {
         return (new self())
-            ->setId($distribution->getId())
+            ->setId((string) $distribution->getId())
             ->setAssetId($distribution->getAssetId())
             ->setAssetFileId($distribution->getAssetFileId())
             ->setStatus($distribution->getStatus())

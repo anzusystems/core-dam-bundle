@@ -36,11 +36,9 @@ final class DistributionValidator extends ConstraintValidator
     }
 
     /**
-     * @param Distribution $constraint
-     *
      * @throws InvalidArgumentException
      */
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         // validate if distribution entity is supported by distribution service (jw, custom, yt)
         if (false === ($value instanceof DistributionEntity)) {
@@ -70,12 +68,12 @@ final class DistributionValidator extends ConstraintValidator
      */
     private function validateUniqueness(Distribution $distribution): void
     {
-        if (
-            null === $this->distributionRepository->findByAssetFileAndDistributionService(
-                $distribution->getAssetFileId(),
-                $distribution->getDistributionService()
-            )
-        ) {
+        $oldDistribution = $this->distributionRepository->findByAssetFileAndDistributionService(
+            $distribution->getAssetFileId(),
+            $distribution->getDistributionService()
+        );
+
+        if (null === $oldDistribution || $oldDistribution->getId() === $distribution->getId()) {
             return;
         }
 
@@ -146,20 +144,10 @@ final class DistributionValidator extends ConstraintValidator
         }
 
         match ($requirements->getStrategy()) {
-            DistributionRequirementStrategy::none => $this->validateNoneStrategy($distribution),
-            DistributionRequirementStrategy::atLeastOne => $this->validateAtLeastOneStrategy($distribution),
-            DistributionRequirementStrategy::waitForAll => $this->validateWaitForAllStrategy($distribution, $requirements),
+            DistributionRequirementStrategy::None => null,
+            DistributionRequirementStrategy::AtLeastOne => $this->validateAtLeastOneStrategy($distribution),
+            DistributionRequirementStrategy::WaitForAll => $this->validateWaitForAllStrategy($distribution, $requirements),
         };
-    }
-
-    private function validateNoneStrategy(
-        Distribution $distribution,
-    ): void {
-        if (false === $distribution->getBlockedBy()->isEmpty()) {
-            $this->context->buildViolation(self::BLOCKED_BY_STRATEGY)
-                ->atPath('blockedBy')
-                ->addViolation();
-        }
     }
 
     private function validateAtLeastOneStrategy(

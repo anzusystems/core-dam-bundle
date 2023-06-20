@@ -7,8 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 final class CropAllowListConfiguration
 {
     public const QUALITY_ALLOW_LIST = 'quality_whitelist';
+    public const DOMAIN = 'domain';
     public const CROPS = 'crops';
 
+    private string $domain;
     private array $qualityAllowList;
     private array $crops;
 
@@ -16,7 +18,20 @@ final class CropAllowListConfiguration
     {
         return (new self())
             ->setQualityAllowList($config[self::QUALITY_ALLOW_LIST] ?? [])
+            ->setDomain($config[self::DOMAIN] ?? '')
             ->setCrops($config[self::CROPS] ?? []);
+    }
+
+    public function getDomain(): string
+    {
+        return $this->domain;
+    }
+
+    public function setDomain(string $domain): self
+    {
+        $this->domain = $domain;
+
+        return $this;
     }
 
     /**
@@ -35,7 +50,7 @@ final class CropAllowListConfiguration
     }
 
     /**
-     * @return array<int, array{width: string, height: string}>
+     * @return list<array{width: int, height: int, tags: list<string>, title: string}>
      */
     public function getCrops(): array
     {

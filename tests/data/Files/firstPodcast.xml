@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xml:base="https://www.thisamericanlife.org"  xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+    <channel>
+        <title>Dobre rano</title>
+        <link>https://www.link.com</link>
+        <description>Dobre rano Description</description>
+        <language>en</language>
+        <itunes:new-feed-url>https://anchor.fm/s/8a651488/podcast/rss</itunes:new-feed-url>
+        <copyright>SME.sk</copyright>
+        <itunes:author>SME.sk</itunes:author>
+        <itunes:subtitle>Dobre rano subtitle</itunes:subtitle>
+        <itunes:owner> <itunes:email>SME.sk</itunes:email>
+        </itunes:owner>
+        <itunes:category text="News">
+        <itunes:category text="Daily News"/>
+        </itunes:category>
+        <itunes:image href="http://core-dam.sme.localhost/download-file?file=50x50" />
+        <item>
+            <title>Rano 3: episode</title>
+            <link>https://www.thisamericanlife.org/789/the-runaround</link>
+            <description>3: Dobre rano description
+            </description>
+            <pubDate>Tue, 07 Mar 2023 23:01:44 GMT</pubDate>
+            <guid isPermaLink="false">fpg3</guid>
+            <itunes:author>SME.sk</itunes:author>
+            <enclosure url="http://core-dam.sme.localhost/download-file?file=audioa" type="audio/mpeg" />
+            <itunes:duration>01:03:02</itunes:duration>
+            <itunes:subtitle>3: Dobre rano subtitle
+            </itunes:subtitle>
+            <itunes:summary>3: Dobre rano summary
+            </itunes:summary>
+            <itunes:image href="http://core-dam.sme.localhost/download-file?file=50x50" />
+        </item>
+        <item>
+            <title>Rano 2: episode</title>
+            <link>https://www.thisamericanlife.org/789/the-runaround</link>
+            <description>2: Dobre rano description
+            </description>
+            <pubDate>Mon, 06 Mar 2023 23:01:44 GMT</pubDate>
+            <guid isPermaLink="false">fpg2</guid>
+            <itunes:author>SME.sk</itunes:author>
+            <enclosure url="http://core-dam.sme.localhost/download-file?file=audiob" type="audio/mpeg" />
+            <itunes:duration>01:03:02</itunes:duration>
+            <itunes:subtitle>3: Dobre rano subtitle
+            </itunes:subtitle>
+            <itunes:summary>3: Dobre rano summary
+            </itunes:summary>
+            <itunes:image href="http://core-dam.sme.localhost/download-file?file=50x50" />
+        </item>
+        <item>
+            <title>Rano 1: episode</title>
+            <link>https://www.thisamericanlife.org/789/the-runaround</link>
+            <description>3: Dobre rano description
+            </description>
+            <pubDate>Sun, 05 Mar 2023 23:01:45 GMT</pubDate>
+            <guid isPermaLink="false">fpg1</guid>
+            <itunes:author>SME.sk</itunes:author>
+            <enclosure url="http://core-dam.sme.localhost/download-file?file=audioa" type="audio/mpeg" />
+            <itunes:duration>01:03:02</itunes:duration>
+            <itunes:subtitle>1: Dobre rano subtitle
+            </itunes:subtitle>
+            <itunes:summary>1: Dobre rano summary
+            </itunes:summary>
+            <itunes:image href="http://core-dam.sme.localhost/download-file?file=50x50" />
+        </item>
+    </channel>
+</rss>

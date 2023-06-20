@@ -4,20 +4,21 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\FileSystem\NameGenerator;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Model\Dto\NameGenerator\GeneratedPath;
 
-class NameGenerator
+readonly class NameGenerator
 {
     public function __construct(
-        private readonly FileNameGeneratorInterface $fileNameGenerator,
-        private readonly DirectoryNamGeneratorInterface $directoryNameGenerator,
+        private FileNameGeneratorInterface $fileNameGenerator,
+        private DirectoryNamGeneratorInterface $directoryNameGenerator,
     ) {
     }
 
     public function alternatePath(string $originPath, ?string $fileNameSuffix = null, ?string $extension = null): GeneratedPath
     {
         $pathParts = pathinfo($originPath);
-        $useExtension = $extension ?? (string) $pathParts['extension'];
+        $useExtension = $extension ?? (string) ($pathParts['extension'] ?? '');
         $fileName = $fileNameSuffix
             ? $pathParts['filename'] . '_' . $fileNameSuffix . '.' . $useExtension
             : $pathParts['filename'] . '.' . $useExtension;
@@ -34,16 +35,16 @@ class NameGenerator
         $pathParts = pathinfo($path);
 
         return new GeneratedPath(
-            dir: $pathParts['dirname'],
-            fileName: $pathParts['filename'],
-            extension: $pathParts['extension']
+            dir: $pathParts['dirname'] ?? '',
+            fileName: $pathParts['filename'] ?? '',
+            extension: $pathParts['extension'] ?? '',
         );
     }
 
-    public function generatePath(?string $extension = null): GeneratedPath
+    public function generatePath(?string $extension = null, bool $dateDirPath = false): GeneratedPath
     {
         return new GeneratedPath(
-            dir: $this->directoryNameGenerator->generateDirectoryPath(),
+            dir: $this->directoryNameGenerator->generateDirectoryPath($dateDirPath ? App::getAppDate() : null),
             fileName: $this->fileNameGenerator->generateFileName(
                 extension: $extension
             ),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -16,8 +17,8 @@ final class AssetFileStatusAdmNotificationDecorator extends AsseFileAdmNotificat
     public static function getInstance(AssetFile $assetFile): self
     {
         return parent::getBaseInstance(
-            assetId: $assetFile->getAsset()->getAsset()->getId(),
-            assetFileId: $assetFile->getId()
+            assetId: (string) $assetFile->getAsset()->getId(),
+            assetFileId: (string) $assetFile->getId()
         )->setAssetFile($assetFile);
     }
 
@@ -40,9 +41,15 @@ final class AssetFileStatusAdmNotificationDecorator extends AsseFileAdmNotificat
     }
 
     #[Serialize]
+    public function getFailReason(): AssetFileFailedType
+    {
+        return $this->assetFile->getAssetAttributes()->getFailReason();
+    }
+
+    #[Serialize]
     public function getAssetType(): AssetType
     {
-        return $this->assetFile->getAsset()->getAsset()->getAttributes()->getAssetType();
+        return $this->assetFile->getAsset()->getAttributes()->getAssetType();
     }
 
     #[Serialize]

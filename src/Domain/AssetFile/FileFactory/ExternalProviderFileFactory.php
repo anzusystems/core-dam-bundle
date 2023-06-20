@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use League\Flysystem\FilesystemException;
 
@@ -21,7 +21,7 @@ final class ExternalProviderFileFactory
     /**
      * @throws FilesystemException
      */
-    public function downloadFile(OriginExternalProvider $externalProvider): File
+    public function downloadFile(OriginExternalProvider $externalProvider): AdapterFile
     {
         $stream = $this->assetExternalProviderContainer
             ->get($externalProvider->getProviderName())
@@ -31,6 +31,6 @@ final class ExternalProviderFileFactory
 
         $baseFile = $fileSystem->writeTmpFileFromStream($stream);
 
-        return File::createFromBaseFile($baseFile, $fileSystem);
+        return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
     }
 }

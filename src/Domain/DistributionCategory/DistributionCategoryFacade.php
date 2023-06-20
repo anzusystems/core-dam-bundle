@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\DistributionCategory;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\DistributionCategory;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
 use Exception;
 
 final class DistributionCategoryFacade
 {
+    use ValidatorAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $entityValidator,
         private readonly DistributionCategoryManager $distributionCategoryManager,
     ) {
     }
@@ -22,7 +23,7 @@ final class DistributionCategoryFacade
      */
     public function create(DistributionCategory $distributionCategorySelect): DistributionCategory
     {
-        $this->entityValidator->validate($distributionCategorySelect);
+        $this->validator->validate($distributionCategorySelect);
 
         return $this->distributionCategoryManager->create($distributionCategorySelect);
     }
@@ -35,7 +36,7 @@ final class DistributionCategoryFacade
         DistributionCategory $distributionCategory,
         DistributionCategory $newDistributionCategory,
     ): DistributionCategory {
-        $this->entityValidator->validate($newDistributionCategory, $distributionCategory);
+        $this->validator->validate($newDistributionCategory, $distributionCategory);
 
         return $this->distributionCategoryManager->update(
             $distributionCategory,

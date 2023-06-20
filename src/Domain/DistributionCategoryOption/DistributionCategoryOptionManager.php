@@ -33,10 +33,11 @@ final class DistributionCategoryOptionManager extends AbstractManager
      */
     public function updateOptions(DistributionCategorySelect $select, DistributionCategorySelect $newSelect): void
     {
+        /** @psalm-suppress InvalidArgument */
         $this->colUpdate(
             oldCollection: $select->getOptions(),
             newCollection: $newSelect->getOptions(),
-            updateElementFn: function (DistributionCategoryOption $oldOption, DistributionCategoryOption $newOption) {
+            updateElementFn: function (DistributionCategoryOption $oldOption, DistributionCategoryOption $newOption): bool {
                 $this->trackModification($oldOption);
                 $oldOption
                     ->setPosition($newOption->getPosition())
@@ -44,18 +45,24 @@ final class DistributionCategoryOptionManager extends AbstractManager
                     ->setValue($newOption->getValue())
                     ->setAssignable($newOption->isAssignable())
                 ;
+
+                return true;
             },
-            addElementFn: function (Collection $oldCollection, DistributionCategoryOption $newOption) use ($select) {
+            addElementFn: function (Collection $oldCollection, DistributionCategoryOption $newOption) use ($select): bool {
                 $newOption->setSelect($select);
                 $oldCollection->add($newOption);
                 if (empty($newOption->getId())) {
                     $this->entityManager->persist($newOption);
                     $this->trackCreation($newOption);
                 }
+
+                return true;
             },
-            removeElementFn: function (Collection $oldCollection, DistributionCategoryOption $oldOption) {
+            removeElementFn: function (Collection $oldCollection, DistributionCategoryOption $oldOption): bool {
                 $oldCollection->removeElement($oldOption);
                 $this->entityManager->remove($oldOption);
+
+                return true;
             }
         );
         $select->setOptions(

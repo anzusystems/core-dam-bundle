@@ -29,7 +29,7 @@ final class AssetMetadataAutocomplete
      */
     public function autocompleteMetadata(AssetFile $assetFile): AssetFile
     {
-        $asset = $assetFile->getAsset()->getAsset();
+        $asset = $assetFile->getAsset();
 
         $form = $this->customFormProvider->provideFormByAssetProvidable($asset);
         $assetCustomData = [];

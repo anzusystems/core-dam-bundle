@@ -22,10 +22,14 @@ final class SettingsConfiguration
     public const ACL_CHECK_ENABLED_KEY = 'acl_check_enabled';
     public const APP_REDIS_KEY = 'app_redis';
     public const CACHE_REDIS_KEY = 'cache_redis';
+    public const NOT_FOUND_IMAGE_ID = 'not_found_image_id';
     public const USER_AUTH_TYPE_KEY = 'user_auth_type';
     public const ADMIN_ALLOW_LIST_NAME_KEY = 'admin_allow_list_name';
     public const ELASTIC_INDEX_PREFIX_KEY = 'elastic_index_prefix';
     public const ELASTIC_LANGUAGE_DICTIONARIES_KEY = 'elastic_language_dictionaries';
+    public const LIMITED_ASSET_LICENCE_FILES_COUNT = 'limited_asset_licence_files_count';
+    public const UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
+    public const JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,
@@ -43,6 +47,8 @@ final class SettingsConfiguration
         private readonly UserAuthType $userAuthType,
         private readonly string $adminAllowListName,
         private readonly string $distributionAuthRedirectUrl,
+        private readonly int $limitedAssetLicenceFilesCount,
+        private readonly string $notFoundImageId,
     ) {
     }
 
@@ -65,7 +71,14 @@ final class SettingsConfiguration
             UserAuthType::tryFrom((string) $settings[self::USER_AUTH_TYPE_KEY]) ?? UserAuthType::Default,
             $settings[self::ADMIN_ALLOW_LIST_NAME_KEY] ?? '',
             $settings[self::DISTRIBUTION_AUTH_REDIRECT_URL_KEY] ?? '',
+            $settings[self::LIMITED_ASSET_LICENCE_FILES_COUNT] ?? 0,
+            $settings[self::NOT_FOUND_IMAGE_ID] ?? '',
         );
+    }
+
+    public function getNotFoundImageId(): string
+    {
+        return $this->notFoundImageId;
     }
 
     public function getApiDomainKey(): string
@@ -144,5 +157,10 @@ final class SettingsConfiguration
     public function getUserAuthType(): UserAuthType
     {
         return $this->userAuthType;
+    }
+
+    public function getLimitedAssetLicenceFilesCount(): int
+    {
+        return $this->limitedAssetLicenceFilesCount;
     }
 }

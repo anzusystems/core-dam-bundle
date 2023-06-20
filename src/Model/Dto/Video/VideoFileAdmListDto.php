@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Video;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
@@ -21,9 +24,18 @@ class VideoFileAdmListDto extends AbstractEntityDto
 
     public static function getInstance(VideoFile $videoFile): static
     {
-        return parent::getBaseInstance($videoFile)
+        /** @psalm-var VideoFileAdmListDto $parent */
+        $parent = parent::getBaseInstance($videoFile);
+
+        return $parent
             ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($videoFile->getAssetAttributes()))
             ->setVideo($videoFile);
+    }
+
+    #[Serialize]
+    public function getImagePreview(): ?ImagePreview
+    {
+        return $this->video->getImagePreview();
     }
 
     public function getFileAttributes(): AssetFileAttributesAdmDto
@@ -31,7 +43,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->fileAttributes;
     }
 
-    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): self
+    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): static
     {
         $this->fileAttributes = $fileAttributes;
 
@@ -43,7 +55,7 @@ class VideoFileAdmListDto extends AbstractEntityDto
         return $this->video;
     }
 
-    public function setVideo(VideoFile $video): self
+    public function setVideo(VideoFile $video): static
     {
         $this->video = $video;
 
@@ -53,6 +65,12 @@ class VideoFileAdmListDto extends AbstractEntityDto
     #[Serialize(handler: EntityIdHandler::class)]
     public function getAsset(): Asset
     {
-        return $this->video->getAsset()->getAsset();
+        return $this->video->getAsset();
+    }
+
+    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::LIST_LINKS_TAGS)]
+    public function getLinks(): ?AssetFile
+    {
+        return $this->video->getImagePreview()?->getImageFile();
     }
 }

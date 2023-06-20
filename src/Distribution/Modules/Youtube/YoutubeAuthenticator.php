@@ -7,28 +7,29 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Event\DistributionAuthorized;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\YoutubeAuthorizationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\AccessTokenDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\ExchangeCodeStateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\RefreshTokenDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\TokenResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeCodeDto;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Exception as YoutubeException;
 use Google\Exception;
 use Psr\Cache\InvalidArgumentException as PsrInvalidArgumentException;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class YoutubeAuthenticator
 {
     use SerializerAwareTrait;
+    use EventDispatcherAwareTrait;
 
     public function __construct(
         private readonly YoutubeExchangeCodeStateManager $exchangeCodeStateManager,
         private readonly GoogleClientProvider $clientProvider,
         private readonly CurrentAnzuUserProvider $currentUserProvider,
         private readonly TokenStorage $tokenStorage,
-        private readonly EventDispatcherInterface $dispatcher,
     ) {
     }
 
@@ -52,14 +53,26 @@ final class YoutubeAuthenticator
         $user = $this->currentUserProvider->getCurrentUser();
         $exchangeToken = $this->exchangeCodeStateManager->generateExchangeCodeStateDto(
             $distributionService,
-            $user->getId(),
-            $user->getId()
+            (int) $user->getId(),
+            (int) $user->getId()
         );
 
         $this->tokenStorage->storeExchangeTokenState($exchangeToken);
         $client->setState($exchangeToken->getState());
 
         return $client->createAuthUrl();
+    }
+
+    /**
+     * @throws PsrInvalidArgumentException
+     */
+    public function logout(string $distributionService): void
+    {
+        if (false === $this->tokenStorage->hasRefreshToken($distributionService)) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_INVALID_STATE_TRANSACTION);
+        }
+
+        $this->tokenStorage->clearTokens($distributionService);
     }
 
     /**
@@ -131,13 +144,16 @@ final class YoutubeAuthenticator
         ExchangeCodeStateDto $exchangeCodeStateDto,
         YoutubeCodeDto $youtubeCodeDto
     ): AccessTokenDto {
-        $token = $this->clientProvider
+        $tokenRaw = $this->clientProvider
             ->getClient($exchangeCodeStateDto->getService())
             ->fetchAccessTokenWithAuthCode($youtubeCodeDto->getCode());
 
+        /** @var TokenResponseDto $token */
+        $token = $this->serializer->fromArray($tokenRaw, TokenResponseDto::class);
+
         return $this->storeTokens(
             $exchangeCodeStateDto->getService(),
-            $this->serializer->fromArray($token, TokenResponseDto::class)
+            $token
         );
     }
 
@@ -146,16 +162,19 @@ final class YoutubeAuthenticator
      * @throws PsrInvalidArgumentException
      * @throws SerializerException
      */
-    private function refreshAccessToken(
+    public function refreshAccessToken(
         RefreshTokenDto $refreshTokenDto
     ): AccessTokenDto {
-        $token = $this->clientProvider
+        $tokenRaw = $this->clientProvider
             ->getClient($refreshTokenDto->getServiceId())
             ->fetchAccessTokenWithRefreshToken($refreshTokenDto->getRefreshToken());
 
+        /** @var TokenResponseDto $token */
+        $token = $this->serializer->fromArray($tokenRaw, TokenResponseDto::class);
+
         return $this->storeTokens(
             $refreshTokenDto->getServiceId(),
-            $this->serializer->fromArray($token, TokenResponseDto::class)
+            $token
         );
     }
 

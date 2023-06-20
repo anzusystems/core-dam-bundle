@@ -13,19 +13,24 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\GCloudFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
+use AnzuSystems\CoreDamBundle\FileSystem\StorageProviderContainer;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileMetadataProcessMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\JwVideoThumbnailPosterMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Exception;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use Symfony\Component\Config\FileLocator;
@@ -61,12 +66,25 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                         'prefix' => 'AnzuSystems\CoreDamBundle\Entity',
                         'alias' => 'AnzuSystems\CoreDamBundle',
                     ],
+                    'AnzuSystemsCommonBundle' => [
+                        'is_bundle' => true,
+                        'type' => 'attribute',
+                        'dir' => 'Entity',
+                        'prefix' => 'AnzuSystems\CommonBundle\Entity',
+                        'alias' => 'AnzuSystems\CommonBundle',
+                    ],
+                    'AnzuSystemsContractsEmbeds' => [
+                        'is_bundle' => false,
+                        'type' => 'attribute',
+                        'dir' => 'vendor/anzusystems/contracts/src/Entity/Embeds',
+                        'prefix' => 'AnzuSystems\Contracts\Entity\Embeds',
+                        'alias' => 'AnzuSystems\ContractsEmbeds',
+                    ],
                 ],
             ],
         ]);
 
         $applicationName = 'core_dam';
-
         $imageFileChangeStateTopic = '%env(MESSENGER_IMAGE_FILE_CHANGE_STATE_TOPIC)%';
         $imageFileChangeStateTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$imageFileChangeStateTopic}";
         $videoFileChangeStateTopic = '%env(MESSENGER_VIDEO_FILE_CHANGE_STATE_TOPIC)%';
@@ -83,6 +101,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $distributionTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionTopic}";
         $distributionRemoteProcessedCheckTopic = '%env(MESSENGER_DISTRIBUTION_REMOTE_PROCESSED_CHECK_TOPIC)%';
         $distributionRemoteProcessedCheckTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
+        $assetPropertyRefreshTopic = '%env(MESSENGER_PROPERTY_REFRESH_TOPIC)%';
+        $assetPropertyRefreshTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetPropertyRefreshTopic}";
 
         $container->prependExtensionConfig('framework', [
             'messenger' => [
@@ -107,7 +127,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $distributionRemoteProcessedCheckTopic,
                                     ],
-                                    'ack_deadline_seconds' => '60s',
+                                    'ackDeadlineSeconds' => '60s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '30s',
                                         'maximumBackoff' => '90s',
@@ -136,6 +156,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $imageFileChangeStateTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '60s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -164,6 +185,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $documentFileChangeStateTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '120s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -192,6 +214,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $audioFileChangeStateTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '300s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -220,6 +243,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $videoFileChangeStateTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '500s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -304,9 +328,30 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $distributionTopic,
                                     ],
-                                    'retryPolicy' => [
-                                        'minimumBackoff' => '2s',
-                                        'maximumBackoff' => '600s',
+                                    'ackDeadlineSeconds' => '600s',
+                                ],
+                            ],
+                        ],
+                    ],
+                    $assetPropertyRefreshTopic => [
+                        'dsn' => $assetPropertyRefreshTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $assetPropertyRefreshTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $assetPropertyRefreshTopic,
+                                        'topic' => $assetPropertyRefreshTopic,
+                                    ],
+                                ],
+                            ],
+                            'subscription' => [
+                                'name' => $assetPropertyRefreshTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $assetPropertyRefreshTopic,
                                     ],
                                 ],
                             ],
@@ -322,19 +367,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     AssetFileMetadataProcessMessage::class => $assetFileMetadataProcessTopic,
                     DistributeMessage::class => $distributionTopic,
                     DistributionRemoteProcessingCheckMessage::class => $distributionRemoteProcessedCheckTopic,
-                ],
-            ],
-            'http_client' => [
-                'scoped_clients' => [
-                    'jwPlayer.api.client' => [
-                        'base_uri' => 'https://api.jwplayer.com',
-                    ],
-                    'unsplash.api.client' => [
-                        'base_uri' => 'https://api.unsplash.com',
-                        'headers' => [
-                            'Accept-Version' => 'v1',
-                        ],
-                    ],
+                    JwVideoThumbnailPosterMessage::class => $distributionRemoteProcessedCheckTopic,
+                    AssetRefreshPropertiesMessage::class => $assetPropertyRefreshTopic,
                 ],
             ],
         ]);
@@ -342,18 +376,37 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         foreach ($container->getExtensionConfig($this->getAlias()) as $config) {
             if (array_key_exists('settings', $config)) {
                 $configSettings = $config['settings'];
+
                 $container->prependExtensionConfig('framework', [
                     'cache' => [
                         'pools' => [
                             'core_dam_bundle.asset_external_provider_cache' => [
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
-                                'default_lifetime' => 'PT3M',
+                                'default_lifetime' => 'P3M',
+                            ],
+                            'core_dam_bundle.counter_cache' => [
+                                'adapter' => 'cache.adapter.redis',
+                                'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
+                                'default_lifetime' => 'P1D',
                             ],
                             'core_dam_bundle.youtube_cache' => [
                                 'adapter' => 'cache.adapter.redis',
                                 'provider' => $configSettings[SettingsConfiguration::CACHE_REDIS_KEY],
-                                'default_lifetime' => 'PT1M',
+                                'default_lifetime' => 'P1M',
+                            ],
+                        ],
+                    ],
+                    'http_client' => [
+                        'scoped_clients' => [
+                            'jwPlayer.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_API_CLIENT],
+                            ],
+                            'unsplash.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::UNSPLASH_API_CLIENT],
+                                'headers' => [
+                                    'Accept-Version' => 'v1',
+                                ],
                             ],
                         ],
                     ],
@@ -448,14 +501,27 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             }
         }
         $container->setParameter('anzu_systems.dam_bundle.tagged_allow_list', $tagGroups);
+        $container->setParameter('anzu_systems.dam_bundle.domain_allow_list', $this->processedConfig['image_settings']['crop_allow_list']);
 
-        $domainAllowList = [];
-        foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $name => $allowList) {
-            foreach ($allowList['domains'] as $domain) {
-                $domainAllowList[$this->getDomain($domain)] = $allowList;
+        $domainAllowMap = [];
+        foreach ($this->processedConfig['image_settings']['crop_allow_map'] as $allowMap) {
+            foreach ($allowMap['ext_system_slugs'] as $slug) {
+                $domainAllowMap[$this->getDomain($allowMap['domain']) . '_' . $slug] = $allowMap;
             }
         }
-        $container->setParameter('anzu_systems.dam_bundle.domain_allow_list', $domainAllowList);
+        $container->setParameter('anzu_systems.dam_bundle.crop_allow_map', $domainAllowMap);
+
+        $extSystemAllowMap = [];
+        foreach ($this->processedConfig['image_settings']['crop_allow_map'] as $allowMap) {
+            foreach ($allowMap['ext_system_slugs'] as $slug) {
+                if (false === isset($extSystemAllowMap[$slug])) {
+                    $extSystemAllowMap[$slug] = [];
+                }
+
+                $extSystemAllowMap[$slug][] = $allowMap;
+            }
+        }
+        $container->setParameter('anzu_systems.dam_bundle.ext_system_allow_list_map', $extSystemAllowMap);
 
         $colors = [];
         foreach ($this->processedConfig['image_settings']['color_set'] as $name => $color) {
@@ -479,6 +545,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             ;
             $assetExternalProviders[$providerName] = new Reference($provider['provider']);
         }
+
         $assetExternalProviderContainer = $container->findDefinition(AssetExternalProviderContainer::class);
         $assetExternalProviderContainer->setArgument(
             '$providersContainer',
@@ -488,15 +555,31 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
 
     private function configureStorages(ContainerBuilder $container): void
     {
+        $storages = [];
         foreach ($this->processedConfig['storages'] as $storageName => $storageConfig) {
             $filesystem = $this->configureFilesystem($storageConfig);
 
             if ($filesystem) {
                 $definitionName = self::STORAGE_DEFINITION_NAME_PREFIX . $storageName;
+
+                $filesystem->addMethodCall('setFallbackEnabled', [$storageConfig['fallback_enabled']]);
+                if ($storageConfig['fallback_enabled'] && false === empty($storageConfig['fallback_storage'])) {
+                    $filesystem->addMethodCall('setFallbackStorage', [new Reference(
+                        self::STORAGE_DEFINITION_NAME_PREFIX . $storageConfig['fallback_storage']
+                    )]);
+                }
+
                 $filesystem->addTag(AnzuSystemsCoreDamBundle::TAG_FILESYSTEM, ['key' => $storageName]);
+                $storages[$storageName] = new Reference($definitionName);
                 $container->setDefinition($definitionName, $filesystem);
             }
         }
+
+        $storageProviderContainer = $container->findDefinition(StorageProviderContainer::class);
+        $storageProviderContainer->setArgument(
+            '$storagesContainer',
+            ServiceLocatorTagPass::register($container, $storages)
+        );
     }
 
     private function configureFilesystem(array $storageConfig): ?Definition
@@ -558,6 +641,11 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
+                if (AssetType::Image->toString() === $assetType) {
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY]);
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY]);
+                }
+
                 $distRequirements = $assetExtSystemConfig['distribution']['distribution_requirements'] ?? [];
                 foreach ($distRequirements as $name => $distRequirement) {
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType]['distribution']['distribution_requirements'][$name][ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_SERVICE_ID_KEY] = $name;
@@ -571,6 +659,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     private function addDefaultsToExtSystemsAssetExternalProviders(): void
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
+            /** @psalm-suppress NoValue */
             foreach (array_keys($extSystemConfig['asset_external_providers'] ?? []) as $providerName) {
                 $this->processedConfig['ext_systems'][$extSystemSlug]['asset_external_providers'][$providerName][ExtSystemAssetExternalProviderConfiguration::PROVIDER_NAME_KEY] = $providerName;
 

@@ -11,16 +11,16 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionFacade;
-use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwAbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -30,11 +30,10 @@ use Symfony\Component\Routing\Annotation\Route;
 final class JwDistributionController extends AbstractApiController
 {
     public function __construct(
-        private readonly DistributionFacade $distributionFacade,
-        private readonly JwDistributionFacade $jwDistributionFacade,
+        private readonly JwAbstractDistributionFacade $jwDistributionFacade,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
-
 
     /**
      * @throws NonUniqueResultException
@@ -42,18 +41,34 @@ final class JwDistributionController extends AbstractApiController
      * @throws AppReadOnlyModeException
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute', methods: [Request::METHOD_POST])]
-    #[ParamConverter('jwDistribution', converter: SerializerParamConverter::class)]
     #[OARequest(JwDistribution::class), OAParameterPath('assetFile'), OAResponse(JwDistribution::class), OAResponseValidation]
-    public function distribute(AssetFile $assetFile, JwDistribution $jwDistribution): JsonResponse
+    public function distribute(AssetFile $assetFile, #[SerializeParam] JwDistribution $jwDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $jwDistribution->getDistributionService());
 
         return $this->okResponse(
-            $this->distributionFacade->distribute($assetFile, $jwDistribution)
+            $this->jwDistributionFacade->distribute($assetFile, $jwDistribution)
         );
     }
 
+    /**
+     * @throws NonUniqueResultException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
+    public function redistribute(JwDistribution $distribution, #[SerializeParam] JwDistribution $newDistribution): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+
+        return $this->okResponse(
+            $this->jwDistributionFacade->redistribute($distribution, $newDistribution)
+        );
+    }
 
     /**
      * @throws NonUniqueResultException

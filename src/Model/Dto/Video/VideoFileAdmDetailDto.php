@@ -15,7 +15,10 @@ final class VideoFileAdmDetailDto extends VideoFileAdmListDto
 
     public static function getInstance(VideoFile $videoFile): static
     {
-        return parent::getInstance($videoFile)
+        /** @psalm-var VideoFileAdmDetailDto $parent */
+        $parent = parent::getInstance($videoFile);
+
+        return $parent
             ->setVideoAttributes(VideoAttributesAdmDto::getInstance($videoFile->getAttributes()));
     }
 

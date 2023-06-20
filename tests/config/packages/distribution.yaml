@@ -10,3 +10,11 @@ anzu_systems_core_dam:
         oauth_credentials: '%kernel.project_dir%/var/secure/youtube/yt_oauth2_credentials.json'
         channel_id: ''
         region_code: 'SK'
+    jw_cms_main:
+      type: jwDistribution
+      title: JW CMS
+      module: AnzuSystems\CoreDamBundle\Distribution\Modules\JwPlayerDistributionModule
+      required_auth: true
+      options:
+        secret_v2: 'secret'
+        site_id: 'site_id'

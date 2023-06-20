@@ -27,16 +27,21 @@ final class ExtSystemManager extends AbstractManager
             ->setName($newExtSystem->getName())
             ->setSlug($newExtSystem->getSlug())
         ;
+        /** @psalm-suppress InvalidArgument */
         $this->colUpdate(
             oldCollection: $extSystem->getAdminUsers(),
             newCollection: $newExtSystem->getAdminUsers(),
-            addElementFn: function (Collection $oldCollection, DamUser $newUser) use ($extSystem) {
+            addElementFn: function (Collection $oldCollection, DamUser $newUser) use ($extSystem): bool {
                 $newUser->getAdminToExtSystems()->add($extSystem);
                 $oldCollection->add($newUser);
+
+                return true;
             },
-            removeElementFn: function (Collection $oldCollection, DamUser $oldUser) use ($extSystem) {
+            removeElementFn: function (Collection $oldCollection, DamUser $oldUser) use ($extSystem): bool {
                 $oldUser->getAdminToExtSystems()->removeElement($extSystem);
                 $oldCollection->removeElement($oldUser);
+
+                return true;
             }
         );
         $this->flush($flush);

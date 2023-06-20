@@ -14,7 +14,7 @@ final class ColorValidator extends ConstraintValidator
     /**
      * @param Color $constraint
      */
-    public function validate($value, Constraint $constraint): void
+    public function validate(mixed $value, Constraint $constraint): void
     {
         if ($constraint->multiple && is_array($value)) {
             foreach ($value as $color) {
@@ -25,7 +25,7 @@ final class ColorValidator extends ConstraintValidator
         }
 
         if (false === $constraint->multiple && is_string($value)) {
-            $this->validateColor((string) $value, $constraint);
+            $this->validateColor($value, $constraint);
         }
     }
 

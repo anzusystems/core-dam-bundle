@@ -8,7 +8,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
-use AnzuSystems\CoreDamBundle\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\CustomFormRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -24,7 +24,6 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
     use TimeTrackingTrait;
     use UuidIdentityTrait;
     use UserTrackingTrait;
-
 
     #[ORM\OneToMany(mappedBy: 'form', targetEntity: CustomFormElement::class)]
     #[ORM\OrderBy(value: ['position' => Criteria::ASC])]
@@ -44,6 +43,11 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
         return $this->elements;
     }
 
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, CustomFormElement> $elements
+     */
     public function setElements(Collection $elements): self
     {
         $this->elements = $elements;

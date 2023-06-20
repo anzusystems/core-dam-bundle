@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DisplayTitleConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 
 final class ConfigurationProvider
 {
@@ -23,7 +21,6 @@ final class ConfigurationProvider
         private readonly array $settings,
         private readonly array $displayTitle,
         private readonly AllowListConfiguration $allowListConfiguration,
-        private readonly AssetLicenceRepository $repository,
         private readonly array $colorSet,
     ) {
     }
@@ -81,16 +78,31 @@ final class ConfigurationProvider
         return $this->domains[$this->getAdminAllowListName()]['domain'] ?? '';
     }
 
-    public function getImageAdminSizeList(ImageCropTag $apiViewType): array
+    public function getFirstCropAllowItemByTag(string $type): ?CropAllowItem
+    {
+        $cropList = $this->allowListConfiguration->getTaggedList(
+            $this->getAdminAllowListName(),
+            $type
+        );
+
+        return reset($cropList) ?: null;
+    }
+
+    /**
+     * @return array<string, CropAllowItem>
+     */
+    public function getImageAdminSizeList(string $type): array
     {
         return $this->allowListConfiguration->getTaggedList(
             $this->getAdminAllowListName(),
-            $apiViewType->toString()
+            $type
         );
     }
 
-    public function getDefaultAssetLicence(): AssetLicence
+    public function getFirstTaggedAllowItem(string $type): ?CropAllowItem
     {
-        return $this->repository->find($this->getSettings()->getDefaultAssetLicenceId());
+        $cropList = $this->getImageAdminSizeList($type);
+
+        return reset($cropList) ?: null;
     }
 }

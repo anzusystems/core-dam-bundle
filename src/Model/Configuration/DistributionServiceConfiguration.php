@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
+use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
+
 class DistributionServiceConfiguration
 {
     public const TYPE_KEY = 'type';
@@ -13,9 +15,12 @@ class DistributionServiceConfiguration
     public const USE_MOCK_KEY = 'use_mock';
     public const MOCK_OPTIONS_KEY = 'mock_options';
     public const AUTH_REDIRECT_URL_KEY = 'auth_redirect_url';
+    public const ICON_PATH = 'icon_path';
     public const REQUIRED_AUTH_KEY = 'required_auth';
+    public const ALLOWED_REDISTRIBUTE_STATUSES = 'redistribute_statuses';
 
     public function __construct(
+        private readonly array $allowedRedistributeStatuses,
         private readonly string $type,
         private readonly string $module,
         private readonly string $title,
@@ -24,6 +29,7 @@ class DistributionServiceConfiguration
         private readonly DistributionServiceMockOptionsConfiguration $mockOptions,
         private readonly bool $requiredAuth,
         private readonly ?string $authRedirectUrlKey = null,
+        private string $iconPath = '',
         private string $serviceId = '',
     ) {
     }
@@ -31,6 +37,12 @@ class DistributionServiceConfiguration
     public static function getFromArrayConfiguration(array $config): static
     {
         return new static(
+            array_filter(
+                array_map(
+                    fn (string $status): ?DistributionProcessStatus => DistributionProcessStatus::tryFrom($status),
+                    $config[self::ALLOWED_REDISTRIBUTE_STATUSES] ?? []
+                )
+            ),
             $config[self::TYPE_KEY] ?? '',
             $config[self::MODULE_KEY] ?? '',
             $config[self::TITLE_KEY] ?? '',
@@ -41,7 +53,13 @@ class DistributionServiceConfiguration
             ),
             $config[self::REQUIRED_AUTH_KEY] ?? false,
             $config[self::AUTH_REDIRECT_URL_KEY] ?? null,
+            $config[self::ICON_PATH] ?? '',
         );
+    }
+
+    public function getAllowedRedistributeStatuses(): array
+    {
+        return $this->allowedRedistributeStatuses;
     }
 
     public function getType(): string
@@ -94,5 +112,17 @@ class DistributionServiceConfiguration
     public function isRequiredAuth(): bool
     {
         return $this->requiredAuth;
+    }
+
+    public function getIconPath(): string
+    {
+        return $this->iconPath;
+    }
+
+    public function setIconPath(string $iconPath): self
+    {
+        $this->iconPath = $iconPath;
+
+        return $this;
     }
 }

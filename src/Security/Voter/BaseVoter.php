@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Security\Voter;
 
+use AnzuSystems\CommonBundle\Security\Voter\AbstractVoter;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
 /**
@@ -20,6 +21,9 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_EXT_SYSTEM_LIST,
             DamPermissions::DAM_EXT_SYSTEM_UPDATE,
             DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW,
+            DamPermissions::DAM_JOB_VIEW,
+            DamPermissions::DAM_JOB_CREATE,
+            DamPermissions::DAM_JOB_DELETE,
         ];
     }
 }

@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\DistributionCategory;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
-use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFlagsAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageCropTag;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\MainFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\Collection;
@@ -24,9 +24,15 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     #[Serialize]
     protected AssetTextsAdmListDto $texts;
 
+    /**
+     * @var Collection<string, Keyword>
+     */
     #[Serialize(handler: EntityIdHandler::class, type: Keyword::class)]
     protected Collection $keywords;
 
+    /**
+     * @var Collection<string, Author>
+     */
     #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
     protected Collection $authors;
 
@@ -41,7 +47,10 @@ final class AssetAdmDetailDto extends AssetAdmListDto
 
     public static function getInstance(Asset $asset): static
     {
-        return parent::getInstance($asset)
+        /** @psalm-var AssetAdmDetailDto $parent */
+        $parent = parent::getInstance($asset);
+
+        return $parent
             ->setTexts(AssetTextsAdmListDto::getInstance($asset->getTexts()))
             ->setFlags(AssetFlagsAdmDto::getInstance($asset->getAssetFlags()))
             ->setLicence($asset->getLicence())
@@ -56,7 +65,7 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->texts;
     }
 
-    public function setTexts(AssetTextsAdmListDto $texts): self
+    public function setTexts(AssetTextsAdmListDto $texts): static
     {
         $this->texts = $texts;
 
@@ -104,6 +113,9 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->keywords;
     }
 
+    /**
+     * @param Collection<string, Keyword> $keywords
+     */
     public function setKeywords(Collection $keywords): self
     {
         $this->keywords = $keywords;
@@ -116,6 +128,9 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this->authors;
     }
 
+    /**
+     * @param Collection<string, Author> $authors
+     */
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;
@@ -123,21 +138,15 @@ final class AssetAdmDetailDto extends AssetAdmListDto
         return $this;
     }
 
-    #[Serialize(handler: MainFileHandler::class, type: ImageCropTag::DETAIL)]
-    public function getMainFile(): Asset
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getDistributionCategory(): ?DistributionCategory
     {
-        return $this->asset;
+        return $this->asset->getDistributionCategory();
     }
 
-    #[Serialize]
-    public function getPodcasts(): array
+    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_DETAIL)]
+    public function getMainFile(): ?AssetFile
     {
-        if ($this->asset->getAttributes()->getAssetType()->is(AssetType::Audio)) {
-            return $this->asset->getEpisodes()->map(
-                fn (PodcastEpisode $episode): string => (string) $episode->getPodcast()->getId()
-            )->getValues();
-        }
-
-        return [];
+        return $this->asset->getMainFile();
     }
 }

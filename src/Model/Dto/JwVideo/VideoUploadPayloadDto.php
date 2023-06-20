@@ -11,8 +11,11 @@ final class VideoUploadPayloadDto
     #[Serialize]
     private string $id;
 
-    #[Serialize(serializedName: 'upload_link')]
-    private string $uploadLink;
+    #[Serialize(serializedName: 'upload_token')]
+    private string $uploadToken;
+
+    #[Serialize(serializedName: 'upload_id')]
+    private string $uploadId;
 
     public function getId(): string
     {
@@ -26,14 +29,26 @@ final class VideoUploadPayloadDto
         return $this;
     }
 
-    public function getUploadLink(): string
+    public function getUploadToken(): string
     {
-        return $this->uploadLink;
+        return $this->uploadToken;
     }
 
-    public function setUploadLink(string $uploadLink): self
+    public function setUploadToken(string $uploadToken): self
     {
-        $this->uploadLink = $uploadLink;
+        $this->uploadToken = $uploadToken;
+
+        return $this;
+    }
+
+    public function getUploadId(): string
+    {
+        return $this->uploadId;
+    }
+
+    public function setUploadId(string $uploadId): self
+    {
+        $this->uploadId = $uploadId;
 
         return $this;
     }

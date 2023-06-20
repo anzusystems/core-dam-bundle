@@ -25,7 +25,7 @@ class YoutubeFlags
 
     public function __construct()
     {
-        $this->setEmbeddable(false);
+        $this->setEmbeddable(true);
         $this->setForKids(false);
         $this->setNotifySubscribers(false);
     }

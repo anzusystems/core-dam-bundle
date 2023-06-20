@@ -19,6 +19,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'podcastIds' => [
                     'type' => 'keyword',
                 ],
+                'fileIds' => [
+                    'type' => 'keyword',
+                ],
                 'withProcessedFile' => [
                     'type' => 'boolean',
                 ],
@@ -26,6 +29,9 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'boolean',
                 ],
                 'visible' => [
+                    'type' => 'boolean',
+                ],
+                'generatedBySystem' => [
                     'type' => 'boolean',
                 ],
                 'inPodcast' => [
@@ -49,7 +55,6 @@ return static function (ContainerConfigurator $configurator): void {
                 ],
                 'originFileName' => [
                     'type' => 'text',
-                    'boost' => 3,
                     'analyzer' => 'exact',
                     'fields' => [
                         'edgegrams' => [
@@ -62,7 +67,7 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'keyword',
                 ],
                 'size' => [
-                    'type' => 'integer',
+                    'type' => 'long',
                 ],
                 'ratioWidth' => [
                     'type' => 'integer',
@@ -100,8 +105,20 @@ return static function (ContainerConfigurator $configurator): void {
                 'bitrate' => [
                     'type' => 'integer',
                 ],
+                'slotsCount' => [
+                    'type' => 'integer',
+                ],
                 'codecName' => [
                     'type' => 'keyword',
+                ],
+                'distributedInServices' => [
+                    'type' => 'keyword',
+                ],
+                'slotNames' => [
+                    'type' => 'keyword',
+                ],
+                'fromRss' => [
+                    'type' => 'boolean',
                 ],
             ]
         );

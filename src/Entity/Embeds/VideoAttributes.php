@@ -25,7 +25,7 @@ class VideoAttributes
     #[ORM\Column(type: Types::SMALLINT)]
     private int $rotation;
 
-    #[ORM\Column(type: Types::FLOAT)]
+    #[ORM\Column(type: Types::INTEGER)]
     private int $duration;
 
     #[ORM\Column(type: Types::STRING, length: 64)]

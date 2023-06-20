@@ -10,23 +10,23 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Request\ParamConverter\ApiFilterParamConverter;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFacade;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetCustomForm;
+use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetCustomFormRepository;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\CustomFormElementRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Repository\ResourceCustomFormRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Request\ParamConverter\SerializerParamConverter;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
@@ -63,8 +63,7 @@ final class AssetCustomFormController extends AbstractApiController
      * @throws ORMException
      */
     #[Route(path: '/ext-system/{extSystem}/type/{assetType}/element', name: 'get_elements_by_ext_system_and_type', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
-    #[OAResponse([AssetCustomForm::class])]
+    #[OAResponseList(CustomFormElement::class)]
     public function getElements(ExtSystem $extSystem, AssetType $assetType, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW);
@@ -85,14 +84,12 @@ final class AssetCustomFormController extends AbstractApiController
      * @throws ORMException
      */
     #[Route(path: '/distribution-service/{distributionService}/element', name: 'get_elements_by_distribution', methods: [Request::METHOD_GET])]
-    #[ParamConverter('apiParams', converter: ApiFilterParamConverter::class)]
-    #[OAResponse([AssetCustomForm::class])]
+    #[OAResponseList(CustomFormElement::class)]
     public function getDistributionElements(string $distributionService, ApiParams $apiParams): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW);
         $form = $this->resourceCustomFormRepository->findByResource(CustomFormFactory::getDistributionServiceResourceKey($distributionService));
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_VIEW, $form);
 
         if (null === $form) {
             return $this->okResponse(new ApiResponseList());
@@ -107,9 +104,8 @@ final class AssetCustomFormController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '/{form}', name: 'update', methods: [Request::METHOD_PUT])]
-    #[ParamConverter('newForm', converter: SerializerParamConverter::class)]
     #[OAParameterPath('form'), OARequest(AssetCustomForm::class), OAResponse(AssetCustomForm::class), OAResponseValidation]
-    public function update(AssetCustomForm $form, AssetCustomForm $newForm): JsonResponse
+    public function update(AssetCustomForm $form, #[SerializeParam] AssetCustomForm $newForm): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_UPDATE, $form);
 

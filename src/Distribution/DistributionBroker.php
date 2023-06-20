@@ -5,31 +5,38 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Distribution;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusManager;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionFailReason;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
-use Symfony\Component\Messenger\MessageBusInterface;
+use Throwable;
 
 final class DistributionBroker
 {
+    use MessageBusAwareTrait;
+
     private const LOCK_PREFIX_NAME = 'distribution_';
 
     public function __construct(
         private readonly ResourceLocker $resourceLocker,
-        private readonly MessageBusInterface $messageBus,
         private readonly DistributionRepository $repository,
         private readonly DistributionStatusManager $distributionStatusManager,
         private readonly ModuleProvider $moduleProvider,
         private readonly DamLogger $damLogger,
+        private readonly AssetPropertiesRefresher $propertiesRefresher,
+        private readonly AssetRepository $assetRepository,
     ) {
     }
 
@@ -49,6 +56,21 @@ final class DistributionBroker
     /**
      * @throws NonUniqueResultException
      */
+    public function redistribute(Distribution $distribution): void
+    {
+        $this->resourceLocker->lock($this->getLockName($distribution));
+        $this->distributionStatusManager->toDistributing($distribution);
+
+        if ($this->repository->isNotBlockByNotFinished($distribution)) {
+            $this->messageBus->dispatch(new DistributeMessage($distribution));
+        }
+
+        $this->resourceLocker->unLock($this->getLockName($distribution));
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
     public function toDistributing(Distribution $distribution): void
     {
         $this->distributionStatusManager->toDistributing($distribution);
@@ -56,11 +78,22 @@ final class DistributionBroker
 
         try {
             $module->distribute($distribution);
-        } catch (DistributionFailedException $e) {
-            $distribution->setFailReason($e->getFailReason());
+        } catch (DistributionFailedException $exception) {
+            $distribution->setFailReason($exception->getFailReason());
             $this->distributionStatusManager->toFailed($distribution);
 
             return;
+        } catch (Throwable $e) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf(
+                    'Unexpected distribution error (%s)',
+                    $e->getMessage()
+                )
+            );
+
+            $distribution->setFailReason(DistributionFailReason::Unknown);
+            $this->distributionStatusManager->toFailed($distribution);
         }
 
         if ($module instanceof RemoteProcessingDistributionModuleInterface) {
@@ -104,6 +137,8 @@ final class DistributionBroker
     public function remoteProcessed(Distribution $distribution): void
     {
         $this->distributionStatusManager->toDistributed($distribution);
+        $this->messageBus->dispatch(new AssetRefreshPropertiesMessage($distribution->getAssetId()));
+
         foreach ($distribution->getBlocks() as $blockedDistribution) {
             $this->startDistribution($blockedDistribution);
         }

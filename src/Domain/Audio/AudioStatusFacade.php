@@ -9,9 +9,11 @@ use AnzuSystems\CoreDamBundle\Domain\Audio\FileProcessor\AudioAttributesProcesso
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
+use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\File;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
+use InvalidArgumentException;
 
 /**
  * @method AudioFile finishUpload(AssetAdmFinishDto $assetFinishDto, AssetFile $assetFile)
@@ -29,8 +31,15 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
         return AudioFile::class;
     }
 
-    protected function processAssetFile(AssetFile $assetFile, File $file): AssetFile
+    /**
+     * @throws FfmpegException
+     */
+    protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
+        if (false === ($assetFile instanceof AudioFile)) {
+            throw new InvalidArgumentException('Asset type must be a type of audio');
+        }
+
         $this->attributesProcessor->process($assetFile, $file);
 
         return $assetFile;
@@ -38,7 +47,10 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
 
     protected function checkDuplicate(AssetFile $assetFile): void
     {
-        $originAsset = $this->audioFileRepository->findProcessedByChecksum($assetFile->getAssetAttributes()->getChecksum());
+        $originAsset = $this->audioFileRepository->findProcessedByChecksumAndLicence(
+            checksum: $assetFile->getAssetAttributes()->getChecksum(),
+            licence: $assetFile->getLicence(),
+        );
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }

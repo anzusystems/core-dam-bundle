@@ -7,39 +7,58 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class AssetTextsWriter
+final readonly class AssetTextsWriter
 {
     public function __construct(
-        private readonly PropertyAccessorInterface $propertyAccessor,
-        private readonly AssetTextStringNormalizer $textStringNormalizer,
+        private PropertyAccessorInterface $propertyAccessor,
+        private AssetTextStringNormalizer $textStringNormalizer,
     ) {
     }
 
     /**
-     * @param array<string, TextsWriterConfiguration> $config
+     * @param array<int, TextsWriterConfiguration> $config
      */
-    public function writeValues(object $from, object $to, array $config): void
+    public function writeValues(object $from, object $to, array $config, bool $reversedConfig = false): void
     {
         foreach ($config as $propertyConfig) {
             $this->propertyAccessor->setValue(
                 objectOrArray: $to,
-                propertyPath: $propertyConfig->getDestinationPropertyPath(),
-                value: $this->getValue($from, $propertyConfig)
+                propertyPath: $reversedConfig
+                    ? $propertyConfig->getSourcePropertyPath()
+                    : $propertyConfig->getDestinationPropertyPath(),
+                value: $this->getValue($from, $propertyConfig, $reversedConfig)
             );
         }
     }
 
-    private function getValue(object $from, TextsWriterConfiguration $configuration): string
+    /**
+     * @param array<int, TextsWriterConfiguration> $config
+     */
+    public function getFirstValue(object $from, array $config): mixed
+    {
+        foreach ($config as $propertyConfig) {
+            $value = $this->getValue($from, $propertyConfig);
+            if (false === empty($value)) {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function getValue(object $from, TextsWriterConfiguration $configuration, bool $reversed = false): mixed
     {
         $value = $this->propertyAccessor->getValue(
             objectOrArray: $from,
-            propertyPath: $configuration->getSourcePropertyPath()
+            propertyPath: $reversed
+                ? $configuration->getDestinationPropertyPath()
+                : $configuration->getSourcePropertyPath(),
         );
 
-        if (is_string($value) && false === empty($configuration->getNormalizers())) {
-            $value = $this->textStringNormalizer->normalizeAll($value, $configuration->getNormalizers());
+        if ((null === $value || is_string($value)) && false === empty($configuration->getNormalizers())) {
+            $value = $this->textStringNormalizer->normalizeAll((string) $value, $configuration->getNormalizers());
         }
 
-        return (string) $value;
+        return $value;
     }
 }

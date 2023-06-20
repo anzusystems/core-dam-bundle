@@ -27,14 +27,14 @@ final class IndexSettings
         return App::ENTITY_NAMESPACE . '\\' . ucfirst($indexName);
     }
 
-    public function getIndexPrefix(string $indexName): string
+    public function getPrefixedIndexName(string $indexName): string
     {
         return $this->configurationProvider->getSettings()->getElasticIndexPrefix() . '_' . strtolower($indexName);
     }
 
     public function getFullIndexNameBySlug(string $indexName, string $slug): string
     {
-        return $this->getIndexPrefix($indexName) . '_' . strtolower($slug);
+        return $this->getPrefixedIndexName($indexName) . '_' . strtolower($slug);
     }
 
     public function getFullIndexNameByEntity(ExtSystemIndexableInterface $entity): string

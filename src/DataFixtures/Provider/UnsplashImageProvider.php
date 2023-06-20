@@ -6,16 +6,18 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures\Provider;
 
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\RequestedUnsplashImage;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
-use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 final class UnsplashImageProvider
 {
     use OutputUtilTrait;
+    use FileHelperTrait;
+
     private const URL_TEMPLATE = 'https://source.unsplash.com/featured/%dx%d?%s';
 
     public function __construct(
@@ -26,8 +28,8 @@ final class UnsplashImageProvider
     }
 
     /**
+     * @throws AssetFileProcessFailed
      * @throws FilesystemException
-     * @throws TransportExceptionInterface
      */
     public function downloadImage(RequestedUnsplashImage $image): void
     {
@@ -37,7 +39,7 @@ final class UnsplashImageProvider
 
         $fixturesPath = $this->nameGenerator->alternatePath(
             originPath: $file->getAdapterPath(),
-            extension: FileHelper::guessExtension($file->getMimeType())
+            extension: $this->fileHelper->guessExtension((string) $file->getMimeType())
         );
 
         $this->fileSystemProvider->getFixturesFileSystem()
@@ -49,6 +51,10 @@ final class UnsplashImageProvider
             );
     }
 
+    /**
+     * @throws FilesystemException
+     * @throws AssetFileProcessFailed
+     */
     public function downloadImages(int $count, array $keyWords = [], array $sizeList = []): void
     {
         $progress = $this->outputUtil->createProgressBar($count);

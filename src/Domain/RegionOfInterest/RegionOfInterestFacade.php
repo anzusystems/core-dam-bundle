@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\RegionOfInterest;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
 use AnzuSystems\CoreDamBundle\Model\Dto\RegionOfInterest\RegionOfInterestAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Validator\EntityValidator;
+use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 
 class RegionOfInterestFacade
 {
+    use ValidatorAwareTrait;
+    use EventDispatcherAwareTrait;
+
     public function __construct(
-        private readonly EntityValidator $entityValidator,
         private readonly RegionOfInterestManager $regionOfInterestManager,
         private readonly RegionOfInterestFactory $regionOfInterestFactory,
         private readonly ImageManager $imageManager,
@@ -27,7 +31,7 @@ class RegionOfInterestFacade
     public function create(ImageFile $imageFile, RegionOfInterestAdmDetailDto $createDto): RegionOfInterest
     {
         $this->ensureSameImageEntity($imageFile, $createDto);
-        $this->entityValidator->validateDto($createDto);
+        $this->validator->validate($createDto);
         $roi = $this->regionOfInterestFactory->createRoi($createDto);
         $this->imageManager->addRegionOfInterest($imageFile, $roi, false);
 
@@ -41,17 +45,35 @@ class RegionOfInterestFacade
         RegionOfInterest $regionOfInterest,
         RegionOfInterestAdmDetailDto $roiDto,
     ): RegionOfInterest {
-        $this->entityValidator->validateDto($roiDto);
+        $this->validator->validate($roiDto);
+        $event = $this->createEvent($regionOfInterest);
         $this->regionOfInterestManager->update($regionOfInterest, $roiDto);
+        $this->dispatcher->dispatch($event);
 
         return $regionOfInterest;
     }
 
     public function delete(RegionOfInterest $regionOfInterest): bool
     {
+        $event = $this->createEvent($regionOfInterest);
         $regionOfInterest->getImage()->getRegionsOfInterest()->removeElement($regionOfInterest);
 
-        return $this->regionOfInterestManager->delete($regionOfInterest);
+        if ($this->regionOfInterestManager->delete($regionOfInterest)) {
+            $this->dispatcher->dispatch($event);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private function createEvent(RegionOfInterest $regionOfInterest): ManipulatedImageEvent
+    {
+        return $this->dispatcher->dispatch(new ManipulatedImageEvent(
+            imageId: (string) $regionOfInterest->getImage()->getId(),
+            roiPositions: [$regionOfInterest->getPosition()],
+            extSystem: $regionOfInterest->getImage()->getExtSystem()->getSlug()
+        ));
     }
 
     /**

@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\LocalFilesystem;
-use AnzuSystems\CoreDamBundle\Helper\FileHelper;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -20,6 +20,8 @@ use Symfony\Contracts\Service\Attribute\Required;
 #[AsController]
 abstract class AbstractAssetFileController extends AbstractController
 {
+    use FileHelperTrait;
+
     private FileSystemProvider $fileSystemProvider;
 
     #[Required]
@@ -46,7 +48,7 @@ abstract class AbstractAssetFileController extends AbstractController
             flush();
         });
 
-        $fileName = $assetFile->getId() . '.' . FileHelper::guessExtension(
+        $fileName = $assetFile->getId() . '.' . $this->fileHelper->guessExtension(
             $assetFile->getAssetAttributes()->getMimeType()
         );
 

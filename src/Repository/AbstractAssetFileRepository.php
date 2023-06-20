@@ -5,19 +5,40 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\QueryBuilder;
 
 /**
- * @template T of BaseIdentifiableInterface
+ * @template T of AssetFile
  *
  * @method AssetFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method AssetFile|null findOneBy(array $criteria, array $orderBy = null)
  */
 abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
 {
+    public function findAllProcessed(int $limit, ?string $idFrom = null): Collection
+    {
+        $qb = $this->createQueryBuilder('entity')
+            ->andWhere('entity.assetAttributes.status = :status')
+            ->setParameter('status', AssetFileProcessStatus::Processed)
+            ->addOrderBy('entity.id', Criteria::ASC)
+            ->setMaxResults($limit);
+
+        if ($idFrom) {
+            $qb->andWhere('entity.id > :id')
+                ->setParameter('id', $idFrom);
+        }
+
+        return new ArrayCollection($qb->getQuery()->getResult());
+    }
+
     /**
      * @throws NonUniqueResultException
      */
@@ -35,47 +56,41 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
     /**
      * @throws NonUniqueResultException
      */
-    public function findProcessedByChecksum(string $checksum): ?AssetFile
+    public function findProcessedByChecksumAndLicence(string $checksum, AssetLicence $licence): ?AssetFile
     {
         return $this->createQueryBuilder('entity')
             ->where('entity.assetAttributes.checksum = :checksum')
             ->andWhere('entity.assetAttributes.status = :status')
+            ->andWhere('IDENTITY(entity.licence) = :licenceId')
             ->setParameter('checksum', $checksum, Types::STRING)
             ->setParameter('status', AssetFileProcessStatus::Processed)
+            ->setParameter('licenceId', $licence->getId())
             ->getQuery()
             ->setMaxResults(1)
-            ->getOneOrNullResult();
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function getByAssetAndFileVersionName(string $assetId, string $version): ?AssetFile
-    {
-        return $this->getByAssetIdQb($assetId)
-            ->andWhere('assetHasFile.versionTitle = :version')
-            ->setParameter('version', $version)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function getDefaultByAsset(string $assetId): ?AssetFile
-    {
-        return $this->getByAssetIdQb($assetId)
-            ->andWhere('assetHasFile.default = :true')
-            ->setParameter('true', true)
-            ->getQuery()
             ->getOneOrNullResult();
     }
 
     public function getByAssetIdQb(string $assetId): QueryBuilder
     {
         return $this->createQueryBuilder('entity')
-            ->innerJoin('entity.asset', 'assetHasFile')
-            ->andWhere('IDENTITY(assetHasFile.asset) = :assetId')
+            ->andWhere('IDENTITY(entity.asset) = :assetId')
             ->setParameter('assetId', $assetId);
+    }
+
+    /**
+     * @return Collection<int, T>
+     */
+    public function findToDelete(DateTimeInterface $createdAtUntil, int $limit): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->andWhere('entity.assetAttributes.status in (:statuses)')
+                ->andWhere('entity.createdAt < :createdAtUntil')
+                ->setParameter('statuses', [AssetFileProcessStatus::Duplicate, AssetFileProcessStatus::Failed])
+                ->setParameter('createdAtUntil', $createdAtUntil->format(DATE_ATOM))
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
     }
 }
