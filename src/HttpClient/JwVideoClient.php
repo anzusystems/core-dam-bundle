@@ -180,6 +180,7 @@ final class JwVideoClient implements LoggerAwareInterface
                     ],
                 ]
             );
+            $this->damLogger->info('_JwVideoDistribution_', 'Prepare multipart upload for upload (%s)', $dto->getUploadId());
 
             $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
 

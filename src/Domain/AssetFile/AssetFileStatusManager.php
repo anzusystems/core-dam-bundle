@@ -72,9 +72,10 @@ final class AssetFileStatusManager extends AssetFileManager
         $this->damLogger->error(
             namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
             message: sprintf(
-                'Asset file (%s) process failed reason (%s).',
+                'Asset file (%s) process failed reason (%s). (%s',
                 (string) $assetFile->getId(),
                 $failedType->toString(),
+                $throwable->getMessage()
             ),
             exception: $throwable
         );

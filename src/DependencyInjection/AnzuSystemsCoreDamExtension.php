@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\AnzuSystemsCoreDamBundle;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\ColorType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginExternalProviderType;
+use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginStorageType;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
@@ -55,6 +56,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                 'types' => [
                     ColorType::NAME => ColorType::class,
                     OriginExternalProviderType::NAME => OriginExternalProviderType::class,
+                    OriginStorageType::NAME => OriginStorageType::class,
                 ],
             ],
             'orm' => [

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Audio;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
@@ -28,7 +28,7 @@ final class AudioFacade extends AbstractAssetFileFacade
         return $this->audioManager;
     }
 
-    protected function getFactory(): AssetFileFactory
+    protected function getFactory(): AbstractAssetFileFactory
     {
         return $this->audioFactory;
     }

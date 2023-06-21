@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
@@ -53,7 +53,7 @@ final class VideoFacade extends AbstractAssetFileFacade
         return $this->videoManager;
     }
 
-    protected function getFactory(): AssetFileFactory
+    protected function getFactory(): AbstractAssetFileFactory
     {
         return $this->videoFactory;
     }

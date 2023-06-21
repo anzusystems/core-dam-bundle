@@ -357,9 +357,9 @@ abstract class AbstractAssetFileFacade
     abstract protected function getManager(): AssetFileManager;
 
     /**
-     * @return AssetFileFactory<T>
+     * @return AbstractAssetFileFactory<T>
      */
-    abstract protected function getFactory(): AssetFileFactory;
+    abstract protected function getFactory(): AbstractAssetFileFactory;
 
     abstract protected function getRepository(): AbstractAssetFileRepository;
 }
