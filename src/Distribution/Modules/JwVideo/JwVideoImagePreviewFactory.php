@@ -6,9 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo;
 
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionDtoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 
 final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
@@ -18,6 +20,7 @@ final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
     public function __construct(
         protected ConfigurationProvider $configurationProvider,
         protected ImageUrlFactory $imageUrlFactory,
+        protected readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider
     ) {
     }
 
@@ -45,19 +48,20 @@ final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
             return null;
         }
 
-        return $this->generateUrl((string) $imagePreview->getImageFile()->getId());
+        return $this->generateUrl($imagePreview->getImageFile());
     }
 
-    private function generateUrl(string $imageId): ?string
+    private function generateUrl(ImageFile $imageFile): ?string
     {
         $cropAllowItem = $this->configurationProvider->getFirstTaggedAllowItem(self::DISTRIBUTION_CROP_TAG);
 
         if (null === $cropAllowItem) {
             return null;
         }
+        $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($imageFile->getExtSystem()->getSlug());
 
-        return $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
-            imageId: $imageId,
+        return $config->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
+            imageId: (string) $imageFile->getId(),
             width: $cropAllowItem->getWidth(),
             height: $cropAllowItem->getHeight(),
         );

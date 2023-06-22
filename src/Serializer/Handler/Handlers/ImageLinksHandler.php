@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
@@ -28,6 +29,7 @@ class ImageLinksHandler extends AbstractHandler
         protected readonly RegionOfInterestRepository $roiRepository,
         protected readonly ImageUrlFactory $imageUrlFactory,
         protected readonly ConfigurationProvider $configurationProvider,
+        protected readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
     ) {
     }
 
@@ -87,10 +89,11 @@ class ImageLinksHandler extends AbstractHandler
     protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
     {
         $imageId = (string) $imageFile->getId();
+        $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($imageFile->getExtSystem()->getSlug());
 
         return [
             'type' => self::LINKS_TYPE,
-            'url' => $this->configurationProvider->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
+            'url' => $config->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
                 imageId: $imageId,
                 item: $item,
                 roiPosition: 0

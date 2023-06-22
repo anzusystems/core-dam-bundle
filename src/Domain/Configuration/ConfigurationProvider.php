@@ -73,11 +73,6 @@ final class ConfigurationProvider
         return $this->getSettings()->getAdminAllowListName();
     }
 
-    public function getAdminDomain(): string
-    {
-        return $this->domains[$this->getAdminAllowListName()]['domain'] ?? '';
-    }
-
     public function getFirstCropAllowItemByTag(string $type): ?CropAllowItem
     {
         $cropList = $this->allowListConfiguration->getTaggedList(
