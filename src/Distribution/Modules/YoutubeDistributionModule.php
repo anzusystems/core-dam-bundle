@@ -22,12 +22,14 @@ use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Exception;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
+use Throwable;
 
 final class YoutubeDistributionModule extends AbstractDistributionModule implements
     RemoteProcessingDistributionModuleInterface,
@@ -159,7 +161,14 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             );
         }
 
-        $this->setThumbnail($distribution);
+        try {
+            $this->setThumbnail($distribution);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                DamLogger::NAMESPACE_DISTRIBUTION,
+                sprintf('YT set thumbnail failed (%s) error (%s)', $distribution->getAssetFileId(), $e->getMessage())
+            );
+        }
     }
 
     private function setThumbnail(YoutubeDistribution $distribution): void
@@ -171,7 +180,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         }
 
         $imageFile = $video->getImagePreview()?->getImageFile();
-        if (null === $imageFile) {
+        if (null === $imageFile || $imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return;
         }
 
