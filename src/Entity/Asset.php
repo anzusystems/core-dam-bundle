@@ -89,6 +89,10 @@ class Asset implements
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     private AssetLicence $licence;
 
+    // todo not nullable after ExtSystemsMigration
+    #[ORM\ManyToOne(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    private ?ExtSystem $extSystem;
+
     #[ORM\OneToMany(mappedBy: 'asset', targetEntity: AssetSlot::class)]
     private Collection $slots;
 
@@ -111,6 +115,7 @@ class Asset implements
         $this->setVideoEpisodes(new ArrayCollection());
         $this->setMainFile(null);
         $this->setAssetFileProperties(new AssetFileProperties());
+        $this->setExtSystem(null);
     }
 
     public function getMainFile(): ?AssetFile
@@ -299,9 +304,18 @@ class Asset implements
         return $this;
     }
 
+    public function setExtSystem(?ExtSystem $extSystem): self
+    {
+        $this->extSystem = $extSystem;
+
+        return $this;
+    }
+
     public function getExtSystem(): ExtSystem
     {
-        return $this->getLicence()->getExtSystem();
+        // todo remove after ExtSystemsMigration
+
+        return $this->extSystem ?? $this->getLicence()->getExtSystem();
     }
 
     public function getAssetType(): AssetType
