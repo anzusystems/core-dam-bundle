@@ -171,7 +171,6 @@ final class YoutubeApiClient
         File $file,
     ): ?YoutubeVideoDto {
         $video = $this->videoFactory->createVideo($assetFile, $distribution, $configuration);
-
         $client = $this->clientProvider->getClient($distribution->getDistributionService());
         $client->setAccessToken($this->authenticator->getAccessToken($distribution->getDistributionService())->getAccessToken());
         $client->setDefer(true);
@@ -179,7 +178,6 @@ final class YoutubeApiClient
         $youtubeService = new Google_Service_YouTube($client);
 
         try {
-            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT asset for asset id (%s)', $assetFile->getId()));
             $insertRequest = $youtubeService->videos->insert(
                 part: 'status,snippet',
                 postBody: $video,
@@ -201,14 +199,11 @@ final class YoutubeApiClient
 
             $handle = fopen($file->getRealPath(), 'rb');
 
-            $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Insert YT chunks for asset id (%s)', $assetFile->getId()));
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, self::CHUNK_SIZE);
                 $status = $media->nextChunk($chunk);
 
                 if ($status instanceof Google_Service_YouTube_Video) {
-                    $this->damLogger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT last chunk inserted for asset id (%s), creating DTO video', $assetFile->getId()));
-
                     return $this->videoFactory->createYoutubeVideoDto($status);
                 }
             }

@@ -26,6 +26,7 @@ final class YoutubeAbstractDistributionManager extends AbstractDistributionManag
             ->setEmbeddable($newDistribution->getFlags()->isEmbeddable())
             ->setNotifySubscribers($newDistribution->getFlags()->isNotifySubscribers());
         $distribution->setPublishAt($newDistribution->getPublishAt());
+        $distribution->setLanguage($newDistribution->getLanguage());
 
         $this->flush($flush);
 

@@ -55,7 +55,7 @@ final class VideoDistributionFacade
 
         try {
             $this->videoManager->beginTransaction();
-            $imageFile = $this->imageDownloadFacade->download($video->getLicence(), $link);
+            $imageFile = $this->imageDownloadFacade->downloadSynchronous($video->getLicence(), $link);
             $this->videoManager->setImagePreview($video, $imageFile);
             $this->videoManager->commit();
 

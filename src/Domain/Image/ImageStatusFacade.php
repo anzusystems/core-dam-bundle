@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use InvalidArgumentException;
 use League\Flysystem\FilesystemException;
@@ -28,7 +29,8 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         private readonly MostDominantColorProcessor $mostDominantColorProcessor,
         private readonly OptimalCropsProcessor $optimalCropsProcessor,
         private readonly DefaultRoiProcessor $defaultRoiProcessor,
-        private readonly ImageFileRepository $imageFileRepository
+        private readonly ImageFileRepository $imageFileRepository,
+        private readonly ImagePreviewRepository $imagePreviewRepository,
     ) {
     }
 
@@ -45,15 +47,13 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
      */
     protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
-        if (false === ($assetFile instanceof ImageFile)) {
-            throw new InvalidArgumentException('Asset type must be a type of image');
-        }
+        $imageFile = $this->getImage($assetFile);
 
-        $this->mostDominantColorProcessor->process($assetFile, $file);
-        $this->optimalCropsProcessor->process($assetFile, $file);
-        $this->defaultRoiProcessor->process($assetFile, $file);
+        $this->mostDominantColorProcessor->process($imageFile, $file);
+        $this->optimalCropsProcessor->process($imageFile, $file);
+        $this->defaultRoiProcessor->process($imageFile, $file);
 
-        return $assetFile;
+        return $imageFile;
     }
 
     protected function checkDuplicate(AssetFile $assetFile): void
@@ -65,5 +65,14 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }
+    }
+
+    private function getImage(AssetFile $assetFile): ImageFile
+    {
+        if (false === ($assetFile instanceof ImageFile)) {
+            throw new InvalidArgumentException('Asset type must be a type of image');
+        }
+
+        return $assetFile;
     }
 }

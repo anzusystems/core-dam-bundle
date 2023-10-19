@@ -17,7 +17,20 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'keyword',
                 ],
                 'podcastIds' => [
-                    'type' => 'keyword',
+                    'type' => 'text',
+                    'fields' => [
+                        'podcastId' => [
+                            'type' => 'keyword',
+                        ],
+                    ],
+                ],
+                'keywordIds' => [
+                    'type' => 'text',
+                    'fields' => [
+                        'keywordId' => [
+                            'type' => 'keyword',
+                        ],
+                    ],
                 ],
                 'fileIds' => [
                     'type' => 'keyword',
