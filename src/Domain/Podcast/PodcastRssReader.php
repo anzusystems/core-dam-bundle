@@ -61,19 +61,19 @@ final class PodcastRssReader
         $channelXml = $this->body->channel;
 
         $channel = (new Channel())
-            ->setTitle((string) $channelXml->title)
-            ->setDescription((string) $channelXml->description)
-            ->setLanguage((string) $channelXml->language)
+            ->setTitle((string) $channelXml?->title)
+            ->setDescription((string) $channelXml?->description)
+            ->setLanguage((string) $channelXml?->language)
         ;
 
-        $itunesXml = $channelXml->children(self::ITUNES_KEY_KEY, true);
+        $itunesXml = $channelXml?->children(self::ITUNES_KEY_KEY, true);
 
         if ($itunesXml) {
             $channelItunes = (new ChannelItunes())
-                ->setImage((string) $itunesXml->image->attributes()?->href)
+                ->setImage((string) $itunesXml->image?->attributes()?->href)
                 ->setExplicit((string) $itunesXml->explicit);
 
-            foreach ($itunesXml->category as $category) {
+            foreach ($itunesXml->category ?? [] as $category) {
                 $channelItunes->addCategory((string) $category->attributes()?->text);
             }
 
@@ -89,7 +89,7 @@ final class PodcastRssReader
      */
     public function readItems(?DateTimeImmutable $from = null): Generator
     {
-        foreach (array_reverse($this->body->channel->xpath('item')) as $item) {
+        foreach (array_reverse($this->body->channel?->xpath('item') ?? []) as $item) {
             $item = $this->readItem($item);
             if ($item->getPubDate() && $from && $from > $item->getPubDate()) {
                 continue;
@@ -112,7 +112,7 @@ final class PodcastRssReader
             ->setPubDate($this->getPublicationDate($element))
         ;
 
-        $enclosureAttributes = $element->enclosure->attributes();
+        $enclosureAttributes = $element->enclosure?->attributes();
         if ($enclosureAttributes) {
             $item->setEnclosure(
                 (new ItemEnclosure())
@@ -131,7 +131,7 @@ final class PodcastRssReader
                     ->setEpisodeType((string) $itunes->episodeType)
                     ->setExplicit((string) $itunes->explicit)
                     ->setDuration((string) $itunes->duration)
-                    ->setImage((string) $itunes->image->attributes()?->href)
+                    ->setImage((string) $itunes->image?->attributes()?->href)
             );
         }
 
