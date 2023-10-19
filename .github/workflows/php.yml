@@ -15,7 +15,7 @@ jobs:
 
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
         ports:
           - 9200:9200
         env:
@@ -31,7 +31,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: admin
           MYSQL_DATABASE: commonbundle
       mongo:
-        image: mongo:5.0
+        image: mongo:6.0
         ports:
           - 27017:27017
         env:
