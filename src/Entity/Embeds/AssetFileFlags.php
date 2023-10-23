@@ -13,9 +13,17 @@ class AssetFileFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $processedMetadata;
 
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $public;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $singleUse;
+
     public function __construct()
     {
         $this->setProcessedMetadata(false);
+        $this->setPublic(true);
+        $this->setSingleUse(false);
     }
 
     public function isProcessedMetadata(): bool
@@ -27,6 +35,28 @@ class AssetFileFlags
     {
         $this->processedMetadata = $processedMetadata;
 
+        return $this;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->public;
+    }
+
+    public function setPublic(bool $public): self
+    {
+        $this->public = $public;
+        return $this;
+    }
+
+    public function isSingleUse(): bool
+    {
+        return $this->singleUse;
+    }
+
+    public function setSingleUse(bool $singleUse): self
+    {
+        $this->singleUse = $singleUse;
         return $this;
     }
 }

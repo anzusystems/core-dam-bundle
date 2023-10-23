@@ -48,44 +48,29 @@ final class CustomDataValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, ResourceCustomFormProvidableInterface::class);
         }
 
-        $form = $this->getForm($value);
+        $form = $this->customFormProvider->provideForm($value);
         $customData = $value->getCustomData();
 
         foreach ($form->getElements() as $element) {
+            if ($element->getAttributes()->isReadonly()) {
+                continue;
+            }
+
             $validator = $this->getValidator($element);
-            $path = $this->getPath($element->getKey());
             $validator->validate(
                 element: $element,
                 context: $this->context,
-                path: $path,
-                value: $customData[$element->getKey()] ?? null
+                path: $this->getPath($element->getProperty()),
+                value: $customData[$element->getProperty()] ?? null
             );
 
-            unset($customData[$element->getKey()]);
-        }
-
-        foreach ($customData as $key => $formValue) {
-            $this->context->buildViolation(ValidationException::ERROR_INVALID_KEY)
-                ->atPath($this->getPath($key))
-                ->addViolation();
+            unset($customData[$element->getProperty()]);
         }
     }
 
     private function getPath(string $key): string
     {
         return sprintf(self::PATH_TEMPLATE, $key);
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    private function getForm(ResourceCustomFormProvidableInterface|AssetCustomFormProvidableInterface $formProvidable): CustomForm
-    {
-        if ($formProvidable instanceof AssetCustomFormProvidableInterface) {
-            return $this->customFormProvider->provideFormByAssetProvidable($formProvidable);
-        }
-
-        return $this->customFormProvider->provideFormByResourceProvidable($formProvidable);
     }
 
     /**

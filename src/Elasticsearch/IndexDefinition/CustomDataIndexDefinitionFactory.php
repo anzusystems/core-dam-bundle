@@ -40,7 +40,7 @@ final class CustomDataIndexDefinitionFactory
 
     public static function getIndexKeyName(CustomFormElement $element): string
     {
-        return self::METADATA_PREFIX . $element->getKey();
+        return self::METADATA_PREFIX . $element->getProperty();
     }
 
     private function getIndexBuilder(CustomFormElement $customFormElement): IndexBuilderInterface

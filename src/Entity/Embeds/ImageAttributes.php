@@ -27,6 +27,9 @@ class ImageAttributes
     #[ORM\Column(type: Types::SMALLINT)]
     private int $rotation;
 
+    #[ORM\Column(type: Types::BOOLEAN)]
+    private bool $animated;
+
     #[ORM\Column(type: ColorType::NAME)]
     private Color $mostDominantColor;
 
@@ -38,6 +41,7 @@ class ImageAttributes
         $this->setHeight(0);
         $this->setRotation(0);
         $this->setMostDominantColor(new Color());
+        $this->setAnimated(false);
     }
 
     public function getRatioWidth(): int
@@ -108,6 +112,18 @@ class ImageAttributes
     public function setMostDominantColor(Color $mostDominantColor): self
     {
         $this->mostDominantColor = $mostDominantColor;
+
+        return $this;
+    }
+
+    public function isAnimated(): bool
+    {
+        return $this->animated;
+    }
+
+    public function setAnimated(bool $animated): self
+    {
+        $this->animated = $animated;
 
         return $this;
     }

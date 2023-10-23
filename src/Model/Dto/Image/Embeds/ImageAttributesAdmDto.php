@@ -27,6 +27,9 @@ final class ImageAttributesAdmDto
     #[Serialize]
     private string $mostDominantColor;
 
+    #[Serialize]
+    private bool $animated;
+
     public static function getInstance(ImageAttributes $attributes): self
     {
         return (new self())
@@ -36,6 +39,7 @@ final class ImageAttributesAdmDto
             ->setHeight($attributes->getHeight())
             ->setRotation($attributes->getRatioWidth())
             ->setMostDominantColor($attributes->getMostDominantColor()->toString())
+            ->setAnimated($attributes->isAnimated())
         ;
     }
 
@@ -108,6 +112,17 @@ final class ImageAttributesAdmDto
     {
         $this->mostDominantColor = $mostDominantColor;
 
+        return $this;
+    }
+
+    public function isAnimated(): bool
+    {
+        return $this->animated;
+    }
+
+    public function setAnimated(bool $animated): self
+    {
+        $this->animated = $animated;
         return $this;
     }
 }

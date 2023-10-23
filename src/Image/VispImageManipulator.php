@@ -32,7 +32,6 @@ final class VispImageManipulator extends AbstractImageManipulator
     public function __construct(
         FilterProcessorStack $filterProcessorStack,
         private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
         private readonly DamLogger $damLogger,
     ) {
         $this->setQuality(self::DEFAULT_QUALITY);
@@ -58,6 +57,20 @@ final class VispImageManipulator extends AbstractImageManipulator
             $this->image = Image::newFromBuffer($resource);
         } catch (Exception $exception) {
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_READ_FAILED, $exception);
+        }
+    }
+
+    public function isAnimated(): bool
+    {
+        try {
+            $pages = $this->image->get('n-pages');
+            if (is_int($pages) && $pages > 1) {
+                return true;
+            }
+
+            return false;
+        } catch (Exception) {
+            return false;
         }
     }
 

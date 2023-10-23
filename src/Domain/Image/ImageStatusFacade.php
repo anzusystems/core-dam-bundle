@@ -6,16 +6,15 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\DefaultRoiProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\MostDominantColorProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
+use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\ImagePreviewRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use InvalidArgumentException;
 use League\Flysystem\FilesystemException;
@@ -26,11 +25,10 @@ use League\Flysystem\FilesystemException;
 final class ImageStatusFacade extends AbstractAssetFileStatusFacade
 {
     public function __construct(
-        private readonly MostDominantColorProcessor $mostDominantColorProcessor,
         private readonly OptimalCropsProcessor $optimalCropsProcessor,
         private readonly DefaultRoiProcessor $defaultRoiProcessor,
         private readonly ImageFileRepository $imageFileRepository,
-        private readonly ImagePreviewRepository $imagePreviewRepository,
+        private readonly VispImageManipulator $imageManipulator,
     ) {
     }
 
@@ -48,8 +46,13 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
     protected function processAssetFile(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $imageFile = $this->getImage($assetFile);
+        $this->imageManipulator->loadFile($file->getRealPath());
 
-        $this->mostDominantColorProcessor->process($imageFile, $file);
+        $imageFile->getImageAttributes()
+            ->setAnimated($this->imageManipulator->isAnimated())
+            ->setMostDominantColor($this->imageManipulator->getMostDominantColor())
+        ;
+
         $this->optimalCropsProcessor->process($imageFile, $file);
         $this->defaultRoiProcessor->process($imageFile, $file);
 

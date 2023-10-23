@@ -63,7 +63,7 @@ final class CustomFormElementManager extends AbstractManager
         $this->trackModification($old);
         $old
             ->setName($new->getName())
-            ->setKey($new->getKey())
+            ->setProperty($new->getProperty())
             ->setAttributes($new->getAttributes())
             ->setPosition($new->getPosition());
     }

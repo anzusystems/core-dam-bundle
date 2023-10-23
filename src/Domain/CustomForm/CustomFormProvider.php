@@ -23,6 +23,7 @@ final class CustomFormProvider extends AbstractManager
         private readonly AssetCustomFormRepository $assetCustomFormRepository,
         private readonly ResourceCustomFormRepository $resourceCustomFormRepository,
         private readonly CustomFormElementRepository $customFormElementRepository,
+        private readonly CustomFormCache $customFormCache,
     ) {
     }
 
@@ -37,20 +38,37 @@ final class CustomFormProvider extends AbstractManager
 
     /**
      * @throws NonUniqueResultException
+     */
+    public function provideForm(ResourceCustomFormProvidableInterface|AssetCustomFormProvidableInterface $formProvidable): CustomForm
+    {
+        if ($formProvidable instanceof AssetCustomFormProvidableInterface) {
+            return $this->provideFormByAssetProvidable($formProvidable);
+        }
+
+        return $this->provideFormByResourceProvidable($formProvidable);
+    }
+
+    /**
+     * @throws NonUniqueResultException
      * @throws ForbiddenOperationException
      */
     public function provideFormByAssetProvidable(AssetCustomFormProvidableInterface $formProvidable): CustomForm
     {
+        $form = $this->customFormCache->getFromCache($formProvidable);
+        if ($form) {
+            return $form;
+        }
+
         $form = $this->assetCustomFormRepository->findOneByTypeAndExtSystem(
             $formProvidable->getExtSystem(),
             $formProvidable->getAssetType(),
         );
 
-        if (null === $form) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::CUSTOM_FORM_NOT_EXISTS);
+        if ($form) {
+            return $this->customFormCache->saveToCache($formProvidable, $form);
         }
 
-        return $form;
+        throw new ForbiddenOperationException(ForbiddenOperationException::CUSTOM_FORM_NOT_EXISTS);
     }
 
     /**
@@ -59,13 +77,18 @@ final class CustomFormProvider extends AbstractManager
      */
     public function provideFormByResourceProvidable(ResourceCustomFormProvidableInterface $formProvidable): CustomForm
     {
-        $form = $this->resourceCustomFormRepository->findByResource($formProvidable->getResourceKey());
-
-        if (null === $form) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::CUSTOM_FORM_NOT_EXISTS);
+        $form = $this->customFormCache->getFromCache($formProvidable);
+        if ($form) {
+            return $form;
         }
 
-        return $form;
+        $form = $this->resourceCustomFormRepository->findByResource($formProvidable->getResourceKey());
+
+        if ($form) {
+            return $this->customFormCache->saveToCache($formProvidable, $form);
+        }
+
+        throw new ForbiddenOperationException(ForbiddenOperationException::CUSTOM_FORM_NOT_EXISTS);
     }
 
     /**
