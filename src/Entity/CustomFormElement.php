@@ -41,7 +41,6 @@ class CustomFormElement implements TimeTrackingInterface, UuidIdentifiableInterf
      * @deprecated
      */
     #[ORM\Column(name: 'key_name', type: Types::STRING, length: 255)]
-    #[Serialize]
     private string $key = '';
 
     /**
