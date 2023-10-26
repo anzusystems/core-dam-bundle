@@ -53,6 +53,7 @@ class CustomFormElementAttributes
         $this->setMaxCount(null);
         $this->setRequired(false);
         $this->setSearchable(false);
+        $this->setReadonly(false);
     }
 
     public function getType(): CustomFormElementType
