@@ -70,12 +70,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         if (false === ($assetFile instanceof VideoFile)) {
             return;
         }
-
-        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('Prepare YT distribution for asset id (%s)', $assetFile->getId()));
-
         $file = $this->getLocalFileCopy($assetFile);
-        $this->logger->info(DamLogger::NAMESPACE_DISTRIBUTION, sprintf('YT Local file copy prepared (%s)', $assetFile->getId()));
-
         $video = $this->client->distribute(
             assetFile: $assetFile,
             distribution: $distribution,
@@ -149,11 +144,6 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     private function updatePreviewAndPlaylist(YoutubeDistribution $distribution): void
     {
         if (false === empty($distribution->getPlaylist())) {
-            $this->logger->info(
-                DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('YT setting playlist for asset id (%s)', $distribution->getAssetFileId())
-            );
-
             $this->client->setPlaylist(
                 distributionService: $distribution->getDistributionService(),
                 videoId: $distribution->getExtId(),

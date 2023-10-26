@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfigura
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionSettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionConfiguration;
@@ -42,6 +43,7 @@ class Configuration implements ConfigurationInterface
         $treeBuilder->getRootNode()
             ->children()
             ->append($this->addSettingsSection())
+            ->append($this->addDistributionsSection())
             ->append($this->addDistributionsSection())
             ->append($this->addAssetExternalProvidersSection())
             ->append($this->addDisplayTitleSection())
@@ -83,6 +85,18 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                     ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addDistributionSettingsSection(): NodeDefinition
+    {
+        return (new TreeBuilder('distribution_settings'))->getRootNode()
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode(DistributionSettingsConfiguration::YOUTUBE_DEFAULT_LANGUAGE)
+                    ->info('Default language for Youtube')
+                    ->isRequired()
                 ->end()
             ->end();
     }

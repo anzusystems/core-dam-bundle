@@ -66,6 +66,7 @@ final class IndexBuilder
             $this->writeln(sprintf('Recreating index <info>%s</info>', $indexNameFullName));
 
             try {
+                /** @psalm-suppress InvalidArgument */
                 $this->client->indices()->delete([
                     'index' => $indexNameFullName,
                 ]);
@@ -75,6 +76,7 @@ final class IndexBuilder
                     throw $exception;
                 }
             }
+            /** @psalm-suppress InvalidArgument */
             $this->client->indices()->create([
                 'index' => $indexNameFullName,
                 'body' => $this->getIndexSettings($indexNameFullName),
@@ -124,6 +126,7 @@ final class IndexBuilder
                 $config->setLastProcessedId($item->getId());
             }
             if (false === empty($payload['body'])) {
+                /** @psalm-suppress InvalidArgument */
                 $this->client->bulk($payload);
             }
             $this->entityManager->clear();

@@ -7,10 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 
-final class ImagePreviewFactory
+final readonly class ImagePreviewFactory
 {
     public function __construct(
-        private readonly ImagePreviewManager $imagePreviewManager
+        private ImagePreviewManager $imagePreviewManager
     ) {
     }
 

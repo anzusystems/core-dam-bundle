@@ -30,6 +30,10 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     protected array $podcastIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $keywordIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Choice(choices: AssetType::CHOICES, multiple: true, multipleMessage: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Count(max: 4, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $type = [];
@@ -625,5 +629,15 @@ final class AssetAdmSearchDto extends AbstractSearchDto
         $this->slotsCountUntil = $slotsCountUntil;
 
         return $this;
+    }
+
+    public function getKeywordIds(): array
+    {
+        return $this->keywordIds;
+    }
+
+    public function setKeywordIds(array $keywordIds): void
+    {
+        $this->keywordIds = $keywordIds;
     }
 }

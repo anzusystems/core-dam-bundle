@@ -77,7 +77,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
             ->setElements(
                 new ArrayCollection([
                     (new CustomFormElement())
-                        ->setKey('description')
+                        ->setProperty('description')
                         ->setName('Description')
                         ->setExifAutocomplete(['Description', 'ImageDescription'])
                         ->setAttributes(
@@ -86,7 +86,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(2_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('author')
+                        ->setProperty('author')
                         ->setName('Author')
                         ->setExifAutocomplete(['Author'])
                         ->setAttributes(
@@ -107,7 +107,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                ->setElements(
                    new ArrayCollection([
                        (new CustomFormElement())
-                           ->setKey('headline')
+                           ->setProperty('headline')
                            ->setName('Headline')
                            ->setExifAutocomplete(['Headline', 'Subject'])
                            ->setAttributes(
@@ -117,7 +117,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(256)
                            ),
                        (new CustomFormElement())
-                           ->setKey('title')
+                           ->setProperty('title')
                            ->setName('Title')
                            ->setExifAutocomplete(['Title', 'Subject'])
                            ->setAttributes(
@@ -127,7 +127,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(64)
                            ),
                        (new CustomFormElement())
-                           ->setKey('description')
+                           ->setProperty('description')
                            ->setName('Description')
                            ->setExifAutocomplete(['Description', 'ImageDescription'])
                            ->setAttributes(
@@ -136,7 +136,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(2_000)
                            ),
                        (new CustomFormElement())
-                           ->setKey('creditLine')
+                           ->setProperty('creditLine')
                            ->setName('Credit Line')
                            ->setExifAutocomplete(['Credit'])
                            ->setAttributes(
@@ -145,7 +145,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(256)
                            ),
                        (new CustomFormElement())
-                           ->setKey('altText')
+                           ->setProperty('altText')
                            ->setName('Alt Text')
                            ->setAttributes(
                                (new CustomFormElementAttributes())
@@ -153,7 +153,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(5_000)
                            ),
                        (new CustomFormElement())
-                           ->setKey('source')
+                           ->setProperty('source')
                            ->setName('Source')
                            ->setExifAutocomplete(['Source'])
                            ->setAttributes(
@@ -162,7 +162,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(32)
                            ),
                        (new CustomFormElement())
-                           ->setKey('copyrightNotice')
+                           ->setProperty('copyrightNotice')
                            ->setName('Copyright Notice')
                            ->setExifAutocomplete(['CopyrightNotice'])
                            ->setAttributes(
@@ -171,7 +171,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(128)
                            ),
                        (new CustomFormElement())
-                           ->setKey('rightsUsageTerms')
+                           ->setProperty('rightsUsageTerms')
                            ->setName('Rights Usage Terms')
                            ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
                            ->setAttributes(
@@ -180,7 +180,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                    ->setMaxValue(256)
                            ),
                        (new CustomFormElement())
-                           ->setKey('personInImage')
+                           ->setProperty('personInImage')
                            ->setName('PersonInImage')
                            ->setExifAutocomplete(['PersonInImage'])
                            ->setAttributes(
@@ -202,7 +202,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
             ->setElements(
                 new ArrayCollection([
                     (new CustomFormElement())
-                        ->setKey('headline')
+                        ->setProperty('headline')
                         ->setName('Headline')
                         ->setExifAutocomplete(['Headline', 'Subject'])
                         ->setAttributes(
@@ -212,7 +212,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('title')
+                        ->setProperty('title')
                         ->setName('Title')
                         ->setExifAutocomplete(['Title', 'Subject'])
                         ->setAttributes(
@@ -222,7 +222,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(64)
                         ),
                     (new CustomFormElement())
-                        ->setKey('description')
+                        ->setProperty('description')
                         ->setName('Description')
                         ->setExifAutocomplete(['Description', 'ImageDescription'])
                         ->setAttributes(
@@ -231,7 +231,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(5_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('creditLine')
+                        ->setProperty('creditLine')
                         ->setName('Credit Line')
                         ->setExifAutocomplete(['Credit'])
                         ->setAttributes(
@@ -240,7 +240,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('altText')
+                        ->setProperty('altText')
                         ->setName('Alt Text')
                         ->setAttributes(
                             (new CustomFormElementAttributes())
@@ -248,7 +248,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(5_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('source')
+                        ->setProperty('source')
                         ->setName('Source')
                         ->setExifAutocomplete(['Source'])
                         ->setAttributes(
@@ -257,7 +257,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(32)
                         ),
                     (new CustomFormElement())
-                        ->setKey('copyrightNotice')
+                        ->setProperty('copyrightNotice')
                         ->setName('Copyright Notice')
                         ->setExifAutocomplete(['CopyrightNotice'])
                         ->setAttributes(
@@ -266,7 +266,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(128)
                         ),
                     (new CustomFormElement())
-                        ->setKey('rightsUsageTerms')
+                        ->setProperty('rightsUsageTerms')
                         ->setName('Rights Usage Terms')
                         ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
                         ->setAttributes(
@@ -287,7 +287,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
             ->setElements(
                 new ArrayCollection([
                     (new CustomFormElement())
-                        ->setKey('headline')
+                        ->setProperty('headline')
                         ->setName('Headline')
                         ->setExifAutocomplete(['Headline', 'Subject'])
                         ->setAttributes(
@@ -297,7 +297,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('title')
+                        ->setProperty('title')
                         ->setName('Title')
                         ->setExifAutocomplete(['Title', 'Subject'])
                         ->setAttributes(
@@ -307,7 +307,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(64)
                         ),
                     (new CustomFormElement())
-                        ->setKey('description')
+                        ->setProperty('description')
                         ->setName('Description')
                         ->setExifAutocomplete(['Description', 'ImageDescription'])
                         ->setAttributes(
@@ -316,7 +316,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(2_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('creditLine')
+                        ->setProperty('creditLine')
                         ->setName('Credit Line')
                         ->setExifAutocomplete(['Credit'])
                         ->setAttributes(
@@ -325,7 +325,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('altText')
+                        ->setProperty('altText')
                         ->setName('Alt Text')
                         ->setAttributes(
                             (new CustomFormElementAttributes())
@@ -333,7 +333,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(5_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('source')
+                        ->setProperty('source')
                         ->setName('Source')
                         ->setExifAutocomplete(['Source'])
                         ->setAttributes(
@@ -342,7 +342,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(32)
                         ),
                     (new CustomFormElement())
-                        ->setKey('copyrightNotice')
+                        ->setProperty('copyrightNotice')
                         ->setName('Copyright Notice')
                         ->setExifAutocomplete(['CopyrightNotice'])
                         ->setAttributes(
@@ -351,7 +351,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(128)
                         ),
                     (new CustomFormElement())
-                        ->setKey('rightsUsageTerms')
+                        ->setProperty('rightsUsageTerms')
                         ->setName('Rights Usage Terms')
                         ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
                         ->setAttributes(
@@ -372,7 +372,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
             ->setElements(
                 new ArrayCollection([
                     (new CustomFormElement())
-                        ->setKey('headline')
+                        ->setProperty('headline')
                         ->setName('Headline')
                         ->setExifAutocomplete(['Headline', 'Subject'])
                         ->setAttributes(
@@ -382,7 +382,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('title')
+                        ->setProperty('title')
                         ->setName('Title')
                         ->setExifAutocomplete(['Title', 'Subject'])
                         ->setAttributes(
@@ -392,7 +392,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(64)
                         ),
                     (new CustomFormElement())
-                        ->setKey('description')
+                        ->setProperty('description')
                         ->setName('Description')
                         ->setExifAutocomplete(['Description', 'ImageDescription'])
                         ->setAttributes(
@@ -401,7 +401,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(5_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('creditLine')
+                        ->setProperty('creditLine')
                         ->setName('Credit Line')
                         ->setExifAutocomplete(['Credit'])
                         ->setAttributes(
@@ -410,7 +410,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(256)
                         ),
                     (new CustomFormElement())
-                        ->setKey('altText')
+                        ->setProperty('altText')
                         ->setName('Alt Text')
                         ->setAttributes(
                             (new CustomFormElementAttributes())
@@ -418,7 +418,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(5_000)
                         ),
                     (new CustomFormElement())
-                        ->setKey('source')
+                        ->setProperty('source')
                         ->setName('Source')
                         ->setExifAutocomplete(['Source'])
                         ->setAttributes(
@@ -427,7 +427,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(32)
                         ),
                     (new CustomFormElement())
-                        ->setKey('copyrightNotice')
+                        ->setProperty('copyrightNotice')
                         ->setName('Copyright Notice')
                         ->setExifAutocomplete(['CopyrightNotice'])
                         ->setAttributes(
@@ -436,7 +436,7 @@ final class CustomFormElementFixtures extends AbstractFixtures
                                 ->setMaxValue(128)
                         ),
                     (new CustomFormElement())
-                        ->setKey('rightsUsageTerms')
+                        ->setProperty('rightsUsageTerms')
                         ->setName('Rights Usage Terms')
                         ->setExifAutocomplete(['RightsUsageTerms', 'Rights'])
                         ->setAttributes(

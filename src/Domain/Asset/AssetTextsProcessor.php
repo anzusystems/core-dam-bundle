@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final readonly class AssetTextsProcessor
 {
@@ -24,11 +25,14 @@ final readonly class AssetTextsProcessor
 
     public function getAssetDisplayTitle(Asset $asset): string
     {
-        return (string) $this->assetTextsWriter->getFirstValue(
-            from: $asset,
-            config: $this->configurationProvider->getDisplayTitle()->getDisplayTitleConfig(
-                $asset->getAttributes()->getAssetType()
-            )
+        return StringHelper::parseString(
+            input: (string) $this->assetTextsWriter->getFirstValue(
+                from: $asset,
+                config: $this->configurationProvider->getDisplayTitle()->getDisplayTitleConfig(
+                    $asset->getAttributes()->getAssetType()
+                ),
+            ),
+            length: 255
         );
     }
 }

@@ -11,6 +11,8 @@ use AnzuSystems\CoreDamBundle\Domain\Distribution\AbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
+use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use Google\Exception;
@@ -29,9 +31,16 @@ class YoutubeAbstractDistributionFacade extends AbstractDistributionFacade
 
     /**
      * @throws NonUniqueResultException
+     * @throws ForbiddenOperationException
      */
     public function preparePayload(AssetFile $assetFile, string $distributionService): YoutubeDistribution
     {
+        try {
+            $config = $this->distributionConfigurationProvider->getYoutubeDistributionService($distributionService);
+        } catch (DomainException) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
+
         $distribution = new YoutubeDistribution();
         $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
         $this->distributionBodyBuilder->setWriterProperties(
@@ -39,6 +48,7 @@ class YoutubeAbstractDistributionFacade extends AbstractDistributionFacade
             $assetFile->getAsset(),
             $distribution
         );
+        $distribution->setLanguage($config->getDefaultLanguage());
 
         return $distribution;
     }

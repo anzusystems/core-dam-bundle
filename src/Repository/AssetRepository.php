@@ -93,8 +93,7 @@ final class AssetRepository extends AbstractAnzuRepository
     protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
     {
         return $queryBuilder
-            ->innerJoin('entity.licence', 'licence')
-            ->andWhere('IDENTITY(licence.extSystem) = :extSystemId')
+            ->andWhere('IDENTITY(entity.extSystem) = :extSystemId')
             ->setParameter('extSystemId', $extSystemId);
     }
 

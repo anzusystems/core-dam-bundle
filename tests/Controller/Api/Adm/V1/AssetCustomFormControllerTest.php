@@ -68,7 +68,7 @@ final class AssetCustomFormControllerTest extends AbstractApiController
 
             $this->assertInstanceOf(CustomFormElement::class, $entityElement);
             $this->assertSame($element->getName(), $entityElement->getName());
-            $this->assertSame($element->getKey(), $entityElement->getKey());
+            $this->assertSame($element->getProperty(), $entityElement->getProperty());
             $this->assertSame($element->getAttributes()->getMaxCount(), $entityElement->getAttributes()->getMaxCount());
             $this->assertSame($element->getAttributes()->getMinCount(), $entityElement->getAttributes()->getMinCount());
             $this->assertSame($element->getAttributes()->getMaxValue(), $entityElement->getAttributes()->getMaxValue());
