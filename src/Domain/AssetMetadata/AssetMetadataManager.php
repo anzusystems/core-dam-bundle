@@ -71,7 +71,7 @@ final class AssetMetadataManager extends AbstractManager
                 continue;
             }
 
-            if (false === isset($newCustomData[$element->getProperty()])) {
+            if (false === array_key_exists($element->getProperty(), $newCustomData)) {
                 unset($oldCustomData[$element->getProperty()]);
 
                 continue;
