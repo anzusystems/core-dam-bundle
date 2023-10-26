@@ -18,11 +18,8 @@ final class CustomFormCache
     public function getFromCache(ResourceCustomFormProvidableInterface|AssetCustomFormProvidableInterface $formProvidable): ?CustomForm
     {
         $key = $this->getKey($formProvidable);
-        if (isset($this->forms[$key])) {
-            return $this->forms[$key];
-        }
 
-        return null;
+        return $this->forms[$key] ?? null;
     }
 
     public function saveToCache(
