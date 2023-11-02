@@ -45,8 +45,7 @@ final class OptimalResizeFactory extends AbstractManager
             imageFile: $asset,
             file: $file,
             size: max($width, $height)
-        )
-            ->setOriginal(true);
+        )->setOriginal(true);
     }
 
     /**

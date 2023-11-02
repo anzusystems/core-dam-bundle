@@ -75,11 +75,17 @@ class AssetFlags
         return $this;
     }
 
+    /**
+     * @deprecated
+     */
     public function isVisible(): bool
     {
         return $this->visible;
     }
 
+    /**
+     * @deprecated
+     */
     public function setVisible(bool $visible): self
     {
         $this->visible = $visible;

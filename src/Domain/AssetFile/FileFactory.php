@@ -6,16 +6,26 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
+use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\FileSystem\AbstractFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
+use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use League\Flysystem\FilesystemException;
+use Symfony\Component\HttpFoundation\File\File;
 
 final readonly class FileFactory
 {
     public function __construct(
         private FileSystemProvider $fileSystemProvider,
+        private VispImageManipulator $vispImageManipulator,
+        private MimeGuesser $mimeGuesser,
     ) {
     }
 
@@ -49,6 +59,8 @@ final readonly class FileFactory
 
     /**
      * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidMimeTypeException
      */
     public function createFromStorage(AssetFile $assetFile): AdapterFile
     {
@@ -78,12 +90,61 @@ final readonly class FileFactory
             );
         }
 
+        if (
+            $assetFile instanceof ImageFile &&
+            false === empty($assetFile->getAssetAttributes()->getConvertToMime())
+        ) {
+            return $this->convertImage(
+                fileSystem: $fileSystem,
+                originStorage: $originStorage,
+                convertToMime: $assetFile->getAssetAttributes()->getConvertToMime()
+            );
+        }
         $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
 
         return AdapterFile::createFromBaseFile(
             file: $tmpFileSystem->writeTmpFileFromFilesystem(
                 filesystem: $fileSystem,
                 filePath: $originStorage->getPath()
+            ),
+            filesystem: $tmpFileSystem
+        );
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidMimeTypeException
+     */
+    private function convertImage(
+        AbstractFilesystem $fileSystem,
+        OriginStorage $originStorage,
+        string $convertToMime,
+    ): AdapterFile {
+        $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
+        $tmpFile = $tmpFileSystem->writeTmpFileFromFilesystem(
+            filesystem: $fileSystem,
+            filePath: $originStorage->getPath()
+        );
+
+        $extension = $this->mimeGuesser->guessExtension($convertToMime);
+
+        if (empty($extension)) {
+            throw new InvalidMimeTypeException(
+                mimeType: $convertToMime,
+                message: InvalidMimeTypeException::ERROR_EXTENSION_GUESS_FAILED
+            );
+        }
+
+        $convertedFilePath = $tmpFileSystem->extendPath($tmpFileSystem->getTmpFileName($extension));
+
+        $this->vispImageManipulator->loadFile((string) $tmpFile->getRealPath());
+        $this->vispImageManipulator->writeToFile($convertedFilePath);
+
+        return AdapterFile::createFromBaseFile(
+            file: AdapterFile::createFromBaseFile(
+                new File($convertedFilePath),
+                $tmpFileSystem
             ),
             filesystem: $tmpFileSystem
         );

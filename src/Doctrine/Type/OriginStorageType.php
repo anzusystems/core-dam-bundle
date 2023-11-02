@@ -21,15 +21,7 @@ final class OriginStorageType extends AbstractValueObjectType
         }
 
         try {
-            /**
-             * @var string $storageName
-             * @var string $path
-             *
-             * @psalm-suppress PossiblyUndefinedArrayOffset
-             */
-            [$storageName, $path] = explode('|', $value, 2);
-
-            return new OriginStorage($storageName, $path);
+            return OriginStorage::fromString($value);
         } catch (Throwable) {
             throw ConversionException::conversionFailed($value, $this->getName());
         }

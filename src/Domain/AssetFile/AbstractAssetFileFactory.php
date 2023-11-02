@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\AssetExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
@@ -162,13 +163,14 @@ abstract class AbstractAssetFileFactory
      * @throws FilesystemException
      * @throws DomainException
      * @throws NonUniqueResultException
+     * @throws InvalidMimeTypeException
      */
     public function createAssetFileForStorage(
         string $storageName,
         string $filePath,
         AssetLicence $licence,
     ): AssetFile {
-        $assetType = $this->getTypeFromMime($storageName, $filePath);
+        $assetType = $this->getTypeFromPath($storageName, $filePath);
         $assetFile = $this->createBlankAssetType($assetType, $licence);
 
         $assetFile->getAssetAttributes()
@@ -183,6 +185,7 @@ abstract class AbstractAssetFileFactory
 
         return $this->assetFileManager->create($assetFile, false);
     }
+
 
     /**
      * @return T
@@ -239,8 +242,9 @@ abstract class AbstractAssetFileFactory
 
     /**
      * @throws FilesystemException
+     * @throws InvalidMimeTypeException
      */
-    private function getTypeFromMime(string $storageName, string $filePath): AssetType
+    protected function getTypeFromPath(string $storageName, string $filePath): AssetType
     {
         $fileSystem = $this->fileSystemProvider->getFileSystemByStorageName($storageName);
         if (null === $fileSystem) {
@@ -251,7 +255,16 @@ abstract class AbstractAssetFileFactory
             throw new DomainException(sprintf('File (%s) not exists in storage (%s)', $filePath, $storageName));
         }
 
-        $mime = $fileSystem->mimeType($filePath);
+        return $this->getTypeFromMime(
+            $fileSystem->mimeType($filePath)
+        );
+    }
+
+    /**
+     * @throws InvalidMimeTypeException
+     */
+    protected function getTypeFromMime(string $mime): AssetType
+    {
         if (in_array($mime, ImageMimeTypes::CHOICES, true)) {
             return AssetType::Image;
         }
@@ -265,10 +278,10 @@ abstract class AbstractAssetFileFactory
             return AssetType::Document;
         }
 
-        throw new DomainException(sprintf('File mime (%s) in storage (%s) not supported', $filePath, $storageName));
+        throw new InvalidMimeTypeException($mime);
     }
 
-    private function createBlankAssetType(AssetType $assetType, AssetLicence $licence): AssetFile
+    protected function createBlankAssetType(AssetType $assetType, AssetLicence $licence): AssetFile
     {
         return match ($assetType) {
             AssetType::Image => $this->createBlankImage($licence),
