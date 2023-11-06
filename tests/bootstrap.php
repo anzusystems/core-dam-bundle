@@ -18,6 +18,7 @@ AnnotationReader::addGlobalIgnoredNamespace('OpenApi');
 AnnotationReader::addGlobalIgnoredNamespace('Nelmio');
 
 $kernel = new AnzuTestKernel(
+    appNamespace: getenv('APP_NAMESPACE'),
     appSystem: getenv('APP_SYSTEM'),
     appVersion: getenv('APP_VERSION'),
     appReadOnlyMode: (bool) getenv('APP_READ_ONLY_MODE'),

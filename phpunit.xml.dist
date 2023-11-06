@@ -21,6 +21,7 @@
         <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
         <env name="APP_ENV" value="test" force="true" />
         <env name="APP_SYSTEM" value="core_dam_bundle" force="true" />
+        <env name="APP_NAMESPACE" value="petit" force="true" />
         <env name="APP_VERSION" value="0.0.0" force="true" />
         <env name="APP_READ_ONLY_MODE" value="false" force="true" />
         <env name="APP_DEBUG" value="false" force="true" />
