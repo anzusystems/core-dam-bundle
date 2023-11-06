@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
@@ -24,6 +25,7 @@ final readonly class CropFacade
         private CropProcessor $cropProcessor,
         private AllowListConfiguration $allowListConfiguration,
         private RegionOfInterestRepository $regionOfInterestRepository,
+        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
     ) {
     }
 
@@ -67,6 +69,14 @@ final readonly class CropFacade
         $crop = $this->cropFactory->prepareImageCrop($roi, $cropPayload, $image);
 
         return $this->cropProcessor->applyCrop($image, $crop);
+    }
+
+    public function isPublicDomain(ImageFile $image): bool
+    {
+        return $this->extSystemConfigurationProvider->getImageExtSystemConfiguration(
+            $image->getExtSystem()->getSlug()
+        )->getPublicDomain() === $this->allowListConfiguration->getSchemeAndHost()
+        ;
     }
 
     /**

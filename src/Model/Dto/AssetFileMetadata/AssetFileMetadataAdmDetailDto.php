@@ -17,7 +17,7 @@ final class AssetFileMetadataAdmDetailDto
     use UserTrackingDtoTrait;
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
-    private array $exifData;
+    private array $exifData = [];
 
     public static function getInstance(AssetFileMetadata $fileMetadata): self
     {

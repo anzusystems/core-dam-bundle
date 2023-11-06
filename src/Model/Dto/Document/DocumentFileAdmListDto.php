@@ -7,38 +7,25 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Document;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
-class DocumentFileAdmListDto extends AbstractEntityDto
+class DocumentFileAdmListDto extends AbstractAssetFileAdmDto
 {
     protected string $resourceName = DocumentFile::class;
-    protected DocumentFile $document;
 
-    #[Serialize]
-    protected AssetFileAttributesAdmDto $fileAttributes;
+    #[Serialize(serializedName: 'id', handler: EntityIdHandler::class)]
+    protected DocumentFile $document;
 
     public static function getInstance(DocumentFile $documentFile): static
     {
         /** @psalm-var DocumentFileAdmListDto $parent */
-        $parent = parent::getBaseInstance($documentFile);
+        $parent = parent::getAssetFileBaseInstance($documentFile);
 
         return $parent
-            ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($documentFile->getAssetAttributes()))
             ->setDocument($documentFile);
-    }
-
-    public function getFileAttributes(): AssetFileAttributesAdmDto
-    {
-        return $this->fileAttributes;
-    }
-
-    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): self
-    {
-        $this->fileAttributes = $fileAttributes;
-
-        return $this;
     }
 
     public function getDocument(): DocumentFile

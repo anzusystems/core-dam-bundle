@@ -54,7 +54,7 @@ final class AllowListConfiguration
 
     public function getListByDomain(string $extSystemSlug, ?string $domain = null): CropAllowListConfiguration
     {
-        $schemeAndHost = $domain ?? $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+        $schemeAndHost = $this->getSchemeAndHost();
         $key = sprintf('%s_%s', $schemeAndHost, $extSystemSlug);
 
         if (isset(
@@ -83,6 +83,11 @@ final class AllowListConfiguration
         return $this->taggedListCache[$key] ?? [];
     }
 
+    public function getSchemeAndHost(): string
+    {
+        return $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+    }
+
     private function buildTagListCache(string $allowListName, string $tag): void
     {
         $cacheRecord = [];
@@ -106,7 +111,7 @@ final class AllowListConfiguration
 
     private function getDomainName(): string
     {
-        $schemeAndHost = $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
+        $schemeAndHost = $this->getSchemeAndHost();
 
         if (isset($this->domainNames[$schemeAndHost])) {
             return $this->domainNames[$schemeAndHost];

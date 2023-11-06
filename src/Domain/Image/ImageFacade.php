@@ -13,9 +13,11 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use RuntimeException;
 use Throwable;
 
@@ -63,6 +65,31 @@ final class ImageFacade extends AbstractAssetFileFacade
         return $image;
     }
 
+    /**
+     * @throws RuntimeException
+     */
+    public function update(ImageFile $image, ImageFileAdmDetailDto $dto): ImageFile
+    {
+        try {
+            $this->imageManager->beginTransaction();
+
+            $dispatchManipulatedImageEvent = $this->shouldDispatchManipulatedEvent($image, $dto);
+            $this->imageManager->updateImage($image, $dto);
+            $this->imageManager->updateExisting($image);
+            $this->imageManager->commit();
+
+            if ($dispatchManipulatedImageEvent) {
+                $this->dispatcher->dispatch($this->createEvent($image));
+            }
+        } catch (Throwable $exception) {
+            $this->imageManager->rollback();
+
+            throw new RuntimeException('image_rotate_failed', 0, $exception);
+        }
+
+        return $image;
+    }
+
     protected function getManager(): AssetFileManager
     {
         return $this->imageManager;
@@ -76,6 +103,11 @@ final class ImageFacade extends AbstractAssetFileFacade
     protected function getRepository(): AbstractAssetFileRepository
     {
         return $this->assetRepository;
+    }
+
+    private function shouldDispatchManipulatedEvent(ImageFile $image, ImageFileAdmDetailDto $dto): bool
+    {
+        return false === ($image->getFlags()->isPublic() === $dto->getFlags()->isPublic());
     }
 
     private function createEvent(ImageFile $image): ManipulatedImageEvent

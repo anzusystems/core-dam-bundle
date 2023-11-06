@@ -10,13 +10,13 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 final class AssetMetadataAdmDetailDto
 {
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
-    private array $keywordSuggestions;
+    private array $keywordSuggestions = [];
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
-    private array $authorSuggestions;
+    private array $authorSuggestions = [];
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
-    private array $customData;
+    private array $customData = [];
 
     public static function getInstance(AssetMetadata $assetMetadata): self
     {

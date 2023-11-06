@@ -76,6 +76,10 @@ final class ImageController extends AbstractImageController
             return $this->createNotFoundResponse($cropPayload);
         }
 
+        if (false === $image->getFlags()->isPublic() && $this->cropFacade->isPublicDomain($image)) {
+            return $this->createNotFoundResponse($cropPayload);
+        }
+
         return $this->okResponse(
             $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
             $image,

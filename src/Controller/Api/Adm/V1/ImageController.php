@@ -231,6 +231,21 @@ final class ImageController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      */
+    #[Route(path: '/{image}', name: 'update', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('image'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
+    public function update(ImageFile $image, #[SerializeParam] ImageFileAdmDetailDto $dto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        return $this->okResponse(
+            ImageFileAdmDetailDto::getInstance($this->imageFacade->update($image, $dto))
+        );
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     */
     #[Route(path: '/{image}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('image'), OAResponseValidation]
     public function delete(ImageFile $image): JsonResponse

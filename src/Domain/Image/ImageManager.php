@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 
 /**
  * @extends AssetFileManager<ImageFile>
@@ -31,6 +32,19 @@ final class ImageManager extends AssetFileManager
     ): ImageFile {
         $image->getRegionsOfInterest()->add($regionOfInterest);
         $regionOfInterest->setImage($image);
+        $this->flush($flush);
+
+        return $image;
+    }
+
+    public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
+    {
+        $image->getFlags()
+            ->setPublic($dto->getFlags()->isPublic())
+            ->setSingleUse($dto->getFlags()->isSingleUse())
+        ;
+
+        $this->trackModification($image);
         $this->flush($flush);
 
         return $image;
