@@ -9,6 +9,8 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
 /**
  * Subject doesn't matter, all it's required is ACL itself.
+ *
+ * @template-extends AbstractVoter<string, mixed>
  */
 final class BaseVoter extends AbstractVoter
 {

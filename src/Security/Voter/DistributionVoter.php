@@ -12,6 +12,9 @@ use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
+/**
+ * @template-extends AbstractVoter<string, Distribution|string>
+ */
 final class DistributionVoter extends AbstractVoter
 {
     public function __construct(
@@ -22,6 +25,7 @@ final class DistributionVoter extends AbstractVoter
     }
 
     /**
+     * @param Distribution|string $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
@@ -30,19 +34,26 @@ final class DistributionVoter extends AbstractVoter
             return false;
         }
 
-        if ($subject instanceof Distribution) {
-            $asset = $this->assetRepository->find($subject->getAssetId());
-            $assetFile = $this->assetFileRepository->find($subject->getAssetFileId());
-
-            return $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $asset, $user)
-                && $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $assetFile, $user);
+        if (is_string($subject)) {
+            return $user->hasAllowedDistributionServices($subject);
         }
 
-        if (false === is_string($subject)) {
+        if (false === ($subject instanceof Distribution)) {
             return false;
         }
 
-        return $user->hasAllowedDistributionServices($subject);
+        $asset = $this->assetRepository->find($subject->getAssetId());
+        if (null === $asset) {
+            return false;
+        }
+
+        $assetFile = $this->assetFileRepository->find($subject->getAssetFileId());
+        if (null === $assetFile) {
+            return false;
+        }
+
+        return $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $asset, $user)
+            && $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $assetFile, $user);
     }
 
     protected function getSupportedPermissions(): array

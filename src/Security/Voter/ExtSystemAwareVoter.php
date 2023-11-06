@@ -12,20 +12,19 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
 /**
  * Subject for these ACLs must be defined otherwise access will be revoked. Subject must implement ExtSystemInterface.
+ *
+ * @template-extends AbstractVoter<string, ExtSystemInterface>
  */
 final class ExtSystemAwareVoter extends AbstractVoter
 {
     /**
+     * @param ExtSystemInterface $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
     {
         if (false === parent::permissionVote($attribute, $subject, $user)) {
             return false;
-        }
-
-        if (null === $subject) {
-            return true;
         }
 
         if (false === ($subject instanceof ExtSystemInterface)) {
