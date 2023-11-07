@@ -6,8 +6,7 @@ cd "${PROJECT_ROOT}" || exit 1
 
 if [ -f /.dockerenv ] && [ -f composer.lock ]; then
     echo "[INFO] Running composer security check"
-    local-php-security-checker --path=composer.lock
-
+    composer audit --no-scripts
     exit
 fi
 
