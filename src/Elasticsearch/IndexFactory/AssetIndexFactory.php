@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
@@ -50,6 +51,10 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'fileIds' => array_values(CollectionHelper::traversableToIds(
                 $entity->getSlots(),
                 fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
+            )),
+            'keywordIds' => array_values(CollectionHelper::traversableToIds(
+                $entity->getKeywords(),
+                fn (Keyword $keyword): string => (string) $keyword->getId()
             )),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),

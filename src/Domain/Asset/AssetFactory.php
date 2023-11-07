@@ -44,7 +44,10 @@ final readonly class AssetFactory
             VideoFile::class => $this->assetManager->create($this->createForVideoFile($assetFile, $assetLicence, $slotName, $id), false),
             DocumentFile::class => $this->assetManager->create($this->createForDocumentFile($assetFile, $assetLicence, $slotName, $id), false),
         };
-        $asset->setLicence($assetLicence);
+        $asset
+            ->setLicence($assetLicence)
+            ->setExtSystem($assetLicence->getExtSystem())
+        ;
 
         return $asset;
     }
@@ -101,6 +104,7 @@ final readonly class AssetFactory
     {
         $asset = (new Asset())
             ->setLicence($assetLicence)
+            ->setExtSystem($assetLicence->getExtSystem())
             ->setMetadata(
                 $this->assetMetadataManager->create(new AssetMetadata(), false)
             )

@@ -120,7 +120,7 @@ final class VideoController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      */
-    #[Route(path: '/{video}/distribution-preview/{distribution}', name: 'set_distribution_preview', methods: [Request::METHOD_PATCH])]
+    #[Route('/{video}/distribution-preview/{distribution}', name: 'set_distribution_preview', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OAParameterPath('distribution'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
     public function setDistributionPreview(VideoFile $video, Distribution $distribution): JsonResponse
     {

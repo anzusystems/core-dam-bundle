@@ -44,7 +44,10 @@ final readonly class IndexManager
     public function delete(ExtSystemIndexableInterface $entity, int|string $deletedId): bool
     {
         try {
-            /** @var ElasticsearchResponse $response */
+            /**
+             * @var ElasticsearchResponse $response
+             * @psalm-suppress ArgumentTypeCoercion
+             */
             $response = $this->client->delete([
                 'index' => $this->indexSettings->getFullIndexNameByEntity($entity),
                 'id' => $deletedId,

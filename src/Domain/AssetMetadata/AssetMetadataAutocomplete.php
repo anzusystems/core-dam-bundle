@@ -37,7 +37,7 @@ final class AssetMetadataAutocomplete
         foreach ($form->getElements() as $element) {
             $autocompletedValue = $this->autocompleteElement($element, $assetFile->getMetadata()->getExifData());
             if ($autocompletedValue) {
-                $assetCustomData[$element->getKey()] = $autocompletedValue;
+                $assetCustomData[$element->getProperty()] = $autocompletedValue;
             }
         }
 

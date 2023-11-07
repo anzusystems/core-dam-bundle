@@ -48,11 +48,10 @@ final class AssetMetadataBulkFacade
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
-            $this->assetMetadataManager->updateFromMetadataBulkDto($asset->getMetadata(), $updateDto, false);
-            $updated[] =
-                FormProvidableMetadataBulkUpdateDto::getInstance(
-                    $this->assetManager->updateFromMetadataBulkDto($asset, $updateDto, false)
-                );
+            $this->assetMetadataManager->updateFromMetadataBulkDto($asset, $updateDto, false);
+            $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
+                asset: $this->assetManager->updateFromMetadataBulkDto($asset, $updateDto, false)
+            );
             if ($updateDto->isDescribed()) {
                 $this->assetMetadataManager->removeSuggestions($updateDto->getAsset()->getMetadata(), false);
             }

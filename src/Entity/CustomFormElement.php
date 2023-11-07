@@ -38,11 +38,17 @@ class CustomFormElement implements TimeTrackingInterface, UuidIdentifiableInterf
     private string $name;
 
     /**
-     * Json key name
+     * @deprecated
      */
     #[ORM\Column(name: 'key_name', type: Types::STRING, length: 255)]
+    private string $key = '';
+
+    /**
+     * Json key name
+     */
+    #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
-    private string $key;
+    private string $property;
 
     #[ORM\Embedded(class: CustomFormElementAttributes::class)]
     #[Serialize]
@@ -61,7 +67,7 @@ class CustomFormElement implements TimeTrackingInterface, UuidIdentifiableInterf
     public function __construct()
     {
         $this->setName('');
-        $this->setKey('');
+        $this->setProperty('');
         $this->setAttributes(new CustomFormElementAttributes());
         $this->setExifAutocomplete([]);
     }
@@ -78,14 +84,14 @@ class CustomFormElement implements TimeTrackingInterface, UuidIdentifiableInterf
         return $this;
     }
 
-    public function getKey(): string
+    public function getProperty(): string
     {
-        return $this->key;
+        return $this->property;
     }
 
-    public function setKey(string $key): self
+    public function setProperty(string $property): self
     {
-        $this->key = $key;
+        $this->property = $property;
 
         return $this;
     }

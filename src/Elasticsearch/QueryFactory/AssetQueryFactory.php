@@ -38,6 +38,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
+        //        $searchDto->getText()
+
         if ($searchDto->getText()) {
             return [
                 'multi_match' => [
@@ -100,10 +102,13 @@ final class AssetQueryFactory extends AbstractQueryFactory
             $filter[] = ['terms' => ['mostDominantColor' => $searchDto->getMostDominantColor()]];
         }
         if (false === empty($searchDto->getPodcastIds())) {
-            $filter[] = ['terms' => ['podcastIds' => $searchDto->getPodcastIds()]];
+            $filter[] = ['terms' => ['podcastIds.podcastId' => $searchDto->getPodcastIds()]];
         }
         if (false === empty($searchDto->getAssetIds())) {
             $filter[] = ['terms' => ['fileIds' => $searchDto->getAssetIds()]];
+        }
+        if (false === empty($searchDto->getKeywordIds())) {
+            $filter[] = ['terms' => ['keywordIds.keywordId' => $searchDto->getKeywordIds()]];
         }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());

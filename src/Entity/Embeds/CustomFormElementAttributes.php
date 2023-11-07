@@ -40,6 +40,10 @@ class CustomFormElementAttributes
     #[Serialize]
     private bool $searchable;
 
+    #[ORM\Column(type: Types::BOOLEAN)]
+    #[Serialize]
+    private bool $readonly;
+
     public function __construct()
     {
         $this->setType(CustomFormElementType::Default);
@@ -49,6 +53,7 @@ class CustomFormElementAttributes
         $this->setMaxCount(null);
         $this->setRequired(false);
         $this->setSearchable(false);
+        $this->setReadonly(false);
     }
 
     public function getType(): CustomFormElementType
@@ -132,6 +137,17 @@ class CustomFormElementAttributes
     {
         $this->searchable = $searchable;
 
+        return $this;
+    }
+
+    public function isReadonly(): bool
+    {
+        return $this->readonly;
+    }
+
+    public function setReadonly(bool $readonly): self
+    {
+        $this->readonly = $readonly;
         return $this;
     }
 }
