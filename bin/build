@@ -12,7 +12,7 @@ cd "${PROJECT_ROOT}" || exit 1
 
 function help() {
     echo -en "$(printf %q "${BASH_SOURCE[0]}") [OPERATION] [OPTIONS]...
-    \nBuild script used to build the project.
+    \nBash script used to run build in the application container.
 
     Options:
         --no-cc Run the build without cache clear
