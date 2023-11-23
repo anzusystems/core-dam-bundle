@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistribution
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemDocumentTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
@@ -432,15 +433,18 @@ class Configuration implements ConfigurationInterface
 
         if ($type->is(AssetType::Audio)) {
             $config
-                ->scalarNode(ExtSystemAudioTypeConfiguration::AUDIO_PUBLIC_STORAGE)
-                    ->isRequired()
-                ->end()
-                ->scalarNode(ExtSystemAudioTypeConfiguration::PUBLIC_DOMAIN_NAME)
-                    ->isRequired()
-                ->end()
+                ->scalarNode(ExtSystemAudioTypeConfiguration::AUDIO_PUBLIC_STORAGE)->end()
+                ->scalarNode(ExtSystemAudioTypeConfiguration::PUBLIC_DOMAIN_NAME)->end()
             ;
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
+        }
+
+        if ($type->is(AssetType::Document)) {
+            $config
+                ->scalarNode(ExtSystemDocumentTypeConfiguration::DOCUMENT_PUBLIC_STORAGE)->end()
+                ->scalarNode(ExtSystemDocumentTypeConfiguration::PUBLIC_DOMAIN_NAME)->end()
+            ;
         }
 
         $config->append($this::addTextMapperConfiguration(ExtSystemAssetTypeConfiguration::ASSET_EXTERNAL_PROVIDERS_MAP_KEY));

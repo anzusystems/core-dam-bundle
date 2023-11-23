@@ -13,12 +13,14 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
@@ -26,7 +28,9 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;
@@ -49,6 +53,7 @@ final class DocumentController extends AbstractApiController
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly DocumentPositionFacade $documentPositionFacade,
+        private readonly AssetFileRouteFacade $routeFacade,
     ) {
     }
 
@@ -235,6 +240,43 @@ final class DocumentController extends AbstractApiController
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($document)
+        );
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    #[Route(
+        path: '/{document}/make-public',
+        name: 'make_public',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('audio'), OARequest(AssetFilePublicRouteAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    public function makePublic(DocumentFile $document, #[SerializeParam] AssetFilePublicRouteAdmDto $dto): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        $this->routeFacade->makePublic($document, $dto);
+
+        return $this->okResponse(
+            ['todo']
+//            AudioFileAdmDetailDto::getInstance($this->routeFacade->makePublic($documentFile, $dto)),
+        );
+    }
+
+    #[Route(
+        path: '/{audio}/make-private',
+        name: 'make_private',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
+    public function makePrivate(DocumentFile $documentFile): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $documentFile);
+
+        return $this->okResponse(
+            ['todo']
+//            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePrivate($audio)),
         );
     }
 }
