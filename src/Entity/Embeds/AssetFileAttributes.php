@@ -32,6 +32,9 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 32)]
     private string $mimeType;
 
+    #[ORM\Column(type: Types::STRING, length: 32)]
+    private string $convertToMime;
+
     #[ORM\Column(type: Types::BIGINT)]
     private int $size;
 
@@ -67,6 +70,7 @@ class AssetFileAttributes
         $this->setSize(0);
         $this->setFailReason(AssetFileFailedType::None);
         $this->setCreateStrategy(AssetFileCreateStrategy::Default);
+        $this->setConvertToMime('');
     }
 
     public function getStatus(): AssetFileProcessStatus
@@ -209,6 +213,18 @@ class AssetFileAttributes
     public function setOriginStorage(?OriginStorage $originStorage): self
     {
         $this->originStorage = $originStorage;
+
+        return $this;
+    }
+
+    public function getConvertToMime(): string
+    {
+        return $this->convertToMime;
+    }
+
+    public function setConvertToMime(string $convertToMime): self
+    {
+        $this->convertToMime = $convertToMime;
 
         return $this;
     }

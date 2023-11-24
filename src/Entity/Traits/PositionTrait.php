@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 trait PositionTrait
 {
-    #[ORM\Column(type: Types::SMALLINT)]
+    #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]
     private int $position = 0;
 

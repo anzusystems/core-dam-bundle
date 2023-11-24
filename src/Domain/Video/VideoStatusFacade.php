@@ -47,6 +47,23 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
     }
 
     /**
+     * @throws FfmpegException
+     * @throws SerializerException
+     * @throws DomainException
+     */
+    public function getPreviewImageFile(VideoFile $videoFile, AdapterFile $file): ImageFile
+    {
+        /** @var ImageFile $imageFile */
+        $imageFile = $this->imageFactory->createAndProcessFromFile(
+            file: $this->ffmpegService->getFileThumbnail($file, self::getThumbnailPosition($videoFile)),
+            assetLicence: $videoFile->getLicence(),
+            generatedBySystem: true
+        );
+
+        return $this->originImageProvider->getOriginImage($imageFile);
+    }
+
+    /**
      * @param VideoFile $assetFile
      *
      * @throws SerializerException|FfmpegException
@@ -85,23 +102,6 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
         if ($originAsset) {
             throw new DuplicateAssetFileException($originAsset, $assetFile);
         }
-    }
-
-    /**
-     * @throws FfmpegException
-     * @throws SerializerException
-     * @throws DomainException
-     */
-    private function getPreviewImageFile(VideoFile $videoFile, AdapterFile $file): ImageFile
-    {
-        /** @var ImageFile $imageFile */
-        $imageFile = $this->imageFactory->createAndProcessFromFile(
-            file: $this->ffmpegService->getFileThumbnail($file, self::getThumbnailPosition($videoFile)),
-            assetLicence: $videoFile->getLicence(),
-            generatedBySystem: true
-        );
-
-        return $this->originImageProvider->getOriginImage($imageFile);
     }
 
     private function getThumbnailPosition(VideoFile $file): int

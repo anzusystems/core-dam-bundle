@@ -22,6 +22,14 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
     #[Serialize]
     protected AssetMetadataAdmDetailDto $assetMetadata;
 
+    public function __construct()
+    {
+        parent::__construct();
+        $this->setImageAttributes(new ImageAttributesAdmDto());
+        $this->setMetadata(new AssetFileMetadataAdmDetailDto());
+        $this->setAssetMetadata(new AssetMetadataAdmDetailDto());
+    }
+
     public static function getInstance(ImageFile $image): static
     {
         /** @psalm-var ImageFileAdmDetailDto $parent */

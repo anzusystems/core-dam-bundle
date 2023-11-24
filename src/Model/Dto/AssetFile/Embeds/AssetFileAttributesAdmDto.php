@@ -20,18 +20,24 @@ final class AssetFileAttributesAdmDto
     private AssetFileFailedType $failReason;
 
     #[Serialize]
-    private string $mimeType;
+    private string $mimeType = '';
 
     #[Serialize]
-    private int $size;
+    private int $size = 0;
 
     #[Serialize]
-    private string $originFileName;
+    private string $originFileName = '';
 
     #[Serialize]
     #[Assert\Url]
     #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $originUrl = null;
+
+    public function __construct()
+    {
+        $this->setStatus(AssetFileProcessStatus::Default);
+        $this->setFailReason(AssetFileFailedType::Default);
+    }
 
     public static function getInstance(AssetFileAttributes $assetFileAttributes): self
     {

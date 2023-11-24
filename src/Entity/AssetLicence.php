@@ -57,10 +57,10 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     /**
      * External system licence ID (e.g. BlogId)
      */
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    private string $extId;
+    private ?string $extId;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
@@ -76,7 +76,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     {
         $this->setName('');
         $this->setExtSystem(new ExtSystem());
-        $this->setExtId('');
+        $this->setExtId(null);
         $this->setUsers(new ArrayCollection());
         $this->setLimitedFiles(false);
     }
@@ -110,12 +110,12 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         return $this;
     }
 
-    public function getExtId(): string
+    public function getExtId(): ?string
     {
         return $this->extId;
     }
 
-    public function setExtId(string $extId): self
+    public function setExtId(?string $extId): self
     {
         $this->extId = $extId;
 

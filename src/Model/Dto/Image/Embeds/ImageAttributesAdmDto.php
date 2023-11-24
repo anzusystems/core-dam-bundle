@@ -10,25 +10,25 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 final class ImageAttributesAdmDto
 {
     #[Serialize]
-    private int $ratioWidth;
+    private int $ratioWidth = 0;
 
     #[Serialize]
-    private int $ratioHeight;
+    private int $ratioHeight = 0;
 
     #[Serialize]
-    private int $width;
+    private int $width = 0;
 
     #[Serialize]
-    private int $height;
+    private int $height = 0;
 
     #[Serialize]
-    private int $rotation;
+    private int $rotation = 0;
 
     #[Serialize]
-    private string $mostDominantColor;
+    private string $mostDominantColor = '';
 
     #[Serialize]
-    private bool $animated;
+    private bool $animated = false;
 
     public static function getInstance(ImageAttributes $attributes): self
     {

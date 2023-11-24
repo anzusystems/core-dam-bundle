@@ -55,6 +55,18 @@ abstract class AbstractFilesystem extends BaseFilesystem
         return $this;
     }
 
+    public function has(string $location): bool
+    {
+        $this->ensureFileFromFallback($location);
+
+        return parent::has($location);
+    }
+
+    public function hasWithoutFallback(string $location): bool
+    {
+        return parent::has($location);
+    }
+
     /**
      * @throws FilesystemException
      */
@@ -64,11 +76,11 @@ abstract class AbstractFilesystem extends BaseFilesystem
             return;
         }
 
-        if ($this->has($location)) {
+        if ($this->hasWithoutFallback($location)) {
             return;
         }
 
-        if ($this->fallbackStorage && $this->fallbackStorage->has($location)) {
+        if ($this->fallbackStorage && $this->fallbackStorage->hasWithoutFallback($location)) {
             $this->writeStream(
                 $location,
                 $this->fallbackStorage->readStream($location)

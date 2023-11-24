@@ -24,6 +24,16 @@ final readonly class OriginStorage implements ValueObjectInterface
         );
     }
 
+    public static function fromString(string $value): self
+    {
+        $parts = explode('|', $value, 3);
+
+        return new self(
+            $parts[0] ?? '',
+            $parts[1] ?? '',
+        );
+    }
+
     public function getStorageName(): string
     {
         return $this->storageName;

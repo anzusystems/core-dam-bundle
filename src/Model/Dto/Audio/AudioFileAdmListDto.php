@@ -7,39 +7,26 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Audio;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AudioLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
-class AudioFileAdmListDto extends AbstractEntityDto
+class AudioFileAdmListDto extends AbstractAssetFileAdmDto
 {
     protected string $resourceName = AudioFile::class;
-    protected AudioFile $audio;
 
-    #[Serialize]
-    protected AssetFileAttributesAdmDto $fileAttributes;
+    #[Serialize(serializedName: 'id', handler: EntityIdHandler::class)]
+    protected AudioFile $audio;
 
     public static function getInstance(AudioFile $audioFile): static
     {
         /** @psalm-var AudioFileAdmListDto $parent */
-        $parent = parent::getBaseInstance($audioFile);
+        $parent = parent::getAssetFileBaseInstance($audioFile);
 
         return $parent
-            ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($audioFile->getAssetAttributes()))
             ->setAudio($audioFile);
-    }
-
-    public function getFileAttributes(): AssetFileAttributesAdmDto
-    {
-        return $this->fileAttributes;
-    }
-
-    public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): self
-    {
-        $this->fileAttributes = $fileAttributes;
-
-        return $this;
     }
 
     public function getAudio(): AudioFile

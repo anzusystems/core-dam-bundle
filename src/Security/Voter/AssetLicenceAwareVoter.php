@@ -12,10 +12,13 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
 /**
  * Subject for these ACLs must be defined otherwise access will be revoked. Subject must implement AssetLicenceInterface.
+ *
+ * @template-extends AbstractVoter<string, AssetLicenceInterface>
  */
 final class AssetLicenceAwareVoter extends AbstractVoter
 {
     /**
+     * @param AssetLicenceInterface $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool

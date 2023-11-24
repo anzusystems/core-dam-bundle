@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\DependencyInjection;
 
 use AnzuSystems\CoreDamBundle\AnzuSystemsCoreDamBundle;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
+use AnzuSystems\CoreDamBundle\Doctrine\Type\BigIntType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\ColorType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginExternalProviderType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginStorageType;
@@ -32,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistribution
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use Doctrine\DBAL\Types\Types;
 use Exception;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
 use Symfony\Component\Config\FileLocator;
@@ -55,6 +57,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
             'dbal' => [
                 'types' => [
                     ColorType::NAME => ColorType::class,
+                    Types::BIGINT => BigIntType::class,
                     OriginExternalProviderType::NAME => OriginExternalProviderType::class,
                     OriginStorageType::NAME => OriginStorageType::class,
                 ],

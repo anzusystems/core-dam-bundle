@@ -12,10 +12,13 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
 /**
  * Only admins to ExtSystem subject can access all assets under the system.
+ *
+ * @template-extends AbstractVoter<string, ExtSystem>
  */
 final class AssetExtSystemAdminVoter extends AbstractVoter
 {
     /**
+     * @param ExtSystem $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
