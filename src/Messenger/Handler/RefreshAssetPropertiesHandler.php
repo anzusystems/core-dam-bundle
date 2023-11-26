@@ -41,7 +41,7 @@ final class RefreshAssetPropertiesHandler
 
         try {
             $this->manager->beginTransaction();
-            $this->manager->updateExisting($asset);
+            $this->manager->updateExisting(asset: $asset, trackModification: false);
             $this->indexManager->index($asset);
             $this->manager->commit();
         } catch (Throwable $e) {
