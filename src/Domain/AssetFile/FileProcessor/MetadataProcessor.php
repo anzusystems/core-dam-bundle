@@ -14,14 +14,14 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
-final class MetadataProcessor
+final readonly class MetadataProcessor
 {
     public function __construct(
-        private readonly AssetMetadataProcessor $assetMetadataProvider,
-        private readonly AssetMetadataAutocomplete $assetMetadataAutocomplete,
-        private readonly AssetFileEventDispatcher $dispatcher,
-        private readonly AssetFileManager $assetFileManager,
-        private readonly ResourceLocker $resourceLocker,
+        private AssetMetadataProcessor $assetMetadataProvider,
+        private AssetMetadataAutocomplete $assetMetadataAutocomplete,
+        private AssetFileEventDispatcher $dispatcher,
+        private AssetFileManager $assetFileManager,
+        private ResourceLocker $resourceLocker,
     ) {
     }
 
@@ -38,7 +38,10 @@ final class MetadataProcessor
             $this->assetMetadataAutocomplete->autocompleteMetadata($assetFile);
         }
 
-        $this->assetFileManager->updateExisting($assetFile);
+        $this->assetFileManager->updateExisting(
+            assetFile: $assetFile,
+            trackModification: false
+        );
         $this->resourceLocker->unLock(AssetMetadataProcessor::DATA_SUGGESTER_LOCK_NAME);
         $this->dispatcher->dispatchMetadataProcessed($assetFile);
 

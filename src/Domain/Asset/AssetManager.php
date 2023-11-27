@@ -41,9 +41,11 @@ class AssetManager extends AbstractManager
     /**
      * @throws NonUniqueResultException
      */
-    public function updateExisting(Asset $asset, bool $flush = true): Asset
+    public function updateExisting(Asset $asset, bool $flush = true, bool $trackModification = true): Asset
     {
-        $this->trackModification($asset);
+        if ($trackModification) {
+            $this->trackModification($asset);
+        }
         $this->propertiesRefresher->refreshProperties($asset);
         $this->flush($flush);
 

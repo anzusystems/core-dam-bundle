@@ -38,9 +38,11 @@ class AssetFileManager extends AbstractManager
      *
      * @return T
      */
-    public function updateExisting(AssetFile $assetFile, bool $flush = true): AssetFile
+    public function updateExisting(AssetFile $assetFile, bool $flush = true, bool $trackModification = true): AssetFile
     {
-        $this->trackModification($assetFile);
+        if ($trackModification) {
+            $this->trackModification($assetFile);
+        }
         $this->flush($flush);
 
         return $assetFile;

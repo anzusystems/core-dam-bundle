@@ -43,7 +43,11 @@ final class AssetFileStatusManager extends AssetFileManager
      */
     public function toStored(AssetFile $assetFile): AssetFile
     {
-        return $this->changeTransition($assetFile, AssetFileProcessStatus::Stored);
+        return $this->changeTransition(
+            assetFile: $assetFile,
+            status: AssetFileProcessStatus::Stored,
+            trackModification: false
+        );
     }
 
     /**
@@ -59,7 +63,11 @@ final class AssetFileStatusManager extends AssetFileManager
      */
     public function toProcessed(AssetFile $assetFile): AssetFile
     {
-        return $this->changeTransition($assetFile, AssetFileProcessStatus::Processed);
+        return $this->changeTransition(
+            assetFile: $assetFile,
+            status: AssetFileProcessStatus::Processed,
+            trackModification: false
+        );
     }
 
     /**
@@ -90,15 +98,15 @@ final class AssetFileStatusManager extends AssetFileManager
         AssetFile $assetFile,
         AssetFileProcessStatus $status,
         ?AssetFileFailedType $failedType = null,
-        bool $flush = true
+        bool $flush = true,
+        bool $trackModification = true
     ): AssetFile {
         $this->validateTransition($assetFile, $status);
         $assetFile->getAssetAttributes()
             ->setStatus($status)
-            ->setFailReason($failedType ?? AssetFileFailedType::None)
-        ;
+            ->setFailReason($failedType ?? AssetFileFailedType::None);
 
-        return $this->updateExisting($assetFile);
+        return $this->updateExisting($assetFile, $flush, $trackModification);
     }
 
     /**
@@ -111,7 +119,7 @@ final class AssetFileStatusManager extends AssetFileManager
             AssetFileProcessStatus::Uploading => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Uploaded],
             AssetFileProcessStatus::Uploaded => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Stored, AssetFileProcessStatus::Duplicate],
             AssetFileProcessStatus::Stored => [AssetFileProcessStatus::Failed, AssetFileProcessStatus::Processed, AssetFileProcessStatus::Duplicate],
-            AssetFileProcessStatus::Duplicate => [AssetFileProcessStatus::Failed],
+            AssetFileProcessStatus::Duplicate,
             AssetFileProcessStatus::Processed => [AssetFileProcessStatus::Failed],
             AssetFileProcessStatus::Failed => [],
         };
