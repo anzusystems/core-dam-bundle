@@ -9,39 +9,39 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetSlotFlags;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileRouteLinksHandler;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 #[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
-#[ORM\UniqueConstraint(name: 'UNIQ_asset_file_id', fields: ['assetFileId'])]
 class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
 
+    #[ORM\OneToOne(mappedBy: 'route', targetEntity: AssetFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    protected AssetFile $assetFile;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
+    #[Serialize]
     private string $path;
 
     #[ORM\Column(type: Types::STRING, length: 128)]
+    #[Serialize]
     private string $slug;
-
-    #[ORM\Column(type: Types::BOOLEAN)]
-    private bool $active;
-
-    #[ORM\Column(type: Types::STRING, length: 36)]
-    private string $assetFileId;
 
     public function __construct()
     {
         $this->setPath('');
         $this->setSlug('');
-        $this->setActive(true);
-        $this->setAssetFileId('');
     }
 
     public function getPath(): string
@@ -52,6 +52,7 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setPath(string $path): self
     {
         $this->path = $path;
+
         return $this;
     }
 
@@ -63,28 +64,25 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
+
         return $this;
     }
 
-    public function isActive(): bool
+    public function getAssetFile(): AssetFile
     {
-        return $this->active;
+        return $this->assetFile;
     }
 
-    public function setActive(bool $active): self
+    public function setAssetFile(AssetFile $assetFile): self
     {
-        $this->active = $active;
+        $this->assetFile = $assetFile;
+
         return $this;
     }
 
-    public function getAssetFileId(): string
+    #[Serialize(handler: AssetFileRouteLinksHandler::class)]
+    public function getLinks(): self
     {
-        return $this->assetFileId;
-    }
-
-    public function setAssetFileId(string $assetFileId): self
-    {
-        $this->assetFileId = $assetFileId;
         return $this;
     }
 }

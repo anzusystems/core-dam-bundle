@@ -256,27 +256,22 @@ final class DocumentController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
 
-        $this->routeFacade->makePublic($document, $dto);
-
         return $this->okResponse(
-            ['todo']
-//            AudioFileAdmDetailDto::getInstance($this->routeFacade->makePublic($documentFile, $dto)),
+            $this->routeFacade->makePublic($document, $dto)
         );
     }
 
     #[Route(
-        path: '/{audio}/make-private',
+        path: '/{document}/make-private',
         name: 'make_private',
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
-    public function makePrivate(DocumentFile $documentFile): JsonResponse
+    public function makePrivate(DocumentFile $document): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $documentFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+        $this->routeFacade->makePrivate($document);
 
-        return $this->okResponse(
-            ['todo']
-//            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePrivate($audio)),
-        );
+        return $this->noContentResponse();
     }
 }

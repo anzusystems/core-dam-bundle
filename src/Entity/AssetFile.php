@@ -54,6 +54,9 @@ abstract class AssetFile implements
     #[ORM\OneToOne(targetEntity: AssetFileMetadata::class)]
     protected AssetFileMetadata $metadata;
 
+    #[ORM\OneToOne(inversedBy: 'assetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    protected ?AssetFileRoute $route;
+
     #[ORM\Embedded(class: AssetFileAttributes::class)]
     protected AssetFileAttributes $assetAttributes;
 
@@ -70,6 +73,18 @@ abstract class AssetFile implements
         $this->setModifiedAt(App::getAppDate());
         $this->setChunks(new ArrayCollection());
         $this->setFlags(new AssetFileFlags());
+        $this->setRoute(null);
+    }
+
+    public function getRoute(): ?AssetFileRoute
+    {
+        return $this->route;
+    }
+
+    public function setRoute(?AssetFileRoute $route): self
+    {
+        $this->route = $route;
+        return $this;
     }
 
     public function __toString(): string

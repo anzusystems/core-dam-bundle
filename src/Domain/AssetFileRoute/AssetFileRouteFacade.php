@@ -10,57 +10,77 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Throwable;
 
 final class AssetFileRouteFacade extends AbstractManager
 {
     public function __construct(
-        private readonly SluggerInterface $slugger,
         private readonly AssetFileRouteRepository $assetFileRouteRepository,
         private readonly AssetFileRouteFactory $routeFactory,
         private readonly AssetFileRouteManager $assetFileRouteManager,
+        private readonly AssetFileRouteStorageManager $assetFileRouteStorageManager,
     ) {
     }
 
-    public function makePublic(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): void
+    // todo cache purge
+
+    public function makePublic(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): AssetFile
     {
         $this->validateProcessState($assetFile);
-        $this->ensureSlug($assetFile, $dto);
         $route = $this->assetFileRouteRepository->findByAssetId((string) $assetFile->getId());
 
         if ($route) {
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
-        $route = $this->routeFactory->createFromDto($assetFile, $dto);
-        dump($route);
+        try {
+            $this->assetFileRouteManager->beginTransaction();
+            $route = $this->routeFactory->createFromDto($assetFile, $dto);
+            $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);
+            $this->assetFileRouteManager->flush();
+            $this->assetFileRouteManager->commit();
+        } catch (Throwable $e) {
+            $this->entityManager->rollback();
+
+            throw new RuntimeException('asset_route_create_failed', 0, $e);
+        }
+
+        return $assetFile;
+    }
+
+    public function makePrivate(AssetFile $assetFile): AssetFile
+    {
+        $route = $this->assetFileRouteRepository->findByAssetId((string) $assetFile->getId());
+        if (null === $route) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
+
+        try {
+            $this->assetFileRouteManager->beginTransaction();
+            $assetFile->setRoute(null);
+            $this->assetFileRouteManager->delete($route);
+
+            $this->assetFileRouteStorageManager->deleteRouteFile($assetFile, $route);
+            $this->assetFileRouteManager->flush();
+            $this->assetFileRouteManager->commit();
+        } catch (Throwable $e) {
+            $this->entityManager->rollback();
+
+            throw new RuntimeException('asset_route_delete_failed', 0, $e);
+        }
+
+        return $assetFile;
     }
 
     private function validateProcessState(AssetFile $assetFile): void
     {
         if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
-            return;
-        }
-
-        throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
-    }
-
-    private function ensureSlug(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): void
-    {
-        if (empty($dto->getSlug())) {
-            $dto->setSlug(
-                $this->slugger->slug($assetFile->getAsset()->getTexts()->getDisplayTitle())->toString()
-            );
-        }
-    }
-
-    private function validateTransition(AssetFile $assetFile, bool $publicExpected): void
-    {
-        if ($assetFile->getAudioPublicLink()->isPublic() === $publicExpected) {
             return;
         }
 

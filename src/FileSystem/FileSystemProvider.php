@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\FileSystem;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
+use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRouteConfigurableInterface;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -86,10 +88,10 @@ final class FileSystemProvider
     /**
      * @throws InvalidArgumentException
      */
-    public function getPublicFilesystem(AudioFile $audioFile): AbstractFilesystem
+    public function getPublicFilesystem(AssetFile $assetFile): AbstractFilesystem
     {
-        $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($audioFile->getAsset());
-        if (false === ($extSystemConfig instanceof ExtSystemAudioTypeConfiguration)) {
+        $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset($assetFile->getAsset());
+        if (false === ($extSystemConfig instanceof AssetFileRouteConfigurableInterface)) {
             throw new InvalidArgumentException('Unsupported public storage');
         }
         $filesystem = $this->getFileSystemByStorageName($extSystemConfig->getPublicStorage());

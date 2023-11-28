@@ -30,6 +30,7 @@ final class AudioLinksHandler extends AbstractHandler
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
     {
+        dump('cc');
         if (null === $value) {
             return null;
         }
@@ -46,6 +47,8 @@ final class AudioLinksHandler extends AbstractHandler
         if ($value->getAudioPublicLink()->isPublic()) {
             $links[self::LINKS_TYPE] = $this->serializeImagePublicLink($value);
         }
+
+        dd($links);
 
         return $links;
     }
