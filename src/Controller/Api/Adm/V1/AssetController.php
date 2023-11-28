@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataBulkFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\AssetAdmElasticsearchDecorator;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
@@ -139,6 +140,18 @@ final class AssetController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
 
         return $this->okResponse(AssetAdmDetailDto::getInstance($asset));
+    }
+
+    /**
+     * Get one item.
+     */
+    #[Route(path: '/asset-file/{assetFile}', name: 'get_one_by_file', methods: [Request::METHOD_GET])]
+    #[OAResponse(AssetAdmDetailDto::class)]
+    public function getOneByAssetFile(AssetFile $assetFile): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile->getAsset());
+
+        return $this->okResponse(AssetAdmDetailDto::getInstance($assetFile->getAsset()));
     }
 
     /**
