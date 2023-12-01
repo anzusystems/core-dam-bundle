@@ -53,7 +53,6 @@ final class AudioFileAdmDetailDto extends AudioFileAdmListDto
     #[Serialize(handler: AudioLinksHandler::class)]
     public function getLinks(): AudioFile
     {
-        dump($this->audio);
         return $this->audio;
     }
 

@@ -30,7 +30,6 @@ final class AudioLinksHandler extends AbstractHandler
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
     {
-        dump('ccd');
         if (null === $value) {
             return null;
         }
