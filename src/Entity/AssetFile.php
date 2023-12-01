@@ -54,7 +54,7 @@ abstract class AssetFile implements
     #[ORM\OneToOne(targetEntity: AssetFileMetadata::class)]
     protected AssetFileMetadata $metadata;
 
-    #[ORM\OneToOne(inversedBy: 'assetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToOne(mappedBy: 'assetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     protected ?AssetFileRoute $route;
 
     #[ORM\Embedded(class: AssetFileAttributes::class)]

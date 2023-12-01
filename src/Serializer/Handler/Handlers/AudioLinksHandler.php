@@ -30,7 +30,7 @@ final class AudioLinksHandler extends AbstractHandler
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
     {
-        dump('cc');
+        dump('ccd');
         if (null === $value) {
             return null;
         }
@@ -48,7 +48,7 @@ final class AudioLinksHandler extends AbstractHandler
             $links[self::LINKS_TYPE] = $this->serializeImagePublicLink($value);
         }
 
-        dd($links);
+//        dd($links);
 
         return $links;
     }
@@ -73,10 +73,7 @@ final class AudioLinksHandler extends AbstractHandler
     {
         return [
             'type' => self::LINKS_TYPE,
-            'url' => $this->audioRouteGenerator->getFullUrl(
-                path: $audioFile->getAudioPublicLink()->getPath(),
-                extSlug: $audioFile->getExtSystem()->getSlug()
-            ),
+            'url' => $this->audioRouteGenerator->getFullUrl($audioFile),
         ];
     }
 }

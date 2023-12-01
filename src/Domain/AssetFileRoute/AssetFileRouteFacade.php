@@ -33,15 +33,17 @@ final class AssetFileRouteFacade extends AbstractManager
     public function makePublic(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): AssetFile
     {
         $this->validateProcessState($assetFile);
-        $route = $this->assetFileRouteRepository->findByAssetId((string) $assetFile->getId());
 
-        if ($route) {
+        if ($assetFile->getRoute()) {
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
         try {
             $this->assetFileRouteManager->beginTransaction();
             $route = $this->routeFactory->createFromDto($assetFile, $dto);
+            if ($assetFile instanceof AudioFile) {
+                $this->makeAudioPublicLegacy($assetFile, $route);
+            }
             $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);
             $this->assetFileRouteManager->flush();
             $this->assetFileRouteManager->commit();
@@ -56,17 +58,21 @@ final class AssetFileRouteFacade extends AbstractManager
 
     public function makePrivate(AssetFile $assetFile): AssetFile
     {
-        $route = $this->assetFileRouteRepository->findByAssetId((string) $assetFile->getId());
-        if (null === $route) {
+        if (null === $assetFile->getRoute()) {
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
         try {
             $this->assetFileRouteManager->beginTransaction();
-            $assetFile->setRoute(null);
-            $this->assetFileRouteManager->delete($route);
+            $path = $assetFile->getRoute()->getPath();
 
-            $this->assetFileRouteStorageManager->deleteRouteFile($assetFile, $route);
+            $this->assetFileRouteManager->delete($assetFile->getRoute());
+
+            if ($assetFile instanceof AudioFile) {
+                $this->makeAudioPrivateLegacy($assetFile);
+            }
+
+            $this->assetFileRouteStorageManager->deleteRouteFile($assetFile, $path);
             $this->assetFileRouteManager->flush();
             $this->assetFileRouteManager->commit();
         } catch (Throwable $e) {
@@ -85,5 +91,23 @@ final class AssetFileRouteFacade extends AbstractManager
         }
 
         throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+    }
+
+    private function makeAudioPublicLegacy(AudioFile $audioFile, AssetFileRoute $route): void
+    {
+        $audioFile->getAudioPublicLink()
+            ->setSlug($route->getSlug())
+            ->setPath($route->getPath())
+            ->setPublic(true)
+        ;
+    }
+
+    private function makeAudioPrivateLegacy(AudioFile $audioFile): void
+    {
+        $audioFile->getAudioPublicLink()
+            ->setSlug('')
+            ->setPath('')
+            ->setPublic(false)
+        ;
     }
 }

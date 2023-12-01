@@ -52,12 +52,12 @@ final class AssetFileRouteStorageManager extends AbstractManager
     /**
      * @throws FilesystemException
      */
-    public function deleteRouteFile(AssetFile $assetFile, AssetFileRoute $route): void
+    public function deleteRouteFile(AssetFile $assetFile, string $path): void
     {
         $filesystem = $this->fileSystemProvider->getPublicFilesystem($assetFile);
 
-        if ($filesystem->has($route->getPath())) {
-            $filesystem->delete($route->getPath());
+        if ($filesystem->has($path)) {
+            $filesystem->delete($path);
         }
     }
 }

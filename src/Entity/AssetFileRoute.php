@@ -27,7 +27,8 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     use UserTrackingTrait;
     use TimeTrackingTrait;
 
-    #[ORM\OneToOne(mappedBy: 'route', targetEntity: AssetFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToOne(inversedBy: 'route', targetEntity: AssetFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinColumn(nullable: false)]
     protected AssetFile $assetFile;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
