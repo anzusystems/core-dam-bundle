@@ -18,7 +18,6 @@ final class AssetFileRouteRepository extends AbstractAnzuRepository
     {
         return $this->findOneBy([
             'uri.path' => $uri,
-            //            'mode' => $uri
         ]);
     }
 
@@ -27,21 +26,6 @@ final class AssetFileRouteRepository extends AbstractAnzuRepository
         return $this->findOneBy([
             'targetAssetFile' => $assetId,
             'uri.main' => true,
-        ]);
-    }
-
-    public function findOneMain(string $uri): ?AssetFileRoute
-    {
-        return $this->findOneBy([
-            'uri.path' => $uri,
-            'uri.main' => true,
-        ]);
-    }
-
-    public function findByAssetId(string $assetId): ?AssetFileRoute
-    {
-        return $this->findOneBy([
-            'assetFileId' => $assetId,
         ]);
     }
 

@@ -19,10 +19,6 @@ class RouteUri
     #[Serialize]
     private string $slug;
 
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    #[Serialize]
-    private ?string $schemeAndHost;
-
     #[ORM\Column(type: Types::BOOLEAN)]
     #[Serialize]
     private bool $main;
@@ -32,7 +28,6 @@ class RouteUri
         $this->setPath('');
         $this->setSlug('');
         $this->setMain(false);
-        $this->setSchemeAndHost(null);
     }
 
     public function getPath(): string
@@ -65,17 +60,6 @@ class RouteUri
     public function setMain(bool $main): self
     {
         $this->main = $main;
-        return $this;
-    }
-
-    public function getSchemeAndHost(): ?string
-    {
-        return $this->schemeAndHost;
-    }
-
-    public function setSchemeAndHost(?string $schemeAndHost): self
-    {
-        $this->schemeAndHost = $schemeAndHost;
         return $this;
     }
 }

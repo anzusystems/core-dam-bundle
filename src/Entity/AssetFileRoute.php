@@ -22,8 +22,9 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-//todo  UNIQ combination MAIN, PATH
 #[ORM\Entity(repositoryClass: AssetFileRouteRepository::class)]
+#[ORM\UniqueConstraint(name: 'UNIQ_uri_path', fields: ['uri_path'])]
+#[ORM\Index(fields: ['uri_main, target_asset_file'], name: 'IDQ_main_asset_file_id')]
 class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;

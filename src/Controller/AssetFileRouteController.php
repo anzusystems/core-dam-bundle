@@ -114,13 +114,9 @@ final class AssetFileRouteController extends AbstractImageController
 
     private function isDomainValid(AssetFileRoute $route): bool
     {
-        $routeUriSchemeAndHost = $route->getUri()->getSchemeAndHost();
-        if ($routeUriSchemeAndHost && $this->domainProvider->domainAndHostEquals($routeUriSchemeAndHost)) {
-            return true;
-        }
-
-        return null === $routeUriSchemeAndHost &&
-            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($route->getTargetAssetFile())
+        return $route->getUri()->isMain()
+            ? $this->domainProvider->isCurrentSchemeAndHostPublicDomain($route->getTargetAssetFile())
+            : $this->domainProvider->isCurrentSchemeAndHostRedirectDomain()
         ;
     }
 }

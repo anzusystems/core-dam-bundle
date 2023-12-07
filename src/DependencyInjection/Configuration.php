@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\AssetExternalProviderConfigura
 use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionSettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionConfiguration;
@@ -185,6 +184,9 @@ class Configuration implements ConfigurationInterface
             ->addDefaultsIfNotSet()
             ->children()
                 ->scalarNode(SettingsConfiguration::API_DOMAIN_KEY)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(SettingsConfiguration::REDIRECT_DOMAIN_KEY)
                     ->isRequired()
                 ->end()
                 ->arrayNode(SettingsConfiguration::NOTIFICATIONS)

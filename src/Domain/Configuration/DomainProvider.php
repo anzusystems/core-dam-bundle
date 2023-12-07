@@ -11,6 +11,7 @@ readonly class DomainProvider
     public function __construct(
         private RequestStack $requestStack,
         private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private string $redirectDomain,
     ) {
     }
 
@@ -22,6 +23,11 @@ readonly class DomainProvider
     public function domainAndHostEquals(string $schemeAndHost): bool
     {
         return $schemeAndHost === $this->getSchemeAndHost($schemeAndHost);
+    }
+
+    public function isCurrentSchemeAndHostRedirectDomain(): bool
+    {
+        return $this->domainAndHostEquals($this->redirectDomain);
     }
 
     public function isCurrentSchemeAndHostPublicDomain(AssetFile $assetFile): bool
