@@ -14,10 +14,34 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
  */
 final class AssetFileRouteRepository extends AbstractAnzuRepository
 {
+    public function findOneByUriPath(string $uri): ?AssetFileRoute
+    {
+        return $this->findOneBy([
+            'uri.path' => $uri,
+            //            'mode' => $uri
+        ]);
+    }
+
+    public function findMainByAssetFile(string $assetId): ?AssetFileRoute
+    {
+        return $this->findOneBy([
+            'targetAssetFile' => $assetId,
+            'uri.main' => true,
+        ]);
+    }
+
+    public function findOneMain(string $uri): ?AssetFileRoute
+    {
+        return $this->findOneBy([
+            'uri.path' => $uri,
+            'uri.main' => true,
+        ]);
+    }
+
     public function findByAssetId(string $assetId): ?AssetFileRoute
     {
         return $this->findOneBy([
-            'assetFileId' => $assetId
+            'assetFileId' => $assetId,
         ]);
     }
 

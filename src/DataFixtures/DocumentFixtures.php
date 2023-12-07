@@ -22,6 +22,7 @@ final class DocumentFixtures extends AbstractAssetFileFixtures
 {
     public const DOC_ID_1 = 'ac967cf4-0ea9-499e-be2a-13bf0b63eabe';
     public const DOC_ID_2 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabc';
+    public const DOC_ID_3 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabd';
 
     public function __construct(
         private readonly DocumentManager $documentManager,
@@ -51,11 +52,10 @@ final class DocumentFixtures extends AbstractAssetFileFixtures
 
     public function load(ProgressBar $progressBar): void
     {
-        /** @var DocumentFile $video */
-        foreach ($progressBar->iterate($this->getData()) as $video) {
-            $video = $this->documentManager->create($video);
-
-            $this->addToRegistry($video, (int) $video->getId());
+        /** @var DocumentFile $document */
+        foreach ($progressBar->iterate($this->getData()) as $document) {
+            $document = $this->documentManager->create($document);
+            $this->addToRegistry($document, (int) $document->getId());
         }
     }
 
@@ -91,6 +91,22 @@ final class DocumentFixtures extends AbstractAssetFileFixtures
         $asset->getAssetFlags()->setDescribed(true);
         $asset->getMetadata()->setCustomData([
             'title' => 'HTML',
+        ]);
+        $document->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($document)->storeAndProcess($document, $file);
+
+        yield $document;
+
+        $file = $this->getFile($fileSystem, 'blank_pdf.pdf');
+        $document = $this->documentFactory->createFromFile(
+            $file,
+            $licence,
+            self::DOC_ID_3
+        );
+        $asset = $document->getAsset();
+        $asset->getAssetFlags()->setDescribed(true);
+        $asset->getMetadata()->setCustomData([
+            'title' => 'I am blank PDF',
         ]);
         $document->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($document)->storeAndProcess($document, $file);

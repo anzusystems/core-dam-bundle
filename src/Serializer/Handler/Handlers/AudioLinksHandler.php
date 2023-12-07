@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
-use AnzuSystems\CoreDamBundle\Cache\AudioRouteGenerator;
+use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -20,12 +22,12 @@ final class AudioLinksHandler extends AbstractHandler
 
     public function __construct(
         private readonly ImageLinksHandler $imageLinksHandler,
-        private readonly AudioRouteGenerator $audioRouteGenerator,
+        private readonly AssetFileRouteGenerator $audioRouteGenerator,
+        private readonly AssetFileRouteRepository $assetFileRouteRepository,
     ) {
     }
 
     /**
-     * @throws NonUniqueResultException
      * @throws SerializerException
      */
     public function serialize(mixed $value, Metadata $metadata): mixed
@@ -43,11 +45,11 @@ final class AudioLinksHandler extends AbstractHandler
         if ($imageFile) {
             $links = $this->imageLinksHandler->getImageLinkUrl($imageFile, [ImageLinksHandler::TAG_LIST, ImageLinksHandler::TAG_TABLE]);
         }
-        if ($value->getAudioPublicLink()->isPublic()) {
-            $links[self::LINKS_TYPE] = $this->serializeImagePublicLink($value);
-        }
 
-//        dd($links);
+        $route = $this->assetFileRouteRepository->findMainByAssetFile((string) $value->getId());
+        if ($route) {
+            $links[self::LINKS_TYPE] = $this->serializeAudioPublicLink($route);
+        }
 
         return $links;
     }
@@ -68,11 +70,11 @@ final class AudioLinksHandler extends AbstractHandler
         return null;
     }
 
-    private function serializeImagePublicLink(AudioFile $audioFile): array
+    private function serializeAudioPublicLink(AssetFileRoute $assetFileRoute): array
     {
         return [
             'type' => self::LINKS_TYPE,
-            'url' => $this->audioRouteGenerator->getFullUrl($audioFile),
+            'url' => $this->audioRouteGenerator->getFullUrl($assetFileRoute),
         ];
     }
 }

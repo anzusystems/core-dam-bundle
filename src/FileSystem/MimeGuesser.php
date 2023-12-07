@@ -56,20 +56,4 @@ final readonly class MimeGuesser
 
         return sha1_file($filePath, false);
     }
-
-    public static function partialChecksumFromPath(string $filePath, int $length): string
-    {
-        if (false === file_exists($filePath)) {
-            throw new RuntimeException(sprintf('Failed to open file with path (%s(', $filePath));
-        }
-
-        $file = fopen($filePath, 'rb');
-        $size = filesize($filePath);
-        $content = fread(
-            $file,
-            $length < $size ? $length : $size
-        );
-
-        return sha1($content, false);
-    }
 }

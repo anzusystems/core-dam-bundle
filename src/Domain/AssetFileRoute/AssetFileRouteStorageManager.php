@@ -8,18 +8,8 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
-use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
-use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
-use Google\Service\Compute\Route;
 use League\Flysystem\FilesystemException;
-use Symfony\Component\String\Slugger\SluggerInterface;
 
 final class AssetFileRouteStorageManager extends AbstractManager
 {
@@ -35,12 +25,12 @@ final class AssetFileRouteStorageManager extends AbstractManager
     {
         $publicFilesystem = $this->fileSystemProvider->getPublicFilesystem($assetFile);
 
-        if ($publicFilesystem->has($route->getPath())) {
-            $publicFilesystem->delete($route->getPath());
+        if ($publicFilesystem->has($route->getUri()->getPath())) {
+            $publicFilesystem->delete($route->getUri()->getPath());
         }
 
         $publicFilesystem->writeStream(
-            location: $route->getPath(),
+            location: $route->getUri()->getPath(),
             contents: $this->fileSystemProvider->getFilesystemByStorable(
                 storable: $assetFile
             )->readStream(

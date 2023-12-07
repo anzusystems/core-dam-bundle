@@ -30,7 +30,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;

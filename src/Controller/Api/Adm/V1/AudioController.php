@@ -31,7 +31,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExt
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -256,9 +255,10 @@ final class AudioController extends AbstractApiController
     public function makePublic(AudioFile $audio, #[SerializeParam] AssetFilePublicRouteAdmDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+        $this->assetFileRouteFacade->makePublic($audio, $dto);
 
         return $this->okResponse(
-            AudioFileAdmDetailDto::getInstance($this->assetFileRouteFacade->makePublic($audio, $dto)),
+            AudioFileAdmDetailDto::getInstance($audio),
         );
     }
 
@@ -271,9 +271,10 @@ final class AudioController extends AbstractApiController
     public function makePrivate(AudioFile $audio): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+        $this->assetFileRouteFacade->makePrivate($audio);
 
         return $this->okResponse(
-            AudioFileAdmDetailDto::getInstance($this->assetFileRouteFacade->makePrivate($audio)),
+            AudioFileAdmDetailDto::getInstance($audio),
         );
     }
 }

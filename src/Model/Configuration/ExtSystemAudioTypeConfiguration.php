@@ -6,7 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfiguration;
 
-final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfiguration implements AssetFileRouteConfigurableInterface
+final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfiguration implements
+    AssetFileRouteConfigurableInterface,
+    AssetFileRoutePublicStorageInterface
 {
     public const PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
     public const PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
@@ -36,8 +38,7 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
             )
             ->setPublicDomainName(
                 $config[self::PUBLIC_DOMAIN_NAME] ?? ''
-            )
-        ;
+            );
     }
 
     public function getPublicDomainName(): string

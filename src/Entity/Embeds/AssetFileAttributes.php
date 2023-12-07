@@ -29,10 +29,10 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $originFileName;
 
-    #[ORM\Column(type: Types::STRING, length: 32)]
+    #[ORM\Column(type: Types::STRING, length: 127)]
     private string $mimeType;
 
-    #[ORM\Column(type: Types::STRING, length: 32)]
+    #[ORM\Column(type: Types::STRING, length: 127)]
     private string $convertToMime;
 
     #[ORM\Column(type: Types::BIGINT)]

@@ -5,20 +5,17 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFileRoute;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
+use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
-use Google\Service\Compute\Route;
-use League\Flysystem\FilesystemException;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 final class AssetFileRouteFactory extends AbstractManager
@@ -31,33 +28,42 @@ final class AssetFileRouteFactory extends AbstractManager
         private readonly SluggerInterface $slugger,
         private readonly AssetFileRouteManager $routeManager,
         private readonly FileSystemProvider $fileSystemProvider,
+        private readonly AssetFileRouteRepository $assetFileRouteRepository,
     ) {
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function createFromDto(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): AssetFileRoute
     {
+        $mainRoute = $this->assetFileRouteRepository->findMainByAssetFile((string) $assetFile->getId());
+        if ($mainRoute) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
+
         $slug = $this->createSlug($assetFile, $dto);
+        $path = $this->createPath($assetFile, $slug);
+
+        $existingRoute = $this->assetFileRouteRepository->findOneByUriPath($path);
+        if ($existingRoute) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
+        }
 
         $route = (new AssetFileRoute())
-            ->setSlug($slug)
-            ->setPath($this->createPath($assetFile, $slug))
+            ->setUri(
+                (new RouteUri())
+                    ->setSlug($slug)
+                    ->setMain(true)
+                    ->setPath($path)
+            )
+            ->setStatus(RouteStatus::Active)
+            ->setMode($this->getMode($assetFile))
         ;
-        $assetFile->setRoute($route);
-        $route->setAssetFile($assetFile);
+        $route->setTargetAssetFile($assetFile);
+        $assetFile->getRoutes()->add($route);
 
         return $this->routeManager->create($route, false);
-    }
-
-    private function createSlug(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): string
-    {
-        return empty($dto->getSlug())
-            ? $this->slugger->slug(
-                empty($assetFile->getAsset()->getTexts()->getDisplayTitle())
-                    ? $assetFile->getId()
-                    : $assetFile->getAsset()->getTexts()->getDisplayTitle(),
-            )->toString()
-            : $dto->getSlug()
-        ;
     }
 
     private function createPath(AssetFile $assetFile, string $slug): string
@@ -68,5 +74,26 @@ final class AssetFileRouteFactory extends AbstractManager
             $slug,
             $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType())
         );
+    }
+
+    private function createSlug(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): string
+    {
+        return empty($dto->getSlug())
+            ? $this->slugger->slug(
+                empty($assetFile->getAsset()->getTexts()->getDisplayTitle())
+                    ? (string) $assetFile->getId()
+                    : $assetFile->getAsset()->getTexts()->getDisplayTitle(),
+            )->toString()
+            : $dto->getSlug()
+        ;
+    }
+
+    private function getMode(AssetFile $assetFile): RouteMode
+    {
+        if ($assetFile instanceof AudioFile) {
+            return RouteMode::StorageCopy;
+        }
+
+        return RouteMode::Direct;
     }
 }

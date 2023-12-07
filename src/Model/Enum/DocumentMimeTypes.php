@@ -32,6 +32,7 @@ enum DocumentMimeTypes: string implements EnumInterface
         self::MICROSOFT_OPEN_XML,
         self::TEXT_XML,
         self::APPLICATION_XML,
+        self::SVG,
     ];
 
     private const MIME_PDF = 'application/pdf';
@@ -39,6 +40,7 @@ enum DocumentMimeTypes: string implements EnumInterface
     private const MIME_X_ABIWORD = 'application/x-abiword';
     private const AMAZON_EBOOK = 'application/vnd.amazon.ebook';
     private const TEXT_CSV = 'text/csv';
+    private const SVG = 'image/svg+xml';
     private const MIME_MSWORD = 'application/msword';
     private const MIME_OPENXML = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
     private const MIME_EPUB = 'application/epub+zip';
@@ -62,6 +64,7 @@ enum DocumentMimeTypes: string implements EnumInterface
     case MimeXAbiWord = self::MIME_X_ABIWORD;
     case AmazonEbook = self::AMAZON_EBOOK;
     case TextCsv = self::TEXT_CSV;
+    case Svg = self::SVG;
     case MimeMSWord = self::MIME_MSWORD;
     case MimeOpenXml = self::MIME_OPENXML;
     case MimeEpub = self::MIME_EPUB;

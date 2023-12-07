@@ -10,74 +10,90 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetSlotFlags;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AudioAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
-use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
+use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileRouteLinksHandler;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-#[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
+//todo  UNIQ combination MAIN, PATH
+#[ORM\Entity(repositoryClass: AssetFileRouteRepository::class)]
 class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
 
-    #[ORM\OneToOne(inversedBy: 'route', targetEntity: AssetFile::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\ManyToOne(targetEntity: AssetFile::class, fetch: App::DOCTRINE_EXTRA_LAZY, inversedBy: 'routes')]
     #[ORM\JoinColumn(nullable: false)]
-    protected AssetFile $assetFile;
+    private AssetFile $targetAssetFile;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Embedded(class: RouteUri::class)]
     #[Serialize]
-    private string $path;
+    private RouteUri $uri;
 
-    #[ORM\Column(type: Types::STRING, length: 128)]
+    #[ORM\Column(enumType: RouteStatus::class)]
     #[Serialize]
-    private string $slug;
+    private RouteStatus $status;
+
+    #[ORM\Column(enumType: RouteMode::class)]
+    #[Serialize]
+    private RouteMode $mode;
 
     public function __construct()
     {
-        $this->setPath('');
-        $this->setSlug('');
+        $this->setUri(new RouteUri());
+        $this->setStatus(RouteStatus::Default);
+        $this->setMode(RouteMode::Default);
     }
 
-    public function getPath(): string
+    public function getTargetAssetFile(): AssetFile
     {
-        return $this->path;
+        return $this->targetAssetFile;
     }
 
-    public function setPath(string $path): self
+    public function setTargetAssetFile(AssetFile $targetAssetFile): self
     {
-        $this->path = $path;
-
+        $this->targetAssetFile = $targetAssetFile;
         return $this;
     }
 
-    public function getSlug(): string
+    public function getUri(): RouteUri
     {
-        return $this->slug;
+        return $this->uri;
     }
 
-    public function setSlug(string $slug): self
+    public function setUri(RouteUri $uri): self
     {
-        $this->slug = $slug;
-
+        $this->uri = $uri;
         return $this;
     }
 
-    public function getAssetFile(): AssetFile
+    public function getStatus(): RouteStatus
     {
-        return $this->assetFile;
+        return $this->status;
     }
 
-    public function setAssetFile(AssetFile $assetFile): self
+    public function setStatus(RouteStatus $status): self
     {
-        $this->assetFile = $assetFile;
+        $this->status = $status;
+        return $this;
+    }
 
+    public function getMode(): RouteMode
+    {
+        return $this->mode;
+    }
+
+    public function setMode(RouteMode $mode): self
+    {
+        $this->mode = $mode;
         return $this;
     }
 

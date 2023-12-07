@@ -26,13 +26,13 @@ final class AllowListConfiguration
         private readonly array $domainNames,
         private readonly array $domainAllowMap,
         private readonly array $extSystemAllowListMap,
-        private readonly RequestStack $requestStack,
+        private readonly DomainProvider $domainProvider,
     ) {
     }
 
     public function getCacheConfiguration(?string $domainName = null): CacheConfiguration
     {
-        $domainName = $domainName ?? $this->getDomainName();
+        $domainName = $this->getDomainName($domainName);
         if (isset($this->domains[$domainName])) {
             return CacheConfiguration::getFromArrayConfiguration($this->domains[$domainName]);
         }
@@ -54,7 +54,7 @@ final class AllowListConfiguration
 
     public function getListByDomain(string $extSystemSlug, ?string $domain = null): CropAllowListConfiguration
     {
-        $schemeAndHost = $this->getSchemeAndHost($domain);
+        $schemeAndHost = $this->domainProvider->getSchemeAndHost($domain);
         $key = sprintf('%s_%s', $schemeAndHost, $extSystemSlug);
 
         if (isset(
@@ -83,11 +83,6 @@ final class AllowListConfiguration
         return $this->taggedListCache[$key] ?? [];
     }
 
-    public function getSchemeAndHost(?string $domain = null): string
-    {
-        return $domain ?? $this->requestStack->getMainRequest()?->getSchemeAndHttpHost() ?? '';
-    }
-
     private function buildTagListCache(string $allowListName, string $tag): void
     {
         $cacheRecord = [];
@@ -109,9 +104,9 @@ final class AllowListConfiguration
         return $allowListName . '_' . $tag;
     }
 
-    private function getDomainName(): string
+    private function getDomainName(?string $domainName = null): string
     {
-        $schemeAndHost = $this->getSchemeAndHost();
+        $schemeAndHost = $this->domainProvider->getSchemeAndHost($domainName);
 
         if (isset($this->domainNames[$schemeAndHost])) {
             return $this->domainNames[$schemeAndHost];

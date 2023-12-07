@@ -20,7 +20,7 @@ final class AssetFileRouteManager extends AbstractManager
 
     public function delete(AssetFileRoute $assetFileRoute, bool $flush = true): bool
     {
-        $assetFileRoute->getAssetFile()->setRoute(null);
+        $assetFileRoute->getTargetAssetFile()->getRoutes()->removeElement($assetFileRoute);
         $this->entityManager->remove($assetFileRoute);
         $this->flush($flush);
 
