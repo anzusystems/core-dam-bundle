@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\FileSystem;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
@@ -126,9 +127,21 @@ final class FileSystemProvider
             $storable->getAssetType(),
         );
 
-        return Chunk::class === ClassUtils::getRealClass($storable::class)
-            ? $extSystemConfig->getChunkStorageName()
-            : $extSystemConfig->getStorageName();
+        if (AssetFileRoute::class === ClassUtils::getRealClass($storable::class)) {
+            if ($extSystemConfig instanceof AssetFileRoutePublicStorageInterface) {
+                return $extSystemConfig->getPublicStorage();
+            }
+
+            throw new InvalidArgumentException(
+                "Route with asset type ({$storable->getAssetType()->toString()}) does not support storage"
+            );
+        }
+
+        if (Chunk::class === ClassUtils::getRealClass($storable::class)) {
+            return $extSystemConfig->getChunkStorageName();
+        }
+
+        return $extSystemConfig->getStorageName();
     }
 
     public function getFileSystemByStorageName(string $storageName): ?AbstractFilesystem

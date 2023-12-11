@@ -81,6 +81,9 @@ abstract class AssetFile implements
         return (string) $this->getId();
     }
 
+    /**
+     * @return Collection<int, AssetFileRoute>
+     */
     public function getRoutes(): Collection
     {
         return $this->routes;

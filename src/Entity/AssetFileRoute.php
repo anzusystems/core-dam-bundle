@@ -12,7 +12,9 @@ use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AudioAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
@@ -25,7 +27,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AssetFileRouteRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_uri_path', fields: ['uri.path'])]
 #[ORM\Index(fields: ['uri.main', 'targetAssetFile'], name: 'IDX_main_asset_file_id')]
-class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
+class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, FileSystemStorableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -102,5 +104,20 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function getLinks(): self
     {
         return $this;
+    }
+
+    public function getFilePath(): string
+    {
+        return $this->uri->getPath();
+    }
+
+    public function getAssetType(): AssetType
+    {
+        return $this->getTargetAssetFile()->getAssetType();
+    }
+
+    public function getExtSystem(): ExtSystem
+    {
+        return $this->getTargetAssetFile()->getExtSystem();
     }
 }

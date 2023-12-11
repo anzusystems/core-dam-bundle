@@ -8,6 +8,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
+/**
+ * Holds data needed for cache purge
+ */
 final readonly class AssetFileDeleteEvent
 {
     public function __construct(
@@ -18,6 +21,7 @@ final readonly class AssetFileDeleteEvent
         protected DamUser $deletedBy,
         protected array $roiPositions,
         protected string $extSystem,
+        protected array $routePaths,
     ) {
     }
 
@@ -54,5 +58,13 @@ final readonly class AssetFileDeleteEvent
     public function getDeletedBy(): DamUser
     {
         return $this->deletedBy;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getRoutePaths(): array
+    {
+        return $this->routePaths;
     }
 }

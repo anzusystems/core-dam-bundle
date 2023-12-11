@@ -32,7 +32,7 @@ final class AllowListConfiguration
 
     public function getCacheConfiguration(?string $domainName = null): CacheConfiguration
     {
-        $domainName = $this->getDomainName($domainName);
+        $domainName = $domainName ?? $this->getDomainName();
         if (isset($this->domains[$domainName])) {
             return CacheConfiguration::getFromArrayConfiguration($this->domains[$domainName]);
         }
@@ -104,9 +104,9 @@ final class AllowListConfiguration
         return $allowListName . '_' . $tag;
     }
 
-    private function getDomainName(?string $domainName = null): string
+    private function getDomainName(): string
     {
-        $schemeAndHost = $this->domainProvider->getSchemeAndHost($domainName);
+        $schemeAndHost = $this->domainProvider->getSchemeAndHost();
 
         if (isset($this->domainNames[$schemeAndHost])) {
             return $this->domainNames[$schemeAndHost];

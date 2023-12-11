@@ -4,34 +4,17 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Controller;
 
-use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Cache\AssetFileCacheManager;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
-use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
-use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
-use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
-use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRouteConfigurableInterface;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
-use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
-use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
