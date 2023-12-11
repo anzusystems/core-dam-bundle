@@ -17,14 +17,14 @@ abstract class AbstractApiController extends AbstractController
     /** @psalm-var array<string, ApiClient> */
     private array $clients = [];
 
-    public function getClient(?int $userId = null): ApiClient
+    public function getApiClient(?int $newClient = null): ApiClient
     {
-        $key = $userId ?? 'anonymous';
+        $key = $newClient ?? 'anonymous';
         if (false === isset($this->clients[$key])) {
             $this->clients[$key] = new ApiClient(
                 static::$client,
                 $this->serializer,
-                $userId
+                $newClient
             );
         }
         return $this->clients[$key];

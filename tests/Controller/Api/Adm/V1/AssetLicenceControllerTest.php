@@ -24,7 +24,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(AssetLicenceUrl::getOne(AssetLicenceFixtures::DEFAULT_LICENCE_ID));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -49,7 +49,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
      */
     public function testGetListSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(AssetLicenceUrl::getList());
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -72,7 +72,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
      */
     public function testCreateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(AssetLicenceUrl::createPath(), $requestJson);
         $this->assertSame($expectedResponseStatusCode, $response->getStatusCode());
@@ -109,7 +109,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
      */
     public function testCreateFailure(array $requestJson, array $validationErrors): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(AssetLicenceUrl::createPath(), $requestJson);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -160,7 +160,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $id = $requestJson['id'];
         $response = $client->put(AssetLicenceUrl::update($id), $requestJson);

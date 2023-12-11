@@ -246,7 +246,7 @@ abstract class AbstractAssetFileApiController extends AbstractApiController
         AssetUrlInterface $url,
     ): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $primarySlotName = $firstAssetFile->getSlots()->first()->getName();
         $asset = $firstAssetFile->getAsset();

@@ -21,7 +21,7 @@ final class DistributionCategorySelectTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $distributionCategorySelectRepository = self::getContainer()->get(DistributionCategorySelectRepository::class);
         $fromDb = $distributionCategorySelectRepository->findOneBy([]);
@@ -46,7 +46,7 @@ final class DistributionCategorySelectTest extends AbstractApiController
      */
     public function testGetListSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(DistributionCategorySelectUrl::getList(ExtSystemFixtures::ID_CMS));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -64,7 +64,7 @@ final class DistributionCategorySelectTest extends AbstractApiController
      */
     public function testUpdateSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $distributionCategorySelectRepository = self::getContainer()->get(DistributionCategorySelectRepository::class);
         $fromDb = $distributionCategorySelectRepository->findOneBy([]);

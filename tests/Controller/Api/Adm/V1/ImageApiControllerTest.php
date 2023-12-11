@@ -46,7 +46,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
     public function testUpload(): void
     {
         $rotation = 90;
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $imageUrl = new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $image = $this->uploadAsset(
@@ -103,7 +103,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
     public function testCreateToAsset(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->post(AssetUrl::createPath(), ['type' => 'image']);
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
         $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
@@ -135,7 +135,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
      */
     public function testCreateToAssetFailed(string $imageId, string $slot, string $error): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->post(AssetUrl::createPath(), ['type' => 'image']);
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
         $asset = $this->serializer->deserialize($response->getContent(), AssetAdmDetailDto::class);
@@ -162,7 +162,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
     public function testCreateImageFailed(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $responseData = $this->createAsset(
             $client,
@@ -193,7 +193,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
      */
     public function testAddChunkFailed(array $reqBody, array $validationFieldsBody): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $responseData = $this->uploadChunk(
             $client,
@@ -245,7 +245,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
     public function testFinishUploadFailed(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $responseData = $this->finishUpload(
             $client,

@@ -15,7 +15,7 @@ final class ConfigurationControllerTest extends AbstractApiController
 {
     public function testGet(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(ConfigurationUrl::getPub());
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
