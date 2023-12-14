@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Audio;
 
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioPublicLinkAdmDto;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AudioLinksHandler;
@@ -60,5 +61,14 @@ final class AudioFileAdmDetailDto extends AudioFileAdmListDto
     public function getOriginAssetFile(): string
     {
         return $this->audio->getAssetAttributes()->getOriginAssetId();
+    }
+
+    #[Serialize]
+    public function getMainRoute(): ?AssetFileRouteAdmDetailDecorator
+    {
+        return $this->audio->getMainRoute()
+            ? AssetFileRouteAdmDetailDecorator::getInstance($this->audio->getMainRoute())
+            : null
+        ;
     }
 }

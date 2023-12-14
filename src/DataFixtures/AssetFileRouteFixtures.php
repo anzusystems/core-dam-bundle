@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use Generator;
@@ -44,7 +44,7 @@ final class AssetFileRouteFixtures extends AbstractAssetFileFixtures
 
     public function load(ProgressBar $progressBar): void
     {
-        /** @var array{assetFile: AssetFile, dto: AssetFilePublicRouteAdmDto} $data */
+        /** @var array{assetFile: AssetFile, dto: AssetFileRouteAdmCreateDto} $data */
         foreach ($progressBar->iterate($this->getData()) as $data) {
             $this->assetFileRouteFacade->makePublic($data['assetFile'], $data['dto']);
         }
@@ -79,19 +79,19 @@ final class AssetFileRouteFixtures extends AbstractAssetFileFixtures
     {
         yield [
             'assetFile' => $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1),
-            'dto' => (new AssetFilePublicRouteAdmDto())
+            'dto' => (new AssetFileRouteAdmCreateDto())
                 ->setSlug('image'),
         ];
 
         yield [
             'assetFile' => $this->entityManager->find(DocumentFile::class, DocumentFixtures::DOC_ID_3),
-            'dto' => (new AssetFilePublicRouteAdmDto())
+            'dto' => (new AssetFileRouteAdmCreateDto())
                 ->setSlug('document'),
         ];
 
         yield [
             'assetFile' => $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1),
-            'dto' => (new AssetFilePublicRouteAdmDto())
+            'dto' => (new AssetFileRouteAdmCreateDto())
                 ->setSlug('podcast'),
         ];
     }

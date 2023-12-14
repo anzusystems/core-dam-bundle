@@ -28,7 +28,7 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
@@ -251,8 +251,8 @@ final class AudioController extends AbstractApiController
         name: 'make_public',
         methods: [Request::METHOD_PATCH]
     )]
-    #[OAParameterPath('audio'), OARequest(AssetFilePublicRouteAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function makePublic(AudioFile $audio, #[SerializeParam] AssetFilePublicRouteAdmDto $dto): JsonResponse
+    #[OAParameterPath('audio'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    public function makePublic(AudioFile $audio, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
         $this->assetFileRouteFacade->makePublic($audio, $dto);

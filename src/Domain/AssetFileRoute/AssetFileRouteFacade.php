@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Event\AssetFileRouteEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
@@ -40,7 +40,7 @@ final class AssetFileRouteFacade extends AbstractManager
     ) {
     }
 
-    public function makePublic(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): AssetFileRoute
+    public function makePublic(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): AssetFileRoute
     {
         $this->validateProcessState($assetFile);
         $route = $this->routeFactory->createFromDto($assetFile, $dto);

@@ -37,7 +37,7 @@ class AssetSlotAdmListDecorator extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_DETAIL)]
     public function getAssetFile(): AssetFile
     {
         return $this->assetSlot->getAssetFile();

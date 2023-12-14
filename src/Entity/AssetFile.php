@@ -57,6 +57,9 @@ abstract class AssetFile implements
     #[ORM\OneToMany(mappedBy: 'targetAssetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     protected Collection $routes;
 
+    #[ORM\OneToOne(targetEntity: AssetFileRoute::class)]
+    protected ?AssetFileRoute $mainRoute;
+
     #[ORM\Embedded(class: AssetFileAttributes::class)]
     protected AssetFileAttributes $assetAttributes;
 
@@ -74,6 +77,7 @@ abstract class AssetFile implements
         $this->setChunks(new ArrayCollection());
         $this->setFlags(new AssetFileFlags());
         $this->setRoutes(new ArrayCollection());
+        $this->setMainRoute(null);
     }
 
     public function __toString(): string
@@ -119,6 +123,18 @@ abstract class AssetFile implements
     public function setAssetAttributes(AssetFileAttributes $assetAttributes): static
     {
         $this->assetAttributes = $assetAttributes;
+
+        return $this;
+    }
+
+    public function getMainRoute(): ?AssetFileRoute
+    {
+        return $this->mainRoute;
+    }
+
+    public function setMainRoute(?AssetFileRoute $mainRoute): self
+    {
+        $this->mainRoute = $mainRoute;
 
         return $this;
     }

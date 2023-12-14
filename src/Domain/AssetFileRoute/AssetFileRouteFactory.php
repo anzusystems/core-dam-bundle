@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFilePublicRouteAdmDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
@@ -35,7 +35,7 @@ final class AssetFileRouteFactory extends AbstractManager
     /**
      * @throws ForbiddenOperationException
      */
-    public function createFromDto(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): AssetFileRoute
+    public function createFromDto(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): AssetFileRoute
     {
         $mainRoute = $this->assetFileRouteRepository->findMainByAssetFile((string) $assetFile->getId());
         if ($mainRoute) {
@@ -62,6 +62,7 @@ final class AssetFileRouteFactory extends AbstractManager
         ;
         $route->setTargetAssetFile($assetFile);
         $assetFile->getRoutes()->add($route);
+        $assetFile->setMainRoute($route);
 
         return $this->routeManager->create($route, false);
     }
@@ -76,7 +77,7 @@ final class AssetFileRouteFactory extends AbstractManager
         );
     }
 
-    private function createSlug(AssetFile $assetFile, AssetFilePublicRouteAdmDto $dto): string
+    private function createSlug(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): string
     {
         return empty($dto->getSlug())
             ? $this->slugger->slug(

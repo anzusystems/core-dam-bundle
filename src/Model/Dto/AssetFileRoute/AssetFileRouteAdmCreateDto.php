@@ -8,7 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class AssetFilePublicRouteAdmDto
+final class AssetFileRouteAdmCreateDto
 {
     public const SLUG_REGEX = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
