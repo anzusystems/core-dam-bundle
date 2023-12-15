@@ -13,6 +13,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
@@ -20,12 +21,16 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
+use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
+use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
@@ -47,6 +52,7 @@ final class ImageController extends AbstractApiController
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly ImagePositionFacade $imagePositionFacade,
+        private readonly AssetFileRouteFacade $routeFacade,
     ) {
     }
 
@@ -266,5 +272,37 @@ final class ImageController extends AbstractApiController
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($image)
         );
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    #[Route(
+        path: '/{image}/make-public',
+        name: 'make_public',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('image'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
+    public function makePublic(ImageFile $image, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+
+        return $this->okResponse(
+            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublic($image, $dto))
+        );
+    }
+
+    #[Route(
+        path: '/{image}/make-private',
+        name: 'make_private',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('image'), OAResponse(AudioFileAdmDetailDto::class)]
+    public function makePrivate(ImageFile $image): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        $this->routeFacade->makePrivate($image);
+
+        return $this->noContentResponse();
     }
 }

@@ -29,6 +29,7 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentAdmCreateDto;
@@ -250,13 +251,13 @@ final class DocumentController extends AbstractApiController
         name: 'make_public',
         methods: [Request::METHOD_PATCH]
     )]
-    #[OAParameterPath('audio'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
+    #[OAParameterPath('document'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
     public function makePublic(DocumentFile $document, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
 
         return $this->okResponse(
-            $this->routeFacade->makePublic($document, $dto)
+            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublic($document, $dto))
         );
     }
 
