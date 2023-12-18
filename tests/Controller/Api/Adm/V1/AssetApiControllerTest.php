@@ -31,7 +31,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
      */
     public function testUpdate(int $statusCode, ?string $categoryId = null): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         $response = $client->put(
@@ -80,7 +80,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
      */
     public function testDelete(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $imageUrl = new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $image = $this->uploadAsset(
@@ -122,7 +122,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
      */
     public function testCreate(string $type): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->post('/api/adm/v1/asset/licence/'.AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
 
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());

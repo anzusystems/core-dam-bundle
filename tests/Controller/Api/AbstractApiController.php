@@ -17,7 +17,7 @@ abstract class AbstractApiController extends AbstractController
     /** @psalm-var array<string, ApiClient> */
     private array $clients = [];
 
-    public function getClient(?int $userId = null): ApiClient
+    public function getApiClient(?int $userId = null): ApiClient
     {
         $key = $userId ?? 'anonymous';
         if (false === isset($this->clients[$key])) {

@@ -17,7 +17,7 @@ final class ImageControllerTest extends AbstractApiController
      */
     public function testGet(string $url, int $statusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->get($url);
 
         $this->assertSame($response->getStatusCode(), $statusCode);

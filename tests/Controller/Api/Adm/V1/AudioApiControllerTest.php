@@ -25,7 +25,7 @@ final class AudioApiControllerTest extends AbstractAssetFileApiController
      */
     public function testUpload(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $audioUrl = new AudioUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $audio = $this->uploadAsset(

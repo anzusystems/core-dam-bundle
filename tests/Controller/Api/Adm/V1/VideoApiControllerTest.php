@@ -24,7 +24,7 @@ final class VideoApiControllerTest extends AbstractAssetFileApiController
      */
     public function testUpload(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $videoUrl = new VideoUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $video = $this->uploadAsset(
