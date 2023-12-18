@@ -43,6 +43,8 @@ final class ExtSystemAwareVoter extends AbstractVoter
     protected function getSupportedPermissions(): array
     {
         return [
+            DamPermissions::DAM_ASSET_CREATE,
+            DamPermissions::DAM_ASSET_VIEW,
             DamPermissions::DAM_AUTHOR_VIEW,
             DamPermissions::DAM_AUTHOR_CREATE,
             DamPermissions::DAM_AUTHOR_UPDATE,
