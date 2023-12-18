@@ -24,7 +24,7 @@ final class VideoShowControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(VideoShowUrl::getOne(VideoShowFixtures::SHOW_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -42,7 +42,7 @@ final class VideoShowControllerTest extends AbstractApiController
      */
     public function testGetListByExtSystem(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(VideoShowUrl::getListByExtSystem(ExtSystemFixtures::ID_CMS));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -60,7 +60,7 @@ final class VideoShowControllerTest extends AbstractApiController
      */
     public function testGetListByLicence(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(VideoShowUrl::getListByLicence(AssetLicenceFixtures::DEFAULT_LICENCE_ID));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -75,7 +75,7 @@ final class VideoShowControllerTest extends AbstractApiController
 
     public function testCreateSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(VideoShowUrl::createPath(), [
             'texts' => [
@@ -93,7 +93,7 @@ final class VideoShowControllerTest extends AbstractApiController
 
     public function testCreateFailed(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(VideoShowUrl::createPath(), []);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -116,7 +116,7 @@ final class VideoShowControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->put(VideoShowUrl::update(VideoShowFixtures::SHOW_1), [
             'id' => VideoShowFixtures::SHOW_1,

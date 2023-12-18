@@ -28,7 +28,7 @@ final class AssetCustomFormControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->get('/api/adm/v1/asset-custom-form/ext-system/1/type/image');
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
@@ -46,7 +46,7 @@ final class AssetCustomFormControllerTest extends AbstractApiController
      */
     public function testGetElementsSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->get('/api/adm/v1/asset-custom-form/ext-system/1/type/image/element');
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());

@@ -29,7 +29,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(PodcastEpisodeUrl::getOne(PodcastEpisodeFixtures::EPISODE_1_ID));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -46,7 +46,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testGetListByPodcast(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(PodcastEpisodeUrl::getListByPodcast(PodcastFixtures::PODCAST_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -64,7 +64,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testGetListByLicence(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $audio = $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1);
 
         $response = $client->get(PodcastEpisodeUrl::getListByAsset((string) $audio->getAsset()->getId()));
@@ -84,7 +84,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testCreateSuccess(array $payload): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(PodcastEpisodeUrl::createPath(), $payload);
         $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
@@ -100,7 +100,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testCreateFailed(array $payload, array $validationErrors, ?string $assetFileId = null): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         if ($assetFileId) {
             $assetFile = $this->entityManager->find(AssetFile::class,$assetFileId);
@@ -155,7 +155,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(array $payload): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $payload['id'] = PodcastEpisodeFixtures::EPISODE_1_ID;
         $response = $client->put(PodcastEpisodeUrl::update(PodcastEpisodeFixtures::EPISODE_1_ID), $payload);

@@ -26,7 +26,7 @@ final class JwDistributionControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $payload = [
             'distributionService' => 'jw_cms_main',

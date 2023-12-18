@@ -25,7 +25,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(VideoShowEpisodeUrl::getOne(VideoShowEpisodeFixtures::EPISODE_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -44,7 +44,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
      */
     public function testPreparePayload(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         $response = $client->get(VideoShowEpisodeUrl::preparePayload(
@@ -64,7 +64,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
      */
     public function testGetListByShow(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->get(VideoShowEpisodeUrl::getListByShow(VideoShowFixtures::SHOW_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $showList = $this->serializer->deserialize($response->getContent(), ApiInfiniteResponseList::class);
@@ -77,7 +77,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
      */
     public function testGetListByAsset(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         $response = $client->get(VideoShowEpisodeUrl::getListByAsset($video->getAsset()->getId()));
@@ -89,7 +89,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
 
     public function testCreateSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(VideoShowEpisodeUrl::createPath(), [
             'texts' => [
@@ -107,7 +107,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
 
     public function testCreateFailed(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(VideoShowEpisodeUrl::createPath(), []);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -130,7 +130,7 @@ final class VideoShowEpisodeControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->put(VideoShowEpisodeUrl::update(VideoShowEpisodeFixtures::EPISODE_1), [
             'id' => VideoShowEpisodeFixtures::EPISODE_1,

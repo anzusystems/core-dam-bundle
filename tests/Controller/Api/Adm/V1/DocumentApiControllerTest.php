@@ -27,7 +27,7 @@ final class DocumentApiControllerTest extends AbstractAssetFileApiController
      */
     public function testUpload(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $documentUrl = new DocumentUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $document = $this->uploadAsset(

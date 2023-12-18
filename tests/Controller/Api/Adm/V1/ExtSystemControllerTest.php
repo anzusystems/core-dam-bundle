@@ -23,7 +23,7 @@ final class ExtSystemControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(ExtSystemUrl::getOne(ExtSystemFixtures::ID_CMS));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -46,7 +46,7 @@ final class ExtSystemControllerTest extends AbstractApiController
      */
     public function testGetListSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(ExtSystemUrl::getList());
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -66,7 +66,7 @@ final class ExtSystemControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $id = $requestJson['id'];
         $response = $client->put(ExtSystemUrl::update($id), $requestJson);
@@ -106,7 +106,7 @@ final class ExtSystemControllerTest extends AbstractApiController
      */
     public function testUpdateFailure(array $requestJson, array $validationErrors): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $id = $requestJson['id'];
         $response = $client->put(ExtSystemUrl::update($id), $requestJson);

@@ -23,7 +23,7 @@ final class AuthorControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(AuthorUrl::getOne(AuthorFixtures::AUTHOR_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -47,7 +47,7 @@ final class AuthorControllerTest extends AbstractApiController
      */
     public function testSearchByExtSystemSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(AuthorUrl::searchByExtSystem(ExtSystemFixtures::ID_CMS));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -70,7 +70,7 @@ final class AuthorControllerTest extends AbstractApiController
      */
     public function testCreateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(AuthorUrl::createPath(), $requestJson);
         $this->assertSame($expectedResponseStatusCode, $response->getStatusCode());
@@ -105,7 +105,7 @@ final class AuthorControllerTest extends AbstractApiController
      */
     public function testCreateFailure(array $requestJson, array $validationErrors): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(AuthorUrl::createPath(), $requestJson);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -156,7 +156,7 @@ final class AuthorControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $id = $requestJson['id'];
         $response = $client->put(AuthorUrl::update($id), $requestJson);

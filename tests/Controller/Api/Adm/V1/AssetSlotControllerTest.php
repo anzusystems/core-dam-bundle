@@ -29,7 +29,7 @@ final class AssetSlotControllerTest extends AbstractApiController
      */
     public function testGetListSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
 
         $audioFile = $this->audioFileRepository->find(AudioFixtures::AUDIO_ID_1);
@@ -56,7 +56,7 @@ final class AssetSlotControllerTest extends AbstractApiController
      */
     public function testUpdateSlot(array $reqJson): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $audioFile = $this->audioFileRepository->find(AudioFixtures::AUDIO_ID_1);
 
         $response = $client->patch(
@@ -74,7 +74,7 @@ final class AssetSlotControllerTest extends AbstractApiController
      */
     public function testUpdateSlotFailed(array $reqJson): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
         $audioFile = $this->audioFileRepository->find(AudioFixtures::AUDIO_ID_1);
 
         $response = $client->patch(

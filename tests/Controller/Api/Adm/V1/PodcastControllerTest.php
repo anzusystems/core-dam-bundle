@@ -27,7 +27,7 @@ final class PodcastControllerTest extends AbstractApiController
      */
     public function testGetOneSuccess(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(PodcastUrl::getOne(PodcastFixtures::PODCAST_1));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -45,7 +45,7 @@ final class PodcastControllerTest extends AbstractApiController
      */
     public function testGetListByExtSystem(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(PodcastUrl::getListByExtSystem(ExtSystemFixtures::ID_CMS));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -63,7 +63,7 @@ final class PodcastControllerTest extends AbstractApiController
      */
     public function testGetListByLicence(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->get(PodcastUrl::getListByLicence(BaseLicenceFixtures::DEFAULT_LICENCE_ID));
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -81,7 +81,7 @@ final class PodcastControllerTest extends AbstractApiController
      */
     public function testCreateSuccess(array $payload): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(PodcastUrl::createPath(), $payload);
         $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
@@ -96,7 +96,7 @@ final class PodcastControllerTest extends AbstractApiController
 
     public function testCreateFailed(): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $response = $client->post(PodcastUrl::createPath(), [
             'attributes' => [
@@ -134,7 +134,7 @@ final class PodcastControllerTest extends AbstractApiController
      */
     public function testUpdateSuccess(array $payload): void
     {
-        $client = $this->getClient(User::ID_ADMIN);
+        $client = $this->getApiClient(User::ID_ADMIN);
 
         $payload['id'] = PodcastFixtures::PODCAST_1;
         $response = $client->put(PodcastUrl::update(PodcastFixtures::PODCAST_1), $payload);
