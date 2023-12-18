@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Sys\V1;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysDetailDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -31,6 +34,9 @@ final class AssetFileController extends AbstractApiController
 
     /**
      * @throws FilesystemException
+     * @throws ValidationException
+     * @throws InvalidMimeTypeException
+     * @throws NonUniqueResultException
      */
     #[Route('', 'create', methods: [Request::METHOD_POST])]
     #[OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]

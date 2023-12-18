@@ -12,9 +12,11 @@ final class ExtSystemConfiguration
 {
     public const ID_KEY = 'id';
     public const ASSET_EXTERNAL_PROVIDERS_KEY = 'asset_external_providers';
+    public const EXT_STORAGE_KEY = 'ext_storage';
 
     public function __construct(
         private readonly int $id,
+        private readonly string $extStorage,
         /** @var ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration> */
         private readonly ArrayCollection $assetExternalProviders,
         private readonly ExtSystemAudioTypeConfiguration $audio,
@@ -35,6 +37,7 @@ final class ExtSystemConfiguration
 
         return new self(
             $config[self::ID_KEY] ?? 0,
+            $config[self::EXT_STORAGE_KEY] ?? '',
             $assetExternalProviders,
             ExtSystemAudioTypeConfiguration::getFromArrayConfiguration($config[AssetType::Audio->toString()] ?? []),
             ExtSystemVideoTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
@@ -74,6 +77,11 @@ final class ExtSystemConfiguration
     public function getDocument(): ExtSystemAssetTypeConfiguration
     {
         return $this->document;
+    }
+
+    public function getExtStorage(): string
+    {
+        return $this->extStorage;
     }
 
     /**
