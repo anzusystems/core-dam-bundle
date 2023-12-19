@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
@@ -15,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
 class AssetAdmListDto extends AbstractEntityDto
 {
@@ -103,5 +105,11 @@ class AssetAdmListDto extends AbstractEntityDto
         }
 
         return [];
+    }
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getLicence(): AssetLicence
+    {
+        return $this->getAsset()->getLicence();
     }
 }
