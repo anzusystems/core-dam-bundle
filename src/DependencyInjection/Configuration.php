@@ -318,6 +318,7 @@ class Configuration implements ConfigurationInterface
             ->arrayPrototype()
                 ->children()
                     ->scalarNode('id')->end()
+                    ->scalarNode(ExtSystemConfiguration::EXT_STORAGE_KEY)->end()
                     ->append($this->addExtSystemAssetExternalProvidersSection())
                     ->append($this->addFileExtSystemSection(AssetType::Image))
                     ->append($this->addFileExtSystemSection(AssetType::Audio))
