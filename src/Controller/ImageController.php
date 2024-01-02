@@ -37,6 +37,27 @@ final class ImageController extends AbstractImageController
     ) {
     }
 
+    #[Route(
+        path: '/animated/{imageId}.gif',
+        name: 'get_one_animated',
+        requirements: [
+            'imageId' => '[0-9a-zA-Z-]+',
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function animation(
+        string $imageId,
+    ): Response {
+        $image = $this->imageFileRepository->findProcessedById($imageId);
+
+        if (null === $image) {
+            // not found image with crop
+            return $this->notFoundResponse();
+        }
+
+        return $this->streamResponse($image);
+    }
+
     /**
      * @throws NonUniqueResultException
      * @throws FilesystemException

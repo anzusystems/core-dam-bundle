@@ -10,7 +10,6 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\AudioAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -18,10 +17,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
-use AnzuSystems\CoreDamBundle\Repository\AssetSlotRepository;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileRouteLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AssetFileRouteRepository::class)]
@@ -97,12 +93,6 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setMode(RouteMode $mode): self
     {
         $this->mode = $mode;
-        return $this;
-    }
-
-    #[Serialize(handler: AssetFileRouteLinksHandler::class)]
-    public function getLinks(): self
-    {
         return $this;
     }
 

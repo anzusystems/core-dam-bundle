@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioPublicLinkAdmDto;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AudioLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class AudioFileAdmDetailDto extends AudioFileAdmListDto
@@ -49,12 +48,6 @@ final class AudioFileAdmDetailDto extends AudioFileAdmListDto
         $this->publicLink = $publicLink;
 
         return $this;
-    }
-
-    #[Serialize(handler: AudioLinksHandler::class)]
-    public function getLinks(): AudioFile
-    {
-        return $this->audio;
     }
 
     #[Serialize]

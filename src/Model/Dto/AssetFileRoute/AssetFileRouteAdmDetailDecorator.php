@@ -18,7 +18,7 @@ final class AssetFileRouteAdmDetailDecorator extends AbstractEntityDto
     private AssetFileRoute $assetFileRoute;
 
     public static function getInstance(
-       AssetFileRoute $assetFileRoute
+        AssetFileRoute $assetFileRoute
     ): static {
         return self::getBaseInstance($assetFileRoute)->setAssetFileRoute($assetFileRoute);
     }

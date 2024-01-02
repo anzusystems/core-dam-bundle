@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Video;
 
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
@@ -49,7 +46,7 @@ class VideoFileAdmListDto extends AbstractAssetFileAdmDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::LIST_LINKS_TAGS)]
+    #[Serialize(handler: LinksHandler::class)]
     public function getLinks(): ?AssetFile
     {
         return $this->video->getImagePreview()?->getImageFile();

@@ -14,6 +14,17 @@ final readonly class ImageUrlFactory
     ) {
     }
 
+    public function generateAnimatedUrl(
+        string $imageId,
+    ): string {
+        return $this->router->generate(
+            'image_get_one_animated',
+            [
+                'imageId' => $imageId,
+            ]
+        );
+    }
+
     public function generateAllowListUrl(
         string $imageId,
         CropAllowItem $item,

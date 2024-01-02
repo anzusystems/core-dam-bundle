@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Image;
 
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\Embeds\AssetFileFlagsAdmDto;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
@@ -42,7 +38,7 @@ class ImageFileAdmListDto extends AbstractAssetFileAdmDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::LIST_LINKS_TAGS)]
+    #[Serialize(handler: LinksHandler::class)]
     public function getLinks(): ImageFile
     {
         return $this->image;

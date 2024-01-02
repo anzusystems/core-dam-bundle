@@ -27,6 +27,6 @@ final class DocumentFileAdmDetailDto extends DocumentFileAdmListDto
         return $this->document->getMainRoute()
             ? AssetFileRouteAdmDetailDecorator::getInstance($this->document->getMainRoute())
             : null
-            ;
+        ;
     }
 }

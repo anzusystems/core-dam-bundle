@@ -12,9 +12,9 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 
@@ -50,7 +50,7 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    #[Serialize(handler: AssetFileHandler::class, type: ApiViewType::LIST)]
     public function getMainFile(): ?AssetFile
     {
         return $this->asset->getMainFile();

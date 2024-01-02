@@ -19,7 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LinksHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -181,13 +181,13 @@ class Podcast implements
         return $this->licence->getExtSystem();
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    #[Serialize(handler: LinksHandler::class)]
     public function getLinks(): ?AssetFile
     {
         return $this->getImagePreview()?->getImageFile();
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    #[Serialize(handler: LinksHandler::class)]
     public function getAltLinks(): ?AssetFile
     {
         return $this->getAltImage()?->getImageFile();
