@@ -37,6 +37,12 @@ final class ImageController extends AbstractImageController
     ) {
     }
 
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidCropException
+     * @throws NonUniqueResultException
+     */
     #[Route(
         path: '/animated/{imageId}.gif',
         name: 'get_one_animated',
@@ -51,8 +57,14 @@ final class ImageController extends AbstractImageController
         $image = $this->imageFileRepository->findProcessedById($imageId);
 
         if (null === $image) {
-            // not found image with crop
-            return $this->notFoundResponse();
+            return $this->notFoundImageResponse(new RequestedCropDto());
+        }
+
+        if (
+            false === $image->getFlags()->isPublic() &&
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+        ) {
+            return $this->notFoundImageResponse(new RequestedCropDto());
         }
 
         return $this->streamResponse($image);

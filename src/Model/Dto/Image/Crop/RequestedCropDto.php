@@ -6,6 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop;
 
 final class RequestedCropDto
 {
+    private const DEFAULT_REQUEST_WIDTH = 450;
+    private const DEFAULT_REQUEST_HEIGHT = 300;
+
     private int $requestWidth;
     private int $requestHeight;
     private int $roi;
@@ -15,8 +18,8 @@ final class RequestedCropDto
     {
         $this->setQuality(null);
         $this->setRoi(0);
-        $this->setRequestWidth(0);
-        $this->setRequestHeight(0);
+        $this->setRequestWidth(self::DEFAULT_REQUEST_WIDTH);
+        $this->setRequestHeight(self::DEFAULT_REQUEST_HEIGHT);
     }
 
     public function getRequestWidth(): int

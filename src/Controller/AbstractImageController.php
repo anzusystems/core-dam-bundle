@@ -125,6 +125,8 @@ abstract class AbstractImageController extends AbstractPublicController
                 assetFile: $notFoundImage,
             )->setStatusCode(Response::HTTP_OK);
             $this->assetFileCacheManager->setNotFoundCache($response);
+
+            return $response;
         }
 
         return $this->notFoundResponse();

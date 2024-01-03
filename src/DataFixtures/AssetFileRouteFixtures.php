@@ -88,11 +88,5 @@ final class AssetFileRouteFixtures extends AbstractAssetFileFixtures
             'dto' => (new AssetFileRouteAdmCreateDto())
                 ->setSlug('document'),
         ];
-
-        yield [
-            'assetFile' => $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1),
-            'dto' => (new AssetFileRouteAdmCreateDto())
-                ->setSlug('podcast'),
-        ];
     }
 }
