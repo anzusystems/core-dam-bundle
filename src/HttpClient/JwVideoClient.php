@@ -139,6 +139,7 @@ final class JwVideoClient implements LoggerAwareInterface
         JwDistributionServiceConfiguration $configuration,
         JwVideoMediaUploadDto $jwVideoDto,
     ): VideoUploadPayloadDto {
+        /** @var array $data */
         $data = $this->serializer->toArray($jwVideoDto);
         $data['upload'] = ['method' => 'multipart'];
 

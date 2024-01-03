@@ -47,9 +47,12 @@ final class AssetFileHandler extends AbstractHandler
         }
 
         if ($value instanceof AssetFile) {
-            return $this->serializer->toArray(
+            /** @var array $data */
+            $data = $this->serializer->toArray(
                 $this->getAssetFileDecorator($value, $type)
             );
+
+            return $data;
         }
 
         throw new SerializerException(sprintf(
