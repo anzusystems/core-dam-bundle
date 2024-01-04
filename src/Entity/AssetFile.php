@@ -58,6 +58,7 @@ abstract class AssetFile implements
     protected Collection $routes;
 
     #[ORM\OneToOne(targetEntity: AssetFileRoute::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     protected ?AssetFileRoute $mainRoute;
 
     #[ORM\Embedded(class: AssetFileAttributes::class)]
