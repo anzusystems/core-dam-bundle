@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Model\Enum\CustomFormElementType;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
-final class NumberValidator implements ElementValidatorInterface
+final class IntegerValidator implements ElementValidatorInterface
 {
     public function validate(
         CustomFormElement $element,
@@ -41,6 +41,6 @@ final class NumberValidator implements ElementValidatorInterface
 
     public static function getDefaultKeyName(): string
     {
-        return CustomFormElementType::Number->toString();
+        return CustomFormElementType::Integer->toString();
     }
 }

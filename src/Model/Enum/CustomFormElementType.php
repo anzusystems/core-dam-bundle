@@ -12,7 +12,7 @@ enum CustomFormElementType: string implements EnumInterface
     use BaseEnumTrait;
 
     case String = 'string';
-    case Number = 'number';
+    case Integer = 'integer';
     case StringArray = 'string_array';
     case Boolean = 'boolean';
     case Choice = 'choice';
@@ -22,7 +22,7 @@ enum CustomFormElementType: string implements EnumInterface
     public function allowedSearch(): bool
     {
         return match($this) {
-            self::Number, self::String, self::Boolean  => true,
+            self::Integer, self::String, self::Boolean  => true,
             self::Choice, self::StringArray => false,
         };
     }
