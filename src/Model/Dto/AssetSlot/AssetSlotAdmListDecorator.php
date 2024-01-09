@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 class AssetSlotAdmListDecorator extends AbstractEntityDto
@@ -37,7 +37,7 @@ class AssetSlotAdmListDecorator extends AbstractEntityDto
         return $this;
     }
 
-    #[Serialize(handler: AssetFileHandler::class, type: ImageLinksHandler::TAG_LIST)]
+    #[Serialize(handler: AssetFileHandler::class, type: ApiViewType::DETAIL)]
     public function getAssetFile(): AssetFile
     {
         return $this->assetSlot->getAssetFile();

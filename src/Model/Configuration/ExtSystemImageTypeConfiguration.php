@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
-final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfiguration
+final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfiguration implements AssetFileRouteConfigurableInterface
 {
     public const PUBLIC_DOMAIN_KEY = 'public_domain';
     public const ADMIN_DOMAIN_KEY = 'admin_domain';
@@ -16,7 +16,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     private int $roiWidth;
     private int $roiHeight;
     private string $cropStorageName;
-    private string $publicDomain;
+    private string $publicDomainName;
     private string $adminDomain;
     private string $notFoundImageId;
 
@@ -24,20 +24,20 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     {
         return parent::getFromArrayConfiguration($config)
             ->setAdminDomain($config[self::ADMIN_DOMAIN_KEY] ?? '')
-            ->setPublicDomain($config[self::PUBLIC_DOMAIN_KEY] ?? '')
+            ->setPublicDomainName($config[self::PUBLIC_DOMAIN_KEY] ?? '')
             ->setRoiWidth($config[self::ROI_WIDTH_KEY] ?? 0)
             ->setRoiHeight($config[self::ROI_HEIGHT_KEY] ?? 0)
             ->setCropStorageName($config[self::CROP_STORAGE_NAME] ?? '');
     }
 
-    public function getPublicDomain(): string
+    public function getPublicDomainName(): string
     {
-        return $this->publicDomain;
+        return $this->publicDomainName;
     }
 
-    public function setPublicDomain(string $publicDomain): self
+    public function setPublicDomainName(string $publicDomainName): static
     {
-        $this->publicDomain = $publicDomain;
+        $this->publicDomainName = $publicDomainName;
 
         return $this;
     }

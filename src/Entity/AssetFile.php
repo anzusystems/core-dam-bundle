@@ -54,6 +54,13 @@ abstract class AssetFile implements
     #[ORM\OneToOne(targetEntity: AssetFileMetadata::class)]
     protected AssetFileMetadata $metadata;
 
+    #[ORM\OneToMany(mappedBy: 'targetAssetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    protected Collection $routes;
+
+    #[ORM\OneToOne(targetEntity: AssetFileRoute::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    protected ?AssetFileRoute $mainRoute;
+
     #[ORM\Embedded(class: AssetFileAttributes::class)]
     protected AssetFileAttributes $assetAttributes;
 
@@ -70,11 +77,26 @@ abstract class AssetFile implements
         $this->setModifiedAt(App::getAppDate());
         $this->setChunks(new ArrayCollection());
         $this->setFlags(new AssetFileFlags());
+        $this->setRoutes(new ArrayCollection());
+        $this->setMainRoute(null);
     }
 
     public function __toString(): string
     {
         return (string) $this->getId();
+    }
+
+    /**
+     * @return Collection<int, AssetFileRoute>
+     */
+    public function getRoutes(): Collection
+    {
+        return $this->routes;
+    }
+
+    public function setRoutes(Collection $routes): void
+    {
+        $this->routes = $routes;
     }
 
     public function getMetadata(): AssetFileMetadata
@@ -102,6 +124,18 @@ abstract class AssetFile implements
     public function setAssetAttributes(AssetFileAttributes $assetAttributes): static
     {
         $this->assetAttributes = $assetAttributes;
+
+        return $this;
+    }
+
+    public function getMainRoute(): ?AssetFileRoute
+    {
+        return $this->mainRoute;
+    }
+
+    public function setMainRoute(?AssetFileRoute $mainRoute): self
+    {
+        $this->mainRoute = $mainRoute;
 
         return $this;
     }

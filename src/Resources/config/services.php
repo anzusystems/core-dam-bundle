@@ -44,6 +44,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->autoconfigure(true)
 
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
+        ->bind('$redirectDomain', param('anzu_systems.dam_bundle.settings_redirect_domain'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))
         ->bind('$distributionServices', param('anzu_systems.dam_bundle.distribution_services'))
         ->bind('$extSystems', param('anzu_systems.dam_bundle.ext_systems'))

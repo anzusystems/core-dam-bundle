@@ -13,6 +13,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPublicFacade;
@@ -27,9 +28,10 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioPublicationAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -50,7 +52,7 @@ final class AudioController extends AbstractApiController
         private readonly ChunkFacade $chunkFacade,
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly AudioPositionFacade $audioPositionFacade,
-        private readonly AudioPublicFacade $audioPublicFacade,
+        private readonly AssetFileRouteFacade $assetFileRouteFacade,
     ) {
     }
 
@@ -250,13 +252,13 @@ final class AudioController extends AbstractApiController
         name: 'make_public',
         methods: [Request::METHOD_PATCH]
     )]
-    #[OAParameterPath('audio'), OARequest(AudioPublicationAdmDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function makePublic(AudioFile $audio, #[SerializeParam] AudioPublicationAdmDto $dto): JsonResponse
+    #[OAParameterPath('audio'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
+    public function makePublic(AudioFile $audio, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
 
         return $this->okResponse(
-            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePublic($audio, $dto)),
+            AssetFileRouteAdmDetailDecorator::getInstance($this->assetFileRouteFacade->makePublic($audio, $dto))
         );
     }
 
@@ -269,9 +271,10 @@ final class AudioController extends AbstractApiController
     public function makePrivate(AudioFile $audio): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+        $this->assetFileRouteFacade->makePrivate($audio);
 
         return $this->okResponse(
-            AudioFileAdmDetailDto::getInstance($this->audioPublicFacade->makePrivate($audio)),
+            AudioFileAdmDetailDto::getInstance($audio),
         );
     }
 }

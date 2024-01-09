@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
+use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
 
 /**
@@ -20,6 +22,7 @@ class AssetFileManager extends AbstractManager
 
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
+    protected AssetFileRouteManager $assetFileRouteManager;
 
     #[Required]
     public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
@@ -31,6 +34,12 @@ class AssetFileManager extends AbstractManager
     public function setChunkFileManager(ChunkFileManager $chunkFileManager): void
     {
         $this->chunkFileManager = $chunkFileManager;
+    }
+
+    #[Required]
+    public function setAssetFileRouteManager(AssetFileRouteManager $assetFileRouteManager): void
+    {
+        $this->assetFileRouteManager = $assetFileRouteManager;
     }
 
     /**
@@ -64,6 +73,8 @@ class AssetFileManager extends AbstractManager
 
     /**
      * @param T $assetFile
+     *
+     * @throws FilesystemException
      */
     public function delete(AssetFile $assetFile, bool $flush = true): bool
     {
@@ -72,6 +83,8 @@ class AssetFileManager extends AbstractManager
         }
 
         $this->chunkFileManager->clearChunks($assetFile, false);
+        $this->assetFileRouteManager->clearRoutes($assetFile, false);
+
         $this->deleteAssetFileRelations($assetFile);
         if (false === empty($assetFile->getAssetAttributes()->getFilePath())) {
             $this->fileStash->add($assetFile);

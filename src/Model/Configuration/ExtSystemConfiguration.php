@@ -22,7 +22,7 @@ final class ExtSystemConfiguration
         private readonly ExtSystemAudioTypeConfiguration $audio,
         private readonly ExtSystemAssetTypeConfiguration $video,
         private readonly ExtSystemImageTypeConfiguration $image,
-        private readonly ExtSystemAssetTypeConfiguration $document,
+        private readonly ExtSystemDocumentTypeConfiguration $document,
     ) {
     }
 
@@ -42,7 +42,7 @@ final class ExtSystemConfiguration
             ExtSystemAudioTypeConfiguration::getFromArrayConfiguration($config[AssetType::Audio->toString()] ?? []),
             ExtSystemVideoTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
             ExtSystemImageTypeConfiguration::getFromArrayConfiguration($config[AssetType::Image->toString()] ?? []),
-            ExtSystemAssetTypeConfiguration::getFromArrayConfiguration($config[AssetType::Document->toString()] ?? []),
+            ExtSystemDocumentTypeConfiguration::getFromArrayConfiguration($config[AssetType::Document->toString()] ?? []),
         );
     }
 
@@ -74,7 +74,7 @@ final class ExtSystemConfiguration
         return $this->image;
     }
 
-    public function getDocument(): ExtSystemAssetTypeConfiguration
+    public function getDocument(): ExtSystemDocumentTypeConfiguration
     {
         return $this->document;
     }

@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Repository\RegionOfInterestRepository;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -31,12 +32,42 @@ final class ImageController extends AbstractImageController
     private const REDIRECT_X_KEY = 'legacy_redirect';
 
     public function __construct(
-        private readonly CropFacade $cropFacade,
-        private readonly ImageFileRepository $imageFileRepository,
         private readonly RegionOfInterestRepository $roiRepository,
-        private readonly ConfigurationProvider $configurationProvider,
         private readonly ImageUrlFactory $imageUrlFactory,
     ) {
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidCropException
+     * @throws NonUniqueResultException
+     */
+    #[Route(
+        path: '/animated/{imageId}.gif',
+        name: 'get_one_animated',
+        requirements: [
+            'imageId' => '[0-9a-zA-Z-]+',
+        ],
+        methods: [Request::METHOD_GET]
+    )]
+    public function animation(
+        string $imageId,
+    ): Response {
+        $image = $this->imageFileRepository->findProcessedById($imageId);
+
+        if (null === $image) {
+            return $this->notFoundImageResponse(new RequestedCropDto());
+        }
+
+        if (
+            false === $image->getFlags()->isPublic() &&
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+        ) {
+            return $this->notFoundImageResponse(new RequestedCropDto());
+        }
+
+        return $this->streamResponse($image);
     }
 
     /**
@@ -55,12 +86,13 @@ final class ImageController extends AbstractImageController
             'regionOfInterestId' => '(-c\d+)|',
             'quality' => '(-q\d+)|',
         ],
-        methods: ['GET']
+        methods: [Request::METHOD_GET]
     )]
     public function getOne(
         RequestedCropDto $cropPayload,
         string $imageId,
     ): Response {
+        // todo remove after blog production routes -c1 expires
         if ($cropPayload->getRoi() > App::ZERO) {
             return $this->redirectResponse($cropPayload, $imageId);
         }
@@ -68,21 +100,25 @@ final class ImageController extends AbstractImageController
         $image = $this->imageFileRepository->findProcessedById($imageId);
 
         if (null === $image) {
-            return $this->createNotFoundResponse($cropPayload);
+            return $this->notFoundImageResponse($cropPayload);
         }
 
         $roi = $this->roiRepository->findByImageIdAndPosition($imageId, $cropPayload->getRoi());
         if (null === $roi) {
-            return $this->createNotFoundResponse($cropPayload);
+            return $this->notFoundImageResponse($cropPayload);
         }
 
-        if (false === $image->getFlags()->isPublic() && $this->cropFacade->isPublicDomain($image)) {
-            return $this->createNotFoundResponse($cropPayload);
+        if (
+            false === $image->getFlags()->isPublic() &&
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+        ) {
+            return $this->notFoundImageResponse($cropPayload);
         }
 
-        return $this->okResponse(
-            $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
-            $image,
+        return $this->okImageResponse(
+            image: $image,
+            roi: $roi,
+            cropPayload: $cropPayload
         );
     }
 
@@ -101,7 +137,7 @@ final class ImageController extends AbstractImageController
             status: Response::HTTP_MOVED_PERMANENTLY,
         );
         $response->setPublic();
-        $response->setMaxAge(0);
+        $response->setMaxAge(App::ZERO);
         $response->headers->set(AssetFileCacheManager::CACHE_CONTROL_TTL_HEADER, (string) self::REDIRECT_TTL);
 
         $response->headers->set(AssetFileCacheManager::X_KEY_HEADER, implode(' ', [
@@ -111,34 +147,5 @@ final class ImageController extends AbstractImageController
         ]));
 
         return $response;
-    }
-
-    /**
-     * @throws FilesystemException
-     * @throws ImageManipulatorException
-     * @throws InvalidCropException
-     * @throws NonUniqueResultException
-     */
-    private function createNotFoundResponse(RequestedCropDto $cropPayload): Response
-    {
-        $notFoundImageId = $this->configurationProvider->getSettings()->getNotFoundImageId();
-        if (empty($notFoundImageId)) {
-            throw new NotFoundHttpException('Image not found');
-        }
-
-        $notFoundImage = $this->imageFileRepository->findProcessedById($notFoundImageId);
-        if (null === $notFoundImage) {
-            throw new NotFoundHttpException('Image not found');
-        }
-
-        $notFoundRoi = $notFoundImage->getRegionsOfInterest()->first();
-        if ($notFoundRoi instanceof RegionOfInterest) {
-            return $this->notFoundResponse(
-                $this->cropFacade->applyCropPayload($notFoundImage, $cropPayload, $notFoundRoi),
-                $notFoundImage,
-            );
-        }
-
-        throw new NotFoundHttpException('Image not found');
     }
 }

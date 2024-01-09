@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 final class SettingsConfiguration
 {
     public const API_DOMAIN_KEY = 'api_domain';
+    public const REDIRECT_DOMAIN_KEY = 'redirect_domain';
     public const NOTIFICATIONS = 'notifications';
     public const DEFAULT_EXT_SYSTEM_ID_KEY = 'default_ext_system_id';
     public const YOUTUBE_API_KEY_KEY = 'youtube_api_key';
@@ -36,6 +37,7 @@ final class SettingsConfiguration
         private readonly NotificationsConfiguration $notificationsConfig,
         private readonly array $elasticLanguageDictionaries,
         private readonly string $apiDomainKey,
+        private readonly string $redirectDomain,
         private readonly string $youtubeApiKey,
         private readonly int $defaultExtSystemId,
         private readonly int $defaultAssetLicenceId,
@@ -60,6 +62,7 @@ final class SettingsConfiguration
             NotificationsConfiguration::getFromArrayConfiguration($settings[self::NOTIFICATIONS] ?? []),
             array_map(fn (string $language) => Language::from($language), $settings[self::ELASTIC_LANGUAGE_DICTIONARIES_KEY] ?? []),
             $settings[self::API_DOMAIN_KEY] ?? '',
+            $settings[self::REDIRECT_DOMAIN_KEY] ?? '',
             $settings[self::YOUTUBE_API_KEY_KEY] ?? '',
             $settings[self::DEFAULT_EXT_SYSTEM_ID_KEY] ?? 0,
             $settings[self::DEFAULT_ASSET_LICENCE_ID_KEY] ?? 0,
@@ -162,5 +165,10 @@ final class SettingsConfiguration
     public function getLimitedAssetLicenceFilesCount(): int
     {
         return $this->limitedAssetLicenceFilesCount;
+    }
+
+    public function getRedirectDomain(): string
+    {
+        return $this->redirectDomain;
     }
 }

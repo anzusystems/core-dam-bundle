@@ -6,9 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image;
 
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileMetadata\AssetFileMetadataAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\AssetMetadataAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Embeds\ImageAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\ImageLinksHandler;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class ImageFileAdmDetailDto extends ImageFileAdmListDto
@@ -78,7 +79,7 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
         return $this;
     }
 
-    #[Serialize(handler: ImageLinksHandler::class, type: ImageLinksHandler::TAG_DETAIL)]
+    #[Serialize(handler: LinksHandler::class)]
     public function getLinks(): ImageFile
     {
         return $this->image;
@@ -88,5 +89,14 @@ final class ImageFileAdmDetailDto extends ImageFileAdmListDto
     public function getOriginAssetFile(): string
     {
         return $this->image->getAssetAttributes()->getOriginAssetId();
+    }
+
+    #[Serialize]
+    public function getMainRoute(): ?AssetFileRouteAdmDetailDecorator
+    {
+        return $this->image->getMainRoute()
+            ? AssetFileRouteAdmDetailDecorator::getInstance($this->image->getMainRoute())
+            : null
+        ;
     }
 }

@@ -9,6 +9,9 @@ enum ApiViewType: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case List = 'list';
-    case Detail = 'detail';
+    public const LIST = 'list';
+    public const DETAIL= 'detail';
+
+    case List = self::LIST;
+    case Detail = self::DETAIL;
 }
