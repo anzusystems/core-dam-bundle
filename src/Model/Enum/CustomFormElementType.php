@@ -13,6 +13,7 @@ enum CustomFormElementType: string implements EnumInterface
 
     case String = 'string';
     case Integer = 'integer';
+    case Number = 'number';  // deprecated
     case StringArray = 'string_array';
     case Boolean = 'boolean';
     case Choice = 'choice';
