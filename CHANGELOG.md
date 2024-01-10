@@ -1,3 +1,7 @@
+## [1.5.0](https://github.com/anzusystems/core-dam-bundle/compare/1.5.0...1.5.1) (2024-01-10)
+### Feature
+* Added `number` case to `CustomFormElementType`
+
 ## [1.5.0](https://github.com/anzusystems/core-dam-bundle/compare/1.4.1...1.5.0) (2024-01-09)
 ### Feature
 * php `8.3`
