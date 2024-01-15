@@ -10,7 +10,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 final class AssetFileRouteAdmCreateDto
 {
-    public const SLUG_REGEX = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
+    public const string SLUG_REGEX = '/^[a-z0-9]+(?:-[a-z0-9]+)*$/';
 
     #[Assert\Length(
         min: 3,

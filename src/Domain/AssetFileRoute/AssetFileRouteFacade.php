@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Event\AssetFileRouteEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
@@ -26,7 +27,8 @@ final class AssetFileRouteFacade extends AbstractManager
 {
     use FileHelperTrait;
     use EventDispatcherAwareTrait;
-    private const PATH_TEMPLATE = '%s/%s.%s';
+
+    private const string PATH_TEMPLATE = '%s/%s.%s';
 
     public function __construct(
         private readonly AssetFileRouteRepository $assetFileRouteRepository,
@@ -40,33 +42,37 @@ final class AssetFileRouteFacade extends AbstractManager
     ) {
     }
 
-    public function makePublic(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): AssetFileRoute
+    /**
+     * @throws ForbiddenOperationException
+     */
+    public function makeImagePublic(ImageFile $imageFile): AssetFileRoute
     {
-        $this->validateProcessState($assetFile);
-        $route = $this->routeFactory->createFromDto($assetFile, $dto);
+        $this->validateProcessState($imageFile);
+        $this->validateMainRouteExists($imageFile);
 
-        try {
-            $this->assetFileRouteManager->beginTransaction();
-
-            if ($assetFile instanceof AudioFile) {
-                $this->makeAudioPublicLegacy($assetFile, $route);
-            }
-            if ($route->getMode()->is(RouteMode::StorageCopy)) {
-                $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);
-            }
-            $this->assetFileRouteManager->flush();
-            $this->assetFileRouteManager->commit();
-
-            $this->dispatcher->dispatch($this->createEvent($route));
-        } catch (Throwable $e) {
-            $this->entityManager->rollback();
-
-            throw new RuntimeException('asset_route_create_failed', 0, $e);
-        }
-
-        return $route;
+        return $this->makePublic(
+            assetFile: $imageFile,
+            route: $this->routeFactory->createForImage($imageFile)
+        );
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
+    public function makePublicFromDto(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): AssetFileRoute
+    {
+        $this->validateProcessState($assetFile);
+        $this->validateMainRouteExists($assetFile);
+
+        return $this->makePublic(
+            assetFile: $assetFile,
+            route: $this->routeFactory->createFromDto($assetFile, $dto)
+        );
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function makePrivate(AssetFile $assetFile): AssetFile
     {
         $mainRoute = $this->assetFileRouteRepository->findMainByAssetFile((string) $assetFile->getId());
@@ -80,9 +86,6 @@ final class AssetFileRouteFacade extends AbstractManager
             $event = $this->createEvent($mainRoute);
             $this->assetFileRouteManager->delete($mainRoute);
 
-            if ($assetFile instanceof AudioFile) {
-                $this->makeAudioPrivateLegacy($assetFile);
-            }
             if ($mainRoute->getMode()->is(RouteMode::StorageCopy)) {
                 $this->assetFileRouteStorageManager->deleteRouteFile($assetFile, $path);
             }
@@ -100,6 +103,30 @@ final class AssetFileRouteFacade extends AbstractManager
         return $assetFile;
     }
 
+    private function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
+    {
+        try {
+            $this->assetFileRouteManager->beginTransaction();
+
+            if ($route->getMode()->is(RouteMode::StorageCopy)) {
+                $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);
+            }
+            $this->assetFileRouteManager->flush();
+            $this->assetFileRouteManager->commit();
+
+            $this->dispatcher->dispatch($this->createEvent($route));
+        } catch (Throwable $e) {
+            $this->entityManager->rollback();
+
+            throw new RuntimeException('asset_route_create_failed', 0, $e);
+        }
+
+        return $route;
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
     private function validateProcessState(AssetFile $assetFile): void
     {
         if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
@@ -109,22 +136,17 @@ final class AssetFileRouteFacade extends AbstractManager
         throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
     }
 
-    private function makeAudioPublicLegacy(AudioFile $audioFile, AssetFileRoute $route): void
+    /**
+     * @throws ForbiddenOperationException
+     */
+    private function validateMainRouteExists(AssetFile $assetFile): void
     {
-        $audioFile->getAudioPublicLink()
-            ->setSlug($route->getUri()->getSlug())
-            ->setPath($route->getUri()->getPath())
-            ->setPublic(true)
-        ;
-    }
+        $mainRoute = $this->assetFileRouteRepository->findMainByAssetFile((string) $assetFile->getId());
+        if (null === $mainRoute) {
+            return;
+        }
 
-    private function makeAudioPrivateLegacy(AudioFile $audioFile): void
-    {
-        $audioFile->getAudioPublicLink()
-            ->setSlug('')
-            ->setPath('')
-            ->setPublic(false)
-        ;
+        throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
     }
 
     private function createEvent(AssetFileRoute $route): AssetFileRouteEvent

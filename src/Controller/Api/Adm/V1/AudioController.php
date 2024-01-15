@@ -258,7 +258,7 @@ final class AudioController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
 
         return $this->okResponse(
-            AssetFileRouteAdmDetailDecorator::getInstance($this->assetFileRouteFacade->makePublic($audio, $dto))
+            AssetFileRouteAdmDetailDecorator::getInstance($this->assetFileRouteFacade->makePublicFromDto($audio, $dto))
         );
     }
 

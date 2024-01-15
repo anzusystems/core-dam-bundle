@@ -275,20 +275,20 @@ final class ImageController extends AbstractApiController
     }
 
     /**
-     * @throws ValidationException
+     * @throws ForbiddenOperationException
      */
     #[Route(
         path: '/{image}/make-public',
         name: 'make_public',
         methods: [Request::METHOD_PATCH]
     )]
-    #[OAParameterPath('image'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
-    public function makePublic(ImageFile $image, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
+    #[OAParameterPath('image'), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
+    public function makePublic(ImageFile $image): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
 
         return $this->okResponse(
-            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublic($image, $dto))
+            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makeImagePublic($image))
         );
     }
 

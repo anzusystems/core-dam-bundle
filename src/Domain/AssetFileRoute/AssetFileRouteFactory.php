@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
@@ -22,7 +23,8 @@ final class AssetFileRouteFactory extends AbstractManager
 {
     use FileHelperTrait;
 
-    private const PATH_TEMPLATE = '%s/%s.%s';
+    private const string PATH_TEMPLATE = '%s/%s.%s';
+    private const string IMAGE_PATH_TEMPLATE = 'image/original/%s.jpg';
 
     public function __construct(
         private readonly SluggerInterface $slugger,
@@ -32,19 +34,31 @@ final class AssetFileRouteFactory extends AbstractManager
     ) {
     }
 
+    public function createForImage(ImageFile $imageFile): AssetFileRoute
+    {
+        return $this->createFileRoute(
+            assetFile: $imageFile,
+            slug: '',
+            path: $this->createPathForImage($imageFile)
+        );
+    }
+
     /**
      * @throws ForbiddenOperationException
      */
     public function createFromDto(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto): AssetFileRoute
     {
-        $mainRoute = $this->assetFileRouteRepository->findMainByAssetFile((string) $assetFile->getId());
-        if ($mainRoute) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
-        }
-
         $slug = $this->createSlug($assetFile, $dto);
-        $path = $this->createPath($assetFile, $slug);
 
+        return $this->createFileRoute(
+            assetFile: $assetFile,
+            slug: $slug,
+            path: $this->createPath($assetFile, $slug)
+        );
+    }
+
+    private function createFileRoute(AssetFile $assetFile, string $slug, string $path): AssetFileRoute
+    {
         $existingRoute = $this->assetFileRouteRepository->findOneByUriPath($path);
         if ($existingRoute) {
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
@@ -74,6 +88,14 @@ final class AssetFileRouteFactory extends AbstractManager
             $assetFile->getId(),
             $slug,
             $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType())
+        );
+    }
+
+    private function createPathForImage(ImageFile $imageFile): string
+    {
+        return sprintf(
+            self::IMAGE_PATH_TEMPLATE,
+            $imageFile->getId(),
         );
     }
 

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Audio;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioAttributesAdmDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\Embeds\AudioPublicLinkAdmDto;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class AudioFileAdmDetailDto extends AudioFileAdmListDto
@@ -15,14 +14,10 @@ final class AudioFileAdmDetailDto extends AudioFileAdmListDto
     #[Serialize]
     protected AudioAttributesAdmDto $audioAttributes;
 
-    #[Serialize]
-    protected AudioPublicLinkAdmDto $publicLink;
-
     public static function getInstance(AudioFile $audioFile): static
     {
         return parent::getInstance($audioFile)
             ->setAudioAttributes(AudioAttributesAdmDto::getInstance($audioFile->getAttributes()))
-            ->setPublicLink(AudioPublicLinkAdmDto::getInstance($audioFile->getAudioPublicLink()))
         ;
     }
 
@@ -34,18 +29,6 @@ final class AudioFileAdmDetailDto extends AudioFileAdmListDto
     public function setAudioAttributes(AudioAttributesAdmDto $audioAttributes): self
     {
         $this->audioAttributes = $audioAttributes;
-
-        return $this;
-    }
-
-    public function getPublicLink(): AudioPublicLinkAdmDto
-    {
-        return $this->publicLink;
-    }
-
-    public function setPublicLink(AudioPublicLinkAdmDto $publicLink): self
-    {
-        $this->publicLink = $publicLink;
 
         return $this;
     }

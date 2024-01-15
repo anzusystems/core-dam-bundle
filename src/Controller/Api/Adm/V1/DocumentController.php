@@ -257,7 +257,7 @@ final class DocumentController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
 
         return $this->okResponse(
-            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublic($document, $dto))
+            AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublicFromDto($document, $dto))
         );
     }
 
