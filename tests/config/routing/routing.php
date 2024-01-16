@@ -10,11 +10,19 @@ return static function (RoutingConfigurator $routes): void {
         ->prefix('/api/adm/v1/');
 
     $routes
+        ->import('@AnzuSystemsCoreDamBundle/Controller/Api/Sys/V1', type: 'attribute')
+        ->prefix('/api/sys/v1/');
+
+    $routes
         ->import('@AnzuSystemsCoreDamBundle/Controller/Api/Pub/V1', type: 'attribute')
         ->prefix('/api/pub/v1/');
 
     $routes
         ->import('@AnzuSystemsCoreDamBundle/Controller/ImageController.php', type: 'attribute')
+        ->prefix('/');
+
+    $routes
+        ->import('@AnzuSystemsCoreDamBundle/Controller/AssetFileRouteController.php', type: 'attribute')
         ->prefix('/');
 
     $routes

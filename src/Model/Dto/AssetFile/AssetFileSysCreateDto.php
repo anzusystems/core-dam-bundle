@@ -23,7 +23,7 @@ final class AssetFileSysCreateDto implements ExtSystemInterface, CustomDataInter
     #[Assert\Length(max: 192, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $path = '';
 
-    #[Serialize]
+    #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $customData = [];
 
     #[Serialize]

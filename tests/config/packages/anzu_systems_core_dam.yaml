@@ -139,6 +139,7 @@ anzu_systems_core_dam:
   ext_systems:
     cms:
       id: 1
+      ext_storage: 'cms.image'
       image:
         title: ['customData:title']
         custom_metadata_pinned_amount: 3

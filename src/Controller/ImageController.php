@@ -54,10 +54,13 @@ final class ImageController extends AbstractImageController
     public function animation(
         string $imageId,
     ): Response {
-        // id snimtion valid
         $image = $this->imageFileRepository->findProcessedById($imageId);
 
         if (null === $image) {
+            return $this->notFoundImageResponse(new RequestedCropDto());
+        }
+
+        if (false === $image->getImageAttributes()->isAnimated()) {
             return $this->notFoundImageResponse(new RequestedCropDto());
         }
 

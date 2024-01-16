@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysDetailDecorator;
+use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\NonUniqueResultException;
@@ -39,7 +40,7 @@ final class AssetFileController extends AbstractApiController
      * @throws NonUniqueResultException
      */
     #[Route('', 'create', methods: [Request::METHOD_POST])]
-    #[OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
+    #[OARequest(AssetFileSysCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
     public function create(#[SerializeParam] AssetFileSysCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $dto);

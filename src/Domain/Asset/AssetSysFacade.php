@@ -45,8 +45,14 @@ final class AssetSysFacade
     {
         $this->validator->validate($dto);
         $assetFile = $this->assetSysFactory->createFromDto($dto);
-        $this->assetMetadataManager->updateFromCustomData($assetFile->getAsset(), $dto->getCustomData());
         $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile);
+        $this->assetMetadataManager->updateFromCustomData(
+            $assetFile->getAsset(),
+            [
+                ...$assetFile->getAsset()->getMetadata()->getCustomData(),
+                ...$dto->getCustomData(),
+            ]
+        );
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
         if (
