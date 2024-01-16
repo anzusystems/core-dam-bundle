@@ -42,6 +42,13 @@ final class AssetFileRouteFacade extends AbstractManager
     ) {
     }
 
+    public function makePublicAssetFile(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto = null): AssetFileRoute
+    {
+        return $assetFile instanceof ImageFile
+            ? $this->makeImagePublic($assetFile)
+            : $this->makePublicFromDto($assetFile, $dto ?? new AssetFileRouteAdmCreateDto());
+    }
+
     /**
      * @throws ForbiddenOperationException
      */

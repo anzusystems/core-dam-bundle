@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -54,5 +55,11 @@ final class AssetFileSysDetailDecorator extends AbstractEntityDto
     public function getAssetType(): AssetType
     {
         return $this->assetFile->getAssetType();
+    }
+
+    #[Serialize(strategy: Serialize::KEYS_VALUES)]
+    public function getCustomData(): array
+    {
+        return $this->assetFile->getAsset()->getMetadata()->getCustomData();
     }
 }

@@ -19,14 +19,14 @@ use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
-final class CustomDataValidator extends ConstraintValidator
+class CustomDataValidator extends ConstraintValidator
 {
     private const PATH_TEMPLATE = 'customData.%s';
 
     private readonly iterable $validators;
 
     public function __construct(
-        private readonly CustomFormProvider $customFormProvider,
+        protected readonly CustomFormProvider $customFormProvider,
         #[TaggedIterator(tag: ElementValidatorInterface::class, indexAttribute: 'key')]
         iterable $validators,
     ) {
@@ -48,9 +48,15 @@ final class CustomDataValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, ResourceCustomFormProvidableInterface::class);
         }
 
-        $form = $this->customFormProvider->provideForm($value);
-        $customData = $value->getCustomData();
+        $this->validateForm(
+            form: $this->customFormProvider->provideForm($value),
+            value: $value
+        );
+    }
 
+    protected function validateForm(CustomForm $form, CustomDataInterface $value): void
+    {
+        $customData = $value->getCustomData();
         foreach ($form->getElements() as $element) {
             if ($element->getAttributes()->isReadonly()) {
                 continue;
