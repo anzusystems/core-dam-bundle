@@ -21,8 +21,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class AudioFixtures extends AbstractAssetFileFixtures
 {
-    public const AUDIO_ID_1 = '7994f48d-118e-4dc6-8245-98b546cda6dc';
-    public const AUDIO_ID_2 = '7994f48d-118e-4dc6-8245-98b546cda6de';
+    public const string AUDIO_ID_1 = '7994f48d-118e-4dc6-8245-98b546cda6dc';
+    public const string AUDIO_ID_2 = '7994f48d-118e-4dc6-8245-98b546cda6de';
 
     public function __construct(
         private readonly AudioFactory $audioFactory,

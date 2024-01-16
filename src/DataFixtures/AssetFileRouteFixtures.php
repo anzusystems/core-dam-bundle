@@ -46,7 +46,7 @@ final class AssetFileRouteFixtures extends AbstractAssetFileFixtures
     {
         /** @var array{assetFile: AssetFile, dto: AssetFileRouteAdmCreateDto} $data */
         foreach ($progressBar->iterate($this->getData()) as $data) {
-            $this->assetFileRouteFacade->makePublic($data['assetFile'], $data['dto']);
+            $this->assetFileRouteFacade->makePublicFromDto($data['assetFile'], $data['dto']);
         }
 
         $this->createLegacy();

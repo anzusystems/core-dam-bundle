@@ -28,8 +28,8 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(path: '/image', name: 'image_')]
 final class ImageController extends AbstractImageController
 {
-    private const REDIRECT_TTL = 604_800;
-    private const REDIRECT_X_KEY = 'legacy_redirect';
+    private const int REDIRECT_TTL = 604_800;
+    private const string REDIRECT_X_KEY = 'legacy_redirect';
 
     public function __construct(
         private readonly RegionOfInterestRepository $roiRepository,
@@ -54,6 +54,7 @@ final class ImageController extends AbstractImageController
     public function animation(
         string $imageId,
     ): Response {
+        // id snimtion valid
         $image = $this->imageFileRepository->findProcessedById($imageId);
 
         if (null === $image) {

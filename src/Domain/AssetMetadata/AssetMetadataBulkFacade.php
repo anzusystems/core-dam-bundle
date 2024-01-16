@@ -48,7 +48,7 @@ final class AssetMetadataBulkFacade
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
-            $this->assetMetadataManager->updateFromMetadataBulkDto($asset, $updateDto, false);
+            $this->assetMetadataManager->updateFromCustomData($asset, $updateDto->getCustomData(), false);
             $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
                 asset: $this->assetManager->updateFromMetadataBulkDto($asset, $updateDto, false)
             );

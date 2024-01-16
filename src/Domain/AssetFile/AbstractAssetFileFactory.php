@@ -158,6 +158,26 @@ abstract class AbstractAssetFileFactory
     }
 
     /**
+     * @throws FilesystemException
+     * @throws InvalidMimeTypeException
+     */
+    public function getTypeFromPath(string $storageName, string $filePath): AssetType
+    {
+        $fileSystem = $this->fileSystemProvider->getFileSystemByStorageName($storageName);
+        if (null === $fileSystem) {
+            throw new DomainException(sprintf('File system not configured (%s)', $storageName));
+        }
+
+        if (false === $fileSystem->has($filePath)) {
+            throw new DomainException(sprintf('File (%s) not exists in storage (%s)', $filePath, $storageName));
+        }
+
+        return $this->getTypeFromMime(
+            $fileSystem->mimeType($filePath)
+        );
+    }
+
+    /**
      * @return T
      *
      * @throws FilesystemException
@@ -238,26 +258,6 @@ abstract class AbstractAssetFileFactory
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
-    }
-
-    /**
-     * @throws FilesystemException
-     * @throws InvalidMimeTypeException
-     */
-    protected function getTypeFromPath(string $storageName, string $filePath): AssetType
-    {
-        $fileSystem = $this->fileSystemProvider->getFileSystemByStorageName($storageName);
-        if (null === $fileSystem) {
-            throw new DomainException(sprintf('File system not configured (%s)', $storageName));
-        }
-
-        if (false === $fileSystem->has($filePath)) {
-            throw new DomainException(sprintf('File (%s) not exists in storage (%s)', $filePath, $storageName));
-        }
-
-        return $this->getTypeFromMime(
-            $fileSystem->mimeType($filePath)
-        );
     }
 
     /**

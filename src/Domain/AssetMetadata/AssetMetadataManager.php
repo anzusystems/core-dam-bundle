@@ -31,14 +31,14 @@ final class AssetMetadataManager extends AbstractManager
     /**
      * @throws NonUniqueResultException
      */
-    public function updateFromMetadataBulkDto(
+    public function updateFromCustomData(
         Asset $asset,
-        FormProvidableMetadataBulkUpdateDto $dto,
+        array $customData,
         bool $flush = true
     ): AssetMetadata {
         $assetMetadata = $asset->getMetadata();
         $this->trackModification($assetMetadata);
-        $assetMetadata->setCustomData($this->updateCustomData($asset, $dto));
+        $assetMetadata->setCustomData($this->updateCustomData($asset, $customData));
         $this->flush($flush);
 
         return $assetMetadata;
@@ -59,12 +59,11 @@ final class AssetMetadataManager extends AbstractManager
     /**
      * @throws NonUniqueResultException
      */
-    private function updateCustomData(Asset $asset, FormProvidableMetadataBulkUpdateDto $dto): array
+    private function updateCustomData(Asset $asset, array $newCustomData): array
     {
         $form = $this->customFormProvider->provideForm($asset);
 
         $oldCustomData = $asset->getMetadata()->getCustomData();
-        $newCustomData = $dto->getCustomData();
 
         foreach ($form->getElements() as $element) {
             if ($element->getAttributes()->isReadonly()) {
