@@ -1,3 +1,16 @@
+## [1.6.1](https://github.com/anzusystems/core-dam-bundle/compare/1.6.0...1.6.1) (2024-01-16)
+### Changes
+* created unittests for AssetFile sys API
+
+### Fixes
+* Animated URL disabled for non-animated image
+
+## [1.6.0](https://github.com/anzusystems/core-dam-bundle/compare/1.5.1...1.6.0) (2024-01-16)
+### Feature
+* Image public routes without slug. Removed deprecations.
+* Asset sys API update. Now supports custom data and could generate pub…
+* Renamed php version in github workflows.
+
 ## [1.5.0](https://github.com/anzusystems/core-dam-bundle/compare/1.5.0...1.5.1) (2024-01-10)
 ### Feature
 * Added `number` case to `CustomFormElementType`
