@@ -11,12 +11,16 @@ use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
 use AnzuSystems\CoreDamBundle\FileSystem\AbstractFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
 
@@ -26,6 +30,8 @@ final readonly class FileFactory
         private FileSystemProvider $fileSystemProvider,
         private VispImageManipulator $vispImageManipulator,
         private MimeGuesser $mimeGuesser,
+        private readonly DamLogger $damLogger,
+        private Exiftool $exiftool
     ) {
     }
 
@@ -102,13 +108,21 @@ final readonly class FileFactory
         }
         $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
 
-        return AdapterFile::createFromBaseFile(
+        $adapterFile = AdapterFile::createFromBaseFile(
             file: $tmpFileSystem->writeTmpFileFromFilesystem(
                 filesystem: $fileSystem,
                 filePath: $originStorage->getPath()
             ),
             filesystem: $tmpFileSystem
         );
+
+        // if the png is uploaded using storage, additional metadata may have been added with the date,
+        // so we need to delete it because the duplicity check could fail
+        if ($this->mimeGuesser->guessMime($adapterFile->getRealPath()) === ImageMimeTypes::MimePng->value) {
+            $this->exiftool->clearPng($adapterFile->getRealPath());
+        }
+
+        return $adapterFile;
     }
 
     /**

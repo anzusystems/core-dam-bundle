@@ -1,3 +1,11 @@
+## [1.7.0](https://github.com/anzusystems/core-dam-bundle/compare/1.6.1...1.7.0) (2024-01-18)
+### Changes
+* `FileFactory` clears png metadata when file is created from storage
+* Added lock to checking duplicity process state to avoid a racing condition
+
+### Fixes
+* `Exiftool` metadata parse fix 
+
 ## [1.6.1](https://github.com/anzusystems/core-dam-bundle/compare/1.6.0...1.6.1) (2024-01-16)
 ### Changes
 * created unittests for AssetFile sys API

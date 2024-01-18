@@ -12,6 +12,7 @@ use Symfony\Component\Process\Process;
 final class Exiftool
 {
     private const ALL = ['-all=', '-tagsFromFile', '@', '-StreamColor', '-StreamBitDepth', '-ColorSpace', '-Orientation'];
+    private const PNG_CLEAR = ['-png:all=', '-overwrite_original'];
     private const DEFAULT_TIMEOUT = 15.0;
 
 
@@ -32,6 +33,15 @@ final class Exiftool
             $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), $exception);
 
             return [];
+        }
+    }
+
+    public function clearPng(string $filePath): void
+    {
+        try {
+            $this->execute($filePath, self::PNG_CLEAR);
+        } catch (RuntimeException $exception) {
+            $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), $exception);
         }
     }
 
@@ -80,7 +90,7 @@ final class Exiftool
         $tagList = [];
 
         foreach ($tags as $tag) {
-            $tagPair = explode(':', $tag);
+            $tagPair = explode(':', $tag, 2);
             if (false === isset($tagPair[0]) || false === isset($tagPair[1])) {
                 continue;
             }
