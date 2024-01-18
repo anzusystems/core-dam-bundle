@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
@@ -55,23 +56,11 @@ final readonly class FileFactory
             );
         }
 
-        $adapterFile = new AdapterFile(
+        return new AdapterFile(
             path: $fileSystem->extendPath($path),
             adapterPath: $path,
             filesystem: $fileSystem
         );
-
-        $this->damLogger->info(
-            'FileFactory',
-            'CreateFromStorage',
-            json_encode([
-                'Path' => $adapterFile->getRealPath(),
-                'Checksum' => MimeGuesser::checksumFromPath($adapterFile->getRealPath()),
-                'Tags' => $this->exiftool->getTags($adapterFile->getRealPath()),
-            ])
-        );
-
-        return $adapterFile;
     }
 
     /**
@@ -127,15 +116,11 @@ final readonly class FileFactory
             filesystem: $tmpFileSystem
         );
 
-        $this->damLogger->info(
-            'FileFactory',
-            'CreateFromStorage',
-            json_encode([
-                'Path' => $adapterFile->getRealPath(),
-                'Checksum' => MimeGuesser::checksumFromPath($adapterFile->getRealPath()),
-                'Tags' => $this->exiftool->getTags($adapterFile->getRealPath()),
-            ])
-        );
+        // if the png is uploaded using storage, additional metadata may have been added with the date,
+        // so we need to delete it because the duplicity check could fail
+        if ($this->mimeGuesser->guessMime($adapterFile->getRealPath()) === ImageMimeTypes::MimePng->value) {
+            $this->exiftool->clearPng($adapterFile->getRealPath());
+        }
 
         return $adapterFile;
     }
