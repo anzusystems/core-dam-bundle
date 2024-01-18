@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\ExternalProviderFileFactory;
@@ -62,6 +63,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected DamLogger $damLogger;
     protected AssetFileCounter $assetFileCounter;
     protected ChunkFileManager $chunkFileManager;
+    protected ResourceLocker $resourceLocker;
 
     #[Required]
     public function setAssetFileCounter(AssetFileCounter $assetFileCounter): void
@@ -165,6 +167,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->chunkFileManager = $chunkFileManager;
     }
 
+    #[Required]
+    public function setResourceLocker(ResourceLocker $resourceLocker): void
+    {
+        $this->resourceLocker = $resourceLocker;
+    }
+
     /**
      * @throws SerializerException
      * @throws ValidationException
@@ -242,14 +250,23 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
         $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
         $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
-        $this->checkDuplicate($assetFile);
+
+        $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
+        $this->resourceLocker->lock($lockName);
+        $originAssetFile = $this->checkDuplicate($assetFile);
+        if ($originAssetFile) {
+            $this->resourceLocker->unLock($lockName);
+            throw new DuplicateAssetFileException($assetFile, $originAssetFile);
+        }
 
         try {
             $this->assetManager->beginTransaction();
             $this->assetFileStorageOperator->save($assetFile, $file);
             $this->assetStatusManager->toStored($assetFile);
             $this->assetManager->commit();
+            $this->resourceLocker->unLock($lockName);
         } catch (Throwable $exception) {
+            $this->resourceLocker->unLock($lockName);
             $this->assetManager->rollback();
 
             throw $exception;
@@ -296,7 +313,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws DuplicateAssetFileException
      * @throws NonUniqueResultException
      */
-    abstract protected function checkDuplicate(AssetFile $assetFile): void;
+    abstract protected function checkDuplicate(AssetFile $assetFile): ?AssetFile;
 
     /**
      * @throws ForbiddenOperationException

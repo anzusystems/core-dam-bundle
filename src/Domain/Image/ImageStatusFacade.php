@@ -59,15 +59,12 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         return $imageFile;
     }
 
-    protected function checkDuplicate(AssetFile $assetFile): void
+    protected function checkDuplicate(AssetFile $assetFile): ?AssetFile
     {
-        $originAsset = $this->imageFileRepository->findProcessedByChecksumAndLicence(
+        return $this->imageFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
         );
-        if ($originAsset) {
-            throw new DuplicateAssetFileException($originAsset, $assetFile);
-        }
     }
 
     private function getImage(AssetFile $assetFile): ImageFile

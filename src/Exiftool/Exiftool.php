@@ -80,7 +80,7 @@ final class Exiftool
         $tagList = [];
 
         foreach ($tags as $tag) {
-            $tagPair = explode(':', $tag);
+            $tagPair = explode(':', $tag, 2);
             if (false === isset($tagPair[0]) || false === isset($tagPair[1])) {
                 continue;
             }

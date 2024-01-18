@@ -93,15 +93,12 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
         return $assetFile;
     }
 
-    protected function checkDuplicate(AssetFile $assetFile): void
+    protected function checkDuplicate(AssetFile $assetFile): ?AssetFile
     {
-        $originAsset = $this->videoFileRepository->findProcessedByChecksumAndLicence(
+        return $this->videoFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
         );
-        if ($originAsset) {
-            throw new DuplicateAssetFileException($originAsset, $assetFile);
-        }
     }
 
     private function getThumbnailPosition(VideoFile $file): int

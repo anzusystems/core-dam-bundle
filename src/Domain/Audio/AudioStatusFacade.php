@@ -45,14 +45,11 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
         return $assetFile;
     }
 
-    protected function checkDuplicate(AssetFile $assetFile): void
+    protected function checkDuplicate(AssetFile $assetFile): ?AssetFile
     {
-        $originAsset = $this->audioFileRepository->findProcessedByChecksumAndLicence(
+        return $this->audioFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
         );
-        if ($originAsset) {
-            throw new DuplicateAssetFileException($originAsset, $assetFile);
-        }
     }
 }
