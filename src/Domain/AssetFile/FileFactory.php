@@ -11,12 +11,15 @@ use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
 use AnzuSystems\CoreDamBundle\FileSystem\AbstractFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Image\VispImageManipulator;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
 
@@ -26,6 +29,8 @@ final readonly class FileFactory
         private FileSystemProvider $fileSystemProvider,
         private VispImageManipulator $vispImageManipulator,
         private MimeGuesser $mimeGuesser,
+        private readonly DamLogger $damLogger,
+        private Exiftool $exiftool
     ) {
     }
 
@@ -50,11 +55,23 @@ final readonly class FileFactory
             );
         }
 
-        return new AdapterFile(
+        $adapterFile = new AdapterFile(
             path: $fileSystem->extendPath($path),
             adapterPath: $path,
             filesystem: $fileSystem
         );
+
+        $this->damLogger->info(
+            'FileFactory',
+            'CreateFromStorage',
+            json_encode([
+                'Path' => $adapterFile->getRealPath(),
+                'Checksum' => MimeGuesser::checksumFromPath($adapterFile->getRealPath()),
+                'Tags' => $this->exiftool->getTags($adapterFile->getRealPath()),
+            ])
+        );
+
+        return $adapterFile;
     }
 
     /**
@@ -102,13 +119,25 @@ final readonly class FileFactory
         }
         $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
 
-        return AdapterFile::createFromBaseFile(
+        $adapterFile = AdapterFile::createFromBaseFile(
             file: $tmpFileSystem->writeTmpFileFromFilesystem(
                 filesystem: $fileSystem,
                 filePath: $originStorage->getPath()
             ),
             filesystem: $tmpFileSystem
         );
+
+        $this->damLogger->info(
+            'FileFactory',
+            'CreateFromStorage',
+            json_encode([
+                'Path' => $adapterFile->getRealPath(),
+                'Checksum' => MimeGuesser::checksumFromPath($adapterFile->getRealPath()),
+                'Tags' => $this->exiftool->getTags($adapterFile->getRealPath()),
+            ])
+        );
+
+        return $adapterFile;
     }
 
     /**
