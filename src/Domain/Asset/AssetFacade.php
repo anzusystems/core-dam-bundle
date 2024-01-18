@@ -132,7 +132,6 @@ class AssetFacade
             $this->assetFileDeleteEventDispatcher->dispatchAll();
             $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $exception) {
-            dump($exception);
             $this->assetManager->rollback();
 
             throw new RuntimeException('asset_delete_failed', 0, $exception);

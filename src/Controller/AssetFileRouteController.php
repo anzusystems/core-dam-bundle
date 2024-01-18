@@ -42,7 +42,6 @@ final class AssetFileRouteController extends AbstractImageController
     public function getOne(
         string $uri,
     ): Response {
-        dump($uri);
         $route = $this->assetFileRouteRepository->findOneByUriPath($uri);
         if (
             null === $route ||
