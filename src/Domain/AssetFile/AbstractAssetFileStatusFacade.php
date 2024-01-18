@@ -253,10 +253,15 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
 
         $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
         $this->resourceLocker->lock($lockName);
+
         $originAssetFile = $this->checkDuplicate($assetFile);
         if ($originAssetFile) {
             $this->resourceLocker->unLock($lockName);
-            throw new DuplicateAssetFileException($assetFile, $originAssetFile);
+
+            throw new DuplicateAssetFileException(
+                oldAsset: $originAssetFile,
+                newAsset: $assetFile
+            );
         }
 
         try {
