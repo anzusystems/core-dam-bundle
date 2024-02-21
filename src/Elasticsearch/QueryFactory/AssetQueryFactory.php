@@ -38,8 +38,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
-        //        $searchDto->getText()
-
         if ($searchDto->getText()) {
             return [
                 'multi_match' => [

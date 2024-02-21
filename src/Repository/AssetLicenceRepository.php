@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 /**
  * @extends AbstractAnzuRepository<AssetLicence>
@@ -23,6 +25,15 @@ final class AssetLicenceRepository extends AbstractAnzuRepository
             'extSystem' => $extSystem,
             'extId' => $extId,
         ]);
+    }
+
+    public function findByIds(array $ids): Collection
+    {
+        return new ArrayCollection(
+            $this->findBy([
+                'id' => $ids,
+            ])
+        );
     }
 
     protected function getEntityClass(): string

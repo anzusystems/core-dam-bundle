@@ -380,4 +380,9 @@ class Asset implements
 
         return $this;
     }
+
+    public static function getIndexName(): string
+    {
+        return self::getResourceName();
+    }
 }

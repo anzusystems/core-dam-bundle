@@ -8,4 +8,5 @@ use AnzuSystems\Contracts\Entity\Interfaces\IndexableInterface;
 
 interface ExtSystemIndexableInterface extends ExtSystemInterface, IndexableInterface
 {
+    public static function getIndexName(): string;
 }

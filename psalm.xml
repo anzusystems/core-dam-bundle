@@ -20,6 +20,7 @@
         <MoreSpecificImplementedParamType errorLevel="suppress"/>
         <UnnecessaryVarAnnotation errorLevel="suppress"/>
         <ImplicitToStringCast errorLevel="suppress"/>
+        <RiskyTruthyFalsyComparison errorLevel="suppress"/>
         <RedundantCast errorLevel="suppress"/>
         <MoreSpecificReturnType errorLevel="suppress"/>
         <LessSpecificReturnStatement errorLevel="suppress"/>

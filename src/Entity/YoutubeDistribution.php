@@ -18,6 +18,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[AppAssert\Youtube]
 class YoutubeDistribution extends Distribution
 {
+    public const string DISCRIMINATOR = 'youtubeDistribution';
+
     #[ORM\Embedded(YoutubeTexts::class)]
     #[Assert\Valid]
     #[Serialize]
@@ -125,5 +127,10 @@ class YoutubeDistribution extends Distribution
         $this->language = $language;
 
         return $this;
+    }
+
+    public function getDiscriminator(): string
+    {
+        return self::DISCRIMINATOR;
     }
 }

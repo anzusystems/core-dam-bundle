@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
+use AnzuSystems\Contracts\Entity\Interfaces\IndexableInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 
-final class IndexSettings
+final readonly class IndexSettings
 {
     public function __construct(
-        private readonly ConfigurationProvider $configurationProvider,
+        private ConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -39,7 +40,7 @@ final class IndexSettings
 
     public function getFullIndexNameByEntity(ExtSystemIndexableInterface $entity): string
     {
-        return $this->getFullIndexNameBySlug($entity::getResourceName(), $entity->getExtSystem()->getSlug());
+        return $this->getFullIndexNameBySlug($entity::getIndexName(), $entity->getExtSystem()->getSlug());
     }
 
     public function hasElasticLanguageDictionary(Language $language): bool

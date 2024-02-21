@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
+
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
+
+final class DistributionQueryFactory extends AbstractQueryFactory
+{
+    public function getSupportedSearchDtoClasses(): array
+    {
+        return [
+            DistributionAdmSearchDto::class,
+        ];
+    }
+
+    /**
+     * @param DistributionAdmSearchDto $searchDto
+
+     * @psalm-suppress PossiblyNullReference
+     */
+    protected function getFilter(SearchDtoInterface $searchDto): array
+    {
+        $filter = [];
+
+        if (false === (null === $searchDto->getService())) {
+            $filter[] = ['terms' => ['service' => [$searchDto->getService()]]];
+        }
+        if (false === (null === $searchDto->getServiceSlug())) {
+            $filter[] = ['terms' => ['serviceSlug' => [$searchDto->getServiceSlug()]]];
+        }
+        if (false === (null === $searchDto->getStatus())) {
+            $filter[] = ['terms' => ['status' => [$searchDto->getStatus()->toString()]]];
+        }
+        if (false === (null === $searchDto->getExtId())) {
+            $filter[] = ['terms' => ['extId' => [$searchDto->getExtId()]]];
+        }
+
+        if (false === $searchDto->getLicenceIds()->isEmpty()) {
+            $terms = [];
+            foreach ($searchDto->getLicenceIds() as $licenceId) {
+                $terms[] = ['term' => ['licenceId' => $licenceId->getId()]];
+            }
+
+            $filter[] = [
+                'bool' => [
+                    'should' => $terms,
+                ],
+            ];
+        }
+
+        return $filter;
+    }
+}

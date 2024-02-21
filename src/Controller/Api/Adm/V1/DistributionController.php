@@ -5,16 +5,22 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionPermissionFacade;
+use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\DistributionAdmElasticsearchDecorator;
+use AnzuSystems\CoreDamBundle\Elasticsearch\ElasticSearch;
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Decorator\DistributionServiceAuthorization;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -28,7 +34,22 @@ final class DistributionController extends AbstractApiController
     public function __construct(
         private readonly DistributionRepositoryDecorator $distributionRepository,
         private readonly DistributionPermissionFacade $distributionPermissionFacade,
+        private readonly DistributionAdmElasticsearchDecorator $elasticSearch,
     ) {
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws ValidationException
+     */
+    #[Route('/search', name: 'search', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('search', description: 'Searched.'), OAResponse([Distribution::class])]
+    public function search(#[SerializeParam] DistributionAdmSearchDto $searchDto): JsonResponse
+    {
+        // todo vote
+        //        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS);
+
+        return $this->okResponse($this->elasticSearch->searchInfiniteList($searchDto));
     }
 
     /**

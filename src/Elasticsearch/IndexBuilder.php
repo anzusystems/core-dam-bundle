@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
+use AnzuSystems\Contracts\Entity\Interfaces\IndexableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
@@ -92,15 +93,14 @@ final class IndexBuilder
     {
         $this->writeln(sprintf('Indexing <info>%s</info>...', $config->getIndexName()));
 
-        /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repo */
-        $repo = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($config->getIndexName()));
-
-        $count = $repo->getAllCountForIndexRebuild($config);
+        /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repository */
+        $repository = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($config->getIndexName()));
+        $count = $repository->getAllCountForIndexRebuild($config);
         $progressBar = $this->outputUtil->createProgressBar($count);
         $this->configureProgressBar($progressBar);
 
         if ($config->hasNotIdUntil()) {
-            $maxId = $repo->getMaxIdForIndexRebuild($config);
+            $maxId = $repository->getMaxIdForIndexRebuild($config);
             if (empty($maxId)) {
                 $this->writeln(sprintf('Skipping <info>%s</info>, nothing to index...', $config->getIndexName()));
 
@@ -111,7 +111,7 @@ final class IndexBuilder
         do {
             $payload = ['body' => []];
             /** @var ExtSystemIndexableInterface $item */
-            foreach ($repo->getAllForIndexRebuild($config) as $item) {
+            foreach ($repository->getAllForIndexRebuild($config) as $item) {
                 $payload['body'][] = [
                     'index' => [
                         '_index' => $this->indexSettings->getFullIndexNameByEntity($item),
