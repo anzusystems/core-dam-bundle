@@ -11,7 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwAbstractDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
@@ -30,7 +30,7 @@ use Symfony\Component\Routing\Annotation\Route;
 final class JwDistributionController extends AbstractApiController
 {
     public function __construct(
-        private readonly JwAbstractDistributionFacade $jwDistributionFacade,
+        private readonly JwDistributionFacade $jwDistributionFacade,
         private readonly AssetRepository $assetRepository,
     ) {
     }

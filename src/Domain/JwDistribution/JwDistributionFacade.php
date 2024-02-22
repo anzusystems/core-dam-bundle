@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use Doctrine\ORM\NonUniqueResultException;
 
-class JwAbstractDistributionFacade extends AbstractDistributionFacade
+class JwDistributionFacade extends AbstractDistributionFacade
 {
     public function __construct(
         private readonly DistributionBodyBuilder $distributionBodyBuilder,
@@ -23,7 +23,7 @@ class JwAbstractDistributionFacade extends AbstractDistributionFacade
     public function preparePayload(AssetFile $assetFile, string $distributionService): JwDistribution
     {
         $distribution = new JwDistribution();
-        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
+        $this->distributionBodyBuilder->setBaseFields($assetFile, $distributionService, $distribution);
 
         $this->distributionBodyBuilder->setWriterProperties(
             $distributionService,

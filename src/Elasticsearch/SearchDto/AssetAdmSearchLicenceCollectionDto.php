@@ -47,8 +47,10 @@ final class AssetAdmSearchLicenceCollectionDto extends AssetAdmSearchDto impleme
     /**
      * @param Collection<int, AssetLicence> $licences
      */
-    public function setLicences(Collection $licences): void
+    public function setLicences(Collection $licences): self
     {
         $this->licences = $licences;
+
+        return $this;
     }
 }

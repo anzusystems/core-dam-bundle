@@ -21,12 +21,20 @@ final class DistributionBodyBuilder
     ) {
     }
 
-    public function setBaseFields(string $distributionService, Distribution $targetDistribution): void
-    {
+    public function setBaseFields(
+        AssetFile $assetFile,
+        string $distributionService,
+        Distribution $targetDistribution
+    ): void {
         $targetDistribution->setId('');
         $targetDistribution->setCreatedBy($this->userProvider->getCurrentUser());
         $targetDistribution->setModifiedBy($this->userProvider->getCurrentUser());
         $targetDistribution->setDistributionService($distributionService);
+        $targetDistribution->setAssetFile($assetFile);
+        $targetDistribution->setAsset($assetFile->getAsset());
+
+        $targetDistribution->setAssetFileId((string) $assetFile->getId());
+        $targetDistribution->setAssetId((string) $assetFile->getAsset()->getId());
     }
 
     public function getKeywords(AssetFile $assetFile): array

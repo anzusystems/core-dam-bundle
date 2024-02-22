@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusManager;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
@@ -27,12 +28,12 @@ final class DistributionBroker
 {
     use MessageBusAwareTrait;
 
-    private const LOCK_PREFIX_NAME = 'distribution_';
+    private const string LOCK_PREFIX_NAME = 'distribution_';
 
     public function __construct(
         private readonly ResourceLocker $resourceLocker,
         private readonly DistributionRepository $repository,
-        private readonly DistributionStatusManager $distributionStatusManager,
+        private readonly DistributionStatusFacade $distributionStatusFacade,
         private readonly ModuleProvider $moduleProvider,
         private readonly DamLogger $damLogger,
         private readonly AssetPropertiesRefresher $propertiesRefresher,
@@ -59,7 +60,7 @@ final class DistributionBroker
     public function redistribute(Distribution $distribution): void
     {
         $this->resourceLocker->lock($this->getLockName($distribution));
-        $this->distributionStatusManager->toDistributing($distribution);
+        $this->distributionStatusFacade->toDistributing($distribution);
 
         if ($this->repository->isNotBlockByNotFinished($distribution)) {
             $this->messageBus->dispatch(new DistributeMessage($distribution));
@@ -73,14 +74,14 @@ final class DistributionBroker
      */
     public function toDistributing(Distribution $distribution): void
     {
-        $this->distributionStatusManager->toDistributing($distribution);
+        $this->distributionStatusFacade->toDistributing($distribution);
         $module = $this->moduleProvider->provideModule($distribution->getDistributionService(), true);
 
         try {
             $module->distribute($distribution);
         } catch (DistributionFailedException $exception) {
             $distribution->setFailReason($exception->getFailReason());
-            $this->distributionStatusManager->toFailed($distribution);
+            $this->distributionStatusFacade->toFailed($distribution);
 
             return;
         } catch (Throwable $e) {
@@ -93,11 +94,11 @@ final class DistributionBroker
             );
 
             $distribution->setFailReason(DistributionFailReason::Unknown);
-            $this->distributionStatusManager->toFailed($distribution);
+            $this->distributionStatusFacade->toFailed($distribution);
         }
 
         if ($module instanceof RemoteProcessingDistributionModuleInterface) {
-            $this->distributionStatusManager->toRemoteProcessing($distribution);
+            $this->distributionStatusFacade->toRemoteProcessing($distribution);
             $this->messageBus->dispatch(new DistributionRemoteProcessingCheckMessage($distribution));
 
             return;
@@ -126,7 +127,7 @@ final class DistributionBroker
                     $exception->getMessage(),
                 ));
                 $distribution->setFailReason(DistributionFailReason::RemoteProcessFailed);
-                $this->distributionStatusManager->toFailed($distribution);
+                $this->distributionStatusFacade->toFailed($distribution);
             }
         }
     }
@@ -136,7 +137,7 @@ final class DistributionBroker
      */
     public function remoteProcessed(Distribution $distribution): void
     {
-        $this->distributionStatusManager->toDistributed($distribution);
+        $this->distributionStatusFacade->toDistributed($distribution);
         $this->messageBus->dispatch(new AssetRefreshPropertiesMessage($distribution->getAssetId()));
 
         foreach ($distribution->getBlocks() as $blockedDistribution) {

@@ -103,8 +103,13 @@ final class DistributionAdmSearchDto extends AbstractSearchDto implements Licenc
         return $this->licences;
     }
 
-    public function setLicences(Collection $licenceIds): void
+    /**
+     * @param Collection<int, AssetLicence> $licences
+     */
+    public function setLicences(Collection $licences): self
     {
-        $this->licences = $licenceIds;
+        $this->licences = $licences;
+
+        return $this;
     }
 }

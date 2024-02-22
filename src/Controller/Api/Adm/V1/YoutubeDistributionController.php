@@ -12,7 +12,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\YoutubeAuthenticator;
-use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeAbstractDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\YoutubeDistribution\YoutubeDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
@@ -38,7 +38,7 @@ use Symfony\Component\Routing\Annotation\Route;
 final class YoutubeDistributionController extends AbstractApiController
 {
     public function __construct(
-        private readonly YoutubeAbstractDistributionFacade $youtubeDistributionFacade,
+        private readonly YoutubeDistributionFacade $youtubeDistributionFacade,
         private readonly YoutubeAuthenticator $youtubeAuthenticator,
         private readonly AssetRepository $assetRepository,
     ) {
