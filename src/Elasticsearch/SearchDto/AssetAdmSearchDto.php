@@ -10,13 +10,16 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LicenceCollectionHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\ArrayStringHandler;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class AssetAdmSearchDto extends AbstractSearchDto
+class AssetAdmSearchDto extends AbstractSearchDto
 {
     #[Serialize]
     protected string $text = '';
@@ -85,10 +88,14 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $distributedInServices = [];
 
-    /**
-     * @var array<int, AssetLicence>
-     */
-    protected array $licences = [];
+    #[Serialize(handler: LicenceCollectionHandler::class, type: AssetLicence::class)]
+    #[Assert\Count(
+        min: 1,
+        max: 20,
+        minMessage: ValidationException::ERROR_FIELD_RANGE_MIN,
+        maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX
+    )]
+    protected Collection $licences;
 
     #[Serialize]
     private ?int $shortestDimensionFrom = null;
@@ -303,18 +310,6 @@ final class AssetAdmSearchDto extends AbstractSearchDto
     public function setInPodcast(?bool $inPodcast): self
     {
         $this->inPodcast = $inPodcast;
-
-        return $this;
-    }
-
-    public function getLicences(): array
-    {
-        return $this->licences;
-    }
-
-    public function setLicences(array $licences): self
-    {
-        $this->licences = $licences;
 
         return $this;
     }

@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchLicenceCollectionDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 
@@ -23,6 +23,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
     {
         return [
             AssetAdmSearchDto::class,
+            AssetAdmSearchLicenceCollectionDto::class,
         ];
     }
 
@@ -120,11 +121,19 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
-        if (false === empty($searchDto->getLicences())) {
-            $filter[] = ['terms' => ['licence' => array_map(
-                fn (AssetLicence $assetLicence): int => (int) $assetLicence->getId(),
-                $searchDto->getLicences()
-            )]];
+        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
+            if (false === $searchDto->getLicences()->isEmpty()) {
+                $terms = [];
+                foreach ($searchDto->getLicences() as $licenceId) {
+                    $terms[] = ['term' => ['licence' => $licenceId->getId()]];
+                }
+
+                $filter[] = [
+                    'bool' => [
+                        'should' => $terms,
+                    ],
+                ];
+            }
         }
 
         return $filter;

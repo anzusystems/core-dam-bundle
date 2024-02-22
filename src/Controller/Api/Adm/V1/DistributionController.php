@@ -11,7 +11,6 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionPermissionFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\DistributionAdmElasticsearchDecorator;
-use AnzuSystems\CoreDamBundle\Elasticsearch\ElasticSearch;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -48,6 +47,8 @@ final class DistributionController extends AbstractApiController
     {
         // todo vote
         //        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS);
+
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_VIEW, $searchDto);
 
         return $this->okResponse($this->elasticSearch->searchInfiniteList($searchDto));
     }

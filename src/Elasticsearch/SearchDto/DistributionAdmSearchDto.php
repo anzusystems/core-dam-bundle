@@ -12,10 +12,11 @@ use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LicenceCollectionHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class DistributionAdmSearchDto extends AbstractSearchDto
+final class DistributionAdmSearchDto extends AbstractSearchDto implements LicenceCollectionInterface
 {
     #[Serialize]
     #[Assert\Choice(choices: [
@@ -42,7 +43,12 @@ final class DistributionAdmSearchDto extends AbstractSearchDto
         minMessage: ValidationException::ERROR_FIELD_RANGE_MIN,
         maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX
     )]
-    protected Collection $licenceIds;
+    protected Collection $licences;
+
+    public function __construct()
+    {
+        $this->setLicences(new ArrayCollection());
+    }
 
     public function getIndexName(): string
     {
@@ -92,13 +98,13 @@ final class DistributionAdmSearchDto extends AbstractSearchDto
     /**
      * @return Collection<int, AssetLicence>
      */
-    public function getLicenceIds(): Collection
+    public function getLicences(): Collection
     {
-        return $this->licenceIds;
+        return $this->licences;
     }
 
-    public function setLicenceIds(Collection $licenceIds): void
+    public function setLicences(Collection $licenceIds): void
     {
-        $this->licenceIds = $licenceIds;
+        $this->licences = $licenceIds;
     }
 }

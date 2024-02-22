@@ -38,9 +38,9 @@ final class DistributionQueryFactory extends AbstractQueryFactory
             $filter[] = ['terms' => ['extId' => [$searchDto->getExtId()]]];
         }
 
-        if (false === $searchDto->getLicenceIds()->isEmpty()) {
+        if (false === $searchDto->getLicences()->isEmpty()) {
             $terms = [];
-            foreach ($searchDto->getLicenceIds() as $licenceId) {
+            foreach ($searchDto->getLicences() as $licenceId) {
                 $terms[] = ['term' => ['licenceId' => $licenceId->getId()]];
             }
 

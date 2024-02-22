@@ -36,7 +36,7 @@ final class DistributionAdmElasticsearchDecorator
     {
         $this->validator->validate($searchDto);
 
-        $licence = $searchDto->getLicenceIds()->first();
+        $licence = $searchDto->getLicences()->first();
         if (false === ($licence instanceof AssetLicence)) {
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }

@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataBulkFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\AssetAdmElasticsearchDecorator;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchLicenceCollectionDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -32,8 +33,10 @@ use AnzuSystems\CoreDamBundle\Repository\Decorator\AssetAdmRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
+use Elastic\Elasticsearch\Exception\ElasticsearchException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -77,23 +80,43 @@ final class AssetController extends AbstractApiController
      * @throws SerializerException
      * @throws ValidationException
      * @throws AppReadOnlyModeException
+     * @throws ElasticsearchException
      */
     #[Route('/licence/{assetLicence}/search', name: 'search_by_licence', methods: [Request::METHOD_GET])]
     #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
-    public function searchByLicence(AssetLicence $assetLicence, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
+    public function searchByLicence(AssetLicence $assetLicence, #[SerializeParam] AssetAdmSearchLicenceCollectionDto $searchDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
-        $searchDto->setLicences([$assetLicence]);
+        $searchDto->setLicences(new ArrayCollection([$assetLicence]));
 
         return $this->okResponse(
-            $this->elasticSearch->searchInfiniteList($searchDto, $assetLicence->getExtSystem())
+            $this->elasticSearch->searchInfiniteList($searchDto)
         );
     }
 
     /**
      * @throws SerializerException
      * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     * @throws ElasticsearchException
+     */
+    #[Route('/licence/search', name: 'search', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
+    public function search(#[SerializeParam] AssetAdmSearchLicenceCollectionDto $searchDto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $searchDto);
+
+        return $this->okResponse(
+            $this->elasticSearch->searchInfiniteList($searchDto)
+        );
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws ValidationException
+     * @throws ElasticsearchException
      */
     #[Route('/ext-system/{extSystem}/search', name: 'search_by_ext_system', methods: [Request::METHOD_GET])]
     #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
@@ -102,7 +125,7 @@ final class AssetController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);
 
         return $this->okResponse(
-            $this->elasticSearch->searchInfiniteList($searchDto, $extSystem)
+            $this->elasticSearch->searchInfiniteListByExtSystem($searchDto, $extSystem)
         );
     }
 

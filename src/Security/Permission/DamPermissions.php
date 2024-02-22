@@ -107,6 +107,7 @@ class DamPermissions
 
     // Distribution
     public const DAM_DISTRIBUTION_ACCESS = 'dam_distribution_access';
+    public const DAM_DISTRIBUTION_VIEW = 'dam_distribution_view';
 
     // Asset External Provider
     public const DAM_ASSET_EXTERNAL_PROVIDER_ACCESS = 'dam_assetExternalProvider_access';
