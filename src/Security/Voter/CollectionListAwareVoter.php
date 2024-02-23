@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\Security\Voter\AbstractVoter;
 use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\LicenceCollectionInterface;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
@@ -19,6 +18,8 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
  */
 final class CollectionListAwareVoter extends AbstractVoter
 {
+    use LicenceVoterTrait;
+
     /**
      * @param ExtSystemInterface $subject
      * @param DamUser $user
@@ -31,14 +32,12 @@ final class CollectionListAwareVoter extends AbstractVoter
         if (false === ($subject instanceof LicenceCollectionInterface)) {
             return false;
         }
+        if ($subject->getLicences()->isEmpty()) {
+            return false;
+        }
 
-        // todo performance improvement
         foreach ($subject->getLicences() as $licence) {
-            if (
-                false === $user->getAssetLicences()->containsKey((int) $licence->getId()) &&
-                false === $user->getAdminToExtSystems()->containsKey((int) $licence->getExtSystem()->getId()) &&
-                false === $user->getUserToExtSystems()->containsKey((int) $licence->getExtSystem()->getId())
-            ) {
+            if (false === $this->licencePermissionGranted($licence, $user)) {
                 return false;
             }
         }

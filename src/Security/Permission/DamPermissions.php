@@ -237,6 +237,13 @@ class DamPermissions
         self::DAM_JOB_CREATE,
         self::DAM_JOB_DELETE,
         self::DAM_JOB_UI,
+        self::DAM_DISTRIBUTION_VIEW,
+        self::DAM_DISTRIBUTION_ACCESS,
+        self::DAM_ASSET_LICENCE_GROUP_VIEW,
+        self::DAM_ASSET_LICENCE_GROUP_UPDATE,
+        self::DAM_ASSET_LICENCE_GROUP_LIST,
+        self::DAM_ASSET_LICENCE_GROUP_CREATE,
+        self::DAM_ASSET_LICENCE_GROUP_UI,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

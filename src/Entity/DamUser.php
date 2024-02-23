@@ -36,6 +36,7 @@ abstract class DamUser extends AnzuUser
     #[ORM\ManyToMany(targetEntity: AssetLicenceGroup::class, inversedBy: 'users', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'user_in_licence_groups')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
+    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected Collection $licenceGroups;
 
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
@@ -148,6 +149,9 @@ abstract class DamUser extends AnzuUser
         return $this;
     }
 
+    /**
+     * @return Collection<int, AssetLicenceGroup>
+     */
     public function getLicenceGroups(): Collection
     {
         return $this->licenceGroups;

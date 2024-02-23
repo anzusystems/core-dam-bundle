@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
  */
 final class AssetLicenceAwareVoter extends AbstractVoter
 {
+    use LicenceVoterTrait;
     /**
      * @param AssetLicenceInterface $subject
      * @param DamUser $user
@@ -33,11 +34,7 @@ final class AssetLicenceAwareVoter extends AbstractVoter
 
         $assetLicence = $subject->getLicence();
 
-        if ($user->getAssetLicences()->containsKey((int) $assetLicence->getId())) {
-            return true;
-        }
-
-        return $user->getAdminToExtSystems()->containsKey((int) $assetLicence->getExtSystem()->getId());
+        return $this->licencePermissionGranted($assetLicence, $user);
     }
 
     protected function getSupportedPermissions(): array
