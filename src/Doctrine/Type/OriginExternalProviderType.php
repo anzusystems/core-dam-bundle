@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Doctrine\Type;
 use AnzuSystems\CommonBundle\Doctrine\Type\AbstractValueObjectType;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\ConversionException;
+use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Throwable;
 
 final class OriginExternalProviderType extends AbstractValueObjectType
@@ -31,7 +31,7 @@ final class OriginExternalProviderType extends AbstractValueObjectType
 
             return new OriginExternalProvider($providerName, $id);
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw ValueNotConvertible::new($value, $this->getName());
         }
     }
 
