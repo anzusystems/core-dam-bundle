@@ -45,9 +45,6 @@ final class DistributionController extends AbstractApiController
     #[OAParameterPath('search', description: 'Searched.'), OAResponse([Distribution::class])]
     public function search(#[SerializeParam] DistributionAdmSearchDto $searchDto): JsonResponse
     {
-        // todo vote
-        //        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS);
-
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_VIEW, $searchDto);
 
         return $this->okResponse($this->elasticSearch->searchInfiniteList($searchDto));
