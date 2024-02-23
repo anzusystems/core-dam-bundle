@@ -142,7 +142,7 @@ abstract class DamUser extends AnzuUser
      *
      * @param Collection<TKey, ExtSystem> $userToExtSystems
      */
-    public function setUserToExtSystems(Collection $userToExtSystems): self
+    public function setUserToExtSystems(Collection $userToExtSystems): static
     {
         $this->userToExtSystems = $userToExtSystems;
 
@@ -162,7 +162,7 @@ abstract class DamUser extends AnzuUser
      *
      * @param Collection<TKey, AssetLicenceGroup> $licenceGroups
      */
-    public function setLicenceGroups(Collection $licenceGroups): self
+    public function setLicenceGroups(Collection $licenceGroups): static
     {
         $this->licenceGroups = $licenceGroups;
         return $this;
