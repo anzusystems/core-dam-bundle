@@ -50,7 +50,6 @@ class Asset implements
     use NotifyToTrait;
 
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
-    #[ORM\JoinTable]
     private Collection $authors;
 
     #[ORM\OneToOne(targetEntity: AssetFile::class)]
@@ -59,7 +58,6 @@ class Asset implements
     private ?AssetFile $mainFile;
 
     #[ORM\ManyToMany(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
-    #[ORM\JoinTable]
     private Collection $keywords;
 
     #[ORM\OneToMany(mappedBy: 'asset', targetEntity: PodcastEpisode::class, fetch: App::DOCTRINE_EXTRA_LAZY)]

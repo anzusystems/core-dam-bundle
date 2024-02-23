@@ -24,7 +24,6 @@ abstract class DamUser extends AnzuUser
     protected array $allowedDistributionServices = [];
 
     #[ORM\ManyToMany(targetEntity: AssetLicence::class, inversedBy: 'users', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
-    #[ORM\JoinTable]
     #[Serialize(handler: EntityIdHandler::class, type: AssetLicence::class)]
     protected Collection $assetLicences;
 

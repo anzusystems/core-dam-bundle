@@ -20,10 +20,6 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class JobFixtures extends AbstractFixtures
 {
-    public const ID_DELETE_BLOG_USER_JOB = 1;
-    public const ID_FULL_PODCAST_SYNCHRONYZER_JOB = 2;
-    public const ID_SINGLE_PODCAST_SYNCHRONYZER_JOB = 3;
-
     public function __construct(
         private readonly JobManager $jobManager,
     ) {
@@ -31,17 +27,12 @@ final class JobFixtures extends AbstractFixtures
 
     public static function getIndexKey(): string
     {
-        return Job::class;
+        return JobPodcastSynchronizer::class;
     }
 
     public static function getDependencies(): array
     {
         return [UserFixtures::class];
-    }
-
-    public function useCustomId(): bool
-    {
-        return true;
     }
 
     public function load(ProgressBar $progressBar): void
@@ -55,18 +46,17 @@ final class JobFixtures extends AbstractFixtures
     private function getData(): Generator
     {
         yield (new JobUserDataDelete())
-            ->setId(self::ID_DELETE_BLOG_USER_JOB)
             ->setTargetUserId(User::ID_BLOG_USER)
             ->setAnonymizeUser(true)
         ;
 
         yield (new JobPodcastSynchronizer())
             ->setFullSync(true)
-            ->setId(self::ID_FULL_PODCAST_SYNCHRONYZER_JOB);
+        ;
 
         yield (new JobPodcastSynchronizer())
             ->setFullSync(false)
             ->setPodcastId(PodcastFixtures::PODCAST_1)
-            ->setId(self::ID_FULL_PODCAST_SYNCHRONYZER_JOB);
+        ;
     }
 }

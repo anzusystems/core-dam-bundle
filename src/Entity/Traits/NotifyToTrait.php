@@ -10,7 +10,6 @@ use Doctrine\ORM\Mapping as ORM;
 trait NotifyToTrait
 {
     #[ORM\ManyToOne(targetEntity: DamUser::class)]
-    #[ORM\JoinColumn]
     protected ?DamUser $notifyTo = null;
 
     public function getNotifyTo(): ?DamUser

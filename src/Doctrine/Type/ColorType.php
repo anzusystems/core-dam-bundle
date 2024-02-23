@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Doctrine\Type;
 use AnzuSystems\CommonBundle\Doctrine\Type\AbstractValueObjectType;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
+use Doctrine\DBAL\Types\ConversionException;
 use Throwable;
 
 final class ColorType extends AbstractValueObjectType
@@ -32,7 +32,7 @@ final class ColorType extends AbstractValueObjectType
 
             return new Color(hexdec($r), hexdec($g), hexdec($b));
         } catch (Throwable) {
-            throw ValueNotConvertible::new($value, $this->getName());
+            throw ConversionException::conversionFailed($value, $this->getName());
         }
     }
 

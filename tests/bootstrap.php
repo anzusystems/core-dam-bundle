@@ -66,6 +66,7 @@ $app->run($input, $output);
 # Database fixtures
 $input = new ArrayInput([
     'command' => 'anzusystems:fixtures:generate',
+    '--vvv' => true,
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);

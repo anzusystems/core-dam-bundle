@@ -70,7 +70,6 @@ abstract class Distribution implements
     protected ?AssetFile $assetFile;
 
     #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'blockedBy')]
-    #[ORM\JoinTable]
     protected Collection $blocks;
 
     #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'blocks')]

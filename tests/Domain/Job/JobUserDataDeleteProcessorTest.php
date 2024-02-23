@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Job;
 
 use AnzuSystems\CommonBundle\Domain\Job\JobProcessor;
+use AnzuSystems\CommonBundle\Domain\Job\JobRunner;
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
@@ -41,23 +42,21 @@ final class JobUserDataDeleteProcessorTest extends CoreDamKernelTestCase
         $this->jobUserDataDeleteProcessor->setBulkSize(1);
 
         // 1. Process the first bulk
-        $this->jobProcessor->process();
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_DELETE_BLOG_USER_JOB);
+        $job = $this->entityManager->getRepository(JobUserDataDelete::class)->findAll()[0];
+        $this->jobProcessor->process($job);
         $this->assertInstanceOf(JobUserDataDelete::class, $job);
 
         $this->assertSame(JobStatus::AwaitingBatchProcess, $job->getStatus());
         $this->assertSame(1, $job->getBatchProcessedIterationCount());
 
         // 2. Process the second bulk
-        $this->jobProcessor->process();
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_DELETE_BLOG_USER_JOB);
+        $this->jobProcessor->process($job);
         $this->assertInstanceOf(JobUserDataDelete::class, $job);
         $this->assertSame(JobStatus::AwaitingBatchProcess, $job->getStatus());
         $this->assertSame(2, $job->getBatchProcessedIterationCount());
 
         // 3. Process the third bulk
-        $this->jobProcessor->process();
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_DELETE_BLOG_USER_JOB);
+        $this->jobProcessor->process($job);
         $this->assertInstanceOf(JobUserDataDelete::class, $job);
         $this->assertSame(2, $job->getBatchProcessedIterationCount());
         $this->assertSame(JobStatus::Done, $job->getStatus());
