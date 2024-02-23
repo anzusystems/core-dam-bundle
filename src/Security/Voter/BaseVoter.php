@@ -26,6 +26,10 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_JOB_VIEW,
             DamPermissions::DAM_JOB_CREATE,
             DamPermissions::DAM_JOB_DELETE,
+            DamPermissions::DAM_ASSET_LICENCE_GROUP_CREATE,
+            DamPermissions::DAM_ASSET_LICENCE_GROUP_LIST,
+            DamPermissions::DAM_ASSET_LICENCE_GROUP_UPDATE,
+            DamPermissions::DAM_ASSET_LICENCE_GROUP_VIEW,
         ];
     }
 }

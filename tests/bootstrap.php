@@ -27,7 +27,7 @@ $app->setAutoExit(false);
 
 $output = new ConsoleOutput();
 
-//return;
+return;
 
 # Clear cache
 $input = new ArrayInput([

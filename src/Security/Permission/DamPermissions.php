@@ -65,6 +65,13 @@ class DamPermissions
     public const DAM_ASSET_LICENCE_LIST = 'dam_assetLicence_list';
     public const DAM_ASSET_LICENCE_UI = 'dam_assetLicence_ui';
 
+    // AssetLicenceGroup
+    public const DAM_ASSET_LICENCE_GROUP_CREATE = 'dam_assetLicenceGroup_create';
+    public const DAM_ASSET_LICENCE_GROUP_UPDATE = 'dam_assetLicenceGroup_update';
+    public const DAM_ASSET_LICENCE_GROUP_VIEW = 'dam_assetLicenceGroup_view';
+    public const DAM_ASSET_LICENCE_GROUP_LIST = 'dam_assetLicenceGroup_list';
+    public const DAM_ASSET_LICENCE_GROUP_UI = 'dam_assetLicenceGroup_ui';
+
     // Author
     public const DAM_AUTHOR_CREATE = 'dam_author_create';
     public const DAM_AUTHOR_UPDATE = 'dam_author_update';

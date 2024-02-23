@@ -33,6 +33,11 @@ abstract class DamUser extends AnzuUser
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
     protected Collection $adminToExtSystems;
 
+    #[ORM\ManyToMany(targetEntity: AssetLicenceGroup::class, inversedBy: 'users', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
+    #[ORM\JoinTable(name: 'user_in_licence_groups')]
+    #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
+    protected Collection $licenceGroups;
+
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'users_to_ext_systems')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
@@ -140,6 +145,22 @@ abstract class DamUser extends AnzuUser
     {
         $this->userToExtSystems = $userToExtSystems;
 
+        return $this;
+    }
+
+    public function getLicenceGroups(): Collection
+    {
+        return $this->licenceGroups;
+    }
+
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, AssetLicenceGroup> $licenceGroups
+     */
+    public function setLicenceGroups(Collection $licenceGroups): self
+    {
+        $this->licenceGroups = $licenceGroups;
         return $this;
     }
 }

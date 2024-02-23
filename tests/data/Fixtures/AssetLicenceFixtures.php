@@ -17,8 +17,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class AssetLicenceFixtures extends AbstractFixtures
 {
-    public const LICENCE_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 1;
-    public const LICENCE_2_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 2;
+    public const int LICENCE_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 1;
+    public const int LICENCE_2_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 2;
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
