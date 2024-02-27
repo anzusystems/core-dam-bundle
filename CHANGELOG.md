@@ -1,3 +1,10 @@
+## [1.8.0](https://github.com/anzusystems/core-dam-bundle/compare/1.6.1...1.7.0) (2024-02-27)
+### Changes
+* New elasticsearch index `distribution`
+* Allow search asset by multiple licences
+* Support for `LicenceGroups` 
+  * updated voters
+
 ## [1.7.0](https://github.com/anzusystems/core-dam-bundle/compare/1.6.1...1.7.0) (2024-01-18)
 ### Changes
 * `FileFactory` clears png metadata when file is created from storage

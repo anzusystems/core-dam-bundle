@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefin
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchLicenceCollectionDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 
@@ -122,21 +123,38 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
         if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
-            if (false === $searchDto->getLicences()->isEmpty()) {
-                $terms = [];
-                foreach ($searchDto->getLicences() as $licenceId) {
-                    $terms[] = ['term' => ['licence' => $licenceId->getId()]];
-                }
-
-                $filter[] = [
-                    'bool' => [
-                        'should' => $terms,
-                    ],
-                ];
-            }
+            $this->applyLicenceCollectionFilter($filter, $searchDto);
         }
 
         return $filter;
+    }
+
+    private function applyLicenceCollectionFilter(array &$filter, AssetAdmSearchLicenceCollectionDto $dto): void
+    {
+        if ($dto->getLicences()->isEmpty()) {
+            return;
+        }
+
+        if (1 === $dto->getLicences()->count()) {
+            $licence = $dto->getLicences()->first();
+            if (false === $licence instanceof AssetLicence) {
+                return;
+            }
+
+            $filter[] = ['terms' => ['licence' => [(int) $licence->getId()]]];
+
+            return;
+        }
+
+        $terms = [];
+        foreach ($dto->getLicences() as $licenceId) {
+            $terms[] = ['term' => ['licence' => $licenceId->getId()]];
+        }
+        $filter[] = [
+            'bool' => [
+                'should' => $terms,
+            ],
+        ];
     }
 
     private function applyRangeFilter(array &$filter, string $key, ?int $from, ?int $until): void
