@@ -1,4 +1,4 @@
-## [1.8.0](https://github.com/anzusystems/core-dam-bundle/compare/1.6.1...1.7.0) (2024-02-27)
+## [1.8.0](https://github.com/anzusystems/core-dam-bundle/compare/1.7.0...1.8.0) (2024-02-27)
 ### Changes
 * New elasticsearch index `distribution`
 * Allow search asset by multiple licences
