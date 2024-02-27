@@ -13,6 +13,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: JwDistributionRepository::class)]
 class JwDistribution extends Distribution
 {
+    public const string DISCRIMINATOR = 'jwDistribution';
+
     #[ORM\Embedded(JwTexts::class)]
     #[Assert\Valid]
     #[Serialize]
@@ -34,5 +36,10 @@ class JwDistribution extends Distribution
         $this->texts = $texts;
 
         return $this;
+    }
+
+    public function getDiscriminator(): string
+    {
+        return self::DISCRIMINATOR;
     }
 }

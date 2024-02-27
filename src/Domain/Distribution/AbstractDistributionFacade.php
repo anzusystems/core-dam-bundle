@@ -48,6 +48,9 @@ abstract class AbstractDistributionFacade
     {
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
+        $distribution->setAsset($assetFile->getAsset());
+        $distribution->setAssetFile($assetFile);
+
         $this->validator->validate($distribution);
         $this->distributionManagerProvider->get($distribution::class)->create($distribution);
 

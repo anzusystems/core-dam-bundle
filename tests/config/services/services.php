@@ -7,25 +7,22 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 use AnzuSystems\CommonBundle\AnzuSystemsCommonBundle;
 use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
-use AnzuSystems\CoreDamBundle\Cache\ImageRouteGenerator;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
 use AnzuSystems\CoreDamBundle\Domain\DistributionCategory\DistributionCategoryManager;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceGroupFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\CustomFormElementFixtures;
@@ -34,7 +31,6 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
-use AnzuSystems\CoreDamBundle\Tests\HttpClient\DownloadFileClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use Doctrine\ORM\EntityManagerInterface;
@@ -61,6 +57,11 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(AssetLicenceFixtures::class)
         ->arg('$assetLicenceManager', service(AssetLicenceManager::class))
+        ->call('setEntityManager', [service(EntityManagerInterface::class)])
+        ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
+
+    $services->set(AssetLicenceGroupFixtures::class)
+        ->arg('$assetLicenceGroupManager', service(AssetLicenceGroupManager::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 

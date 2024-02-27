@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 
 final class CustomDataIndexDefinitionFactory
 {
-    private const METADATA_PREFIX = 'custom_data_';
+    private const string METADATA_PREFIX = 'custom_data_';
 
     private readonly iterable $indexBuilders;
 

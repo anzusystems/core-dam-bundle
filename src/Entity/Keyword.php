@@ -91,4 +91,9 @@ class Keyword implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
 
         return $this;
     }
+
+    public static function getIndexName(): string
+    {
+        return self::getResourceName();
+    }
 }

@@ -14,12 +14,10 @@ use Doctrine\ORM\Mapping as ORM;
 trait UserTrackingTrait
 {
     #[ORM\ManyToOne(targetEntity: DamUser::class)]
-    #[ORM\JoinColumn]
     #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     protected DamUser $createdBy;
 
     #[ORM\ManyToOne(targetEntity: DamUser::class)]
-    #[ORM\JoinColumn]
     #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     protected DamUser $modifiedBy;
 

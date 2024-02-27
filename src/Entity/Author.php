@@ -126,4 +126,9 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
 
         return $this;
     }
+
+    public static function getIndexName(): string
+    {
+        return self::getResourceName();
+    }
 }

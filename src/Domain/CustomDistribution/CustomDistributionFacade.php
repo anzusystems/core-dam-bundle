@@ -48,7 +48,7 @@ final class CustomDistributionFacade
         }
 
         $distribution = $adapter->preparePayload($assetFile, $distributionService);
-        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
+        $this->distributionBodyBuilder->setBaseFields($assetFile, $distributionService, $distribution);
         $this->distributionBodyBuilder->setWriterProperties(
             $distributionService,
             $assetFile->getAsset(),

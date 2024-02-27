@@ -39,7 +39,7 @@ final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
 
     public function testFullSyncProcess(): void
     {
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_FULL_PODCAST_SYNCHRONYZER_JOB);
+        $job = $this->entityManager->getRepository(JobPodcastSynchronizer::class)->findBy(['fullSync' => true])[0];
         $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
 
         $this->synchronizerProcessor->setBulkSize(2);
@@ -80,7 +80,7 @@ final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
 
     public function testSpecificPodcastSyncProcess(): void
     {
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_SINGLE_PODCAST_SYNCHRONYZER_JOB);
+        $job = $this->entityManager->getRepository(JobPodcastSynchronizer::class)->findBy(['fullSync' => false])[0];
         $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
 
         $this->synchronizerProcessor->setBulkSize(2);
@@ -99,7 +99,7 @@ final class JobPodcastSynchronizerProcessorTest extends CoreDamKernelTestCase
 
     public function testSpecificPodcastSyncProcessAndImportFrom(): void
     {
-        $job = $this->entityManager->find(Job::class, JobFixtures::ID_SINGLE_PODCAST_SYNCHRONYZER_JOB);
+        $job = $this->entityManager->getRepository(JobPodcastSynchronizer::class)->findBy(['fullSync' => false])[0];
         $this->assertInstanceOf(JobPodcastSynchronizer::class, $job);
 
         $this->synchronizerProcessor->setBulkSize(2);

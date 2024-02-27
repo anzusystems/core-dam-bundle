@@ -24,9 +24,9 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 final class DistributionValidator extends ConstraintValidator
 {
-    private const BLOCKED_BY_NOT_SUPPORTED = 'blocked_by_not_supported';
-    private const BLOCKED_BY_INVALID_ASSET_FILE = 'blocked_by_invalid_asset_file';
-    private const BLOCKED_BY_STRATEGY = 'blocked_by_strategy';
+    private const string BLOCKED_BY_NOT_SUPPORTED = 'blocked_by_not_supported';
+    private const string BLOCKED_BY_INVALID_ASSET_FILE = 'blocked_by_invalid_asset_file';
+    private const string BLOCKED_BY_STRATEGY = 'blocked_by_strategy';
 
     public function __construct(
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,

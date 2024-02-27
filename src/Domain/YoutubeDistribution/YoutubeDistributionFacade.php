@@ -19,7 +19,7 @@ use Google\Exception;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 
-class YoutubeAbstractDistributionFacade extends AbstractDistributionFacade
+class YoutubeDistributionFacade extends AbstractDistributionFacade
 {
     public function __construct(
         private readonly YoutubeDataStorage $youtubeDataStorage,
@@ -42,7 +42,7 @@ class YoutubeAbstractDistributionFacade extends AbstractDistributionFacade
         }
 
         $distribution = new YoutubeDistribution();
-        $this->distributionBodyBuilder->setBaseFields($distributionService, $distribution);
+        $this->distributionBodyBuilder->setBaseFields($assetFile, $distributionService, $distribution);
         $this->distributionBodyBuilder->setWriterProperties(
             $distributionService,
             $assetFile->getAsset(),

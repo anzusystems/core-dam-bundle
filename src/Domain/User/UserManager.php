@@ -27,6 +27,7 @@ class UserManager extends AbstractManager
         $user
             ->setAssetLicences(new ArrayCollection())
             ->setUserToExtSystems(new ArrayCollection())
+            ->setLicenceGroups(new ArrayCollection())
             ->setPermissions([])
             ->setPermissionGroups(new ArrayCollection())
             ->setAllowedAssetExternalProviders([])

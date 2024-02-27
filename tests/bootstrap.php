@@ -65,7 +65,7 @@ $app->run($input, $output);
 
 # Database fixtures
 $input = new ArrayInput([
-    'command' => 'anzusystems:fixtures:generate',
+    'command' => 'anzusystems:fixtures:generate'
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);

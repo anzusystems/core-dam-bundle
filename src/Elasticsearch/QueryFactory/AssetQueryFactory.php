@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
+use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchLicenceCollectionDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
@@ -23,6 +24,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
     {
         return [
             AssetAdmSearchDto::class,
+            AssetAdmSearchLicenceCollectionDto::class,
         ];
     }
 
@@ -37,8 +39,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
-
-        //        $searchDto->getText()
 
         if ($searchDto->getText()) {
             return [
@@ -122,14 +122,39 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
-        if (false === empty($searchDto->getLicences())) {
-            $filter[] = ['terms' => ['licence' => array_map(
-                fn (AssetLicence $assetLicence): int => (int) $assetLicence->getId(),
-                $searchDto->getLicences()
-            )]];
+        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
+            $this->applyLicenceCollectionFilter($filter, $searchDto);
         }
 
         return $filter;
+    }
+
+    private function applyLicenceCollectionFilter(array &$filter, AssetAdmSearchLicenceCollectionDto $dto): void
+    {
+        if ($dto->getLicences()->isEmpty()) {
+            return;
+        }
+
+        if (1 === $dto->getLicences()->count()) {
+            $licence = $dto->getLicences()->first();
+            if (false === $licence instanceof AssetLicence) {
+                return;
+            }
+
+            $filter[] = ['terms' => ['licence' => [(int) $licence->getId()]]];
+
+            return;
+        }
+
+        $terms = [];
+        foreach ($dto->getLicences() as $licenceId) {
+            $terms[] = ['term' => ['licence' => $licenceId->getId()]];
+        }
+        $filter[] = [
+            'bool' => [
+                'should' => $terms,
+            ],
+        ];
     }
 
     private function applyRangeFilter(array &$filter, string $key, ?int $from, ?int $until): void

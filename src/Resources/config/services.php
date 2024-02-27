@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexBuilder;
+use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNamGeneratorInterface;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\FileNameGenerator;
@@ -35,6 +36,7 @@ return static function (ContainerConfigurator $configurator): void {
             'asset' => param('anzu_systems.dam_bundle.index_asset'),
             'keyword' => param('anzu_systems.dam_bundle.index_keyword'),
             'author' => param('anzu_systems.dam_bundle.index_author'),
+            Distribution::INDEX_NAME => param('anzu_systems.dam_bundle.index_distribution'),
         ])
     ;
 

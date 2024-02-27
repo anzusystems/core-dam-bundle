@@ -55,6 +55,14 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     private ExtSystem $extSystem;
 
     /**
+     * Asset belongs to external system (e.g. Blogs, CMS, ...)
+     */
+    #[ORM\ManyToMany(targetEntity: AssetLicenceGroup::class, inversedBy: 'licences')]
+    #[ORM\JoinTable('asset_licence_in_group')]
+    #[Serialize(handler: EntityIdHandler::class, type: AssetLicenceGroup::class)]
+    private Collection $groups;
+
+    /**
      * External system licence ID (e.g. BlogId)
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -79,6 +87,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setExtId(null);
         $this->setUsers(new ArrayCollection());
         $this->setLimitedFiles(false);
+        $this->setGroups(new ArrayCollection());
     }
 
     public function getName(): string
@@ -156,6 +165,23 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     public function getLicence(): self
     {
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, AssetLicenceGroup>
+     */
+    public function getGroups(): Collection
+    {
+        return $this->groups;
+    }
+
+    /**
+     * @param Collection<int, AssetLicenceGroup> $groups
+     */
+    public function setGroups(Collection $groups): self
+    {
+        $this->groups = $groups;
         return $this;
     }
 }
