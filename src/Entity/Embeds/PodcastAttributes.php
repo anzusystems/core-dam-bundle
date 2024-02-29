@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 class PodcastAttributes
 {
     #[ORM\Column(type: Types::STRING, length: 2_048, nullable: true)]
-    #[Assert\Length(max: 100, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
     #[Serialize]
     private string $rssUrl;

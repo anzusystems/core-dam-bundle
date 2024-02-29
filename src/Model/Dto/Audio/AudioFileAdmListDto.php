@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Audio;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileAdmDto;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LinksHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -49,5 +51,17 @@ class AudioFileAdmListDto extends AbstractAssetFileAdmDto
     public function getLinks(): AudioFile
     {
         return $this->audio;
+    }
+
+    #[Serialize]
+    public function getImagePreview(): ?ImagePreview
+    {
+        $firstEpisode = $this->audio->getAsset()->getEpisodes()->first();
+
+        if ($firstEpisode instanceof PodcastEpisode) {
+            return $firstEpisode->getImagePreview() ?? $firstEpisode->getPodcast()->getImagePreview();
+        }
+
+        return null;
     }
 }
