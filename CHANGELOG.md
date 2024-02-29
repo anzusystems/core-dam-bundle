@@ -1,3 +1,8 @@
+## [1.8.1](https://github.com/anzusystems/core-dam-bundle/compare/1.8.0...1.8.1) (2024-02-29)
+### Changes
+* Podcast rss url length validation
+* `AudioFileAdmListDto` added imagePreview
+
 ## [1.8.0](https://github.com/anzusystems/core-dam-bundle/compare/1.7.0...1.8.0) (2024-02-27)
 ### Changes
 * New elasticsearch index `distribution`
