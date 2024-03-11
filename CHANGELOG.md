@@ -1,3 +1,8 @@
+## [1.8.2](https://github.com/anzusystems/core-dam-bundle/compare/1.8.1...1.8.2) (2024-03-12)
+
+### Features
+* Podcast episode extUrl, podcast extUrl
+
 ## [1.8.1](https://github.com/anzusystems/core-dam-bundle/compare/1.8.0...1.8.1) (2024-02-29)
 ### Changes
 * Podcast rss url length validation
