@@ -2,6 +2,7 @@
 
 ### Features
 * Podcast episode extUrl, podcast extUrl
+* 'avif' support
 
 ## [1.8.1](https://github.com/anzusystems/core-dam-bundle/compare/1.8.0...1.8.1) (2024-02-29)
 ### Changes
