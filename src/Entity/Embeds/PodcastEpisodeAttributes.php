@@ -14,8 +14,20 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastEpisodeAttributes
 {
+    /**
+     * Audio track URL provided by external service (obtained from RSS FEED)
+     */
     #[ORM\Column(type: Types::STRING, length: 2_048)]
     private string $rssUrl;
+
+    /**
+     * Podcast episode URL (located in external service)
+     */
+    #[ORM\Column(type: Types::STRING, length: 2_048, options: ['default' => ''])]
+    #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Serialize]
+    private string $extUrl;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $rssId;
@@ -40,6 +52,7 @@ class PodcastEpisodeAttributes
         $this->setLastImportStatus(PodcastEpisodeStatus::Default);
         $this->setRssId('');
         $this->setRssUrl('');
+        $this->setExtUrl('');
     }
 
     #[Serialize]
@@ -101,6 +114,18 @@ class PodcastEpisodeAttributes
     public function setRssId(string $rssId): self
     {
         $this->rssId = $rssId;
+
+        return $this;
+    }
+
+    public function getExtUrl(): string
+    {
+        return $this->extUrl;
+    }
+
+    public function setExtUrl(string $extUrl): self
+    {
+        $this->extUrl = $extUrl;
 
         return $this;
     }

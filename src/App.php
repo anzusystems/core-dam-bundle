@@ -9,14 +9,15 @@ use Exception;
 
 final class App extends AnzuApp
 {
-    public const ZERO = 0;
-    public const DOCTRINE_EXTRA_LAZY = 'EXTRA_LAZY';
-    public const CACHE_STRATEGY = 'NONSTRICT_READ_WRITE';
-    public const DATE_TIME_API_FORMAT = 'Y-m-d\TH:i:s.u\Z';
+    public const int ZERO = 0;
+    public const string DOCTRINE_EXTRA_LAZY = 'EXTRA_LAZY';
+    public const string CACHE_STRATEGY = 'NONSTRICT_READ_WRITE';
+    public const string DATE_TIME_API_FORMAT = 'Y-m-d\TH:i:s.u\Z';
+    public const string ORDER_ASC = 'ASC';
 
-    public const ENTITY_NAMESPACE = __NAMESPACE__ . '\Entity';
+    public const string ENTITY_NAMESPACE = __NAMESPACE__ . '\Entity';
 
-    private const RANDOM_BYTES_LEN = 32;
+    private const int RANDOM_BYTES_LEN = 32;
 
     /**
      * @throws Exception

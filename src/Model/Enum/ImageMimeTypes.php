@@ -27,6 +27,5 @@ enum ImageMimeTypes: string implements EnumInterface
     case MimePng = self::MIME_PNG;
     case MimeWebp = self::MIME_WEBP;
     case MimeGif = self::MIME_GIF;
-    // todo fix colors
-//    case MimeAvif = self::MIME_AVIF;
+    case MimeAvif = self::MIME_AVIF;
 }

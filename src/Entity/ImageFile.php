@@ -20,7 +20,7 @@ class ImageFile extends AssetFile
     private ImageAttributes $imageAttributes;
 
     #[ORM\OneToMany(mappedBy: 'image', targetEntity: ImageFileOptimalResize::class)]
-    #[ORM\OrderBy(value: ['requestedSize' => Criteria::ASC])]
+    #[ORM\OrderBy(value: ['requestedSize' => App::ORDER_ASC])]
     private Collection $resizes;
 
     #[ORM\OneToMany(mappedBy: 'image', targetEntity: RegionOfInterest::class)]

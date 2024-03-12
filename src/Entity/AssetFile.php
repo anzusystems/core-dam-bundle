@@ -48,7 +48,7 @@ abstract class AssetFile implements
     use NotifyToTrait;
 
     #[ORM\OneToMany(mappedBy: 'assetFile', targetEntity: Chunk::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
-    #[ORM\OrderBy(value: ['offset' => Criteria::ASC])]
+    #[ORM\OrderBy(value: ['offset' => App::ORDER_ASC])]
     protected Collection $chunks;
 
     #[ORM\OneToOne(targetEntity: AssetFileMetadata::class)]

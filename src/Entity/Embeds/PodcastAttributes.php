@@ -15,11 +15,23 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastAttributes
 {
+    /**
+     * RSS feed URL
+     */
     #[ORM\Column(type: Types::STRING, length: 2_048, nullable: true)]
     #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
     #[Serialize]
     private string $rssUrl;
+
+    /**
+     * Podcast URL (located in external service)
+     */
+    #[ORM\Column(type: Types::STRING, length: 2_048, options: ['default' => ''])]
+    #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Serialize]
+    private string $extUrl;
 
     #[ORM\Column(type: Types::STRING, length: 128, nullable: true)]
     #[Assert\Length(max: 128, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -37,6 +49,7 @@ class PodcastAttributes
     {
         $this->setRssUrl('');
         $this->setFileSlot('');
+        $this->setExtUrl('');
         $this->setLastImportStatus(PodcastLastImportStatus::Default);
         $this->setMode(PodcastImportMode::Default);
     }
@@ -87,6 +100,17 @@ class PodcastAttributes
     {
         $this->fileSlot = $fileSlot;
 
+        return $this;
+    }
+
+    public function getExtUrl(): string
+    {
+        return $this->extUrl;
+    }
+
+    public function setExtUrl(string $extUrl): self
+    {
+        $this->extUrl = $extUrl;
         return $this;
     }
 }

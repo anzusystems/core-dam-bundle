@@ -9,6 +9,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\CustomFormRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -26,7 +27,7 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
     use UserTrackingTrait;
 
     #[ORM\OneToMany(mappedBy: 'form', targetEntity: CustomFormElement::class)]
-    #[ORM\OrderBy(value: ['position' => Criteria::ASC])]
+    #[ORM\OrderBy(value: ['position' => App::ORDER_ASC])]
     #[Assert\Valid]
     private Collection $elements;
 

@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -49,7 +50,7 @@ class DistributionCategorySelect implements TimeTrackingInterface, UserTrackingI
 
     #[Serialize(type: DistributionCategoryOption::class)]
     #[ORM\OneToMany(mappedBy: 'select', targetEntity: DistributionCategoryOption::class)]
-    #[ORM\OrderBy(['position' => Criteria::ASC])]
+    #[ORM\OrderBy(['position' => App::ORDER_ASC])]
     #[Assert\Count(min: 1, minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN)]
     #[Assert\Valid]
     private Collection $options;

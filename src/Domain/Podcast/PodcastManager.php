@@ -52,6 +52,7 @@ class PodcastManager extends AbstractManager
         ;
         $podcast->getAttributes()
             ->setRssUrl($newPodcast->getAttributes()->getRssUrl())
+            ->setExtUrl($newPodcast->getAttributes()->getExtUrl())
             ->setFileSlot($newPodcast->getAttributes()->getFileSlot())
             ->setMode($newPodcast->getAttributes()->getMode())
         ;

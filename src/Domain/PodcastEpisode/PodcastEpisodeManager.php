@@ -61,6 +61,7 @@ class PodcastEpisodeManager extends AbstractManager
         $podcastEpisode->getAttributes()
             ->setSeasonNumber($newPodcastEpisode->getAttributes()->getSeasonNumber())
             ->setEpisodeNumber($newPodcastEpisode->getAttributes()->getEpisodeNumber())
+            ->setExtUrl($newPodcastEpisode->getAttributes()->getExtUrl())
         ;
         $podcastEpisode->getTexts()
             ->setTitle($newPodcastEpisode->getTexts()->getTitle())
