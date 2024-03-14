@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
+use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
@@ -31,6 +33,10 @@ final class UrlFileFactory
                 Request::METHOD_GET,
                 $url,
             );
+
+            if (Response::HTTP_BAD_REQUEST <= $response->getStatusCode()) {
+                throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+            }
 
             $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
             $baseFile = $fileSystem->writeTmpFileFromStream(StreamWrapper::createResource($response));

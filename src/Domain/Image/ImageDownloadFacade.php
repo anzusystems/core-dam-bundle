@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
@@ -27,10 +28,11 @@ final readonly class ImageDownloadFacade
 
     /**
      * @throws SerializerException
+     * @throws AssetFileProcessFailed
      */
     public function downloadSynchronous(AssetLicence $assetLicence, string $url): ImageFile
     {
-        $imageFile = $this->imageFileRepository->findOneByUrlAndLicence($url, $assetLicence);
+        $imageFile = $this->imageFileRepository->findOneProcessedByUrlAndLicence($url, $assetLicence);
         if ($imageFile) {
             return $imageFile;
         }

@@ -9,7 +9,7 @@ use Exception;
 
 class AssetFileProcessFailed extends Exception
 {
-    public const ERROR_MESSAGE = 'asset_file_process_failed';
+    public const string ERROR_MESSAGE = 'asset_file_process_failed';
 
     public function __construct(
         private readonly AssetFileFailedType $assetFileFailedType,

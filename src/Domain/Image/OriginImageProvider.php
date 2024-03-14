@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
@@ -17,7 +18,7 @@ final readonly class OriginImageProvider
     }
 
     /**
-     * @throws DomainException
+     * @throws AssetFileProcessFailed
      */
     public function getOriginImage(ImageFile $imageFile): ImageFile
     {
@@ -26,13 +27,14 @@ final readonly class OriginImageProvider
             return $originImage;
         }
 
-        throw new DomainException(
-            sprintf(
-                'Get origin image failed. Image id (%s), status (%s), originImageId(%s)',
-                $imageFile->getId(),
-                $imageFile->getAssetAttributes()->getStatus()->toString(),
-                $imageFile->getAssetAttributes()->getOriginAssetId()
-            )
+        //        dump(
+        //            $imageFile,
+        //            $imageFile->getAssetAttributes()->getStatus(),
+        //            $imageFile->getAssetAttributes()->getFailReason()
+        //        );
+
+        throw new AssetFileProcessFailed(
+            $imageFile->getAssetAttributes()->getFailReason()
         );
     }
 

@@ -8,7 +8,7 @@ use Attribute;
 use Symfony\Component\Validator\Constraint;
 
 #[Attribute]
-final class AssetFileSysCreate extends Constraint
+final class AssetFileSysCreatePath extends Constraint
 {
     public function getTargets(): string
     {
