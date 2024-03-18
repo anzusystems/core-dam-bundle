@@ -11,6 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
@@ -53,11 +54,11 @@ final class AssetFileController extends AbstractApiController
 
     /**
      * @throws FilesystemException
-     * @throws ValidationException
-     * @throws InvalidMimeTypeException
      * @throws NonUniqueResultException
+     * @throws ValidationException
+     * @throws AssetFileProcessFailed
      */
-    #[Route('/from-url', 'create', methods: [Request::METHOD_POST])]
+    #[Route('/from-url', 'create_from_url', methods: [Request::METHOD_POST])]
     #[OARequest(AssetFileSysUrlCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
     public function createFromUrl(#[SerializeParam] AssetFileSysUrlCreateDto $dto): JsonResponse
     {

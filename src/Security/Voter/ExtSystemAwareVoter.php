@@ -30,9 +30,6 @@ final class ExtSystemAwareVoter extends AbstractVoter
         if (false === ($subject instanceof ExtSystemInterface)) {
             return false;
         }
-
-        dump($subject);
-
         $extSystemId = (int) $subject->getExtSystem()->getId();
 
         if ($user->getAdminToExtSystems()->containsKey($extSystemId)) {

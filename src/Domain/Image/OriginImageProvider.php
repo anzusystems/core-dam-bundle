@@ -27,12 +27,6 @@ final readonly class OriginImageProvider
             return $originImage;
         }
 
-        //        dump(
-        //            $imageFile,
-        //            $imageFile->getAssetAttributes()->getStatus(),
-        //            $imageFile->getAssetAttributes()->getFailReason()
-        //        );
-
         throw new AssetFileProcessFailed(
             $imageFile->getAssetAttributes()->getFailReason()
         );

@@ -22,6 +22,12 @@ final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
     #[Assert\Length(max: 2048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $url = '';
 
+    #[Serialize]
+    private array $authors = [];
+
+    #[Serialize]
+    private array $keywords = [];
+
     public function getUrl(): string
     {
         return $this->url;
@@ -30,6 +36,28 @@ final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
     public function setUrl(string $url): self
     {
         $this->url = $url;
+        return $this;
+    }
+
+    public function getAuthors(): array
+    {
+        return $this->authors;
+    }
+
+    public function setAuthors(array $authors): self
+    {
+        $this->authors = $authors;
+        return $this;
+    }
+
+    public function getKeywords(): array
+    {
+        return $this->keywords;
+    }
+
+    public function setKeywords(array $keywords): self
+    {
+        $this->keywords = $keywords;
         return $this;
     }
 }

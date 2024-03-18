@@ -194,7 +194,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * @throws SerializerException
      */
-    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null): AssetFile
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile
     {
         try {
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
@@ -205,7 +205,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             }
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored)) {
                 $this->chunkFileManager->clearChunks($assetFile);
-                $this->process($assetFile, $file);
+                $this->process($assetFile, $file, $dispatchPropertyRefresh);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
             $assetFile->getAssetAttributes()->setOriginAssetId(
@@ -287,7 +287,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws SerializerException
      * @throws Throwable
      */
-    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile
+    public function process(AssetFile $assetFile, AdapterFile $file, bool $dispatchPropertyRefresh): AssetFile
     {
         try {
             $this->assetManager->beginTransaction();
@@ -298,7 +298,9 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             }
             $this->assetStatusManager->toProcessed($assetFile);
             $this->assetManager->commit();
-            $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
+            if ($dispatchPropertyRefresh) {
+                $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
+            }
         } catch (Throwable $exception) {
             $this->assetManager->rollback();
 

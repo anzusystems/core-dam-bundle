@@ -7,11 +7,13 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Closure;
 
 final readonly class ImageDownloadFacade
 {
@@ -29,8 +31,10 @@ final readonly class ImageDownloadFacade
     /**
      * @throws SerializerException
      * @throws AssetFileProcessFailed
+     *
+     * @param ?Closure(AssetFile): void $setupData
      */
-    public function downloadSynchronous(AssetLicence $assetLicence, string $url): ImageFile
+    public function downloadSynchronous(AssetLicence $assetLicence, string $url, ?Closure $setupData = null): ImageFile
     {
         $imageFile = $this->imageFileRepository->findOneProcessedByUrlAndLicence($url, $assetLicence);
         if ($imageFile) {
@@ -38,6 +42,9 @@ final readonly class ImageDownloadFacade
         }
 
         $imageFile = $this->createImageFile($assetLicence, $url);
+        if ($setupData) {
+            $setupData($imageFile);
+        }
         $this->assetFileStatusManager->toUploaded($imageFile, false);
         $this->facadeProvider->getStatusFacade($imageFile)->storeAndProcess($imageFile);
 
