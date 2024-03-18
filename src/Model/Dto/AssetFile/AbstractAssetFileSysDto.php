@@ -15,34 +15,17 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[AppAssert\AssetFileSysCreate]
-final class AssetFileSysCreateDto implements ExtSystemInterface, CustomDataInterface
+abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomDataInterface
 {
-    #[Serialize]
-    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Length(max: 192, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    private string $path = '';
-
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
-    private array $customData = [];
+    protected array $customData = [];
 
     #[Serialize]
-    private bool $generatePublicRoute = false;
+    protected bool $generatePublicRoute = false;
 
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    private AssetLicence $licence;
-
-    public function getPath(): string
-    {
-        return $this->path;
-    }
-
-    public function setPath(string $path): self
-    {
-        $this->path = $path;
-        return $this;
-    }
+    protected AssetLicence $licence;
 
     public function getLicence(): AssetLicence
     {

@@ -31,11 +31,13 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     use UserTrackingTrait;
     use TimeTrackingTrait;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    public const int NAME_MAX_LENGTH = 255;
+
+    #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH)]
     #[Serialize]
     #[Assert\Length(
         min: 2,
-        max: 255,
+        max: self::NAME_MAX_LENGTH,
         minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
     )]

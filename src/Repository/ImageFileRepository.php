@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
@@ -32,11 +33,12 @@ final class ImageFileRepository extends AbstractAssetFileRepository
         );
     }
 
-    public function findOneByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
+    public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
     {
         return $this->findOneBy([
             'assetAttributes.originUrl' => $url,
             'licence' => $licence,
+            'assetAttributes.status' => AssetFileProcessStatus::Processed,
         ]);
     }
 

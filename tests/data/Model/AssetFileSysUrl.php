@@ -12,4 +12,9 @@ final class AssetFileSysUrl
     {
         return sprintf('/api/sys/v%d/asset-file', self::API_VERSION);
     }
+
+    public static function createFromUrl(): string
+    {
+        return sprintf('/api/sys/v%d/asset-file/from-url', self::API_VERSION);
+    }
 }

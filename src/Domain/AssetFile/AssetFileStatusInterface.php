@@ -13,9 +13,9 @@ interface AssetFileStatusInterface
 {
     public function store(AssetFile $assetFile, ?AdapterFile $file): AdapterFile;
 
-    public function process(AssetFile $assetFile, AdapterFile $file): AssetFile;
+    public function process(AssetFile $assetFile, AdapterFile $file, bool $dispatchPropertyRefresh): AssetFile;
 
-    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null): AssetFile;
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile;
 
     public static function getDefaultKeyName(): string;
 }

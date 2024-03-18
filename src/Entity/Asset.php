@@ -238,6 +238,15 @@ class Asset implements
         return $this->authors;
     }
 
+    public function addAuthor(Author $author): self
+    {
+        if (false === $this->authors->contains($author)) {
+            $this->authors->add($author);
+        }
+
+        return $this;
+    }
+
     /**
      * @return list<string>
      */
@@ -266,6 +275,15 @@ class Asset implements
     public function getKeywords(): Collection
     {
         return $this->keywords;
+    }
+
+    public function addKeyword(Keyword $keyword): self
+    {
+        if (false === $this->keywords->contains($keyword)) {
+            $this->keywords->add($keyword);
+        }
+
+        return $this;
     }
 
     /**
