@@ -36,14 +36,6 @@ final class RefreshAssetPropertiesHandler
     {
         $asset = $this->assetRepository->find($message->getAssetId());
         if (null === $asset) {
-            $this->damLogger->error(
-                DamLogger::NAMESPACE_ASSET_PROPERTY_REFRESHER,
-                sprintf(
-                    'Asset %s not found',
-                    (string) $message->getAssetId()
-                ),
-            );
-
             return;
         }
 
