@@ -88,11 +88,15 @@ final class AssetSysFacade
                 }
             );
 
-            /** @psalm-suppress InvalidArgument */
-            $this->indexManager->indexBulk([
+            $indexEntities = [
                 ...$assetFile->getAsset()->getAuthors(),
                 ...$assetFile->getAsset()->getKeywords(),
-            ]);
+            ];
+            if (false === empty($indexEntities)) {
+                /** @psalm-suppress InvalidArgument */
+                $this->indexManager->indexBulk($indexEntities);
+            }
+
             $this->assetMetadataManager->commit();
             $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
 
