@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/anzusystems/core-dam-bundle/compare/1.8.2...1.9.0) (2024-04-25)
+
+### Features
+* package updates
+* SYS API -> create image from url (with authors, keywords, ...)
+
 ## [1.8.2](https://github.com/anzusystems/core-dam-bundle/compare/1.8.1...1.8.2) (2024-03-12)
 
 ### Features
