@@ -11,17 +11,33 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileMessageDispatcher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
+use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
+use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysCreateDto;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
+use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
+use Throwable;
 
 final class AssetSysFacade
 {
     use IndexManagerAwareTrait;
+    use MessageBusAwareTrait;
 
     public function __construct(
         private readonly Validator $validator,
@@ -32,6 +48,9 @@ final class AssetSysFacade
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteFacade $assetFileRouteFacade,
         private readonly AssetMetadataManager $assetMetadataManager,
+        private readonly ImageDownloadFacade $imageDownloadFacade,
+        private readonly KeywordProvider $keywordProvider,
+        private readonly AuthorProvider $authorProvider,
     ) {
     }
 
@@ -41,11 +60,64 @@ final class AssetSysFacade
      * @throws InvalidMimeTypeException
      * @throws NonUniqueResultException
      */
-    public function createFromDto(AssetFileSysCreateDto $dto): AssetFile
+    public function createFromFileDto(AssetFileSysPathCreateDto $dto): AssetFile
     {
         $this->validator->validate($dto);
         $assetFile = $this->assetSysFactory->createFromDto($dto);
         $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile);
+
+        return $this->createFromDto($assetFile, $dto);
+    }
+
+    /**
+     * @throws AssetFileProcessFailed
+     * @throws ValidationException
+     */
+    public function createFromUrlDto(AssetFileSysUrlCreateDto $dto): AssetFile
+    {
+        $this->validator->validate($dto);
+        try {
+            $this->assetMetadataManager->beginTransaction();
+            $assetFile = $this->imageDownloadFacade->downloadSynchronous(
+                assetLicence: $dto->getLicence(),
+                url: $dto->getUrl(),
+                setupData: function (AssetFile $assetFile) use ($dto): void {
+                    $this->createFromDto($assetFile, $dto);
+                    $this->setupKeywords($assetFile, $dto);
+                    $this->setupAuthors($assetFile, $dto);
+                }
+            );
+
+            $indexEntities = [
+                ...$assetFile->getAsset()->getAuthors(),
+                ...$assetFile->getAsset()->getKeywords(),
+            ];
+            if (false === empty($indexEntities)) {
+                /** @psalm-suppress InvalidArgument */
+                $this->indexManager->indexBulk($indexEntities);
+            }
+
+            $this->assetMetadataManager->commit();
+            $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
+
+            return $assetFile;
+        } catch (AssetFileProcessFailed $e) {
+            $this->assetMetadataManager->rollback();
+
+            throw $e;
+        } catch (Throwable $e) {
+            $this->assetMetadataManager->rollback();
+
+            throw new RuntimeException('asset_file_create_from_url_failed', 0, $e);
+        }
+    }
+
+    /**
+     * @throws FilesystemException
+     * @throws NonUniqueResultException
+     */
+    public function createFromDto(AssetFile $assetFile, AbstractAssetFileSysDto $dto): AssetFile
+    {
         $this->assetMetadataManager->updateFromCustomData(
             $assetFile->getAsset(),
             [
@@ -63,5 +135,25 @@ final class AssetSysFacade
         }
 
         return $assetFile;
+    }
+
+    public function setupKeywords(AssetFile $assetFile, AssetFileSysUrlCreateDto $dto): void
+    {
+        foreach ($dto->getKeywords() as $keywordName) {
+            $keyword = $this->keywordProvider->provideKeyword($keywordName, $assetFile->getExtSystem());
+            if ($keyword instanceof Keyword) {
+                $assetFile->getAsset()->addKeyword($keyword);
+            }
+        }
+    }
+
+    public function setupAuthors(AssetFile $assetFile, AssetFileSysUrlCreateDto $dto): void
+    {
+        foreach ($dto->getAuthors() as $authorName) {
+            $author = $this->authorProvider->provideAuthor($authorName, $assetFile->getExtSystem());
+            if ($author instanceof Author) {
+                $assetFile->getAsset()->addAuthor($author);
+            }
+        }
     }
 }

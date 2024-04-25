@@ -6,9 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 
@@ -25,7 +27,7 @@ final readonly class AssetSysFactory
      * @throws NonUniqueResultException
      * @throws InvalidMimeTypeException
      */
-    public function createFromDto(AssetFileSysCreateDto $dto): AssetFile
+    public function createFromDto(AssetFileSysPathCreateDto $dto): AssetFile
     {
         $configuration = $this->configurationProvider->getExtSystemConfiguration($dto->getExtSystem()->getSlug());
 

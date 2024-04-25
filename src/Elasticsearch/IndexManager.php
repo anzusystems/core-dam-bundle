@@ -41,6 +41,40 @@ final readonly class IndexManager
         throw new RuntimeException('elastic_index_failed');
     }
 
+    /**
+     * @param array<int, ExtSystemIndexableInterface> $entities
+     */
+    public function indexBulk(array $entities): bool
+    {
+        $params = ['body' => []];
+        foreach ($entities as $entity) {
+            $params['body'][] = [
+                'index' => [
+                    '_index' => $this->indexSettings->getFullIndexNameByEntity($entity),
+                    '_id' => $entity->getId(),
+                ],
+            ];
+
+            $params['body'][] = $this->indexFactoryProvider->getIndexFactory($entity::class)->buildFromEntity($entity);
+        }
+
+        try {
+            /**
+             * @psalm-suppress InvalidArgument
+             * @var ElasticsearchResponse $response
+             */
+            $response = $this->client->bulk($params);
+        } catch (ElasticsearchException $exception) {
+            throw new RuntimeException('elastic_index_failed', 0, $exception);
+        }
+
+        if (!$response->asArray()['errors']) {
+            return true;
+        }
+
+        throw new RuntimeException('elastic_index_failed');
+    }
+
     public function delete(ExtSystemIndexableInterface $entity, int|string $deletedId): bool
     {
         try {

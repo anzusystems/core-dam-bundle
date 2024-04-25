@@ -7,6 +7,11 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetFileSysUrl;
@@ -46,7 +51,7 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
 
         $fileSystem->delete(self::TEST_DATA_FILENAME);
 
-        $this->assertEquals($response->getStatusCode(), Response::HTTP_OK);
+        $this->assertEquals($response->getStatusCode(), Response::HTTP_OK, $response->getContent());
         $responseData = json_decode($response->getContent(), true);
         $this->assertEqualsCanonicalizing(
             [
@@ -66,5 +71,67 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
             $response ->getStatusCode(),
             Response::HTTP_OK
         );
+    }
+
+    public function testCreateFromUrl(): void
+    {
+        $client = $this->getApiClient(User::ID_CMS_USER);
+        $response = $client->post(AssetFileSysUrl::createFromUrl(), [
+            'licence' => 100_000,
+            'url' => 'http://core-dam.sme.localhost/download-file?file=50x50',
+            'customData' => [
+                'title' => 'Titulok',
+                'headline' => 'Headline'
+            ],
+            'generatePublicRoute' => false,
+            'authors' => [
+                'Aarne Ormonde',
+                'New author'
+            ],
+            'keywords' => [
+                'News',
+                'New keyword',
+            ]
+        ]);
+
+        $this->assertEquals(Response::HTTP_OK, $response ->getStatusCode());
+
+        $responseData = json_decode($response->getContent(), true);
+
+        $asset = $this->entityManager->getRepository(Asset::class)->find($responseData['assetId']);
+        $this->assertEquals(AssetStatus::WithFile, $asset->getAttributes()->getStatus());
+
+        $this->assertEqualsCanonicalizing(
+            [
+                'title' => 'Titulok',
+                'headline' => 'Headline'
+            ],
+            $responseData['customData']
+        );
+
+        $this->assertKeywordExists('News');
+        $this->assertKeywordExists('New keyword');
+        $this->assertAuthorExists('Aarne Ormonde');
+        $this->assertAuthorExists('New author');
+    }
+
+    private function assertKeywordExists(string $keyword): void
+    {
+        $keyword = $this->entityManager->getRepository(Keyword::class)->findOneBy([
+            'extSystem' => 1,
+            'name' => $keyword
+        ]);
+
+        $this->assertNotNull($keyword);
+    }
+
+    private function assertAuthorExists(string $keyword): void
+    {
+        $author = $this->entityManager->getRepository(Author::class)->findOneBy([
+            'extSystem' => 1,
+            'name' => $keyword
+        ]);
+
+        $this->assertNotNull($author);
     }
 }

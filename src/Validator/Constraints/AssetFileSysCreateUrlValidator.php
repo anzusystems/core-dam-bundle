@@ -10,14 +10,15 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetCustomFormProvidableDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 use Symfony\Contracts\Service\Attribute\Required;
 
-final class AssetFileSysCreateValidator extends CustomDataValidator
+final class AssetFileSysCreateUrlValidator extends CustomDataValidator
 {
     private ExtSystemConfigurationProvider $configurationProvider;
     private AssetFileFactory $assetFileFactory;
@@ -35,33 +36,18 @@ final class AssetFileSysCreateValidator extends CustomDataValidator
     }
 
     /**
-     * @throws InvalidMimeTypeException
-     * @throws FilesystemException
      * @throws NonUniqueResultException
      */
     public function validate(mixed $value, Constraint $constraint): void
     {
-        if (false === ($value instanceof AssetFileSysCreateDto)) {
-            throw new UnexpectedTypeException($constraint, AssetFileSysCreateDto::class);
-        }
-
-        $configuration = $this->configurationProvider->getExtSystemConfiguration($value->getExtSystem()->getSlug());
-
-        try {
-            $assetType = $this->assetFileFactory->getTypeFromPath($configuration->getExtStorage(), $value->getPath());
-        } catch (DomainException) {
-            $this->context
-                ->buildViolation(ValidationException::ERROR_FIELD_INVALID)
-                ->atPath('path')
-                ->addViolation();
-
-            return;
+        if (false === ($value instanceof AssetFileSysUrlCreateDto)) {
+            throw new UnexpectedTypeException($constraint, AssetFileSysUrlCreateDto::class);
         }
 
         $this->validateForm(
             form: $this->customFormProvider->provideForm(
                 (new AssetCustomFormProvidableDto(
-                    assetType: $assetType,
+                    assetType: $value->getAssetType(),
                     extSystem: $value->getExtSystem()
                 ))
             ),

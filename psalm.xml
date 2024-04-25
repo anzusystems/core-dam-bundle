@@ -17,6 +17,18 @@
         </ignoreFiles>
     </projectFiles>
     <issueHandlers>
+        <InvalidArgument>
+            <!-- They have bad typehints, e.g. "enum" is not a valid type -->
+            <errorLevel type="suppress">
+                <referencedFunction name="Elastic\Elasticsearch\Client::index" />
+                <referencedFunction name="Elastic\Elasticsearch\Client::indexBulk" />
+                <referencedFunction name="Elastic\Elasticsearch\Client::create" />
+                <referencedFunction name="Elastic\Elasticsearch\Client::delete" />
+                <referencedFunction name="Elastic\Elasticsearch\Client::bulk" />
+                <referencedFunction name="Elastic\Elasticsearch\Endpoints\Indices::create" />
+                <referencedFunction name="Elastic\Elasticsearch\Endpoints\Indices::delete" />
+            </errorLevel>
+        </InvalidArgument>
         <MoreSpecificImplementedParamType errorLevel="suppress"/>
         <UnnecessaryVarAnnotation errorLevel="suppress"/>
         <ImplicitToStringCast errorLevel="suppress"/>
