@@ -1,3 +1,8 @@
+## [1.9.1](https://github.com/anzusystems/core-dam-bundle/compare/1.9.0...1.9.1) (2024-05-09)
+
+### Fixes
+* update licence collection in `AssetLicenceGroup` update
+
 ## [1.9.0](https://github.com/anzusystems/core-dam-bundle/compare/1.8.2...1.9.0) (2024-04-25)
 
 ### Features
