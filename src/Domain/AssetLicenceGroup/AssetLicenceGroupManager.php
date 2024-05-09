@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
+use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use Doctrine\Common\Collections\Collection;
 
 final class AssetLicenceGroupManager extends AbstractManager
 {
@@ -26,7 +29,19 @@ final class AssetLicenceGroupManager extends AbstractManager
         ;
         $this->colUpdate(
             oldCollection: $assetLicenceGroup->getLicences(),
-            newCollection: $newAssetLicenceGroup->getLicences()
+            newCollection: $newAssetLicenceGroup->getLicences(),
+            addElementFn: function (Collection $oldCollection, AssetLicence $licence) use ($assetLicenceGroup): bool {
+                $licence->getGroups()->add($assetLicenceGroup);
+                $oldCollection->add($licence);
+
+                return true;
+            },
+            removeElementFn: function (Collection $oldCollection, AssetLicence $licence) use ($assetLicenceGroup): bool {
+                $licence->getGroups()->removeElement($assetLicenceGroup);
+                $oldCollection->removeElement($licence);
+
+                return true;
+            }
         );
         $this->flush($flush);
 
