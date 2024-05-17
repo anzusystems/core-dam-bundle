@@ -48,7 +48,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[OA\Tag('Asset')]
 final class AssetController extends AbstractApiController
 {
-    private const IDS_LIMIT = 50;
+    private const int IDS_LIMIT = 50;
 
     public function __construct(
         private readonly AssetFacade $assetFacade,

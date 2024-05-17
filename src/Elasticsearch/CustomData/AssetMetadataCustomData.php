@@ -13,7 +13,7 @@ use Doctrine\ORM\NonUniqueResultException;
 
 final class AssetMetadataCustomData
 {
-    private const METADATA_PREFIX = 'custom_data_';
+    private const string METADATA_PREFIX = 'custom_data_';
 
     /**
      * @var array<string, ReadableCollection<int, CustomFormElement>>

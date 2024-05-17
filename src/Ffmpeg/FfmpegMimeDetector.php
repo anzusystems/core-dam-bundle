@@ -10,9 +10,9 @@ use Throwable;
 
 final class FfmpegMimeDetector
 {
-    private const CODEC_TAG_STRING = 'codec_tag_string';
+    private const string CODEC_TAG_STRING = 'codec_tag_string';
 
-    private const AUDIO_FORMAT_MIME_TYPES = [
+    private const array AUDIO_FORMAT_MIME_TYPES = [
         'mp4a' => 'audio/m4a',
     ];
 

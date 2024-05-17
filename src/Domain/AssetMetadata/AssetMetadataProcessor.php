@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
 final class AssetMetadataProcessor
 {
-    public const DATA_SUGGESTER_LOCK_NAME = 'lock_suggester';
+    public const string DATA_SUGGESTER_LOCK_NAME = 'lock_suggester';
 
     /**
      * @var iterable<DataSuggesterInterface>

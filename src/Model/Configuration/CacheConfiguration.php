@@ -6,10 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class CacheConfiguration
 {
-    public const DOMAIN = 'domain';
-    public const MAX_AGE = 'max_age';
-    public const CACHE_TTL = 'cache_ttl';
-    public const PUBLIC = 'public';
+    public const string DOMAIN = 'domain';
+    public const string MAX_AGE = 'max_age';
+    public const string CACHE_TTL = 'cache_ttl';
+    public const string PUBLIC = 'public';
 
     private string $domain;
     private int $maxAge;

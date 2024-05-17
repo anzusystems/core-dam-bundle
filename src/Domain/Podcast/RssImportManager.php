@@ -18,7 +18,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 final class RssImportManager
 {
     use OutputUtilTrait;
-    private const BULK_SIZE = 2;
+    private const int BULK_SIZE = 2;
 
     public function __construct(
         private readonly PodcastStatusManager $podcastStatusManager,

@@ -9,7 +9,7 @@ use DateTimeImmutable;
 
 final class AccessTokenDto implements ScopeInterface
 {
-    private const ACCESS_TOKEN_TRESHOLD = 300;
+    private const int ACCESS_TOKEN_TRESHOLD = 300;
 
     private string $accessToken = '';
     private string $scope = '';

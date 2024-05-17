@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class JwDistributionServiceConfiguration extends DistributionServiceConfiguration
 {
-    public const SECRET_V2_KEY = 'secret_v2';
-    public const SITE_ID_KEY = 'site_id';
+    public const string SECRET_V2_KEY = 'secret_v2';
+    public const string SITE_ID_KEY = 'site_id';
 
     private string $secretV2;
     private string $siteId;

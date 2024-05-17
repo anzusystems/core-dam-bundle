@@ -17,8 +17,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
 {
-    public const EPISODE_1 = 'a081fd6f-57a0-4c9c-8a98-0347499b8ae2';
-    public const EPISODE_2 = '6b27f43c-530a-403f-9aa5-d728d825db2f';
+    public const string EPISODE_1 = 'a081fd6f-57a0-4c9c-8a98-0347499b8ae2';
+    public const string EPISODE_2 = '6b27f43c-530a-403f-9aa5-d728d825db2f';
 
     public function __construct(
         private readonly VideoShowEpisodeManager $videoShowEpisodeManager,

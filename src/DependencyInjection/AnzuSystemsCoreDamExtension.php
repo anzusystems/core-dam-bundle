@@ -47,7 +47,7 @@ use Symfony\Component\DependencyInjection\Reference;
 
 final class AnzuSystemsCoreDamExtension extends Extension implements PrependExtensionInterface
 {
-    public const STORAGE_DEFINITION_NAME_PREFIX = 'core_dam_bundle.storage.';
+    public const string STORAGE_DEFINITION_NAME_PREFIX = 'core_dam_bundle.storage.';
 
     private array $processedConfig = [];
 

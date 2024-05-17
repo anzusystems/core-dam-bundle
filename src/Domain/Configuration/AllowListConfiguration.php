@@ -13,9 +13,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 final class AllowListConfiguration
 {
-    public const CROP_ALLOW_ITEM_WIDTH = 'width';
-    public const CROP_ALLOW_ITEM_HEIGHT = 'height';
-    public const CROP_ALLOW_ITEM_TITLE = 'title';
+    public const string CROP_ALLOW_ITEM_WIDTH = 'width';
+    public const string CROP_ALLOW_ITEM_HEIGHT = 'height';
+    public const string CROP_ALLOW_ITEM_TITLE = 'title';
 
     private array $taggedListCache = [];
 

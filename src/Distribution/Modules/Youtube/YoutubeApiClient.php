@@ -33,11 +33,11 @@ use Throwable;
 
 final class YoutubeApiClient
 {
-    public const MAX_PAGE = 5;
-    public const MAX_RESULTS = 50;
+    public const int MAX_PAGE = 5;
+    public const int MAX_RESULTS = 50;
 
-    private const QUOTA_EXCEEDED_REASON = 'quotaExceeded';
-    private const VIDEO_RESOURCE_TYPE = 'youtube#video';
+    private const string QUOTA_EXCEEDED_REASON = 'quotaExceeded';
+    private const string VIDEO_RESOURCE_TYPE = 'youtube#video';
     private const CHUNK_SIZE = 5 * 1_024 * 1_024;
 
     public function __construct(

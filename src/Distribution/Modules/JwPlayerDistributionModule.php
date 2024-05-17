@@ -28,7 +28,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
     RemoteProcessingDistributionModuleInterface,
     PreviewProvidableModuleInterface
 {
-    private const REMOTE_PROCESS_WAIT_TRESHOLD = '+1 hour';
+    private const string REMOTE_PROCESS_WAIT_TRESHOLD = '+1 hour';
 
     public function __construct(
         private readonly JwVideoClient $jwVideoClient,

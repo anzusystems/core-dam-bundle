@@ -10,9 +10,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 
 final class ExtSystemConfiguration
 {
-    public const ID_KEY = 'id';
-    public const ASSET_EXTERNAL_PROVIDERS_KEY = 'asset_external_providers';
-    public const EXT_STORAGE_KEY = 'ext_storage';
+    public const string ID_KEY = 'id';
+    public const string ASSET_EXTERNAL_PROVIDERS_KEY = 'asset_external_providers';
+    public const string EXT_STORAGE_KEY = 'ext_storage';
 
     public function __construct(
         private readonly int $id,

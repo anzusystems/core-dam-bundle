@@ -18,7 +18,7 @@ final class UnsplashImageProvider
     use OutputUtilTrait;
     use FileHelperTrait;
 
-    private const URL_TEMPLATE = 'https://source.unsplash.com/featured/%dx%d?%s';
+    private const string URL_TEMPLATE = 'https://source.unsplash.com/featured/%dx%d?%s';
 
     public function __construct(
         private readonly UrlFileFactory $urlFileFactory,

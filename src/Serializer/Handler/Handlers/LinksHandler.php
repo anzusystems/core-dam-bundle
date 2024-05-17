@@ -41,8 +41,8 @@ class LinksHandler extends AbstractHandler
         self::IMAGE_TAG_ROI_EXAMPLE,
     ];
 
-    private const LINKS_TAGS_LIMIT = 5;
-    private const LINKS_QUERY_PARAM = '_links';
+    private const int LINKS_TAGS_LIMIT = 5;
+    private const string LINKS_QUERY_PARAM = '_links';
 
     public function __construct(
         protected readonly ConfigurationProvider $configurationProvider,

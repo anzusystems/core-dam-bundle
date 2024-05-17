@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 
 final class ClosestColorProvider
 {
-    private const MAX_DISTANCE = 9_999;
+    private const int MAX_DISTANCE = 9_999;
 
     public function __construct(
         private readonly array $colorSet

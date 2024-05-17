@@ -25,7 +25,7 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
 {
     use EntityManagerAwareTrait;
 
-    private const ASSET_BULK_SIZE = 10;
+    private const int ASSET_BULK_SIZE = 10;
 
     public function __construct(
         private readonly AssetRepository $assetRepository,

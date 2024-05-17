@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop;
 
 final class RequestedCropDto
 {
-    private const DEFAULT_REQUEST_WIDTH = 450;
-    private const DEFAULT_REQUEST_HEIGHT = 300;
+    private const int DEFAULT_REQUEST_WIDTH = 450;
+    private const int DEFAULT_REQUEST_HEIGHT = 300;
 
     private int $requestWidth;
     private int $requestHeight;

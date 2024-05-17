@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 
 final class ConfigurationProvider
 {
-    public const IMAGE_SETTINGS_OPTIMAL_RESIZES = 'optimal_resizes';
+    public const string IMAGE_SETTINGS_OPTIMAL_RESIZES = 'optimal_resizes';
 
     private ?SettingsConfiguration $settingsConfiguration = null;
     private ?DisplayTitleConfiguration $displayTitleConfiguration = null;

@@ -9,7 +9,7 @@ use Exception;
 
 class FileNameGenerator implements FileNameGeneratorInterface
 {
-    private const FILENAME_LENGTH = 32;
+    private const int FILENAME_LENGTH = 32;
 
     /**
      * @throws Exception

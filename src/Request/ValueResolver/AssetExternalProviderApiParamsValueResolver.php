@@ -17,7 +17,7 @@ final class AssetExternalProviderApiParamsValueResolver implements ValueResolver
 {
     use SerializerAwareTrait;
 
-    private const ATTRIBUTE_NAME = 'providerName';
+    private const string ATTRIBUTE_NAME = 'providerName';
 
     public function __construct(
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,

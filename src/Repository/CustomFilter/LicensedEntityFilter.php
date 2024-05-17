@@ -9,8 +9,8 @@ use Doctrine\ORM\QueryBuilder;
 
 final class LicensedEntityFilter implements CustomFilterInterface
 {
-    public const EXT_SYSTEM = 'extSystem';
-    public const LICENCE = 'licence';
+    public const string EXT_SYSTEM = 'extSystem';
+    public const string LICENCE = 'licence';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

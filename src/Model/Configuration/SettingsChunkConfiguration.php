@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class SettingsChunkConfiguration
 {
-    public const MIN_SIZE_KEY = 'min_size';
-    public const MAX_SIZE_KEY = 'max_size';
+    public const string MIN_SIZE_KEY = 'min_size';
+    public const string MAX_SIZE_KEY = 'max_size';
 
     public function __construct(
         private readonly int $minSize,

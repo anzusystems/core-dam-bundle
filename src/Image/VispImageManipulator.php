@@ -22,9 +22,9 @@ use Throwable;
  */
 final class VispImageManipulator extends AbstractImageManipulator
 {
-    private const N_BINS = 10;
-    private const BIN_SIZE = 256;
-    private const DEFAULT_QUALITY = 100;
+    private const int N_BINS = 10;
+    private const int BIN_SIZE = 256;
+    private const int DEFAULT_QUALITY = 100;
 
     private ?Image $image = null;
     private int $quality;

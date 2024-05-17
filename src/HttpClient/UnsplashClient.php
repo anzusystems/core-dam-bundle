@@ -29,9 +29,9 @@ final class UnsplashClient
 {
     use SerializerAwareTrait;
 
-    private const CACHE_TAG = 'unsplash';
-    private const SEARCH_CACHE_KEY_PREFIX = 'unsplash_search_';
-    private const PHOTO_CACHE_KEY_PREFIX = 'unsplash_photo_';
+    private const string CACHE_TAG = 'unsplash';
+    private const string SEARCH_CACHE_KEY_PREFIX = 'unsplash_search_';
+    private const string PHOTO_CACHE_KEY_PREFIX = 'unsplash_photo_';
 
     public function __construct(
         private readonly HttpClientInterface $unsplashApiClient,

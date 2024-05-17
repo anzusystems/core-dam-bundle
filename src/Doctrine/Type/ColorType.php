@@ -12,7 +12,7 @@ use Throwable;
 
 final class ColorType extends AbstractValueObjectType
 {
-    public const NAME = 'ColorType';
+    public const string NAME = 'ColorType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): ?Color
     {

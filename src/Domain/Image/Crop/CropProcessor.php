@@ -23,7 +23,7 @@ final class CropProcessor
 {
     use FileHelperTrait;
 
-    public const DEFAULT_MIME_TYPE = 'image/jpeg';
+    public const string DEFAULT_MIME_TYPE = 'image/jpeg';
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,

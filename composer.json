@@ -49,15 +49,16 @@
     "symfony/yaml": "^6.4"
   },
   "require-dev": {
+    "ext-fileinfo": "*",
     "doctrine/doctrine-bundle": "^2.4",
     "phpunit/phpunit": "^9.5",
     "psalm/plugin-symfony": "^5.0",
+    "rector/rector": "^1.0",
     "slevomat/coding-standard": "^7.0",
     "symfony/test-pack": "^1.0",
     "symplify/easy-coding-standard": "^11.1",
     "vimeo/psalm": "^5.6",
-    "weirdan/doctrine-psalm-plugin": "^2.8",
-    "ext-fileinfo": "*"
+    "weirdan/doctrine-psalm-plugin": "^2.8"
   },
   "replace": {
     "symfony/polyfill-ctype": "*",

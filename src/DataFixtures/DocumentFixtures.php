@@ -20,9 +20,9 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class DocumentFixtures extends AbstractAssetFileFixtures
 {
-    public const DOC_ID_1 = 'ac967cf4-0ea9-499e-be2a-13bf0b63eabe';
-    public const DOC_ID_2 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabc';
-    public const DOC_ID_3 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabd';
+    public const string DOC_ID_1 = 'ac967cf4-0ea9-499e-be2a-13bf0b63eabe';
+    public const string DOC_ID_2 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabc';
+    public const string DOC_ID_3 = 'ad967cf4-0ea9-499e-be2a-13bf0b63eabd';
 
     public function __construct(
         private readonly DocumentManager $documentManager,

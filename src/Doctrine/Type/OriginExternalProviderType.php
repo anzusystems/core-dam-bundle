@@ -12,7 +12,7 @@ use Throwable;
 
 final class OriginExternalProviderType extends AbstractValueObjectType
 {
-    public const NAME = 'OriginExternalProviderType';
+    public const string NAME = 'OriginExternalProviderType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): ?OriginExternalProvider
     {

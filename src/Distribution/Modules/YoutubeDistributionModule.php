@@ -35,7 +35,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     RemoteProcessingDistributionModuleInterface,
     PreviewProvidableModuleInterface
 {
-    private const YOUTUBE_DISTRIBUTION_TAG = 'youtube_distribution';
+    private const string YOUTUBE_DISTRIBUTION_TAG = 'youtube_distribution';
 
     public function __construct(
         private readonly YoutubeApiClient $client,

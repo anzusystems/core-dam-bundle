@@ -12,7 +12,7 @@ use Throwable;
 
 final class OriginStorageType extends AbstractValueObjectType
 {
-    public const NAME = 'OriginStorageType';
+    public const string NAME = 'OriginStorageType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): ?OriginStorage
     {

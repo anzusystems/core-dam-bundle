@@ -17,8 +17,8 @@ final class ChunkParamValueResolver implements ValueResolverInterface
 {
     use SerializerAwareTrait;
 
-    private const REQUEST_CHUNK_KEY = 'chunk';
-    private const REQUEST_FILE_KEY = 'file';
+    private const string REQUEST_CHUNK_KEY = 'chunk';
+    private const string REQUEST_FILE_KEY = 'file';
 
     /**
      * @throws SerializerException

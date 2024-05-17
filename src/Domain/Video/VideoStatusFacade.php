@@ -28,7 +28,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
  */
 final class VideoStatusFacade extends AbstractAssetFileStatusFacade
 {
-    private const THUMBNAIL_PERCENTAGE_POSITION = 0.1;
+    private const float THUMBNAIL_PERCENTAGE_POSITION = 0.1;
 
     public function __construct(
         private readonly VideoAttributesProcessor $attributesProcessor,

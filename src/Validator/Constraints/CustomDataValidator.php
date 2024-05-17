@@ -21,7 +21,7 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 class CustomDataValidator extends ConstraintValidator
 {
-    private const PATH_TEMPLATE = 'customData.%s';
+    private const string PATH_TEMPLATE = 'customData.%s';
 
     private readonly iterable $validators;
 

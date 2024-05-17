@@ -13,8 +13,8 @@ use InvalidArgumentException;
 
 final class DefaultRegionOfInterestFactory
 {
-    private const ROI_PERCENTAGE_DECIMAL_PLACES = 4;
-    private const DEFAULT_ROI_TITLE = 'Default';
+    private const int ROI_PERCENTAGE_DECIMAL_PLACES = 4;
+    private const string DEFAULT_ROI_TITLE = 'Default';
 
     public function __construct(
         private readonly ExtSystemConfigurationProvider $configurationProvider

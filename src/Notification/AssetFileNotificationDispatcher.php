@@ -17,9 +17,9 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
 {
     use SerializerAwareTrait;
 
-    private const EVENT_NAME_PREFIX = 'asset_file_';
-    private const EVENT_METADATA_PROCESSED_NAME = 'asset_metadata_processed';
-    private const EVENT_ASSET_FILE_DELETED_NAME = 'asset_file_deleted';
+    private const string EVENT_NAME_PREFIX = 'asset_file_';
+    private const string EVENT_METADATA_PROCESSED_NAME = 'asset_metadata_processed';
+    private const string EVENT_ASSET_FILE_DELETED_NAME = 'asset_file_deleted';
 
     public function __construct(
         private readonly DamLogger $damLogger,

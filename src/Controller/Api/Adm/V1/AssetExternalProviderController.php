@@ -21,7 +21,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[OA\Tag('AssetExternalProvider')]
 final class AssetExternalProviderController extends AbstractApiController
 {
-    private const IDS_LIMIT = 50;
+    private const int IDS_LIMIT = 50;
 
     public function __construct(
         private readonly AssetExternalProviderContainer $providerContainer,

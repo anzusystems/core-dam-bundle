@@ -29,8 +29,8 @@ final class FixtureImageProvider
 {
     use SerializerAwareTrait;
     use OutputUtilTrait;
-    private const ASSET_TITLE_SENTENCE_LENGTH = 5;
-    private const ASSET_DESCRIPTION_TEXT_LENGTH = 256;
+    private const int ASSET_TITLE_SENTENCE_LENGTH = 5;
+    private const int ASSET_DESCRIPTION_TEXT_LENGTH = 256;
 
     private readonly Generator $fakerGenerator;
 

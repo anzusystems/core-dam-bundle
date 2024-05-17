@@ -9,28 +9,28 @@ use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 
 final class SettingsConfiguration
 {
-    public const API_DOMAIN_KEY = 'api_domain';
-    public const REDIRECT_DOMAIN_KEY = 'redirect_domain';
-    public const NOTIFICATIONS = 'notifications';
-    public const DEFAULT_EXT_SYSTEM_ID_KEY = 'default_ext_system_id';
-    public const YOUTUBE_API_KEY_KEY = 'youtube_api_key';
-    public const DISTRIBUTION_AUTH_REDIRECT_URL_KEY = 'distribution_auth_redirect_url';
-    public const DEFAULT_ASSET_LICENCE_ID_KEY = 'default_asset_licence_id';
-    public const ALLOW_SELECT_EXT_SYSTEM_KEY_KEY = 'allow_select_ext_system';
-    public const ALLOW_SELECT_LICENCE_ID_KEY = 'allow_select_licence';
-    public const MAX_BULK_ITEM_COUNT_KEY = 'max_bulk_item_count';
-    public const IMAGE_CHUNK_CONFIG_KEY = 'image_chunk_config';
-    public const ACL_CHECK_ENABLED_KEY = 'acl_check_enabled';
-    public const APP_REDIS_KEY = 'app_redis';
-    public const CACHE_REDIS_KEY = 'cache_redis';
-    public const NOT_FOUND_IMAGE_ID = 'not_found_image_id';
-    public const USER_AUTH_TYPE_KEY = 'user_auth_type';
-    public const ADMIN_ALLOW_LIST_NAME_KEY = 'admin_allow_list_name';
-    public const ELASTIC_INDEX_PREFIX_KEY = 'elastic_index_prefix';
-    public const ELASTIC_LANGUAGE_DICTIONARIES_KEY = 'elastic_language_dictionaries';
-    public const LIMITED_ASSET_LICENCE_FILES_COUNT = 'limited_asset_licence_files_count';
-    public const UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
-    public const JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
+    public const string API_DOMAIN_KEY = 'api_domain';
+    public const string REDIRECT_DOMAIN_KEY = 'redirect_domain';
+    public const string NOTIFICATIONS = 'notifications';
+    public const string DEFAULT_EXT_SYSTEM_ID_KEY = 'default_ext_system_id';
+    public const string YOUTUBE_API_KEY_KEY = 'youtube_api_key';
+    public const string DISTRIBUTION_AUTH_REDIRECT_URL_KEY = 'distribution_auth_redirect_url';
+    public const string DEFAULT_ASSET_LICENCE_ID_KEY = 'default_asset_licence_id';
+    public const string ALLOW_SELECT_EXT_SYSTEM_KEY_KEY = 'allow_select_ext_system';
+    public const string ALLOW_SELECT_LICENCE_ID_KEY = 'allow_select_licence';
+    public const string MAX_BULK_ITEM_COUNT_KEY = 'max_bulk_item_count';
+    public const string IMAGE_CHUNK_CONFIG_KEY = 'image_chunk_config';
+    public const string ACL_CHECK_ENABLED_KEY = 'acl_check_enabled';
+    public const string APP_REDIS_KEY = 'app_redis';
+    public const string CACHE_REDIS_KEY = 'cache_redis';
+    public const string NOT_FOUND_IMAGE_ID = 'not_found_image_id';
+    public const string USER_AUTH_TYPE_KEY = 'user_auth_type';
+    public const string ADMIN_ALLOW_LIST_NAME_KEY = 'admin_allow_list_name';
+    public const string ELASTIC_INDEX_PREFIX_KEY = 'elastic_index_prefix';
+    public const string ELASTIC_LANGUAGE_DICTIONARIES_KEY = 'elastic_language_dictionaries';
+    public const string LIMITED_ASSET_LICENCE_FILES_COUNT = 'limited_asset_licence_files_count';
+    public const string UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
+    public const string JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,

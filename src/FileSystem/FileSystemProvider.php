@@ -22,8 +22,8 @@ use Doctrine\Common\Util\ClassUtils;
 
 final class FileSystemProvider
 {
-    public const TMP_STORAGE_SETTINGS = 'tmp_dir_path';
-    public const FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
+    public const string TMP_STORAGE_SETTINGS = 'tmp_dir_path';
+    public const string FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
 
     private ?LocalFilesystem $tmpFilesystem = null;
     private ?LocalFilesystem $fixturesFileSystem = null;
