@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "authors": [
   ],
+  "prefer-stable": true,
   "require": {
     "php": ">=8.3",
     "ext-json": "*",
@@ -15,7 +16,7 @@
     "ext-vips": "*",
     "ext-xmlreader": "*",
     "ext-zend-opcache": "*",
-    "anzusystems/common-bundle": "^7.0",
+    "anzusystems/common-bundle": "dev-feature_77476_acl",
     "doctrine/doctrine-bundle": "^2.12",
     "doctrine/orm": "^3.1",
     "elasticsearch/elasticsearch": "^8.6",
@@ -91,5 +92,6 @@
       "symfony/runtime": true,
       "php-http/discovery": true
     }
-  }
+  },
+  "minimum-stability": "dev"
 }
