@@ -29,7 +29,7 @@ final class JwVideoClient implements LoggerAwareInterface
     use SerializerAwareTrait;
     use LoggerAwareRequest;
 
-    private const CHUNK_SIZE = 100 * 1_024 * 1_024;
+    private const int|float CHUNK_SIZE = 100 * 1_024 * 1_024;
     private const int UPLOAD_TIMEOUT = 3_600;
     private const int UPLOAD_DURATION = 3_600;
 

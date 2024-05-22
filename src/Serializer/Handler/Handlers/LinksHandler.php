@@ -24,18 +24,18 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class LinksHandler extends AbstractHandler
 {
-    public const IMAGE_TAG_LIST = 'list';
-    public const IMAGE_TAG_DETAIL = 'detail';
-    public const IMAGE_TAG_TABLE = 'table';
-    public const IMAGE_TAG_ROI_EXAMPLE = 'roi_example';
+    public const string IMAGE_TAG_LIST = 'list';
+    public const string IMAGE_TAG_DETAIL = 'detail';
+    public const string IMAGE_TAG_TABLE = 'table';
+    public const string IMAGE_TAG_ROI_EXAMPLE = 'roi_example';
 
-    public const IMAGE_KEY_ANIMATED = 'image_animated';
-    public const AUDIO_KEY_AUDIO = 'audio';
+    public const string IMAGE_KEY_ANIMATED = 'image_animated';
+    public const string AUDIO_KEY_AUDIO = 'audio';
 
-    protected const IMAGE_LINKS_TYPE = 'image';
-    protected const AUDIO_LINKS_TYPE = 'audio';
+    protected const string IMAGE_LINKS_TYPE = 'image';
+    protected const string AUDIO_LINKS_TYPE = 'audio';
 
-    protected const IMAGE_TAGS = [
+    protected const array IMAGE_TAGS = [
         self::IMAGE_TAG_LIST,
         self::IMAGE_TAG_DETAIL,
         self::IMAGE_TAG_TABLE,

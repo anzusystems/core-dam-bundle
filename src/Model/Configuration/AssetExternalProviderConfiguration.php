@@ -6,12 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 class AssetExternalProviderConfiguration
 {
-    public const DEFAULT_LISTING_LIMIT = 30;
+    public const int DEFAULT_LISTING_LIMIT = 30;
 
-    public const PROVIDER_KEY = 'provider';
-    public const LISTING_LIMIT_KEY = 'listing_limit';
-    public const TITLE_KEY = 'title';
-    public const OPTIONS_KEY = 'options';
+    public const string PROVIDER_KEY = 'provider';
+    public const string LISTING_LIMIT_KEY = 'listing_limit';
+    public const string TITLE_KEY = 'title';
+    public const string OPTIONS_KEY = 'options';
 
     public function __construct(
         private readonly string $provider,

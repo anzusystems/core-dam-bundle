@@ -26,8 +26,9 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractImageController extends AbstractPublicController
 {
-    public const CROP_EXTENSION = 'jpeg';
-    public const DEFAULT_CROP_MIME_TYPE = 'image/jpeg';
+    public const string CROP_EXTENSION = 'jpeg';
+    public const string DEFAULT_CROP_MIME_TYPE = 'image/jpeg';
+
     protected DomainProvider $domainProvider;
     protected ImageFileRepository $imageFileRepository;
     private FileSystemProvider $fileSystemProvider;

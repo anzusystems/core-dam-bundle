@@ -13,5 +13,5 @@ enum DistributionRequirementStrategy: string implements EnumInterface
     case AtLeastOne = 'at_least_one';
     case WaitForAll = 'wait_for_all';
 
-    public const Default = self::None;
+    public const DistributionRequirementStrategy Default = self::None;
 }

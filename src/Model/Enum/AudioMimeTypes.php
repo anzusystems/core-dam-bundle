@@ -9,7 +9,7 @@ enum AudioMimeTypes: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const CHOICES = [
+    public const array CHOICES = [
         self::MIME_AUDIO_MP4,
         self::MIME_WAV,
         self::MIME_X_WAV,
@@ -18,12 +18,12 @@ enum AudioMimeTypes: string implements EnumInterface
         self::MIME_X_M4A,
     ];
 
-    private const MIME_AUDIO_MP4 = 'audio/mp4';
-    private const MIME_WAV = 'audio/wav';
-    private const MIME_X_WAV = 'audio/x-wav';
-    private const MIME_MPEG = 'audio/mpeg';
-    private const MIME_M4A = 'audio/m4a';
-    private const MIME_X_M4A = 'audio/x-m4a';
+    private const string MIME_AUDIO_MP4 = 'audio/mp4';
+    private const string MIME_WAV = 'audio/wav';
+    private const string MIME_X_WAV = 'audio/x-wav';
+    private const string MIME_MPEG = 'audio/mpeg';
+    private const string MIME_M4A = 'audio/m4a';
+    private const string MIME_X_M4A = 'audio/x-m4a';
 
     case MimeMp4 = self::MIME_AUDIO_MP4;
     case MimeWaw = self::MIME_WAV;

@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractSuggester implements DataSuggesterInterface
 {
-    protected const MAX_IDS_SUGGESTIONS = 10;
+    protected const int MAX_IDS_SUGGESTIONS = 10;
 
     protected ExtSystemConfigurationProvider $extSystemConfigurationProvider;
     protected SuggestionTagParser $suggestionTagParser;

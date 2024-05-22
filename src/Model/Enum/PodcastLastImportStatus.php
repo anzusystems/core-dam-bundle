@@ -13,5 +13,5 @@ enum PodcastLastImportStatus: string implements EnumInterface
     case Imported = 'imported';
     case ImportFailed = 'import_failed';
 
-    public const Default = self::NotImported;
+    public const PodcastLastImportStatus Default = self::NotImported;
 }

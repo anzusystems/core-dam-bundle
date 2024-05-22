@@ -38,7 +38,7 @@ final class YoutubeApiClient
 
     private const string QUOTA_EXCEEDED_REASON = 'quotaExceeded';
     private const string VIDEO_RESOURCE_TYPE = 'youtube#video';
-    private const CHUNK_SIZE = 5 * 1_024 * 1_024;
+    private const int|float CHUNK_SIZE = 5 * 1_024 * 1_024;
 
     public function __construct(
         private readonly YoutubeVideoFactory $videoFactory,

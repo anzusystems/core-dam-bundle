@@ -26,7 +26,7 @@ class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterfa
     use PositionTrait;
     use UserTrackingTrait;
 
-    public const FIRST_ROI_POSITION = 0;
+    public const int FIRST_ROI_POSITION = 0;
 
     #[ORM\Column(type: Types::INTEGER)]
     private int $pointX;

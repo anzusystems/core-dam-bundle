@@ -14,5 +14,5 @@ enum RouteMode: string implements EnumInterface
     case StorageCopy = 'storage_copy';
     case Direct = 'direct';
 
-    public const Default = self::Direct;
+    public const RouteMode Default = self::Direct;
 }
