@@ -19,8 +19,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Faker\Factory;
-use Faker\Generator;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\StorageAttributes;
@@ -29,10 +27,6 @@ final class FixtureImageProvider
 {
     use SerializerAwareTrait;
     use OutputUtilTrait;
-    private const int ASSET_TITLE_SENTENCE_LENGTH = 5;
-    private const int ASSET_DESCRIPTION_TEXT_LENGTH = 256;
-
-    private readonly Generator $fakerGenerator;
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
@@ -41,7 +35,6 @@ final class FixtureImageProvider
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly EntityManagerInterface $entityManager,
     ) {
-        $this->fakerGenerator = Factory::create();
     }
 
     /**

@@ -23,7 +23,7 @@ final class OriginStorageType extends AbstractValueObjectType
         try {
             return OriginStorage::fromString($value);
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw new ConversionException();
         }
     }
 

@@ -30,7 +30,6 @@ abstract class AbstractImageController extends AbstractPublicController
     public const DEFAULT_CROP_MIME_TYPE = 'image/jpeg';
     protected DomainProvider $domainProvider;
     protected ImageFileRepository $imageFileRepository;
-
     private FileSystemProvider $fileSystemProvider;
     private CropFacade $cropFacade;
     private ConfigurationProvider $configurationProvider;

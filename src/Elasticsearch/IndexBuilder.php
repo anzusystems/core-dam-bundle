@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
-use AnzuSystems\Contracts\Entity\Interfaces\IndexableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;

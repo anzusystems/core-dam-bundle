@@ -20,7 +20,6 @@ use AnzuSystems\CoreDamBundle\Domain\Document\DocumentPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;

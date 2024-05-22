@@ -182,6 +182,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setGroups(Collection $groups): self
     {
         $this->groups = $groups;
+
         return $this;
     }
 }

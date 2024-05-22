@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
-use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class AssetFileRouteManager extends AbstractManager

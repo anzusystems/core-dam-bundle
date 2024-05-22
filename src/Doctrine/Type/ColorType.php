@@ -32,7 +32,7 @@ final class ColorType extends AbstractValueObjectType
 
             return new Color(hexdec($r), hexdec($g), hexdec($b));
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw new ConversionException();
         }
     }
 

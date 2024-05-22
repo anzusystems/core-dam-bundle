@@ -13,7 +13,6 @@ use InvalidArgumentException;
 
 final class DefaultRegionOfInterestFactory
 {
-    private const int ROI_PERCENTAGE_DECIMAL_PLACES = 4;
     private const string DEFAULT_ROI_TITLE = 'Default';
 
     public function __construct(
@@ -53,7 +52,7 @@ final class DefaultRegionOfInterestFactory
             }
 
             $roiY = (int) (($imageAttributes->getHeight() - ($imageAttributes->getWidth() / $defaultRoiRatio)) / 2);
-            $roiHeightPercentage = (float) ($imageAttributes->getWidth() / $defaultRoiRatio / $imageAttributes->getHeight());
+            $roiHeightPercentage = $imageAttributes->getWidth() / $defaultRoiRatio / $imageAttributes->getHeight();
 
             return $this->fillRoiAttributes($roi, 0, $roiY, 1, $roiHeightPercentage);
         }
@@ -63,7 +62,7 @@ final class DefaultRegionOfInterestFactory
         }
 
         $roiY = (int) ($imageAttributes->getHeight() / 10);
-        $roiHeightPercentage = (float) ($imageAttributes->getWidth() / $defaultRoiRatio / $imageAttributes->getHeight());
+        $roiHeightPercentage = $imageAttributes->getWidth() / $defaultRoiRatio / $imageAttributes->getHeight();
 
         return $this->fillRoiAttributes($roi, 0, $roiY, 1, $roiHeightPercentage);
     }

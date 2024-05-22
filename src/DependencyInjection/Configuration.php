@@ -89,18 +89,6 @@ class Configuration implements ConfigurationInterface
             ->end();
     }
 
-    private function addDistributionSettingsSection(): NodeDefinition
-    {
-        return (new TreeBuilder('distribution_settings'))->getRootNode()
-            ->addDefaultsIfNotSet()
-            ->children()
-                ->scalarNode(DistributionSettingsConfiguration::YOUTUBE_DEFAULT_LANGUAGE)
-                    ->info('Default language for Youtube')
-                    ->isRequired()
-                ->end()
-            ->end();
-    }
-
     private function addDistributionsSection(): NodeDefinition
     {
         return (new TreeBuilder('distribution_services'))->getRootNode()

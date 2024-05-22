@@ -104,7 +104,6 @@ final class DistributionCategorySelectSynchronizer
         ArrayCollection $handledCategorySelects,
     ): int {
         $deletedCount = 0;
-        /** @var list<string> $notIds */
         CollectionHelper::traversableToIds($handledCategorySelects);
         foreach ($this->repository->getAllForExtSystemAndType($extSystem, $type) as $categorySelect) {
             if ($handledCategorySelects->contains($categorySelect)) {

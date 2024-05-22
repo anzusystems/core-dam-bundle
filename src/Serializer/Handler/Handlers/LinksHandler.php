@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -54,7 +55,7 @@ class LinksHandler extends AbstractHandler
     ) {
     }
 
-    public function serialize(mixed $value, Metadata $metadata): mixed
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): mixed
     {
         if ($value instanceof ImageFile) {
             return $this->getImageFileLinks($value);

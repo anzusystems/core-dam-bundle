@@ -28,8 +28,6 @@ use Throwable;
 final class UnsplashClient
 {
     use SerializerAwareTrait;
-
-    private const string CACHE_TAG = 'unsplash';
     private const string SEARCH_CACHE_KEY_PREFIX = 'unsplash_search_';
     private const string PHOTO_CACHE_KEY_PREFIX = 'unsplash_photo_';
 

@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterfa
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\CustomDataInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ResourceCustomFormProvidableInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 use Symfony\Component\Validator\Constraint;

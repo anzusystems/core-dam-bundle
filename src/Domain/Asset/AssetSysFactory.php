@@ -6,11 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 

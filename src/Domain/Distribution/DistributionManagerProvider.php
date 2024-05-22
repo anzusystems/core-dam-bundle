@@ -12,7 +12,8 @@ final readonly class DistributionManagerProvider
     private ServiceLocator $manager;
 
     public function __construct(
-        #[TaggedLocator(DistributionManagerInterface::class, indexAttribute: 'key')] ServiceLocator $manager,
+        #[TaggedLocator(DistributionManagerInterface::class, indexAttribute: 'key')]
+        ServiceLocator $manager,
     ) {
         $this->manager = $manager;
     }

@@ -15,10 +15,6 @@ final class TokenStorage
 {
     use SerializerAwareTrait;
 
-    private const string ACCESS_TOKEN_KEY = 'access_token';
-    private const string REFRESH_TOKEN_KEY = 'refresh_token';
-    private const string EXCHANGE_CODE_STATE_KEY = 'exchange_code_state';
-
     public function __construct(
         private readonly CacheItemPoolInterface $coreDamBundleYoutubeCache,
     ) {

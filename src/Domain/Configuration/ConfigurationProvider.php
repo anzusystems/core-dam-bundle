@@ -17,7 +17,6 @@ final class ConfigurationProvider
 
     public function __construct(
         private readonly array $imageSettings,
-        private readonly array $domains,
         private readonly array $settings,
         private readonly array $displayTitle,
         private readonly AllowListConfiguration $allowListConfiguration,

@@ -85,6 +85,7 @@ class AssetLicenceGroup implements
     public function setName(string $name): self
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -96,6 +97,7 @@ class AssetLicenceGroup implements
     public function setExtSystem(ExtSystem $extSystem): self
     {
         $this->extSystem = $extSystem;
+
         return $this;
     }
 
@@ -113,6 +115,7 @@ class AssetLicenceGroup implements
     public function setLicences(Collection $licences): self
     {
         $this->licences = $licences;
+
         return $this;
     }
 
@@ -124,6 +127,7 @@ class AssetLicenceGroup implements
     public function setUsers(Collection $users): self
     {
         $this->users = $users;
+
         return $this;
     }
 }

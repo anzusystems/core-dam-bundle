@@ -43,7 +43,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
         foreach ($tags as $tag) {
             $ids = [];
             /** @psalm-suppress TypeDoesNotContainNull */
-            if (null === self::MAX_IDS_SUGGESTIONS || $iteration < self::MAX_IDS_SUGGESTIONS) {
+            if ($iteration < self::MAX_IDS_SUGGESTIONS) {
                 $ids = $this->suggestIdsByTag($tag, $originAsset);
             }
             $suggestions[$tag] = $ids;

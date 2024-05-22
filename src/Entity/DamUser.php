@@ -164,6 +164,7 @@ abstract class DamUser extends AnzuUser
     public function setLicenceGroups(Collection $licenceGroups): static
     {
         $this->licenceGroups = $licenceGroups;
+
         return $this;
     }
 }

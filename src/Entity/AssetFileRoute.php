@@ -60,6 +60,7 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setTargetAssetFile(AssetFile $targetAssetFile): self
     {
         $this->targetAssetFile = $targetAssetFile;
+
         return $this;
     }
 
@@ -71,6 +72,7 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setUri(RouteUri $uri): self
     {
         $this->uri = $uri;
+
         return $this;
     }
 
@@ -82,6 +84,7 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setStatus(RouteStatus $status): self
     {
         $this->status = $status;
+
         return $this;
     }
 
@@ -93,6 +96,7 @@ class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface
     public function setMode(RouteMode $mode): self
     {
         $this->mode = $mode;
+
         return $this;
     }
 

@@ -31,7 +31,7 @@ final class OriginExternalProviderType extends AbstractValueObjectType
 
             return new OriginExternalProvider($providerName, $id);
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw new ConversionException();
         }
     }
 

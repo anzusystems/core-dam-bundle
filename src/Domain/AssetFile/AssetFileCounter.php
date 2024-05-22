@@ -64,6 +64,6 @@ class AssetFileCounter
 
     private function getKey(AssetFile $assetFile): string
     {
-        return self::UPLOAD_SIZE_KEY . '_' . (string) $assetFile->getId();
+        return self::UPLOAD_SIZE_KEY . '_' . $assetFile->getId();
     }
 }

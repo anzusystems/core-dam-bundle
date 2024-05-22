@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetCustomFormRepository;
 use Doctrine\ORM\NonUniqueResultException;
+use Exception;
 
 final class AssetCustomFormSynchronizer
 {
@@ -43,7 +44,7 @@ final class AssetCustomFormSynchronizer
 
     /**
      * @throws NonUniqueResultException
-     * @throws \Exception
+     * @throws Exception
      */
     private function createIfNotExist(ExtSystem $extSystem, AssetType $assetType): AssetCustomForm
     {

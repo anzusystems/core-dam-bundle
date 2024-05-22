@@ -13,9 +13,6 @@ use Doctrine\DBAL\Types\Types;
  */
 class BigIntType extends Type
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getName(): string
     {
         return Types::BIGINT;

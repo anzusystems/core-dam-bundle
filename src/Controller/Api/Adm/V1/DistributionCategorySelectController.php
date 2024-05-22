@@ -79,7 +79,8 @@ final class DistributionCategorySelectController extends AbstractApiController
     #[OAParameterPath('distributionCategorySelect'), OARequest(DistributionCategorySelect::class), OAResponse(DistributionCategorySelect::class), OAResponseValidation]
     public function update(
         DistributionCategorySelect $distributionCategorySelect,
-        #[SerializeParam] DistributionCategorySelect $newDistributionCategorySelect,
+        #[SerializeParam]
+        DistributionCategorySelect $newDistributionCategorySelect,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_SELECT_UPDATE, $distributionCategorySelect);

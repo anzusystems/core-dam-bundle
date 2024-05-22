@@ -5,16 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LicenceCollectionHandler;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use AnzuSystems\SerializerBundle\Handler\Handlers\ArrayStringHandler;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -29,7 +22,6 @@ final class AssetAdmSearchLicenceCollectionDto extends AssetAdmSearchDto impleme
         maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX
     )]
     protected Collection $licences;
-
 
     public function __construct()
     {

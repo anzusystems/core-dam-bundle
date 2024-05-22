@@ -66,7 +66,8 @@ final class VideoController extends AbstractApiController
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
     public function uploadFromExternalProvider(
-        #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto,
+        #[SerializeParam]
+        UploadAssetFromExternalProviderDto $uploadDto,
         AssetLicence $assetLicence,
     ): JsonResponse {
         App::throwOnReadOnlyMode();

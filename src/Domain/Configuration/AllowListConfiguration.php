@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use DomainException;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 final class AllowListConfiguration
 {

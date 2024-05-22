@@ -11,10 +11,8 @@ use Symfony\Component\Process\Process;
 
 final class Exiftool
 {
-    private const array ALL = ['-all=', '-tagsFromFile', '@', '-StreamColor', '-StreamBitDepth', '-ColorSpace', '-Orientation'];
     private const array PNG_CLEAR = ['-png:all=', '-overwrite_original'];
     private const float DEFAULT_TIMEOUT = 15.0;
-
 
     public function __construct(
         private readonly string $exiftoolBin,
