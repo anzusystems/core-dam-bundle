@@ -25,7 +25,7 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
     use UuidIdentityTrait;
     use UserTrackingTrait;
 
-    #[ORM\OneToMany(mappedBy: 'form', targetEntity: CustomFormElement::class)]
+    #[ORM\OneToMany(targetEntity: CustomFormElement::class, mappedBy: 'form')]
     #[ORM\OrderBy(value: ['position' => App::ORDER_ASC])]
     #[Assert\Valid]
     private Collection $elements;
