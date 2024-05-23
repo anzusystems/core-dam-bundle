@@ -171,6 +171,7 @@ class Configuration implements ConfigurationInterface
         return (new TreeBuilder('settings'))->getRootNode()
             ->addDefaultsIfNotSet()
             ->children()
+                ->scalarNode(SettingsConfiguration::USER_ENTITY_CLASS)->defaultValue('App\\Entity\\User')->end()
                 ->scalarNode(SettingsConfiguration::API_DOMAIN_KEY)
                     ->isRequired()
                 ->end()

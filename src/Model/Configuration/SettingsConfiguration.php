@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 final class SettingsConfiguration
 {
     public const string API_DOMAIN_KEY = 'api_domain';
+    public const string USER_ENTITY_CLASS = 'user_entity_class';
     public const string REDIRECT_DOMAIN_KEY = 'redirect_domain';
     public const string NOTIFICATIONS = 'notifications';
     public const string DEFAULT_EXT_SYSTEM_ID_KEY = 'default_ext_system_id';

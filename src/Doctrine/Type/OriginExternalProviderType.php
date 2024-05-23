@@ -14,6 +14,11 @@ final class OriginExternalProviderType extends AbstractValueObjectType
 {
     public const string NAME = 'OriginExternalProviderType';
 
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
+    {
+        return $platform->getStringTypeDeclarationSQL($column);
+    }
+
     public function convertToPHPValue($value, AbstractPlatform $platform): ?OriginExternalProvider
     {
         if (null === $value) {
