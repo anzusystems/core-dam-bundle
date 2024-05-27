@@ -42,7 +42,7 @@ final class ExtSystemController extends AbstractApiController
     #[OAParameterPath('extSystem'), OAResponse(ExtSystem::class)]
     public function getOne(ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_READ, $extSystem);
 
         return $this->okResponse($extSystem);
     }

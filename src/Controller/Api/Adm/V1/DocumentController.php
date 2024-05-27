@@ -190,7 +190,7 @@ final class DocumentController extends AbstractApiController
     #[OAResponse(DocumentFileAdmDetailDto::class)]
     public function getOne(DocumentFile $document): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_VIEW, $document);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_READ, $document);
 
         return $this->okResponse(DocumentFileAdmDetailDto::getInstance($document));
     }
@@ -235,7 +235,7 @@ final class DocumentController extends AbstractApiController
     #[OAParameterPath('document'), OAResponseValidation]
     public function generateDownloadUrl(DocumentFile $document): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_VIEW, $document);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_READ, $document);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($document)

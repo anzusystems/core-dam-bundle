@@ -44,7 +44,7 @@ final class VideoShowController extends AbstractApiController
     #[OAParameterPath('videoShow'), OAResponse(VideoShow::class)]
     public function getOne(VideoShow $videoShow): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $videoShow);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_READ, $videoShow);
 
         return $this->okResponse($videoShow);
     }
@@ -88,7 +88,7 @@ final class VideoShowController extends AbstractApiController
     #[OAResponseInfiniteList(VideoShow::class)]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_READ, $extSystem);
 
         return $this->okResponse($this->videoShowRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyCustomFilter($apiParams, $extSystem),
@@ -103,7 +103,7 @@ final class VideoShowController extends AbstractApiController
     #[OAResponseInfiniteList(VideoShow::class)]
     public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_READ, $assetLicence);
 
         return $this->okResponse($this->videoShowRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),

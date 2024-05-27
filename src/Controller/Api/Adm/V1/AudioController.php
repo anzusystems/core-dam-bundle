@@ -191,7 +191,7 @@ final class AudioController extends AbstractApiController
     #[OAResponse(AudioFileAdmDetailDto::class)]
     public function getOne(AudioFile $audio): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_VIEW, $audio);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_READ, $audio);
 
         return $this->okResponse(AudioFileAdmDetailDto::getInstance($audio));
     }
@@ -236,7 +236,7 @@ final class AudioController extends AbstractApiController
     #[OAParameterPath('audio'), OAResponseValidation]
     public function generateDownloadUrl(AudioFile $audio): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_VIEW, $audio);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_READ, $audio);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($audio)

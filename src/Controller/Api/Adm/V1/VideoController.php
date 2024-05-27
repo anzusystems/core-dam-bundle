@@ -143,7 +143,7 @@ final class VideoController extends AbstractApiController
     #[OAParameterPath('video'), OAResponse([DistributionImagePreviewAdmDto::class])]
     public function getDistributionImagePreviewList(VideoFile $video, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_VIEW, $video);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_READ, $video);
 
         return $this->okResponse(
             $this->videoDistributionFacade->getPreview($apiParams, $video)
@@ -244,7 +244,7 @@ final class VideoController extends AbstractApiController
     #[OAResponse(VideoFileAdmDetailDto::class)]
     public function getOne(VideoFile $video): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_VIEW, $video);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_READ, $video);
 
         return $this->okResponse(VideoFileAdmDetailDto::getInstance($video));
     }
@@ -288,7 +288,7 @@ final class VideoController extends AbstractApiController
     #[OAParameterPath('video'), OAResponseValidation]
     public function generateDownloadUrl(VideoFile $video): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_VIEW, $video);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_READ, $video);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($video)

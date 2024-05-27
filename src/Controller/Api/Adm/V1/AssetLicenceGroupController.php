@@ -43,7 +43,7 @@ final class AssetLicenceGroupController extends AbstractApiController
     #[OAParameterPath('assetLicenceGroup'), OAResponse(AssetLicenceGroup::class)]
     public function getOne(AssetLicenceGroup $assetLicenceGroup): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_GROUP_VIEW, $assetLicenceGroup);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_GROUP_READ, $assetLicenceGroup);
 
         return $this->okResponse($assetLicenceGroup);
     }

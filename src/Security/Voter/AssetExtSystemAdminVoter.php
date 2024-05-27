@@ -37,7 +37,7 @@ final class AssetExtSystemAdminVoter extends AbstractVoter
     protected function getSupportedPermissions(): array
     {
         return [
-            DamPermissions::DAM_ASSET_VIEW,
+            DamPermissions::DAM_ASSET_READ,
         ];
     }
 }

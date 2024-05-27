@@ -190,7 +190,7 @@ final class ImageController extends AbstractApiController
     #[OAResponse(ImageFileAdmDetailDto::class)]
     public function getOne(ImageFile $image): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_VIEW, $image);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_READ, $image);
 
         return $this->okResponse(ImageFileAdmDetailDto::getInstance($image));
     }
@@ -266,7 +266,7 @@ final class ImageController extends AbstractApiController
     #[OAParameterPath('image'), OAResponseValidation]
     public function generateDownloadUrl(ImageFile $image): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_VIEW, $image);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_READ, $image);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($image)

@@ -38,7 +38,7 @@ final class AssetSlotController extends AbstractApiController
     #[OAParameterPath('asset'), OAResponse(AssetSlotAdmListDecorator::class), OAResponseValidation]
     public function list(Asset $asset): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $asset);
 
         return $this->okResponse($this->assetSlotFacade->decorateAssetSlots($asset));
     }
