@@ -15,11 +15,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
-final class UrlFileFactory
+final readonly class UrlFileFactory
 {
+    private const int TIMEOUT = 600;
+    private const int MAX_DURATION = 600;
+
     public function __construct(
-        private readonly FileSystemProvider $fileSystemProvider,
-        private readonly HttpClientInterface $client,
+        private FileSystemProvider $fileSystemProvider,
+        private HttpClientInterface $client,
     ) {
     }
 
@@ -30,8 +33,12 @@ final class UrlFileFactory
     {
         try {
             $response = $this->client->request(
-                Request::METHOD_GET,
-                $url,
+                method: Request::METHOD_GET,
+                url: $url,
+                options: [
+                    'timeout' => self::TIMEOUT,
+                    'max_duration' => self::MAX_DURATION,
+                ]
             );
 
             if (Response::HTTP_BAD_REQUEST <= $response->getStatusCode()) {
@@ -42,7 +49,9 @@ final class UrlFileFactory
             $baseFile = $fileSystem->writeTmpFileFromStream(StreamWrapper::createResource($response));
 
             return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            // todo log
+
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }
     }
