@@ -32,7 +32,7 @@ final readonly class MimeGuesser
     {
         $mimeType = null;
         if ($useFfmpeg) {
-            $mimeType = $this->ffmpegMimeDetector->detectMime($path);
+            $mimeType = $this->ffmpegMimeDetector->detectAudioMime($path);
         }
 
         if ($mimeType) {
