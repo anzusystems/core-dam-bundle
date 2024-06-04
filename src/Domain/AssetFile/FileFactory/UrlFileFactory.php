@@ -7,8 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,11 +25,13 @@ final readonly class UrlFileFactory
     public function __construct(
         private FileSystemProvider $fileSystemProvider,
         private HttpClientInterface $client,
+        protected DamLogger $damLogger,
     ) {
     }
 
     /**
      * @throws AssetFileProcessFailed
+     * @throws SerializerException
      */
     public function downloadFile(string $url): AdapterFile
     {
@@ -50,7 +54,14 @@ final readonly class UrlFileFactory
 
             return AdapterFile::createFromBaseFile($baseFile, $fileSystem);
         } catch (Throwable $e) {
-            // todo log
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
+                sprintf(
+                    'Failed To download file from url (%s). Failed message (%s)',
+                    $url,
+                    $e->getMessage()
+                )
+            );
 
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }
