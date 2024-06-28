@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory\IndexFactoryInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class IndexFactoryProvider
 {
@@ -16,7 +16,7 @@ final class IndexFactoryProvider
     private iterable $indexFactories;
 
     public function __construct(
-        #[TaggedIterator(tag: IndexFactoryInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: IndexFactoryInterface::class, indexAttribute: 'key')]
         iterable $indexFactories,
     ) {
         $this->indexFactories = $indexFactories;

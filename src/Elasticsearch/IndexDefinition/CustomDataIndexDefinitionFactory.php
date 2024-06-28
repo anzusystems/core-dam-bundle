@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\IndexBuilderInte
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class CustomDataIndexDefinitionFactory
 {
@@ -17,7 +17,7 @@ final class CustomDataIndexDefinitionFactory
     private readonly iterable $indexBuilders;
 
     public function __construct(
-        #[TaggedIterator(tag: IndexBuilderInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: IndexBuilderInterface::class, indexAttribute: 'key')]
         iterable $indexBuilders,
         private readonly CustomFormProvider $customFormProvider,
     ) {

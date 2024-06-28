@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\QueryFactoryInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use Doctrine\Common\Util\ClassUtils;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class QueryFactoryProvider
 {
@@ -18,7 +18,7 @@ final class QueryFactoryProvider
     private iterable $queryFactories;
 
     public function __construct(
-        #[TaggedIterator(tag: QueryFactoryInterface::class)]
+        #[AutowireIterator(tag: QueryFactoryInterface::class)]
         iterable $queryFactories,
     ) {
         $this->queryFactories = $queryFactories;
