@@ -10,8 +10,8 @@ use Exception;
 
 class DirectoryNameGenerator implements DirectoryNamGeneratorInterface
 {
-    private const LEVEL_INT_LEN = 19;
-    private const RANDOM_BYTES_LEN = 10;
+    private const int LEVEL_INT_LEN = 19;
+    private const int RANDOM_BYTES_LEN = 10;
 
     /**
      * @throws Exception

@@ -24,7 +24,7 @@ final class ImageFileController extends AbstractAssetFileController
     #[OAParameterPath('image')]
     public function download(ImageFile $image): Response
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_VIEW, $image);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_READ, $image);
 
         return $this->getDownloadResponse($image);
     }

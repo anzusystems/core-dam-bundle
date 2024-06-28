@@ -9,7 +9,7 @@ use Symfony\Component\Validator\ConstraintValidator;
 
 final class ColorValidator extends ConstraintValidator
 {
-    private const PATTERN = '/^#[a-f0-9]{6}$/i';
+    private const string PATTERN = '/^#[a-f0-9]{6}$/i';
 
     /**
      * @param Color $constraint

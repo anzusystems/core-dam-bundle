@@ -12,7 +12,7 @@ use Throwable;
 
 final class ColorType extends AbstractValueObjectType
 {
-    public const NAME = 'ColorType';
+    public const string NAME = 'ColorType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): ?Color
     {
@@ -32,7 +32,7 @@ final class ColorType extends AbstractValueObjectType
 
             return new Color(hexdec($r), hexdec($g), hexdec($b));
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw new ConversionException();
         }
     }
 

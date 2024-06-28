@@ -6,10 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemAssetExternalProviderConfiguration
 {
-    public const PROVIDER_NAME_KEY = 'provider_name';
-    public const TITLE_KEY = 'title';
-    public const IMPORT_AUTHOR_ID = 'import_author_id';
-    public const LISTING_LIMIT_KEY = 'listing_limit';
+    public const string PROVIDER_NAME_KEY = 'provider_name';
+    public const string TITLE_KEY = 'title';
+    public const string IMPORT_AUTHOR_ID = 'import_author_id';
+    public const string LISTING_LIMIT_KEY = 'listing_limit';
 
     public function __construct(
         private readonly string $providerName,

@@ -12,7 +12,7 @@ enum PodcastImportMode: string implements EnumInterface
     case NotImport = 'not_import';
     case Import = 'import';
 
-    public const Default = self::Import;
+    public const PodcastImportMode Default = self::Import;
 
     public static function getAllImportModes(): array
     {

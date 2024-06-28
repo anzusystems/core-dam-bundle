@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 
 final class ExtSystemVideoTypeConfiguration extends ExtSystemAssetTypeConfiguration
 {
-    public const VIDEO_EPISODE_ENTITY_MAP_KEY = 'video_episode_entity_map';
+    public const string VIDEO_EPISODE_ENTITY_MAP_KEY = 'video_episode_entity_map';
 
     private array $videoEpisodeEntityMap;
 

@@ -10,10 +10,10 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     AssetFileRouteConfigurableInterface,
     AssetFileRoutePublicStorageInterface
 {
-    public const PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
-    public const PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
-    public const AUDIO_PUBLIC_STORAGE = 'public_storage';
-    public const PUBLIC_DOMAIN_NAME = 'public_domain_name';
+    public const string PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
+    public const string PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
+    public const string AUDIO_PUBLIC_STORAGE = 'public_storage';
+    public const string PUBLIC_DOMAIN_NAME = 'public_domain_name';
 
     private array $podcastEpisodeRssMap;
     private array $podcastEpisodeEntityMap;

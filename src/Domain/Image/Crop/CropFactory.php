@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
 
 final class CropFactory
 {
-    private const DEFAULT_CROP_QUALITY = 75;
+    private const int DEFAULT_CROP_QUALITY = 75;
 
     private int $originWidth;
     private int $originHeight;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
 use AnzuSystems\CoreDamBundle\Entity\Author;

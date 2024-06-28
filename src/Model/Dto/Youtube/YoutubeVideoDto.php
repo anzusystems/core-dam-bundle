@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Youtube;
 
 final class YoutubeVideoDto
 {
-    public const UPLOAD_STATUS_PROCESSED = 'processed';
+    public const string UPLOAD_STATUS_PROCESSED = 'processed';
 
     private string $id;
     private string $uploadStatus;

@@ -8,7 +8,7 @@ use DomainException;
 
 class InvalidExtSystemConfigurationException extends DomainException
 {
-    public const ERROR_MESSAGE = 'invalid_ext_system_configuration';
+    public const string ERROR_MESSAGE = 'invalid_ext_system_configuration';
 
     public function __construct(
         private readonly string $detail

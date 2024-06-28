@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemAssetTypeDistributionRequirementCategorySelectConfiguration
 {
-    public const ENABLED_KEY = 'enabled';
-    public const REQUIRED_KEY = 'required';
+    public const string ENABLED_KEY = 'enabled';
+    public const string REQUIRED_KEY = 'required';
 
     public function __construct(
         private readonly bool $enabled,

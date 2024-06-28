@@ -9,8 +9,8 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomDistributionFilter implements CustomFilterInterface
 {
-    public const ASSET_ID = 'assetId';
-    public const ASSET_FILE_ID = 'assetFileId';
+    public const string ASSET_ID = 'assetId';
+    public const string ASSET_FILE_ID = 'assetFileId';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

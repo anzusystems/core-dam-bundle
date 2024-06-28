@@ -12,7 +12,12 @@ use Throwable;
 
 final class OriginExternalProviderType extends AbstractValueObjectType
 {
-    public const NAME = 'OriginExternalProviderType';
+    public const string NAME = 'OriginExternalProviderType';
+
+    public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
+    {
+        return $platform->getStringTypeDeclarationSQL($column);
+    }
 
     public function convertToPHPValue($value, AbstractPlatform $platform): ?OriginExternalProvider
     {
@@ -31,7 +36,7 @@ final class OriginExternalProviderType extends AbstractValueObjectType
 
             return new OriginExternalProvider($providerName, $id);
         } catch (Throwable) {
-            throw ConversionException::conversionFailed($value, $this->getName());
+            throw new ConversionException();
         }
     }
 

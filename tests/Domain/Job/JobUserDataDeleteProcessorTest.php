@@ -62,7 +62,7 @@ final class JobUserDataDeleteProcessorTest extends CoreDamKernelTestCase
         $this->assertSame(JobStatus::Done, $job->getStatus());
 
         // 4. Check if user anonymized
-        $user = $this->entityManager->find(AnzuUser::class, $job->getTargetUserId());
+        $user = $this->entityManager->find(User::class, $job->getTargetUserId());
         $this->assertInstanceOf(User::class, $user);
         $this->assertCount(0, $user->getAssetLicences());
         $this->assertStringStartsWith('deleted_', $user->getEmail());

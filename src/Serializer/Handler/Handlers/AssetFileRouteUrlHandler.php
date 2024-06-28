@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -17,7 +18,7 @@ final class AssetFileRouteUrlHandler extends AbstractHandler
     ) {
     }
 
-    public function serialize(mixed $value, Metadata $metadata): string
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): string
     {
         if (null === $value) {
             return '';

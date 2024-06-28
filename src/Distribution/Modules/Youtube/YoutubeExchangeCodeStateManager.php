@@ -11,7 +11,7 @@ use Exception;
 
 final class YoutubeExchangeCodeStateManager
 {
-    private const TOKEN_EXPIRATION = '+ 15 minutes';
+    private const string TOKEN_EXPIRATION = '+ 15 minutes';
 
     /**
      * @throws Exception

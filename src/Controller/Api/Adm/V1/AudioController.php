@@ -16,7 +16,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPositionFacade;
-use AnzuSystems\CoreDamBundle\Domain\Audio\AudioPublicFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -65,7 +64,8 @@ final class AudioController extends AbstractApiController
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
     public function uploadFromExternalProvider(
-        #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto,
+        #[SerializeParam]
+        UploadAssetFromExternalProviderDto $uploadDto,
         AssetLicence $assetLicence,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
@@ -191,7 +191,7 @@ final class AudioController extends AbstractApiController
     #[OAResponse(AudioFileAdmDetailDto::class)]
     public function getOne(AudioFile $audio): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_VIEW, $audio);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_READ, $audio);
 
         return $this->okResponse(AudioFileAdmDetailDto::getInstance($audio));
     }
@@ -232,12 +232,11 @@ final class AudioController extends AbstractApiController
         return $this->noContentResponse();
     }
 
-
     #[Route(path: '/{audio}/download-link', name: 'download_link', methods: [Request::METHOD_GET])]
     #[OAParameterPath('audio'), OAResponseValidation]
     public function generateDownloadUrl(AudioFile $audio): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_VIEW, $audio);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_READ, $audio);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($audio)

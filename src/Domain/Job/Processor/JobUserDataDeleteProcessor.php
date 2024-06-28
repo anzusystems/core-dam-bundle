@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
-use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
@@ -25,8 +24,11 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
 {
     use EntityManagerAwareTrait;
 
-    private const ASSET_BULK_SIZE = 10;
+    private const int ASSET_BULK_SIZE = 10;
 
+    /**
+     * @param class-string $userEntityClass
+     */
     public function __construct(
         private readonly AssetRepository $assetRepository,
         private readonly UserManager $userManager,
@@ -34,6 +36,7 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
         private readonly AssetLicenceFacade $licenceFacade,
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
+        private readonly string $userEntityClass,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -54,7 +57,7 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
     public function process(JobInterface $job): void
     {
         /** @var DamUser $user */
-        $user = $this->entityManager->find(AnzuUser::class, $job->getTargetUserId());
+        $user = $this->entityManager->find($this->userEntityClass, $job->getTargetUserId());
         $licencesWithUserOnlyMembership = $user->getAssetLicences()->filter(
             fn (AssetLicence $licence): bool => 1 === $licence->getUsers()->count(),
         );

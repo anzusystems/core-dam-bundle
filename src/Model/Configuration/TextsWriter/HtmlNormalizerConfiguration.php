@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter;
 
 final class HtmlNormalizerConfiguration
 {
-    public const TYPE = 'html';
-    public const WORDS_WRAP_KEY = 'words_wrap';
+    public const string TYPE = 'html';
+    public const string WORDS_WRAP_KEY = 'words_wrap';
 
     private ?int $wordsWrap = null;
 

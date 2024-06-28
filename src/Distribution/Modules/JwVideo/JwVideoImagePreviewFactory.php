@@ -15,7 +15,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 
 final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
 {
-    public const DISTRIBUTION_CROP_TAG = 'jw_distribution';
+    public const string DISTRIBUTION_CROP_TAG = 'jw_distribution';
 
     public function __construct(
         protected ConfigurationProvider $configurationProvider,

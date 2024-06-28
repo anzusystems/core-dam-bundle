@@ -24,22 +24,27 @@ abstract class DamUser extends AnzuUser
     protected array $allowedDistributionServices = [];
 
     #[ORM\ManyToMany(targetEntity: AssetLicence::class, inversedBy: 'users', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
+    #[ORM\JoinTable(name: 'user_asset_licence')]
+    #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
     #[Serialize(handler: EntityIdHandler::class, type: AssetLicence::class)]
     protected Collection $assetLicences;
 
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, inversedBy: 'adminUsers', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'admins_to_ext_systems')]
+    #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
     protected Collection $adminToExtSystems;
 
     #[ORM\ManyToMany(targetEntity: AssetLicenceGroup::class, inversedBy: 'users', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'user_in_licence_groups')]
+    #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
     #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected Collection $licenceGroups;
 
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'users_to_ext_systems')]
+    #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
     protected Collection $userToExtSystems;
 
@@ -164,6 +169,7 @@ abstract class DamUser extends AnzuUser
     public function setLicenceGroups(Collection $licenceGroups): static
     {
         $this->licenceGroups = $licenceGroups;
+
         return $this;
     }
 }

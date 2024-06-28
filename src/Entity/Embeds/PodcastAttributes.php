@@ -111,6 +111,7 @@ class PodcastAttributes
     public function setExtUrl(string $extUrl): self
     {
         $this->extUrl = $extUrl;
+
         return $this;
     }
 }

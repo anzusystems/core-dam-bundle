@@ -29,7 +29,7 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_ASSET_LICENCE_GROUP_CREATE,
             DamPermissions::DAM_ASSET_LICENCE_GROUP_LIST,
             DamPermissions::DAM_ASSET_LICENCE_GROUP_UPDATE,
-            DamPermissions::DAM_ASSET_LICENCE_GROUP_VIEW,
+            DamPermissions::DAM_ASSET_LICENCE_GROUP_READ,
         ];
     }
 }

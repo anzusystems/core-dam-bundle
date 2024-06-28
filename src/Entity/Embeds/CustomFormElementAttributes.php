@@ -148,6 +148,7 @@ class CustomFormElementAttributes
     public function setReadonly(bool $readonly): self
     {
         $this->readonly = $readonly;
+
         return $this;
     }
 }

@@ -62,6 +62,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$exifImageMetadata', param('anzu_systems.dam_bundle.image_metadata'))
         ->bind('$colorSet', param('anzu_systems.dam_bundle.color_set'))
         ->bind('$exiftoolBin', param('kernel.project_dir') . '/vendor/phpexiftool/exiftool/exiftool')
+        ->bind('$userEntityClass', param('anzu_systems.dam_bundle.settings.user_entity_class'))
     ;
 
     $services

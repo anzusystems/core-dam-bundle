@@ -8,8 +8,8 @@ use AnzuSystems\Contracts\Response\Cache\AbstractCacheSettings;
 
 final class AdmConfigCacheSettings extends AbstractCacheSettings
 {
-    public const CACHE_KEY = 'core-dam-adm-config';
-    private const CACHE_TTL = 604_800; // one week
+    public const string CACHE_KEY = 'core-dam-adm-config';
+    private const int CACHE_TTL = 604_800; // one week
 
     public function __construct()
     {

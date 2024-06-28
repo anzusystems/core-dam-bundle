@@ -9,24 +9,24 @@ enum ArtemisMediaDto: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const CHOICES = [
+    public const array CHOICES = [
         self::IMAGE,
         self::VIDEO,
         self::AUDIO,
         self::DOCUMENT,
     ];
 
-    public const IMAGE = 'image';
-    public const VIDEO = 'video';
-    public const AUDIO = 'audio';
-    public const DOCUMENT = 'document';
+    public const string IMAGE = 'image';
+    public const string VIDEO = 'video';
+    public const string AUDIO = 'audio';
+    public const string DOCUMENT = 'document';
 
     case Image = self::IMAGE;
     case Video = self::VIDEO;
     case Audio = self::AUDIO;
     case Document = self::DOCUMENT;
 
-    public const Default = self::Image;
+    public const ArtemisMediaDto Default = self::Image;
 
     public function getAllowedMimeChoices(): array
     {

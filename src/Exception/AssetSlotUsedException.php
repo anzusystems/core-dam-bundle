@@ -9,7 +9,7 @@ use Exception;
 
 class AssetSlotUsedException extends Exception
 {
-    private const ERROR_MESSAGE = 'asset_slot_used';
+    private const string ERROR_MESSAGE = 'asset_slot_used';
 
     public function __construct(
         private readonly AssetFile $assetFile,

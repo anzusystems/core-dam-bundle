@@ -6,9 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class AllowListMapConfiguration
 {
-    public const ALLOW_LIST_KEY = 'crop_allow_list';
-    public const DOMAIN_KEY = 'domain';
-    public const EXT_SYSTEM_SLUGS = 'ext_system_slugs';
+    public const string ALLOW_LIST_KEY = 'crop_allow_list';
+    public const string DOMAIN_KEY = 'domain';
+    public const string EXT_SYSTEM_SLUGS = 'ext_system_slugs';
 
     private string $allowList;
     private string $domainKey;

@@ -14,5 +14,5 @@ enum RouteStatus: string implements EnumInterface
     case Disabled = 'disabled';
     case Active = 'active';
 
-    public const Default = self::Disabled;
+    public const RouteStatus Default = self::Disabled;
 }

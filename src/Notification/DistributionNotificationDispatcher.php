@@ -14,8 +14,8 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 final class DistributionNotificationDispatcher extends AbstractNotificationDispatcher
 {
     use SerializerAwareTrait;
-    private const EVENT_NAME_PREFIX = 'distribution_';
-    private const EVENT_DISTRIBUTION_AUTHORIZED = 'distribution_authorized';
+    private const string EVENT_NAME_PREFIX = 'distribution_';
+    private const string EVENT_DISTRIBUTION_AUTHORIZED = 'distribution_authorized';
 
     /**
      * @throws SerializerException

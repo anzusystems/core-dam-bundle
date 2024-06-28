@@ -77,7 +77,7 @@ final class RegionOfInterestController extends AbstractApiController
     #[OAParameterPath('image'), OAResponse([RegionOfInterestAdmListDto::class])]
     public function getList(ImageFile $image, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_VIEW, $image);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_READ, $image);
 
         return $this->okResponse(
             $this->repositoryDecorator->findByApiParamsWithInfiniteListing($apiParams, $image),
@@ -91,7 +91,7 @@ final class RegionOfInterestController extends AbstractApiController
     #[OAResponse(RegionOfInterestAdmDetailDto::class)]
     public function getOne(RegionOfInterest $regionOfInterest): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_VIEW, $regionOfInterest);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_READ, $regionOfInterest);
 
         return $this->okResponse(RegionOfInterestAdmDetailDto::getInstance($regionOfInterest));
     }

@@ -41,8 +41,8 @@ abstract class AbstractAssetFileFacade
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
 
-    private const DUPLICATE_FILES_DELETE_MODIFIER = '-1 week';
-    private const DUPLICATE_FILES_DELETE_LIMIT = 50;
+    private const string DUPLICATE_FILES_DELETE_MODIFIER = '-1 week';
+    private const int DUPLICATE_FILES_DELETE_LIMIT = 50;
 
     protected AssetManager $assetManager;
     protected AssetFactory $assetFactory;

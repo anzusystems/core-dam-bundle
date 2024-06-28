@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Attribute;
 use Symfony\Component\Validator\Constraint;
 

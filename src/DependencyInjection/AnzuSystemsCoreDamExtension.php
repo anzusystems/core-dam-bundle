@@ -47,7 +47,7 @@ use Symfony\Component\DependencyInjection\Reference;
 
 final class AnzuSystemsCoreDamExtension extends Extension implements PrependExtensionInterface
 {
-    public const STORAGE_DEFINITION_NAME_PREFIX = 'core_dam_bundle.storage.';
+    public const string STORAGE_DEFINITION_NAME_PREFIX = 'core_dam_bundle.storage.';
 
     private array $processedConfig = [];
 
@@ -81,9 +81,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     'AnzuSystemsContractsEmbeds' => [
                         'is_bundle' => false,
                         'type' => 'attribute',
-                        'dir' => 'vendor/anzusystems/contracts/src/Entity/Embeds',
-                        'prefix' => 'AnzuSystems\Contracts\Entity\Embeds',
-                        'alias' => 'AnzuSystems\ContractsEmbeds',
+                        'dir' => 'vendor/anzusystems/contracts/src/Entity',
+                        'prefix' => 'AnzuSystems\Contracts\Entity',
+                        'alias' => 'AnzuSystems\Contracts',
                     ],
                 ],
             ],
@@ -486,6 +486,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $container->setParameter('anzu_systems.dam_bundle.common_metadata', $this->processedConfig['exif_metadata']['common_metadata']);
         $container->setParameter('anzu_systems.dam_bundle.image_metadata', $this->processedConfig['exif_metadata']['image_metadata']);
         $container->setParameter('anzu_systems.dam_bundle.crop_allow_list', $this->processedConfig['image_settings']['crop_allow_list']);
+        $container->setParameter('anzu_systems.dam_bundle.settings.user_entity_class', $this->processedConfig['settings'][SettingsConfiguration::USER_ENTITY_CLASS]);
 
         $tagGroups = [];
         foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $name => $allowList) {

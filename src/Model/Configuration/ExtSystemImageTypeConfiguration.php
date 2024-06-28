@@ -6,12 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfiguration implements AssetFileRouteConfigurableInterface
 {
-    public const PUBLIC_DOMAIN_KEY = 'public_domain';
-    public const ADMIN_DOMAIN_KEY = 'admin_domain';
-    public const ROI_WIDTH_KEY = 'roi_width';
-    public const ROI_HEIGHT_KEY = 'roi_height';
-    public const CROP_STORAGE_NAME = 'crop_storage_name';
-    public const NOT_FOUND_IMAGE_ID = 'not_found_image_id';
+    public const string PUBLIC_DOMAIN_KEY = 'public_domain';
+    public const string ADMIN_DOMAIN_KEY = 'admin_domain';
+    public const string ROI_WIDTH_KEY = 'roi_width';
+    public const string ROI_HEIGHT_KEY = 'roi_height';
+    public const string CROP_STORAGE_NAME = 'crop_storage_name';
+    public const string NOT_FOUND_IMAGE_ID = 'not_found_image_id';
 
     private int $roiWidth;
     private int $roiHeight;

@@ -14,5 +14,5 @@ enum AssetFileCreateStrategy: string implements EnumInterface
     case Download = 'download';
     case Storage = 'storage';
 
-    public const Default = self::Chunk;
+    public const AssetFileCreateStrategy Default = self::Chunk;
 }

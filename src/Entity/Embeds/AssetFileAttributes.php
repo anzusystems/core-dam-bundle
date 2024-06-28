@@ -41,10 +41,10 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 2_048, nullable: true)]
     private ?string $originUrl;
 
-    #[ORM\Column(type: OriginExternalProviderType::NAME, nullable: true)]
+    #[ORM\Column(type: OriginExternalProviderType::NAME, length: 255, nullable: true)]
     private ?OriginExternalProvider $originExternalProvider = null;
 
-    #[ORM\Column(type: OriginStorageType::NAME, nullable: true)]
+    #[ORM\Column(type: OriginStorageType::NAME, length: 255, nullable: true)]
     private ?OriginStorage $originStorage = null;
 
     #[ORM\Column(enumType: AssetFileProcessStatus::class)]

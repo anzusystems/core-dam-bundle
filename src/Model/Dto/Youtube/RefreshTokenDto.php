@@ -8,7 +8,7 @@ use DateTimeImmutable;
 
 final class RefreshTokenDto implements ScopeInterface
 {
-    private const REFRESH_TOKEN_CUSTOM_EXPIRATION = 7_776_000; // 90 days
+    private const int REFRESH_TOKEN_CUSTOM_EXPIRATION = 7_776_000; // 90 days
 
     private string $refreshToken = '';
     private string $scope = '';

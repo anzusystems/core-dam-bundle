@@ -16,7 +16,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class PermissionGroupFixtures extends AbstractFixtures
 {
-    public const BASIC_GROUP_TITLE = 'DAM Basic';
+    public const string BASIC_GROUP_TITLE = 'DAM Basic';
 
     public function __construct(
         private readonly PermissionGroupManager $permissionGroupManager,

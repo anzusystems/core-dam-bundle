@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;

@@ -79,10 +79,10 @@ final class AssetMetadataBulkFacade
     {
         $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $updateDto->getAsset());
         foreach ($updateDto->getAuthors() as $author) {
-            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_VIEW, $author);
+            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $author);
         }
         foreach ($updateDto->getKeywords() as $keyword) {
-            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_KEYWORD_VIEW, $keyword);
+            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_KEYWORD_READ, $keyword);
         }
     }
 }

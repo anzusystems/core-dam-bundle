@@ -21,7 +21,6 @@ abstract class AbstractNotificationDispatcher
     protected ConfigurationProvider $configurationProvider;
     private CacheItemPoolInterface $coreDamBundlePubSubTokenCache;
 
-
     #[Required]
     public function setCurrentUserProvider(CurrentAnzuUserProvider $currentUserProvider): void
     {

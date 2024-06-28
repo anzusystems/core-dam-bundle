@@ -8,7 +8,7 @@ use League\Flysystem\Local\LocalFilesystemAdapter as BaseLocalFilesystemAdapter;
 
 final class LocalFileSystemAdapter extends BaseLocalFilesystemAdapter
 {
-    private const DEFAULT_DIRECTORY_VISIBILITY = 0_700;
+    private const int DEFAULT_DIRECTORY_VISIBILITY = 0_700;
 
     public function ensureDirectory(string $path): void
     {

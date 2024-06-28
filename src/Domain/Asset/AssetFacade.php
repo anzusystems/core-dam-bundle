@@ -30,8 +30,8 @@ class AssetFacade
     use IndexManagerAwareTrait;
     use ValidatorAwareTrait;
 
-    private const UNFINISHED_UPLOADS_DELETE_MODIFIER = '-1 week';
-    private const UNFINISHED_UPLOADS_DELETE_LIMIT = 100;
+    private const string UNFINISHED_UPLOADS_DELETE_MODIFIER = '-1 week';
+    private const int UNFINISHED_UPLOADS_DELETE_LIMIT = 100;
 
     public function __construct(
         private readonly AssetManager $assetManager,

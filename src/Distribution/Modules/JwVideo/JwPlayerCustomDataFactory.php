@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\Distribution;
 
 final class JwPlayerCustomDataFactory extends AbstractCustomDataFactory
 {
-    public const THUMBNAIL_DATA = 'thumbnail';
+    public const string THUMBNAIL_DATA = 'thumbnail';
 
     public function __construct(
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,

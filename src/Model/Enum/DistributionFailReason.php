@@ -15,5 +15,5 @@ enum DistributionFailReason: string implements EnumInterface
     case RemoteProcessFailed = 'remote_process_failed';
     case ValidationFailed = 'validation_failed';
 
-    public const Default = self::None;
+    public const DistributionFailReason Default = self::None;
 }

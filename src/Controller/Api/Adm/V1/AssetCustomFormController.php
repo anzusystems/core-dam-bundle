@@ -51,7 +51,7 @@ final class AssetCustomFormController extends AbstractApiController
     public function getOne(ExtSystem $extSystem, AssetType $assetType): JsonResponse
     {
         $form = $this->assetCustomFormRepository->findOneByTypeAndExtSystem($extSystem, $assetType);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_VIEW, $form);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_READ, $form);
 
         return $form
             ? $this->okResponse($form)
@@ -68,7 +68,7 @@ final class AssetCustomFormController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW);
         $form = $this->assetCustomFormRepository->findOneByTypeAndExtSystem($extSystem, $assetType);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_VIEW, $form);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_READ, $form);
 
         if (null === $form) {
             return $this->okResponse(new ApiResponseList());

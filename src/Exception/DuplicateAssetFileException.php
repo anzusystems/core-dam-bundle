@@ -9,7 +9,7 @@ use Exception;
 
 class DuplicateAssetFileException extends Exception
 {
-    private const ERROR_MESSAGE = 'duplicate_asset_exception';
+    private const string ERROR_MESSAGE = 'duplicate_asset_exception';
 
     private AssetFile $newAsset;
     private AssetFile $oldAsset;

@@ -73,7 +73,7 @@ final class AssetFileController extends AbstractApiController
     #[OAResponse(AssetFileSysDetailDecorator::class)]
     public function getOne(AssetFile $assetFile): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile->getAsset());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile->getAsset());
 
         return $this->okResponse(
             AssetFileSysDetailDecorator::getInstance($assetFile)

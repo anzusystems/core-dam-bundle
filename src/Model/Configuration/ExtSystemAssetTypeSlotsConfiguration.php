@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemAssetTypeSlotsConfiguration
 {
-    public const DEFAULT_KEY = 'default';
-    public const SLOTS_KEY = 'slots';
+    public const string DEFAULT_KEY = 'default';
+    public const string SLOTS_KEY = 'slots';
 
     public function __construct(
         private readonly string $default,

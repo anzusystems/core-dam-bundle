@@ -9,13 +9,13 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionRequirementStrategy;
 
 final class ExtSystemAssetTypeDistributionRequirementConfiguration
 {
-    public const BLOCKED_BY_KEY = 'blocked_by';
-    public const CATEGORY_SELECT_KEY = 'category_select';
-    public const STRATEGY_KEY = 'strategy';
-    public const TITLE_KEY = 'title';
-    public const DISTRIBUTION_SERVICE_ID_KEY = 'distribution_service_id';
-    public const REQUIRED_AUTH_KEY = 'required_auth';
-    public const DISTRIBUTION_METADATA_MAP = 'distribution_metadata_map';
+    public const string BLOCKED_BY_KEY = 'blocked_by';
+    public const string CATEGORY_SELECT_KEY = 'category_select';
+    public const string STRATEGY_KEY = 'strategy';
+    public const string TITLE_KEY = 'title';
+    public const string DISTRIBUTION_SERVICE_ID_KEY = 'distribution_service_id';
+    public const string REQUIRED_AUTH_KEY = 'required_auth';
+    public const string DISTRIBUTION_METADATA_MAP = 'distribution_metadata_map';
 
     public function __construct(
         private readonly string $distributionServiceId,

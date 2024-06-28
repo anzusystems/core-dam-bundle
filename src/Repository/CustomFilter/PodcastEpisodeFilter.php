@@ -9,8 +9,8 @@ use Doctrine\ORM\QueryBuilder;
 
 final class PodcastEpisodeFilter implements CustomFilterInterface
 {
-    public const PODCAST = 'podcast';
-    public const ASSET = 'asset';
+    public const string PODCAST = 'podcast';
+    public const string ASSET = 'asset';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

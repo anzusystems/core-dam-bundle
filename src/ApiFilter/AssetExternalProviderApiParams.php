@@ -11,11 +11,11 @@ use Symfony\Component\Routing\Exception\InvalidParameterException;
 
 final class AssetExternalProviderApiParams
 {
-    private const LIMIT = 'limit';
-    private const OFFSET = 'offset';
-    private const TERM = 'term';
+    private const string LIMIT = 'limit';
+    private const string OFFSET = 'offset';
+    private const string TERM = 'term';
 
-    private const DEFAULTS = [
+    private const array DEFAULTS = [
         self::LIMIT => AssetExternalProviderConfiguration::DEFAULT_LISTING_LIMIT,
         self::OFFSET => 0,
         self::TERM => '',

@@ -50,6 +50,7 @@ abstract class AbstractAssetFileAdmDto extends AbstractEntityDto
     public function setAsset(Asset $asset): self
     {
         $this->asset = $asset;
+
         return $this;
     }
 
@@ -61,6 +62,7 @@ abstract class AbstractAssetFileAdmDto extends AbstractEntityDto
     public function setFileAttributes(AssetFileAttributesAdmDto $fileAttributes): self
     {
         $this->fileAttributes = $fileAttributes;
+
         return $this;
     }
 
@@ -72,6 +74,7 @@ abstract class AbstractAssetFileAdmDto extends AbstractEntityDto
     public function setFlags(AssetFileFlagsAdmDto $flags): self
     {
         $this->flags = $flags;
+
         return $this;
     }
 }

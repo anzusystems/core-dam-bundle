@@ -81,7 +81,7 @@ final class CustomDistributionController extends AbstractApiController
     public function redistribute(Distribution $distribution, #[SerializeParam] CustomDistributionAdmDto $customDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(
@@ -98,7 +98,7 @@ final class CustomDistributionController extends AbstractApiController
     #[OAParameterPath('assetFile'), OAParameterPath('distributionService'), OAResponse(CustomDistributionAdmDto::class)]
     public function preparePayload(AssetFile $assetFile, string $distributionService): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
 
         return $this->okResponse(

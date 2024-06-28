@@ -11,15 +11,15 @@ enum YoutubeVideoPrivacy: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const PRIVATE = 'private';
-    public const PUBLIC = 'public';
-    public const UNLISTED = 'unlisted';
-    public const DYNAMIC = 'dynamic';
+    public const string PRIVATE = 'private';
+    public const string PUBLIC = 'public';
+    public const string UNLISTED = 'unlisted';
+    public const string DYNAMIC = 'dynamic';
 
     case Private = self::PRIVATE;
     case Public = self::PUBLIC;
     case Unlisted = self::UNLISTED;
     case Dynamic = self::DYNAMIC;
 
-    public const Default = self::Private;
+    public const YoutubeVideoPrivacy Default = self::Private;
 }

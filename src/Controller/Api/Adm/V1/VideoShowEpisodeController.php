@@ -46,7 +46,7 @@ final class VideoShowEpisodeController extends AbstractApiController
     #[OAParameterPath('VideoShowEpisode'), OAResponse(VideoShowEpisode::class)]
     public function getOne(VideoShowEpisode $videoShowEpisode): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShowEpisode);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_READ, $videoShowEpisode);
 
         return $this->okResponse($videoShowEpisode);
     }
@@ -55,8 +55,8 @@ final class VideoShowEpisodeController extends AbstractApiController
     #[OAResponse(VideoShowEpisode::class)]
     public function preparePayload(Asset $asset, VideoShow $videoShow): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShow);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_READ, $videoShow);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $asset);
 
         return $this->okResponse($this->videoShowEpisodeBodyFacade->preparePayload($asset, $videoShow));
     }
@@ -68,7 +68,7 @@ final class VideoShowEpisodeController extends AbstractApiController
     #[OAResponseInfiniteList(VideoShowEpisode::class)]
     public function getList(VideoShow $videoShow, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $videoShow);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_READ, $videoShow);
 
         return $this->okResponse($this->videoShowEpisodeRepository->findByApiParamsWithInfiniteListing(
             apiParams: VideoShowEpisodeApiParams::applyCustomFilter($apiParams, $videoShow),
@@ -83,7 +83,7 @@ final class VideoShowEpisodeController extends AbstractApiController
     #[OAResponseInfiniteList(VideoShowEpisode::class)]
     public function getListByAsset(Asset $asset, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_READ, $asset);
 
         return $this->okResponse($this->videoShowEpisodeRepository->findByApiParamsWithInfiniteListing(
             apiParams: VideoShowEpisodeApiParams::applyCustomFilterByAsset($apiParams, $asset),

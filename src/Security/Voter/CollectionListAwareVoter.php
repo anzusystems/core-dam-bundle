@@ -48,7 +48,7 @@ final class CollectionListAwareVoter extends AbstractVoter
     protected function getSupportedPermissions(): array
     {
         return [
-            DamPermissions::DAM_ASSET_VIEW,
+            DamPermissions::DAM_ASSET_READ,
             DamPermissions::DAM_DISTRIBUTION_VIEW,
         ];
     }

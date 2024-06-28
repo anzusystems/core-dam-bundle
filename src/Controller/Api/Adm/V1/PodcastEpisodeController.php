@@ -46,7 +46,7 @@ final class PodcastEpisodeController extends AbstractApiController
     #[OAParameterPath('podcast'), OAResponse(Podcast::class)]
     public function getOne(PodcastEpisode $podcastEpisode): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $podcastEpisode);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_READ, $podcastEpisode);
 
         return $this->okResponse($podcastEpisode);
     }
@@ -55,8 +55,8 @@ final class PodcastEpisodeController extends AbstractApiController
     #[OAResponse(PodcastEpisode::class)]
     public function preparePayload(Asset $asset, Podcast $podcast): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $podcast);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_READ, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $asset);
 
         return $this->okResponse($this->episodeBodyFacade->preparePayload($asset, $podcast));
     }
@@ -68,7 +68,7 @@ final class PodcastEpisodeController extends AbstractApiController
     #[OAResponseInfiniteList(PodcastEpisode::class)]
     public function getList(Podcast $podcast, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_READ, $podcast);
 
         return $this->okResponse($this->podcastEpisodeRepository->findByApiParamsWithInfiniteListing(
             apiParams: PodcastEpisodeApiParams::applyCustomFilter($apiParams, $podcast),
@@ -83,7 +83,7 @@ final class PodcastEpisodeController extends AbstractApiController
     #[OAResponseInfiniteList(PodcastEpisode::class)]
     public function getListByAsset(Asset $asset, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_READ, $asset);
 
         return $this->okResponse($this->podcastEpisodeRepository->findByApiParamsWithInfiniteListing(
             apiParams: PodcastEpisodeApiParams::applyCustomFilterByAsset($apiParams, $asset),

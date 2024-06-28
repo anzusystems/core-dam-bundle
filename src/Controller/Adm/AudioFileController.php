@@ -24,7 +24,7 @@ final class AudioFileController extends AbstractAssetFileController
     #[OAParameterPath('audio')]
     public function download(AudioFile $audio): Response
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_VIEW, $audio);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_READ, $audio);
 
         return $this->getDownloadResponse($audio);
     }

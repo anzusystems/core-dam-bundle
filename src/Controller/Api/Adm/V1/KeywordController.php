@@ -44,7 +44,7 @@ final class KeywordController extends AbstractApiController
     #[OAParameterPath('keyword'), OAResponse(Keyword::class)]
     public function getOne(Keyword $keyword): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_VIEW, $keyword);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_READ, $keyword);
 
         return $this->okResponse($keyword);
     }
@@ -56,7 +56,7 @@ final class KeywordController extends AbstractApiController
     #[OAParameterPath('search', description: 'Searched.'), OAResponse([Keyword::class])]
     public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] KeywordAdmSearchDto $searchDto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_READ, $extSystem);
 
         return $this->okResponse($this->elasticSearch->searchInfiniteList($searchDto, $extSystem));
     }

@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -23,26 +24,26 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class LinksHandler extends AbstractHandler
 {
-    public const IMAGE_TAG_LIST = 'list';
-    public const IMAGE_TAG_DETAIL = 'detail';
-    public const IMAGE_TAG_TABLE = 'table';
-    public const IMAGE_TAG_ROI_EXAMPLE = 'roi_example';
+    public const string IMAGE_TAG_LIST = 'list';
+    public const string IMAGE_TAG_DETAIL = 'detail';
+    public const string IMAGE_TAG_TABLE = 'table';
+    public const string IMAGE_TAG_ROI_EXAMPLE = 'roi_example';
 
-    public const IMAGE_KEY_ANIMATED = 'image_animated';
-    public const AUDIO_KEY_AUDIO = 'audio';
+    public const string IMAGE_KEY_ANIMATED = 'image_animated';
+    public const string AUDIO_KEY_AUDIO = 'audio';
 
-    protected const IMAGE_LINKS_TYPE = 'image';
-    protected const AUDIO_LINKS_TYPE = 'audio';
+    protected const string IMAGE_LINKS_TYPE = 'image';
+    protected const string AUDIO_LINKS_TYPE = 'audio';
 
-    protected const IMAGE_TAGS = [
+    protected const array IMAGE_TAGS = [
         self::IMAGE_TAG_LIST,
         self::IMAGE_TAG_DETAIL,
         self::IMAGE_TAG_TABLE,
         self::IMAGE_TAG_ROI_EXAMPLE,
     ];
 
-    private const LINKS_TAGS_LIMIT = 5;
-    private const LINKS_QUERY_PARAM = '_links';
+    private const int LINKS_TAGS_LIMIT = 5;
+    private const string LINKS_QUERY_PARAM = '_links';
 
     public function __construct(
         protected readonly ConfigurationProvider $configurationProvider,
@@ -54,7 +55,7 @@ class LinksHandler extends AbstractHandler
     ) {
     }
 
-    public function serialize(mixed $value, Metadata $metadata): mixed
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): mixed
     {
         if ($value instanceof ImageFile) {
             return $this->getImageFileLinks($value);

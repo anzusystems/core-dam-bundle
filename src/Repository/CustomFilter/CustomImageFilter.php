@@ -9,7 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomImageFilter implements CustomFilterInterface
 {
-    public const IMAGE = 'image';
+    public const string IMAGE = 'image';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

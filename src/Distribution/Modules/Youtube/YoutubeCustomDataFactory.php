@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Youtube\YoutubeVideoDto;
 
 final class YoutubeCustomDataFactory extends AbstractCustomDataFactory
 {
-    public const THUMBNAIL_DATA = 'thumbnail';
+    public const string THUMBNAIL_DATA = 'thumbnail';
 
     public function createDistributionData(YoutubeVideoDto $video): array
     {

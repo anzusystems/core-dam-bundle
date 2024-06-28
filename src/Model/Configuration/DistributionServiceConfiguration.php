@@ -8,16 +8,16 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 
 class DistributionServiceConfiguration
 {
-    public const TYPE_KEY = 'type';
-    public const MODULE_KEY = 'module';
-    public const TITLE_KEY = 'title';
-    public const OPTIONS_KEY = 'options';
-    public const USE_MOCK_KEY = 'use_mock';
-    public const MOCK_OPTIONS_KEY = 'mock_options';
-    public const AUTH_REDIRECT_URL_KEY = 'auth_redirect_url';
-    public const ICON_PATH = 'icon_path';
-    public const REQUIRED_AUTH_KEY = 'required_auth';
-    public const ALLOWED_REDISTRIBUTE_STATUSES = 'redistribute_statuses';
+    public const string TYPE_KEY = 'type';
+    public const string MODULE_KEY = 'module';
+    public const string TITLE_KEY = 'title';
+    public const string OPTIONS_KEY = 'options';
+    public const string USE_MOCK_KEY = 'use_mock';
+    public const string MOCK_OPTIONS_KEY = 'mock_options';
+    public const string AUTH_REDIRECT_URL_KEY = 'auth_redirect_url';
+    public const string ICON_PATH = 'icon_path';
+    public const string REQUIRED_AUTH_KEY = 'required_auth';
+    public const string ALLOWED_REDISTRIBUTE_STATUSES = 'redistribute_statuses';
 
     public function __construct(
         private readonly array $allowedRedistributeStatuses,

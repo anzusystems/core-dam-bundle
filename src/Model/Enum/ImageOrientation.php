@@ -11,21 +11,21 @@ enum ImageOrientation: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const OPTIONS = [
+    public const array OPTIONS = [
         self::LANDSCAPE,
         self::PORTRAIT,
         self::SQUARE,
     ];
 
-    public const LANDSCAPE = 'L';
-    public const PORTRAIT = 'P';
-    public const SQUARE = 'S';
+    public const string LANDSCAPE = 'L';
+    public const string PORTRAIT = 'P';
+    public const string SQUARE = 'S';
 
     case Landscape = self::LANDSCAPE;
     case Portrait = self::PORTRAIT;
     case Square = self::SQUARE;
 
-    public const Default = self::Square;
+    public const ImageOrientation Default = self::Square;
 
     public static function fromImage(ImageFile $image): self
     {

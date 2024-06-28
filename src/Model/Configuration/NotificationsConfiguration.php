@@ -6,9 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class NotificationsConfiguration
 {
-    public const ENABLED = 'enabled';
-    public const TOPIC = 'topic';
-    public const GPS_CONFIG = 'gps_config';
+    public const string ENABLED = 'enabled';
+    public const string TOPIC = 'topic';
+    public const string GPS_CONFIG = 'gps_config';
 
     public function __construct(
         private readonly bool $enabled,

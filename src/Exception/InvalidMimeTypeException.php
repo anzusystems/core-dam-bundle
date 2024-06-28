@@ -8,8 +8,8 @@ use Exception;
 
 class InvalidMimeTypeException extends Exception
 {
-    public const ERROR_MESSAGE = 'invalid_mime_type';
-    public const ERROR_EXTENSION_GUESS_FAILED = 'extension_guess_failed';
+    public const string ERROR_MESSAGE = 'invalid_mime_type';
+    public const string ERROR_EXTENSION_GUESS_FAILED = 'extension_guess_failed';
 
     public function __construct(
         private readonly string $mimeType,

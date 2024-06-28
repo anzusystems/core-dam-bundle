@@ -123,6 +123,7 @@ final class ImageAttributesAdmDto
     public function setAnimated(bool $animated): self
     {
         $this->animated = $animated;
+
         return $this;
     }
 }

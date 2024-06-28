@@ -8,12 +8,12 @@ use Symfony\Component\Console\Input\InputInterface;
 
 final class RebuildIndexConfig
 {
-    public const ARG_INDEX_NAME = 'index-name';
-    public const OPT_EXT_SYSTEM = 'ext-system';
-    public const OPT_ID_FROM = 'id-from';
-    public const OPT_ID_UNTIL = 'id-until';
-    public const OPT_NO_DROP = 'no-drop';
-    public const OPT_BATCH = 'batch';
+    public const string ARG_INDEX_NAME = 'index-name';
+    public const string OPT_EXT_SYSTEM = 'ext-system';
+    public const string OPT_ID_FROM = 'id-from';
+    public const string OPT_ID_UNTIL = 'id-until';
+    public const string OPT_NO_DROP = 'no-drop';
+    public const string OPT_BATCH = 'batch';
 
     private ?string $lastProcessedId = null;
     private ?string $maxId = null;

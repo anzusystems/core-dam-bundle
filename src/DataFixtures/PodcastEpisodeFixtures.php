@@ -20,8 +20,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class PodcastEpisodeFixtures extends AbstractFixtures
 {
-    public const EPISODE_1_ID = '84a9f83c-8d3f-4800-a32e-2b61b7f5875e';
-    public const EPISODE_2_ID = 'ba87ee36-6312-4dd6-a2e0-9572ac6dad90';
+    public const string EPISODE_1_ID = '84a9f83c-8d3f-4800-a32e-2b61b7f5875e';
+    public const string EPISODE_2_ID = 'ba87ee36-6312-4dd6-a2e0-9572ac6dad90';
 
     public function __construct(
         private readonly PodcastEpisodeManager $podcastManager

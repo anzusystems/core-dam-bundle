@@ -10,13 +10,13 @@ use Symfony\Component\DependencyInjection\EnvVarProcessorInterface;
 
 final class ByteSizeEnvVarProcessor implements EnvVarProcessorInterface
 {
-    private const KB = 'KB';
-    private const MB = 'MB';
-    private const GB = 'GB';
-    private const TB = 'TB';
-    private const PB = 'PB';
+    private const string KB = 'KB';
+    private const string MB = 'MB';
+    private const string GB = 'GB';
+    private const string TB = 'TB';
+    private const string PB = 'PB';
 
-    private const MULTIPLE_MAP = [
+    private const array MULTIPLE_MAP = [
         self::KB => 1,
         self::MB => 2,
         self::GB => 3,
@@ -24,7 +24,7 @@ final class ByteSizeEnvVarProcessor implements EnvVarProcessorInterface
         self::PB => 5,
     ];
 
-    private const KILOBYTE_SIZE = 1_024;
+    private const int KILOBYTE_SIZE = 1_024;
 
     public function getEnv(string $prefix, string $name, Closure $getEnv): int
     {

@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormCache;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
-use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use Doctrine\ORM\NonUniqueResultException;
 
 final class AssetMetadataManager extends AbstractManager

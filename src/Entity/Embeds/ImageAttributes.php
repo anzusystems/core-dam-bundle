@@ -30,7 +30,7 @@ class ImageAttributes
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $animated;
 
-    #[ORM\Column(type: ColorType::NAME)]
+    #[ORM\Column(type: ColorType::NAME, length: 255)]
     private Color $mostDominantColor;
 
     public function __construct()

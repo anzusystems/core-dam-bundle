@@ -23,7 +23,7 @@ use Throwable;
 
 final class FfmpegService
 {
-    public const FRAME_EXTENSION = 'jpeg';
+    public const string FRAME_EXTENSION = 'jpeg';
 
     public function __construct(
         private readonly Exiftool $exiftool,

@@ -14,5 +14,5 @@ enum AuthorType: string implements EnumInterface
     case External = 'external';
     case Agency = 'agency';
 
-    public const Default = self::None;
+    public const AuthorType Default = self::None;
 }

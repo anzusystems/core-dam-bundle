@@ -13,14 +13,14 @@ use Google_Service_YouTube;
 
 final class GoogleClientProvider
 {
-    public const REQUIRED_SCOPES = [
+    public const array REQUIRED_SCOPES = [
         Google_Service_YouTube::YOUTUBE_UPLOAD,
         Google_Service_YouTube::YOUTUBE_READONLY,
         Google_Service_YouTube::YOUTUBEPARTNER,
     ];
 
-    private const ACCESS_TYPE = 'offline';
-    private const PROMPT = 'consent';
+    private const string ACCESS_TYPE = 'offline';
+    private const string PROMPT = 'consent';
 
     public function __construct(
         private readonly DistributionConfigurationProvider $distributionConfigurationProvider,

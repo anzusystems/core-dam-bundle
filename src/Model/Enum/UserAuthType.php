@@ -12,5 +12,5 @@ enum UserAuthType: string implements EnumInterface
     case JsonCredentials = 'json_credentials';
     case OAuth2 = 'oauth2';
 
-    public const Default = self::JsonCredentials;
+    public const UserAuthType Default = self::JsonCredentials;
 }

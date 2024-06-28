@@ -8,18 +8,18 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 
 class ExtSystemAssetTypeConfiguration
 {
-    public const ENABLED_KEY = 'enabled';
-    public const STORAGE_NAME_KEY = 'storage_name';
-    public const TITLE_CONFIG_KEY = 'title';
-    public const CHUNK_STORAGE_NAME_KEY = 'chunk_storage_name';
-    public const MIME_TYPES = 'mime_types';
-    public const FILE_SLOTS_KEY = 'file_slots';
-    public const SIZE_LIMIT_KEY = 'size_limit';
-    public const CUSTOM_METADATA_PINNED_AMOUNT = 'custom_metadata_pinned_amount';
-    public const KEYWORDS_KEY = 'keywords';
-    public const AUTHORS_KEY = 'authors';
-    public const DISTRIBUTION_KEY = 'distribution';
-    public const ASSET_EXTERNAL_PROVIDERS_MAP_KEY = 'asset_external_providers_map';
+    public const string ENABLED_KEY = 'enabled';
+    public const string STORAGE_NAME_KEY = 'storage_name';
+    public const string TITLE_CONFIG_KEY = 'title';
+    public const string CHUNK_STORAGE_NAME_KEY = 'chunk_storage_name';
+    public const string MIME_TYPES = 'mime_types';
+    public const string FILE_SLOTS_KEY = 'file_slots';
+    public const string SIZE_LIMIT_KEY = 'size_limit';
+    public const string CUSTOM_METADATA_PINNED_AMOUNT = 'custom_metadata_pinned_amount';
+    public const string KEYWORDS_KEY = 'keywords';
+    public const string AUTHORS_KEY = 'authors';
+    public const string DISTRIBUTION_KEY = 'distribution';
+    public const string ASSET_EXTERNAL_PROVIDERS_MAP_KEY = 'asset_external_providers_map';
 
     public function __construct(
         private readonly bool $enabled,

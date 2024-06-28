@@ -62,7 +62,7 @@ final class JwDistributionController extends AbstractApiController
     public function redistribute(JwDistribution $distribution, #[SerializeParam] JwDistribution $newDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(

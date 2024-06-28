@@ -12,7 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractSuggester implements DataSuggesterInterface
 {
-    protected const MAX_IDS_SUGGESTIONS = 10;
+    protected const int MAX_IDS_SUGGESTIONS = 10;
 
     protected ExtSystemConfigurationProvider $extSystemConfigurationProvider;
     protected SuggestionTagParser $suggestionTagParser;
@@ -43,7 +43,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
         foreach ($tags as $tag) {
             $ids = [];
             /** @psalm-suppress TypeDoesNotContainNull */
-            if (null === self::MAX_IDS_SUGGESTIONS || $iteration < self::MAX_IDS_SUGGESTIONS) {
+            if ($iteration < self::MAX_IDS_SUGGESTIONS) {
                 $ids = $this->suggestIdsByTag($tag, $originAsset);
             }
             $suggestions[$tag] = $ids;

@@ -7,14 +7,14 @@ namespace AnzuSystems\CoreDamBundle\Image\FilterProcessor\Stack;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Image\Filter\ImageFilterInterface;
 use AnzuSystems\CoreDamBundle\Image\FilterProcessor\FilterProcessorInterface;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class FilterProcessorStack
 {
     private iterable $filterProcessors;
 
     public function __construct(
-        #[TaggedIterator(tag: FilterProcessorInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: FilterProcessorInterface::class, indexAttribute: 'key')]
         iterable $filterProcessors,
     ) {
         $this->filterProcessors = $filterProcessors;

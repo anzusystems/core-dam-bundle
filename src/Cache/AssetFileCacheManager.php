@@ -12,9 +12,9 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 final class AssetFileCacheManager
 {
-    public const CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
-    public const X_KEY_HEADER = 'xkey';
-    private const NOT_FOUND_TTL = 360;
+    public const string CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
+    public const string X_KEY_HEADER = 'xkey';
+    private const int NOT_FOUND_TTL = 360;
 
     private AllowListConfiguration $allowListConfiguration;
 

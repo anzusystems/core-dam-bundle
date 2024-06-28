@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\CustomDataInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -35,6 +34,7 @@ abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomData
     public function setLicence(AssetLicence $licence): self
     {
         $this->licence = $licence;
+
         return $this;
     }
 

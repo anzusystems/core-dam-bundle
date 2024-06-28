@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class UnsplashAssetExternalProviderConfiguration extends AssetExternalProviderConfiguration
 {
-    public const ACCESS_KEY = 'access_key';
+    public const string ACCESS_KEY = 'access_key';
 
     private string $accessKey;
 

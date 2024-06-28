@@ -15,5 +15,5 @@ enum JwMediaStatus: string implements EnumInterface
     case Updating = 'updating';
     case Failed = 'failed';
 
-    public const Default = self::Created;
+    public const JwMediaStatus Default = self::Created;
 }

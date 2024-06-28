@@ -17,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
-use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use RuntimeException;
 use Throwable;
 

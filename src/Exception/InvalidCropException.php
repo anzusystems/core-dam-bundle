@@ -8,7 +8,7 @@ use Exception;
 
 final class InvalidCropException extends Exception
 {
-    public const ERROR_MESSAGE = 'crop_not_supported';
+    public const string ERROR_MESSAGE = 'crop_not_supported';
 
     public function __construct(string $errorMessage = self::ERROR_MESSAGE)
     {

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Exception\Handler;
 use AnzuSystems\CommonBundle\Exception\Handler\ExceptionHandlerInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
-use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;

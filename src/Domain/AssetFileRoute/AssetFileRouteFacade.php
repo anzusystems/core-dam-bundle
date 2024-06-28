@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Event\AssetFileRouteEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
@@ -27,8 +26,6 @@ final class AssetFileRouteFacade extends AbstractManager
 {
     use FileHelperTrait;
     use EventDispatcherAwareTrait;
-
-    private const string PATH_TEMPLATE = '%s/%s.%s';
 
     public function __construct(
         private readonly AssetFileRouteRepository $assetFileRouteRepository,

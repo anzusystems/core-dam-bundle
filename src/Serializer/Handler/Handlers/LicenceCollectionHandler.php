@@ -5,22 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Document\DocumentFileAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmListDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -39,7 +24,7 @@ final class LicenceCollectionHandler extends AbstractHandler
     ) {
     }
 
-    public function serialize(mixed $value, Metadata $metadata): string
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): string
     {
         throw new SerializerException('Serialization not supported');
     }

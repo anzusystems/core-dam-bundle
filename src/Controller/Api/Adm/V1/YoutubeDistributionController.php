@@ -92,7 +92,7 @@ final class YoutubeDistributionController extends AbstractApiController
     #[OAParameterPath('assetFile'), OAParameterPath('distributionService'), OAResponse(YoutubeDistribution::class)]
     public function preparePayload(AssetFile $assetFile, string $distributionService): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
 
         return $this->okResponse(
@@ -144,7 +144,7 @@ final class YoutubeDistributionController extends AbstractApiController
     public function distribute(AssetFile $assetFile, #[SerializeParam] YoutubeDistribution $youtubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $youtubeDistribution->getDistributionService());
 
         return $this->okResponse(
@@ -162,7 +162,7 @@ final class YoutubeDistributionController extends AbstractApiController
     public function redistribute(YoutubeDistribution $distribution, #[SerializeParam] YoutubeDistribution $newYoutubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $this->assetRepository->find($distribution->getAssetId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
 
         return $this->okResponse(

@@ -20,7 +20,7 @@ use Generator;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
-    private const BULK_SIZE = 20;
+    private const int BULK_SIZE = 20;
 
     public function __construct(
         private readonly EpisodeRssImportManager $episodeRssImportManager,

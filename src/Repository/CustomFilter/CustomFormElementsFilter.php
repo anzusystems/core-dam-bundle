@@ -9,7 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomFormElementsFilter implements CustomFilterInterface
 {
-    public const FORM = 'form';
+    public const string FORM = 'form';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

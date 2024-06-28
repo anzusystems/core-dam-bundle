@@ -9,18 +9,18 @@ enum DistributionProcessStatus: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const WAITING = 'waiting';
-    public const DISTRIBUTING = 'distributing';
-    public const REMOTE_PROCESSING = 'remote_processing';
-    public const DISTRIBUTED = 'distributed';
-    public const FAILED = 'failed';
+    public const string WAITING = 'waiting';
+    public const string DISTRIBUTING = 'distributing';
+    public const string REMOTE_PROCESSING = 'remote_processing';
+    public const string DISTRIBUTED = 'distributed';
+    public const string FAILED = 'failed';
 
-    public const FINISHED_MAP = [
+    public const array FINISHED_MAP = [
         self::DISTRIBUTED,
         self::FAILED
     ];
 
-    public const NOT_FINISHED_MAP = [
+    public const array NOT_FINISHED_MAP = [
         self::WAITING,
         self::DISTRIBUTING,
         self::REMOTE_PROCESSING
@@ -32,5 +32,5 @@ enum DistributionProcessStatus: string implements EnumInterface
     case Distributed = self::DISTRIBUTED;
     case Failed = self::FAILED;
 
-    public const Default = self::Waiting;
+    public const DistributionProcessStatus Default = self::Waiting;
 }

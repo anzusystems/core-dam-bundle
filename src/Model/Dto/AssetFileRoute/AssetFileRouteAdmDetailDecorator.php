@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute;
 
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
@@ -31,6 +30,7 @@ final class AssetFileRouteAdmDetailDecorator extends AbstractEntityDto
     public function setAssetFileRoute(AssetFileRoute $assetFileRoute): self
     {
         $this->assetFileRoute = $assetFileRoute;
+
         return $this;
     }
 

@@ -9,7 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomExtSystemFilter implements CustomFilterInterface
 {
-    public const EXT_SYSTEM = 'extSystem';
+    public const string EXT_SYSTEM = 'extSystem';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

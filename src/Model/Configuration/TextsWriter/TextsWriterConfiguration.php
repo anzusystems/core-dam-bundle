@@ -8,12 +8,12 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 
 final class TextsWriterConfiguration
 {
-    public const SOURCE_PROPERTY_PATH_KEY = 'source_property_path';
-    public const DESTINATION_PROPERTY_PATH_KEY = 'destination_property_path';
-    public const NORMALIZERS_KEY = 'normalizers';
+    public const string SOURCE_PROPERTY_PATH_KEY = 'source_property_path';
+    public const string DESTINATION_PROPERTY_PATH_KEY = 'destination_property_path';
+    public const string NORMALIZERS_KEY = 'normalizers';
 
-    public const NORMALIZERS_TYPE_KEY = 'type';
-    public const NORMALIZERS_OPTIONS_KEY = 'options';
+    public const string NORMALIZERS_TYPE_KEY = 'type';
+    public const string NORMALIZERS_OPTIONS_KEY = 'options';
 
     private string $sourcePropertyPath;
     private string $destinationPropertyPath;

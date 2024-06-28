@@ -14,7 +14,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
  */
 abstract class AbstractAssetFileFixtures extends AbstractFixtures
 {
-    public const DATA_PATH = __DIR__ . '/../Resources/fixtures/';
+    public const string DATA_PATH = __DIR__ . '/../Resources/fixtures/';
 
     protected function getFile(LocalFilesystem $fileSystem, string $fileName): AdapterFile
     {

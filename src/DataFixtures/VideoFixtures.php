@@ -23,8 +23,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  */
 final class VideoFixtures extends AbstractAssetFileFixtures
 {
-    public const VIDEO_ID_1 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabe';
-    public const VIDEO_ID_2 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabc';
+    public const string VIDEO_ID_1 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabe';
+    public const string VIDEO_ID_2 = 'aa967cf4-0ea9-499e-be2a-13bf0b63eabc';
 
     public function __construct(
         private readonly VideoManager $videoManager,

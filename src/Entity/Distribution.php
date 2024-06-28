@@ -110,7 +110,6 @@ abstract class Distribution implements
 
     abstract public function getDiscriminator(): string;
 
-
     public static function getIndexName(): string
     {
         return self::INDEX_NAME;

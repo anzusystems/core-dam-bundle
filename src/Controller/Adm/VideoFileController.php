@@ -24,7 +24,7 @@ final class VideoFileController extends AbstractAssetFileController
     #[OAParameterPath('video')]
     public function download(VideoFile $video): Response
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_VIEW, $video);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_READ, $video);
 
         return $this->getDownloadResponse($video);
     }

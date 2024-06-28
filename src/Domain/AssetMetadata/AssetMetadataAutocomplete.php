@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use Doctrine\ORM\NonUniqueResultException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class AssetMetadataAutocomplete
 {
@@ -18,7 +18,7 @@ final class AssetMetadataAutocomplete
 
     public function __construct(
         public readonly CustomFormProvider $customFormProvider,
-        #[TaggedIterator(tag: ElementParserInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: ElementParserInterface::class, indexAttribute: 'key')]
         iterable $parsers,
     ) {
         $this->parsers = $parsers;

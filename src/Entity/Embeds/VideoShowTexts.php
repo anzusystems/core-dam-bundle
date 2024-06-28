@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class VideoShowTexts
 {
-    public const TITLE_LENGTH = 100;
+    public const int TITLE_LENGTH = 100;
 
     #[ORM\Column(type: Types::STRING, length: 128)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]

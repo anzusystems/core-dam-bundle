@@ -21,7 +21,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[OA\Tag('AssetExternalProvider')]
 final class AssetExternalProviderController extends AbstractApiController
 {
-    private const IDS_LIMIT = 50;
+    private const int IDS_LIMIT = 50;
 
     public function __construct(
         private readonly AssetExternalProviderContainer $providerContainer,
@@ -46,7 +46,8 @@ final class AssetExternalProviderController extends AbstractApiController
     #[OAParameterPath('ids', description: 'List of ids.'), OAResponse([AssetExternalProviderDto::class])]
     public function getByProviderService(
         string $providerName,
-        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)] array $ids,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)]
+        array $ids,
     ): JsonResponse {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $providerName);
 

@@ -33,13 +33,13 @@ final class YtTokenManageCommand extends Command
 {
     use OutputUtilTrait;
 
-    private const ARG_EXT_SYSTEM_SLUG = 'service';
+    private const string ARG_EXT_SYSTEM_SLUG = 'service';
 
-    private const OPT_SHOW_TOKENS = 'show';
-    private const OPT_AUTH_URL = 'authUrl';
-    private const OPT_LOGOUT = 'logout';
-    private const OPT_REFRESH_TOKENS = 'refresh';
-    private const OPT_REFRESH_TOKEN = 'refreshToken';
+    private const string OPT_SHOW_TOKENS = 'show';
+    private const string OPT_AUTH_URL = 'authUrl';
+    private const string OPT_LOGOUT = 'logout';
+    private const string OPT_REFRESH_TOKENS = 'refresh';
+    private const string OPT_REFRESH_TOKEN = 'refreshToken';
 
     public function __construct(
         private readonly TokenStorage $tokenStorage,

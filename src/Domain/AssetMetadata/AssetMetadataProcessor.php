@@ -10,12 +10,12 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
 final class AssetMetadataProcessor
 {
-    public const DATA_SUGGESTER_LOCK_NAME = 'lock_suggester';
+    public const string DATA_SUGGESTER_LOCK_NAME = 'lock_suggester';
 
     /**
      * @var iterable<DataSuggesterInterface>
@@ -27,7 +27,7 @@ final class AssetMetadataProcessor
         private readonly array $exifCommonMetadata,
         private readonly Exiftool $exiftool,
         private readonly ResourceLocker $resourceLocker,
-        #[TaggedIterator(tag: DataSuggesterInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: DataSuggesterInterface::class, indexAttribute: 'key')]
         iterable $dataSuggesters,
     ) {
         $this->dataSuggesters = $dataSuggesters;

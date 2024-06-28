@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Data\Fixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -53,20 +54,36 @@ final class UserFixtures extends AbstractFixtures
         $licenceBlog = $this->assetLicenceFixtures->getOneFromRegistry(AssetLicenceFixtures::LICENCE_ID);
         $licenceCms = $this->baseAssetLicenceFixtures->getOneFromRegistry(BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
-        yield (new User())
+        $userBlog = (new User())
             ->setId(User::ID_BLOG_USER)
             ->setEmail('blog_user@anzusystems.sk')
             ->setAssetLicences(new ArrayCollection([$licenceCms, $licenceBlog]))
             ->setUserToExtSystems(new ArrayCollection([$licenceCms->getExtSystem(), $licenceBlog->getExtSystem()]))
             ->setEnabled(true)
+            ->setCreatedAt(App::getAppDate())
+            ->setModifiedAt(App::getAppDate())
+        ;
+        $userBlog
+            ->setCreatedBy($userBlog)
+            ->setModifiedBy($userBlog)
         ;
 
-        yield (new User())
+        yield $userBlog;
+
+        $userCms = (new User())
             ->setId(User::ID_CMS_USER)
             ->setEmail('cms_user@anzusystems.sk')
             ->setAssetLicences(new ArrayCollection([$licenceCms]))
             ->setUserToExtSystems(new ArrayCollection([$licenceCms->getExtSystem()]))
             ->setEnabled(true)
+            ->setCreatedAt(App::getAppDate())
+            ->setModifiedAt(App::getAppDate())
         ;
+        $userCms
+            ->setCreatedBy($userCms)
+            ->setModifiedBy($userCms)
+        ;
+
+        yield $userCms;
     }
 }

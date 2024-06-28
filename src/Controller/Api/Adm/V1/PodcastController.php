@@ -43,7 +43,7 @@ final class PodcastController extends AbstractApiController
     #[OAParameterPath('podcast'), OAResponse(Podcast::class)]
     public function getOne(Podcast $podcast): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $podcast);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_READ, $podcast);
 
         return $this->okResponse($podcast);
     }
@@ -87,7 +87,7 @@ final class PodcastController extends AbstractApiController
     #[OAResponseInfiniteList(Podcast::class)]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_READ, $extSystem);
 
         return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyCustomFilter($apiParams, $extSystem),
@@ -102,7 +102,7 @@ final class PodcastController extends AbstractApiController
     #[OAResponseInfiniteList(Podcast::class)]
     public function getList(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_READ, $assetLicence);
 
         return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
             apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),

@@ -6,9 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
 abstract class AbstractCustomDataFactory
 {
-    protected const TYPE_URL = 'url';
-    protected const ARG_TYPE = 'type';
-    protected const ARG_VALUE = 'value';
+    protected const string TYPE_URL = 'url';
+    protected const string ARG_TYPE = 'type';
+    protected const string ARG_VALUE = 'value';
 
     public function createUrl(string $url): array
     {
