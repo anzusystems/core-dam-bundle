@@ -15,6 +15,9 @@ final class AssetLicenceGroupManager extends AbstractManager
     {
         $this->trackCreation($assetLicenceGroup);
         $this->entityManager->persist($assetLicenceGroup);
+        foreach ($assetLicenceGroup->getLicences() as $licence) {
+            $licence->getGroups()->add($assetLicenceGroup);
+        }
         $this->flush($flush);
 
         return $assetLicenceGroup;

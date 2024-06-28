@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
  * @method YoutubeDistribution|null find($id, $lockMode = null, $lockVersion = null)
  * @method YoutubeDistribution|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class YoutubeDistributionRepository extends AbstractAnzuRepository
+final class YoutubeDistributionRepository extends DistributionRepository
 {
     protected function getEntityClass(): string
     {

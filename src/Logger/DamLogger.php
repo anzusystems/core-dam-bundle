@@ -24,6 +24,7 @@ final class DamLogger
     public const string NAMESPACE_PODCAST_RSS_IMPORT = 'PodcastRssImport';
     public const string NAMESPACE_VISP = 'Visp';
     public const string NAMESPACE_ASSET_FILE_PROCESS = 'AssetFileProcess';
+    public const string NAMESPACE_ASSET_FILE_DOWNLOAD = 'AssetFileDownload';
 
     public function __construct(
         private readonly LoggerInterface $appLogger,
