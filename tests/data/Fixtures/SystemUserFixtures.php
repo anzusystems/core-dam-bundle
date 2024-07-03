@@ -6,6 +6,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Data\Fixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use Generator;
@@ -53,9 +54,7 @@ final class SystemUserFixtures extends AbstractFixtures
         ;
         yield (new User())
             ->setEmail('console@anzusystems.sk')
-            ->setId(User::ID_CONSOLE);
-        yield (new User())
-            ->setEmail('anonymous@anzusystems.sk')
-            ->setId(User::ID_ANONYMOUS);
+            ->setId(User::ID_CONSOLE)
+        ;
     }
 }
