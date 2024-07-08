@@ -1,12 +1,10 @@
-## [1.9.2](https://github.com/anzusystems/core-dam-bundle/compare/1.9.1...1.10.0) (2024-07-08)
+## [1.10.0](https://github.com/anzusystems/core-dam-bundle/compare/1.9.1...1.10.0) (2024-07-08)
+
+### Changes:
 * php83 -> AddTypeToConstRector
 * doctrine 2 -> 3 update
 * symfony 6.4 -> 7 update
 * User ACL update, renamed _VIEW to _READ
-
-### Fixes
-* update licence collection in `AssetLicenceGroup` update
-
 
 ## [1.9.1](https://github.com/anzusystems/core-dam-bundle/compare/1.9.0...1.9.1) (2024-05-09)
 
