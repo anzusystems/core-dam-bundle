@@ -1,4 +1,4 @@
-## [1.9.2](https://github.com/anzusystems/core-dam-bundle/compare/1.9.1...1.10.0) (2024-07-03)
+## [1.9.2](https://github.com/anzusystems/core-dam-bundle/compare/1.9.1...1.10.0) (2024-07-08)
 * php83 -> AddTypeToConstRector
 * doctrine 2 -> 3 update
 * symfony 6.4 -> 7 update
