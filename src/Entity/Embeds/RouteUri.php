@@ -38,6 +38,7 @@ class RouteUri
     public function setPath(string $path): self
     {
         $this->path = $path;
+
         return $this;
     }
 
@@ -49,6 +50,7 @@ class RouteUri
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
+
         return $this;
     }
 
@@ -60,6 +62,7 @@ class RouteUri
     public function setMain(bool $main): self
     {
         $this->main = $main;
+
         return $this;
     }
 }

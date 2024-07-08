@@ -9,7 +9,7 @@ enum VideoMimeTypes: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const CHOICES = [
+    public const array CHOICES = [
         self::MIME_MP4,
         self::MIME_FLV,
         self::MIME_3GP,
@@ -21,15 +21,15 @@ enum VideoMimeTypes: string implements EnumInterface
         self::MIME_WMW_ASF,
     ];
 
-    private const MIME_MP4 = 'video/mp4';
-    private const MIME_FLV = 'video/x-flv';
-    private const MIME_3GP = 'video/3gpp';
-    private const MIME_X_MSVIDEO = 'video/x-msvideo';
-    private const MIME_MS_VIDEO = 'video/msvideo';
-    private const MIME_AVI = 'video/avi';
-    private const MIME_MOV = 'video/quicktime';
-    private const MIME_WMW = 'video/x-ms-wmv';
-    private const MIME_WMW_ASF = 'video/x-ms-asf';
+    private const string MIME_MP4 = 'video/mp4';
+    private const string MIME_FLV = 'video/x-flv';
+    private const string MIME_3GP = 'video/3gpp';
+    private const string MIME_X_MSVIDEO = 'video/x-msvideo';
+    private const string MIME_MS_VIDEO = 'video/msvideo';
+    private const string MIME_AVI = 'video/avi';
+    private const string MIME_MOV = 'video/quicktime';
+    private const string MIME_WMW = 'video/x-ms-wmv';
+    private const string MIME_WMW_ASF = 'video/x-ms-asf';
 
     case MimeMp4 = self::MIME_MP4;
     case MimeXFlv = self::MIME_FLV;

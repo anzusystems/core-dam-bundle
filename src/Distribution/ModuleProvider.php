@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\MockDistributionModule;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Traversable;
 
 final class ModuleProvider
@@ -23,7 +23,7 @@ final class ModuleProvider
     private array $adapterCache = [];
 
     public function __construct(
-        #[TaggedIterator(tag: DistributionModuleInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: DistributionModuleInterface::class, indexAttribute: 'key')]
         Traversable $distributionModules,
         private readonly DistributionConfigurationProvider $configurationProvider,
     ) {

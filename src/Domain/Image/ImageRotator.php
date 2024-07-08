@@ -21,8 +21,8 @@ use League\Flysystem\FilesystemException;
 
 final class ImageRotator
 {
-    public const CLOCK_ANGLE = 360.0;
-    public const MIRROR_ANGLE = 180.0;
+    public const float CLOCK_ANGLE = 360.0;
+    public const float MIRROR_ANGLE = 180.0;
 
     public function __construct(
         private readonly ImageManipulatorInterface $imageManipulator,

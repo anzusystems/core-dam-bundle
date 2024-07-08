@@ -16,7 +16,7 @@ use Symfony\Component\Routing\RouterInterface;
 
 final class AssetFileDownloadFacade
 {
-    private const G_CLOUD_DOWNLOAD_LINK_MODIFIER = '15 min';
+    private const string G_CLOUD_DOWNLOAD_LINK_MODIFIER = '15 min';
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,

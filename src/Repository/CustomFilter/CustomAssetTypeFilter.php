@@ -9,7 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomAssetTypeFilter implements CustomFilterInterface
 {
-    public const ASSET_TYPE = 'assetType';
+    public const string ASSET_TYPE = 'assetType';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

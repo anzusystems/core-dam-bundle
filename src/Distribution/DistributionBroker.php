@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Distribution;
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusFacade;
-use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusManager;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;

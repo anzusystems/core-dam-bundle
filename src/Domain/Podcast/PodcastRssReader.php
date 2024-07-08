@@ -20,7 +20,7 @@ use Throwable;
 
 final class PodcastRssReader
 {
-    private const ITUNES_KEY_KEY = 'itunes';
+    private const string ITUNES_KEY_KEY = 'itunes';
 
     private SimpleXMLElement $body;
 

@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoFileAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -32,7 +33,7 @@ final class AssetFileHandler extends AbstractHandler
     /**
      * @throws SerializerException
      */
-    public function serialize(mixed $value, Metadata $metadata): ?array
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): ?array
     {
         if (null === $value) {
             return null;

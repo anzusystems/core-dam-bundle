@@ -19,7 +19,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class DebugAllowListCommand extends Command
 {
-    private const ARG_EXT_SYSTEM_SLUG = 'ext_system_slug';
+    private const string ARG_EXT_SYSTEM_SLUG = 'ext_system_slug';
 
     public function __construct(
         private readonly array $domainAllowMap,

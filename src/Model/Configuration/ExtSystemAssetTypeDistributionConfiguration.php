@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemAssetTypeDistributionConfiguration
 {
-    public const DISTRIBUTION_SERVICES_KEY = 'distribution_services';
-    public const DISTRIBUTION_REQUIREMENTS_KEY = 'distribution_requirements';
+    public const string DISTRIBUTION_SERVICES_KEY = 'distribution_services';
+    public const string DISTRIBUTION_REQUIREMENTS_KEY = 'distribution_requirements';
 
     public function __construct(
         private readonly array $distributionServices,

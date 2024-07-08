@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup;
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
-use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use Doctrine\Common\Collections\Collection;
 
 final class AssetLicenceGroupManager extends AbstractManager

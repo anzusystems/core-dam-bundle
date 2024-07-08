@@ -69,7 +69,7 @@ final class DistributionController extends AbstractApiController
     #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
     public function getAssetDistributionList(Asset $asset, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $asset);
 
         return $this->okResponse(
             $this->distributionRepository->findByApiParamsByAsset($apiParams, $asset)
@@ -83,7 +83,7 @@ final class DistributionController extends AbstractApiController
     #[OAParameterPath('assetFile'), OAResponse([Distribution::class])]
     public function getAssetFileDistributionList(AssetFile $assetFile, ApiParams $apiParams): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile);
 
         return $this->okResponse(
             $this->distributionRepository->findByApiParamsByAssetFile($apiParams, $assetFile)

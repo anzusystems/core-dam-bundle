@@ -20,7 +20,6 @@ use AnzuSystems\CoreDamBundle\Domain\Document\DocumentPositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Document\DocumentStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
@@ -191,7 +190,7 @@ final class DocumentController extends AbstractApiController
     #[OAResponse(DocumentFileAdmDetailDto::class)]
     public function getOne(DocumentFile $document): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_VIEW, $document);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_READ, $document);
 
         return $this->okResponse(DocumentFileAdmDetailDto::getInstance($document));
     }
@@ -236,7 +235,7 @@ final class DocumentController extends AbstractApiController
     #[OAParameterPath('document'), OAResponseValidation]
     public function generateDownloadUrl(DocumentFile $document): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_VIEW, $document);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_READ, $document);
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($document)

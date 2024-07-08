@@ -58,8 +58,8 @@ final class CustomFormElementFixtures extends AbstractFixtures
      */
     private function getData(): Generator
     {
-        $blogExtSystem = $this->entityManager->getPartialReference(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
-        $cmsExtSystem = $this->entityManager->getPartialReference(ExtSystem::class, ExtSystemFixtures::ID_CMS);
+        $blogExtSystem = $this->entityManager->getReference(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
+        $cmsExtSystem = $this->entityManager->getReference(ExtSystem::class, ExtSystemFixtures::ID_CMS);
 
         yield $this->createBlogImageCustomForm($blogExtSystem);
         yield $this->createImageCustomForm($cmsExtSystem);

@@ -13,7 +13,7 @@ use Psr\Cache\InvalidArgumentException;
 
 class AssetFileCounter
 {
-    private const UPLOAD_SIZE_KEY = 'asset_file_uploaded_size';
+    private const string UPLOAD_SIZE_KEY = 'asset_file_uploaded_size';
 
     public function __construct(
         private readonly CacheItemPoolInterface $coreDamBundleCounterCache,
@@ -64,6 +64,6 @@ class AssetFileCounter
 
     private function getKey(AssetFile $assetFile): string
     {
-        return self::UPLOAD_SIZE_KEY . '_' . (string) $assetFile->getId();
+        return self::UPLOAD_SIZE_KEY . '_' . $assetFile->getId();
     }
 }

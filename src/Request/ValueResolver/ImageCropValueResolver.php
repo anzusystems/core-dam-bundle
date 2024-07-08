@@ -12,15 +12,15 @@ use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
 
 final class ImageCropValueResolver implements ValueResolverInterface
 {
-    public const WIDTH_ATTR_NAME = 'requestWidth';
-    public const HEIGHT_ATTR_NAME = 'requestHeight';
-    public const QUALITY_ATTR_NAME = 'quality';
-    public const ROI_ATTR_NAME = 'regionOfInterestId';
+    public const string WIDTH_ATTR_NAME = 'requestWidth';
+    public const string HEIGHT_ATTR_NAME = 'requestHeight';
+    public const string QUALITY_ATTR_NAME = 'quality';
+    public const string ROI_ATTR_NAME = 'regionOfInterestId';
 
-    public const WIDTH_ARG_SYMBOL = 'w';
-    public const HEIGHT_ARG_SYMBOL = '-h';
-    public const ROI_ARG_SYMBOL = '-c';
-    public const QUALITY_ARG_SYMBOL = '-q';
+    public const string WIDTH_ARG_SYMBOL = 'w';
+    public const string HEIGHT_ARG_SYMBOL = '-h';
+    public const string ROI_ARG_SYMBOL = '-c';
+    public const string QUALITY_ARG_SYMBOL = '-q';
 
     public function resolve(Request $request, ArgumentMetadata $argument): iterable
     {

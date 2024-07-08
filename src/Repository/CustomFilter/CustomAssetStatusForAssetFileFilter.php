@@ -9,7 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 
 final class CustomAssetStatusForAssetFileFilter implements CustomFilterInterface
 {
-    public const ASSET_STATUS = 'assetStatus';
+    public const string ASSET_STATUS = 'assetStatus';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

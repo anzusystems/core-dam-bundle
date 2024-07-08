@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -29,6 +28,7 @@ final class AssetFileSysDetailDecorator extends AbstractEntityDto
     public function setAssetFile(AssetFile $assetFile): self
     {
         $this->assetFile = $assetFile;
+
         return $this;
     }
 
@@ -37,7 +37,6 @@ final class AssetFileSysDetailDecorator extends AbstractEntityDto
     {
         return $this->assetFile->getAssetAttributes()->getOriginAssetId();
     }
-
 
     #[Serialize]
     public function getAssetFileStatus(): AssetFileProcessStatus

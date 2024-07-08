@@ -7,23 +7,20 @@ namespace AnzuSystems\CoreDamBundle\FileSystem;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRouteConfigurableInterface;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRoutePublicStorageInterface;
-use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Doctrine\Common\Util\ClassUtils;
 
 final class FileSystemProvider
 {
-    public const TMP_STORAGE_SETTINGS = 'tmp_dir_path';
-    public const FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
+    public const string TMP_STORAGE_SETTINGS = 'tmp_dir_path';
+    public const string FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
 
     private ?LocalFilesystem $tmpFilesystem = null;
     private ?LocalFilesystem $fixturesFileSystem = null;

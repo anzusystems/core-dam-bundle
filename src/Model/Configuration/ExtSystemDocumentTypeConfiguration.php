@@ -6,8 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemDocumentTypeConfiguration extends ExtSystemAssetTypeConfiguration implements AssetFileRouteConfigurableInterface
 {
-    public const DOCUMENT_PUBLIC_STORAGE = 'public_storage';
-    public const PUBLIC_DOMAIN_NAME = 'public_domain_name';
+    public const string DOCUMENT_PUBLIC_STORAGE = 'public_storage';
+    public const string PUBLIC_DOMAIN_NAME = 'public_domain_name';
 
     private string $publicStorage;
     private string $publicDomainName;

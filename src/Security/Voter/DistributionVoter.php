@@ -52,8 +52,8 @@ final class DistributionVoter extends AbstractVoter
             return false;
         }
 
-        return $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $asset, $user)
-            && $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_VIEW, $assetFile, $user);
+        return $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_READ, $asset, $user)
+            && $this->assetLicenceAwareVoter->permissionVote(DamPermissions::DAM_ASSET_READ, $assetFile, $user);
     }
 
     protected function getSupportedPermissions(): array

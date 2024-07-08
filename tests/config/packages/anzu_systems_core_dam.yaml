@@ -13,6 +13,7 @@ parameters:
 
 anzu_systems_core_dam:
   settings:
+    user_entity_class: 'AnzuSystems\CoreDamBundle\Tests\Data\Entity\User'
     api_domain: '%env(resolve:string:DOMAIN_CORE_DAM_API)%'
     redirect_domain: 'http://localhost'
     notifications: false

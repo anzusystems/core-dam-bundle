@@ -27,8 +27,6 @@ $app->setAutoExit(false);
 
 $output = new ConsoleOutput();
 
-//return;
-
 # Clear cache
 $input = new ArrayInput([
     'command' => 'cache:clear',
@@ -62,6 +60,19 @@ $input = new ArrayInput([
 ]);
 $input->setInteractive(false);
 $app->run($input, $output);
+
+# Console user
+$input = new ArrayInput([
+    'command' => 'doctrine:query:sql',
+    'sql' => "INSERT INTO user (id, created_by_id, modified_by_id, email, roles, permissions, person_first_name, person_last_name,
+                              person_full_name, avatar_color, avatar_text, created_at, modified_at, enabled,
+                              allowed_asset_external_providers, allowed_distribution_services)
+            VALUES (2, 2, 2, 'anonymous@anzusystems.sk', '[]', '[]', '', '', 'Anzu App Anon', '#3F51B5', '',
+                    NOW(), NOW(), 0, '[]', '[]')"
+]);
+$input->setInteractive(false);
+$app->run($input, $output);
+
 
 # Database fixtures
 $input = new ArrayInput([

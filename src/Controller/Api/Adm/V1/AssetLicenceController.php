@@ -43,7 +43,7 @@ final class AssetLicenceController extends AbstractApiController
     #[OAParameterPath('assetLicence'), OAResponse(AssetLicence::class)]
     public function getOne(AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_READ, $assetLicence);
 
         return $this->okResponse($assetLicence);
     }

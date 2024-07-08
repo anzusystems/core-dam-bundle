@@ -24,7 +24,7 @@ final class DocumentFileController extends AbstractAssetFileController
     #[OAParameterPath('document')]
     public function download(DocumentFile $document): Response
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_VIEW, $document);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_READ, $document);
 
         return $this->getDownloadResponse($document);
     }

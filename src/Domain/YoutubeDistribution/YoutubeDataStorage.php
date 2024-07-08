@@ -14,8 +14,8 @@ final class YoutubeDataStorage
 {
     use SerializerAwareTrait;
 
-    private const PLAYLIST_KEY = 'playlist';
-    private const LANAGUAGE_KEY = 'language';
+    private const string PLAYLIST_KEY = 'playlist';
+    private const string LANAGUAGE_KEY = 'language';
 
     public function __construct(
         private readonly CacheItemPoolInterface $coreDamBundleYoutubeCache,

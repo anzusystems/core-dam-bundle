@@ -12,7 +12,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 final class AssetNotificationDispatcher extends AbstractNotificationDispatcher
 {
     use SerializerAwareTrait;
-    private const EVENT_ASSET_DELETED_NAME = 'asset_deleted';
+    private const string EVENT_ASSET_DELETED_NAME = 'asset_deleted';
 
     /**
      * @throws SerializerException

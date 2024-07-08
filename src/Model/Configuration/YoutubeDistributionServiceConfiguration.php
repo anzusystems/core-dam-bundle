@@ -6,11 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class YoutubeDistributionServiceConfiguration extends DistributionServiceConfiguration
 {
-    public const OAUTH_CREDENTIALS_KEY = 'oauth_credentials';
-    public const CHANNEL_ID_KEY = 'channel_id';
-    public const REGION_CODE = 'region_code';
-    public const REDIRECT_URI = 'redirect_uri';
-    public const YOUTUBE_DEFAULT_LANGUAGE = 'default_language';
+    public const string OAUTH_CREDENTIALS_KEY = 'oauth_credentials';
+    public const string CHANNEL_ID_KEY = 'channel_id';
+    public const string REGION_CODE = 'region_code';
+    public const string REDIRECT_URI = 'redirect_uri';
+    public const string YOUTUBE_DEFAULT_LANGUAGE = 'default_language';
 
     private string $oauthCredentials;
     private string $channelId;

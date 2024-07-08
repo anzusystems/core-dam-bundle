@@ -43,7 +43,7 @@ final class DistributionCategoryController extends AbstractApiController
     #[OAParameterPath('distributionCategory'), OAResponse(DistributionCategory::class)]
     public function getOne(DistributionCategory $distributionCategory): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_VIEW, $distributionCategory);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_READ, $distributionCategory);
 
         return $this->okResponse($distributionCategory);
     }
@@ -57,7 +57,7 @@ final class DistributionCategoryController extends AbstractApiController
     #[OAParameterPath('extSystem'), OAParameterPath('type'), OAResponse([DistributionCategory::class])]
     public function getList(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_READ, $extSystem);
 
         return $this->okResponse(
             $this->distributionCategoryAdmRepositoryDecorator->findByApiParams(
@@ -95,7 +95,8 @@ final class DistributionCategoryController extends AbstractApiController
     #[OAParameterPath('distributionCategory'), OARequest(DistributionCategory::class), OAResponse(DistributionCategory::class), OAResponseValidation]
     public function update(
         DistributionCategory $distributionCategory,
-        #[SerializeParam] DistributionCategory $newDistributionCategory,
+        #[SerializeParam]
+        DistributionCategory $newDistributionCategory,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_UPDATE, $distributionCategory);

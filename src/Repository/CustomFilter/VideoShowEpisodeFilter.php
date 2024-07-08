@@ -9,8 +9,8 @@ use Doctrine\ORM\QueryBuilder;
 
 final class VideoShowEpisodeFilter implements CustomFilterInterface
 {
-    public const VIDEO_SHOW = 'videoShow';
-    public const ASSET = 'asset';
+    public const string VIDEO_SHOW = 'videoShow';
+    public const string ASSET = 'asset';
 
     public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
     {

@@ -48,7 +48,7 @@ use Symfony\Component\Routing\Annotation\Route;
 #[OA\Tag('Asset')]
 final class AssetController extends AbstractApiController
 {
-    private const IDS_LIMIT = 50;
+    private const int IDS_LIMIT = 50;
 
     public function __construct(
         private readonly AssetFacade $assetFacade,
@@ -87,7 +87,7 @@ final class AssetController extends AbstractApiController
     public function searchByLicence(AssetLicence $assetLicence, #[SerializeParam] AssetAdmSearchLicenceCollectionDto $searchDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetLicence);
         $searchDto->setLicences(new ArrayCollection([$assetLicence]));
 
         return $this->okResponse(
@@ -106,7 +106,7 @@ final class AssetController extends AbstractApiController
     public function search(#[SerializeParam] AssetAdmSearchLicenceCollectionDto $searchDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $searchDto);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $searchDto);
 
         return $this->okResponse(
             $this->elasticSearch->searchInfiniteList($searchDto)
@@ -122,7 +122,7 @@ final class AssetController extends AbstractApiController
     #[OAParameterPath('search', description: 'Searched asset.'), OAResponse([AssetAdmListDto::class])]
     public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] AssetAdmSearchDto $searchDto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $extSystem);
 
         return $this->okResponse(
             $this->elasticSearch->searchInfiniteListByExtSystem($searchDto, $extSystem)
@@ -132,9 +132,10 @@ final class AssetController extends AbstractApiController
     #[Route('/licence/{assetLicence}/ids/{ids}', name: 'get_by_licence_and_ids', methods: [Request::METHOD_GET])]
     public function getByLicenceAndIds(
         AssetLicence $assetLicence,
-        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)] array $ids,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)]
+        array $ids,
     ): JsonResponse {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetLicence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetLicence);
 
         return $this->okResponse(
             $this->admRepositoryDecorator->findByLicenceAndIds($assetLicence, $ids)
@@ -144,9 +145,10 @@ final class AssetController extends AbstractApiController
     #[Route('/ext-system/{extSystem}/ids/{ids}', name: 'get_by_ext_system_and_ids', methods: [Request::METHOD_GET])]
     public function getByExtSystemAndIds(
         ExtSystem $extSystem,
-        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT, itemNormalizer: 'intval')] array $ids,
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT, itemNormalizer: 'intval')]
+        array $ids,
     ): JsonResponse {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $extSystem);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $extSystem);
 
         return $this->okResponse(
             $this->admRepositoryDecorator->findByExtSystemAndIds($extSystem, $ids)
@@ -160,7 +162,7 @@ final class AssetController extends AbstractApiController
     #[OAResponse(AssetAdmDetailDto::class)]
     public function getOne(Asset $asset): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $asset);
 
         return $this->okResponse(AssetAdmDetailDto::getInstance($asset));
     }
@@ -172,7 +174,7 @@ final class AssetController extends AbstractApiController
     #[OAResponse(AssetAdmDetailDto::class)]
     public function getOneByAssetFile(AssetFile $assetFile): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_VIEW, $assetFile->getAsset());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile->getAsset());
 
         return $this->okResponse(AssetAdmDetailDto::getInstance($assetFile->getAsset()));
     }

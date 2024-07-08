@@ -13,13 +13,11 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
@@ -28,12 +26,11 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
  */
 final class VideoStatusFacade extends AbstractAssetFileStatusFacade
 {
-    private const THUMBNAIL_PERCENTAGE_POSITION = 0.1;
+    private const float THUMBNAIL_PERCENTAGE_POSITION = 0.1;
 
     public function __construct(
         private readonly VideoAttributesProcessor $attributesProcessor,
         private readonly VideoFileRepository $videoFileRepository,
-        private readonly ImageFileRepository $imageFileRepository,
         private readonly FfmpegService $ffmpegService,
         private readonly ImageFactory $imageFactory,
         private readonly ImagePreviewFactory $imagePreviewFactory,

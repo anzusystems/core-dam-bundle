@@ -12,22 +12,21 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterfa
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\CustomDataInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ResourceCustomFormProvidableInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use Doctrine\ORM\NonUniqueResultException;
-use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 class CustomDataValidator extends ConstraintValidator
 {
-    private const PATH_TEMPLATE = 'customData.%s';
+    private const string PATH_TEMPLATE = 'customData.%s';
 
     private readonly iterable $validators;
 
     public function __construct(
         protected readonly CustomFormProvider $customFormProvider,
-        #[TaggedIterator(tag: ElementValidatorInterface::class, indexAttribute: 'key')]
+        #[AutowireIterator(tag: ElementValidatorInterface::class, indexAttribute: 'key')]
         iterable $validators,
     ) {
         $this->validators = $validators;

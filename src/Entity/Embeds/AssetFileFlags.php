@@ -46,6 +46,7 @@ class AssetFileFlags
     public function setPublic(bool $public): self
     {
         $this->public = $public;
+
         return $this;
     }
 
@@ -57,6 +58,7 @@ class AssetFileFlags
     public function setSingleUse(bool $singleUse): self
     {
         $this->singleUse = $singleUse;
+
         return $this;
     }
 }

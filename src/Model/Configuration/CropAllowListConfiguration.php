@@ -6,9 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class CropAllowListConfiguration
 {
-    public const QUALITY_ALLOW_LIST = 'quality_whitelist';
-    public const DOMAIN = 'domain';
-    public const CROPS = 'crops';
+    public const string QUALITY_ALLOW_LIST = 'quality_whitelist';
+    public const string DOMAIN = 'domain';
+    public const string CROPS = 'crops';
 
     private string $domain;
     private array $qualityAllowList;

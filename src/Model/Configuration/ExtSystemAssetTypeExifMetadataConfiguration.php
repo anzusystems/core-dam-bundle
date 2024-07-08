@@ -6,9 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 final class ExtSystemAssetTypeExifMetadataConfiguration
 {
-    public const ENABLED_KEY = 'enabled';
-    public const REQUIRED_KEY = 'required';
-    public const AUTOCOMPLETE_FROM_EXIF_METADATA_TAGS_KEY = 'autocomplete_from_exif_metadata_tags';
+    public const string ENABLED_KEY = 'enabled';
+    public const string REQUIRED_KEY = 'required';
+    public const string AUTOCOMPLETE_FROM_EXIF_METADATA_TAGS_KEY = 'autocomplete_from_exif_metadata_tags';
 
     public function __construct(
         private readonly bool $enabled,

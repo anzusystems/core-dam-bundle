@@ -8,10 +8,10 @@ use AnzuSystems\CoreDamBundle\Model\Enum\DistributionFailReason;
 
 class DistributionServiceMockOptionsConfiguration
 {
-    public const SLEEP_KEY = 'sleep';
-    public const FAIL_REASON = 'fail_reason';
-    public const EXT_ID_KEY = 'ext_id';
-    public const DISTRIBUTION_DATA_KEY = 'distribution_data';
+    public const string SLEEP_KEY = 'sleep';
+    public const string FAIL_REASON = 'fail_reason';
+    public const string EXT_ID_KEY = 'ext_id';
+    public const string DISTRIBUTION_DATA_KEY = 'distribution_data';
 
     public function __construct(
         private readonly int $sleep,

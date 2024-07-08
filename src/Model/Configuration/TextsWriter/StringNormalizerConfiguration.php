@@ -6,10 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter;
 
 final class StringNormalizerConfiguration
 {
-    public const TYPE = 'string';
-    public const LENGTH_KEY = 'length';
-    public const EMPTY_STRING = 'empty_string';
-    public const TRIM = 'trim';
+    public const string TYPE = 'string';
+    public const string LENGTH_KEY = 'length';
+    public const string EMPTY_STRING = 'empty_string';
+    public const string TRIM = 'trim';
 
     private ?int $length = null;
     private bool $emptyString = false;

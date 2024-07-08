@@ -9,7 +9,7 @@ enum DocumentMimeTypes: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    public const CHOICES = [
+    public const array CHOICES = [
         self::MIME_PDF,
         self::TEXT_PLAIN,
         self::MIME_X_ABIWORD,
@@ -35,29 +35,29 @@ enum DocumentMimeTypes: string implements EnumInterface
         self::SVG,
     ];
 
-    private const MIME_PDF = 'application/pdf';
-    private const TEXT_PLAIN = 'text/plain';
-    private const MIME_X_ABIWORD = 'application/x-abiword';
-    private const AMAZON_EBOOK = 'application/vnd.amazon.ebook';
-    private const TEXT_CSV = 'text/csv';
-    private const SVG = 'image/svg+xml';
-    private const MIME_MSWORD = 'application/msword';
-    private const MIME_OPENXML = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    private const MIME_EPUB = 'application/epub+zip';
-    private const TEXT_HTML = 'text/html';
-    private const TEXT_CALENDAR = 'text/calendar';
-    private const MOBILE_EBOOK = 'application/x-mobipocket-ebook';
-    private const OPEN_DOCUMENT_PRESENTATION = 'application/vnd.oasis.opendocument.presentation';
-    private const OPEN_DOCUMENT_SHEET = 'application/vnd.oasis.opendocument.spreadsheet';
-    private const OPEN_DOCUMENT_TEXT = 'application/vnd.oasis.opendocument.text';
-    private const POWER_POINT = 'application/vnd.ms-powerpoint';
-    private const POWER_POINT_OPEN_XML = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-    private const RTF = 'application/rtf';
-    private const MICROSOFT_VISIO = 'application/vnd.visio';
-    private const MICROSOFT_EXCEL = 'application/vnd.ms-excel';
-    private const MICROSOFT_OPEN_XML = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    private const TEXT_XML = 'text/xml';
-    private const APPLICATION_XML = 'application/xml';
+    private const string MIME_PDF = 'application/pdf';
+    private const string TEXT_PLAIN = 'text/plain';
+    private const string MIME_X_ABIWORD = 'application/x-abiword';
+    private const string AMAZON_EBOOK = 'application/vnd.amazon.ebook';
+    private const string TEXT_CSV = 'text/csv';
+    private const string SVG = 'image/svg+xml';
+    private const string MIME_MSWORD = 'application/msword';
+    private const string MIME_OPENXML = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    private const string MIME_EPUB = 'application/epub+zip';
+    private const string TEXT_HTML = 'text/html';
+    private const string TEXT_CALENDAR = 'text/calendar';
+    private const string MOBILE_EBOOK = 'application/x-mobipocket-ebook';
+    private const string OPEN_DOCUMENT_PRESENTATION = 'application/vnd.oasis.opendocument.presentation';
+    private const string OPEN_DOCUMENT_SHEET = 'application/vnd.oasis.opendocument.spreadsheet';
+    private const string OPEN_DOCUMENT_TEXT = 'application/vnd.oasis.opendocument.text';
+    private const string POWER_POINT = 'application/vnd.ms-powerpoint';
+    private const string POWER_POINT_OPEN_XML = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    private const string RTF = 'application/rtf';
+    private const string MICROSOFT_VISIO = 'application/vnd.visio';
+    private const string MICROSOFT_EXCEL = 'application/vnd.ms-excel';
+    private const string MICROSOFT_OPEN_XML = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    private const string TEXT_XML = 'text/xml';
+    private const string APPLICATION_XML = 'application/xml';
 
     case MimePdf = self::MIME_PDF;
     case TextPlain = self::TEXT_PLAIN;

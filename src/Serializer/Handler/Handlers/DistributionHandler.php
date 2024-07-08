@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Model\Decorator\DistributionAdmGetDecorator;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -23,7 +24,7 @@ final class DistributionHandler extends AbstractHandler
     /**
      * @throws SerializerException
      */
-    public function serialize(mixed $value, Metadata $metadata): mixed
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): mixed
     {
         return $this->serializer->toArray(DistributionAdmGetDecorator::getInstance(
             $this->moduleProvider->provideModule($value)

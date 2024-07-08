@@ -14,5 +14,5 @@ enum PodcastEpisodeStatus: string implements EnumInterface
     case ImportFailed = 'import_failed';
     case Conflict = 'conflict';
 
-    public const Default = self::NotImported;
+    public const PodcastEpisodeStatus Default = self::NotImported;
 }

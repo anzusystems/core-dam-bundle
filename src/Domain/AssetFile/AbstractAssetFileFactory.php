@@ -206,7 +206,6 @@ abstract class AbstractAssetFileFactory
         return $this->assetFileManager->create($assetFile, false);
     }
 
-
     /**
      * @return T
      */

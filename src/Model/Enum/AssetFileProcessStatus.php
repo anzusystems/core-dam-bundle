@@ -16,5 +16,5 @@ enum AssetFileProcessStatus: string implements EnumInterface
     case Processed = 'processed';       // file processed and ready to serve
     case Failed = 'failed';
 
-    public const Default = self::Uploading;
+    public const AssetFileProcessStatus Default = self::Uploading;
 }

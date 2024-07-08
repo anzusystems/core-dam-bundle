@@ -14,7 +14,6 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\CustomFormRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -26,7 +25,7 @@ class CustomForm implements TimeTrackingInterface, UuidIdentifiableInterface, Us
     use UuidIdentityTrait;
     use UserTrackingTrait;
 
-    #[ORM\OneToMany(mappedBy: 'form', targetEntity: CustomFormElement::class)]
+    #[ORM\OneToMany(targetEntity: CustomFormElement::class, mappedBy: 'form')]
     #[ORM\OrderBy(value: ['position' => App::ORDER_ASC])]
     #[Assert\Valid]
     private Collection $elements;

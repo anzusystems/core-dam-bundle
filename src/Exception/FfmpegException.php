@@ -9,10 +9,10 @@ use Throwable;
 
 final class FfmpegException extends Exception
 {
-    public const ERROR_MESSAGE = 'ffmpg_failed';
-    public const ERROR_READ_STREAM = 'error_read_stream';
-    public const ERROR_FFPROBE = 'error_ffprobe';
-    public const ERROR_UNSUPPORTED_MEDIA_TYPE = 'unsupported_media_type';
+    public const string ERROR_MESSAGE = 'ffmpg_failed';
+    public const string ERROR_READ_STREAM = 'error_read_stream';
+    public const string ERROR_FFPROBE = 'error_ffprobe';
+    public const string ERROR_UNSUPPORTED_MEDIA_TYPE = 'unsupported_media_type';
 
     public function __construct(string $errorMessage = self::ERROR_MESSAGE, Throwable $previous = null)
     {
