@@ -11,11 +11,11 @@ jobs:
       matrix:
         include:
           - php-version: 8.3
-            docker-image: anzusystems/php:3.3.0-php83-cli-vipsffmpeg
+            docker-image: anzusystems/php:3.4.0-php83-cli-vipsffmpeg
 
     services:
       elasticsearch:
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.15.1
         ports:
           - 9200:9200
         env:
@@ -31,14 +31,14 @@ jobs:
           MYSQL_ROOT_PASSWORD: admin
           MYSQL_DATABASE: commonbundle
       mongo:
-        image: mongo:6.0
+        image: mongo:7.0
         ports:
           - 27017:27017
         env:
           MONGO_INITDB_ROOT_USERNAME: root
           MONGO_INITDB_ROOT_PASSWORD: admin
       redis:
-        image: redis:6.2
+        image: redis:7.2
         ports:
           - 6379:6379
 
