@@ -48,6 +48,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
 
         return [
             'id' => $entity->getId(),
+            'mainFileId' => $entity->getMainFile()?->getId(),
             'fileIds' => array_values(CollectionHelper::traversableToIds(
                 $entity->getSlots(),
                 fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()

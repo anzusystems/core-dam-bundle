@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\UuidHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
@@ -40,6 +41,10 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
+        if (UuidHelper::isUuid($searchDto->getText())) {
+            return parent::getMust($searchDto, $extSystem);
+        }
+
         if ($searchDto->getText()) {
             return [
                 'multi_match' => [
@@ -61,6 +66,19 @@ final class AssetQueryFactory extends AbstractQueryFactory
     protected function getFilter(SearchDtoInterface $searchDto): array
     {
         $filter = [];
+
+        if (UuidHelper::isUuid($searchDto->getText())) {
+            $filter[] = [
+                'bool' => [
+                    'should' => [
+                        ['term' => ['id' => $searchDto->getText()]],
+                        ['term' => ['mainFileId' => $searchDto->getText()]],
+                    ],
+                ],
+            ];
+
+            return $filter;
+        }
 
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];

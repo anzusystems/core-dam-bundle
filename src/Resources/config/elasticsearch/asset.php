@@ -13,6 +13,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'id' => [
                     'type' => 'keyword',
                 ],
+                'mainFileId' => [
+                    'type' => 'keyword',
+                ],
                 'type' => [
                     'type' => 'keyword',
                 ],
