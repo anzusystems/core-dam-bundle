@@ -29,11 +29,23 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $mainFileIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $podcastIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $keywordIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $authorIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $createdByIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Choice(choices: AssetType::CHOICES, multiple: true, multipleMessage: ValidationException::ERROR_FIELD_INVALID)]
@@ -633,5 +645,38 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setKeywordIds(array $keywordIds): void
     {
         $this->keywordIds = $keywordIds;
+    }
+
+    public function getAuthorIds(): array
+    {
+        return $this->authorIds;
+    }
+
+    public function setAuthorIds(array $authorIds): self
+    {
+        $this->authorIds = $authorIds;
+        return $this;
+    }
+
+    public function getMainFileIds(): array
+    {
+        return $this->mainFileIds;
+    }
+
+    public function setMainFileIds(array $mainFileIds): self
+    {
+        $this->mainFileIds = $mainFileIds;
+        return $this;
+    }
+
+    public function getCreatedByIds(): array
+    {
+        return $this->createdByIds;
+    }
+
+    public function setCreatedByIds(array $createdByIds): self
+    {
+        $this->createdByIds = $createdByIds;
+        return $this;
     }
 }

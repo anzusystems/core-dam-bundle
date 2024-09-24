@@ -66,17 +66,13 @@ final class AssetQueryFactory extends AbstractQueryFactory
     protected function getFilter(SearchDtoInterface $searchDto): array
     {
         $filter = [];
+        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
+            $this->applyLicenceCollectionFilter($filter, $searchDto);
+        }
 
         if (UuidHelper::isUuid($searchDto->getText())) {
-            $filter[] = [
-                'bool' => [
-                    'should' => [
-                        ['term' => ['id' => $searchDto->getText()]],
-                        ['term' => ['mainFileId' => $searchDto->getText()]],
-                    ],
-                ],
-            ];
-
+            $filter[] = $this->getAssetIdAndMainFileIdFilter($searchDto->getText());
+            // other filters should not be applied
             return $filter;
         }
 
@@ -125,8 +121,17 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === empty($searchDto->getAssetIds())) {
             $filter[] = ['terms' => ['fileIds' => $searchDto->getAssetIds()]];
         }
+        if (false === empty($searchDto->getMainFileIds())) {
+            $filter[] = ['terms' => ['mainFileId' => $searchDto->getMainFileIds()]];
+        }
         if (false === empty($searchDto->getKeywordIds())) {
             $filter[] = ['terms' => ['keywordIds.keywordId' => $searchDto->getKeywordIds()]];
+        }
+        if (false === empty($searchDto->getAuthorIds())) {
+            $filter[] = ['terms' => ['authorIds.authorId' => $searchDto->getAuthorIds()]];
+        }
+        if (false === empty($searchDto->getCreatedByIds())) {
+            $filter[] = ['terms' => ['createdById' => $searchDto->getAuthorIds()]];
         }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
@@ -140,11 +145,19 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
-        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
-            $this->applyLicenceCollectionFilter($filter, $searchDto);
-        }
-
         return $filter;
+    }
+
+    private function getAssetIdAndMainFileIdFilter(string $id): array
+    {
+        return [
+            'bool' => [
+                'should' => [
+                    ['term' => ['id' => $id]],
+                    ['term' => ['mainFileId' => $id]],
+                ],
+            ],
+        ];
     }
 
     private function applyLicenceCollectionFilter(array &$filter, AssetAdmSearchLicenceCollectionDto $dto): void

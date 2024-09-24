@@ -16,6 +16,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'mainFileId' => [
                     'type' => 'keyword',
                 ],
+                'createdById' => [
+                    'type' => 'keyword',
+                ],
                 'type' => [
                     'type' => 'keyword',
                 ],
@@ -31,6 +34,14 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'text',
                     'fields' => [
                         'keywordId' => [
+                            'type' => 'keyword',
+                        ],
+                    ],
+                ],
+                'authorIds' => [
+                    'type' => 'text',
+                    'fields' => [
+                        'authorId' => [
                             'type' => 'keyword',
                         ],
                     ],

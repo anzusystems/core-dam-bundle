@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\CustomData\AssetMetadataCustomData;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
@@ -53,10 +54,8 @@ final class AssetIndexFactory implements IndexFactoryInterface
                 $entity->getSlots(),
                 fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
             )),
-            'keywordIds' => array_values(CollectionHelper::traversableToIds(
-                $entity->getKeywords(),
-                fn (Keyword $keyword): string => (string) $keyword->getId()
-            )),
+            'keywordIds' => array_values(CollectionHelper::traversableToIds($entity->getKeywords())),
+            'authorIds' => array_values(CollectionHelper::traversableToIds($entity->getAuthors())),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),
@@ -65,6 +64,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'generatedBySystem' => $entity->getAssetFlags()->isGeneratedBySystem(),
             'modifiedAt' => $entity->getModifiedAt()->getTimestamp(),
             'createdAt' => $entity->getCreatedAt()->getTimestamp(),
+            'createdById' => $entity->getCreatedBy()->getId(),
             'licence' => $entity->getLicence()->getId(),
             'distributedInServices' => array_values($entity->getAssetFileProperties()->getDistributesInServices()),
             'slotNames' => array_values($entity->getAssetFileProperties()->getSlotNames()),
