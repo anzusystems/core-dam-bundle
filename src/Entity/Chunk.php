@@ -16,7 +16,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ChunkRepository::class)]
-#[ORM\Index(fields: ['offset'], name: 'IDX_offset')]
+#[ORM\Index(name: 'IDX_offset', fields: ['offset'])]
 class Chunk implements UuidIdentifiableInterface, FileSystemStorableInterface, AssetLicenceInterface
 {
     use UuidIdentityTrait;
@@ -33,7 +33,7 @@ class Chunk implements UuidIdentifiableInterface, FileSystemStorableInterface, A
     private int $size;
 
     #[Serialize]
-    #[ORM\Column(type: Types::STRING, length: 32)]
+    #[ORM\Column(type: Types::STRING, length: 255)]
     private string $mimeType;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
