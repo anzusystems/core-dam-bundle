@@ -83,8 +83,6 @@ final class FileAttributesProcessor
             throw new AssetFileProcessFailed(AssetFileFailedType::InvalidMimeType);
         }
 
-        dump($mimeType);
-
         $assetFile->getAssetAttributes()
             ->setMimeType($mimeType)
             ->setSize($file->getSize());
