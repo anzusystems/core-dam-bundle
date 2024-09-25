@@ -71,7 +71,14 @@ final class AssetQueryFactory extends AbstractQueryFactory
         }
 
         if (UuidHelper::isUuid($searchDto->getText())) {
-            $filter[] = $this->getAssetIdAndMainFileIdFilter($searchDto->getText());
+            $filter[] = $this->getAssetIdAndMainFileIdFilter([$searchDto->getText()]);
+            // other filters should not be applied
+            return $filter;
+        }
+
+
+        if (false === empty($searchDto->getAssetAndMainFileIds())) {
+            $filter[] = $this->getAssetIdAndMainFileIdFilter($searchDto->getAssetAndMainFileIds());
             // other filters should not be applied
             return $filter;
         }
@@ -131,7 +138,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
             $filter[] = ['terms' => ['authorIds.authorId' => $searchDto->getAuthorIds()]];
         }
         if (false === empty($searchDto->getCreatedByIds())) {
-            $filter[] = ['terms' => ['createdById' => $searchDto->getAuthorIds()]];
+            $filter[] = ['terms' => ['createdById' => $searchDto->getCreatedByIds()]];
         }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
@@ -148,13 +155,13 @@ final class AssetQueryFactory extends AbstractQueryFactory
         return $filter;
     }
 
-    private function getAssetIdAndMainFileIdFilter(string $id): array
+    private function getAssetIdAndMainFileIdFilter(array $ids): array
     {
         return [
             'bool' => [
                 'should' => [
-                    ['term' => ['id' => $id]],
-                    ['term' => ['mainFileId' => $id]],
+                    ['terms' => ['id' => $ids]],
+                    ['terms' => ['mainFileId' => $ids]],
                 ],
             ],
         ];

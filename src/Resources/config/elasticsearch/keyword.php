@@ -17,7 +17,14 @@ return static function (ContainerConfigurator $configurator): void {
                     'type' => 'boolean',
                 ],
                 'name' => [
-                    'type' => 'search_as_you_type',
+                    'type' => 'text',
+                    'analyzer' => 'exact_stop',
+                    'fields' => [
+                        'edgegrams' => [
+                            'type' => 'text',
+                            'analyzer' => 'edgegrams',
+                        ],
+                    ]
                 ],
                 'createdAt' => [
                     'type' => 'date',

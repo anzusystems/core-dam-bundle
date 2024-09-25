@@ -25,6 +25,10 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected array $assetAndMainFileIds = [];
+
+    #[Serialize(handler: ArrayStringHandler::class)]
+    #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $assetIds = [];
 
     #[Serialize(handler: ArrayStringHandler::class)]
@@ -677,6 +681,17 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setCreatedByIds(array $createdByIds): self
     {
         $this->createdByIds = $createdByIds;
+        return $this;
+    }
+
+    public function getAssetAndMainFileIds(): array
+    {
+        return $this->assetAndMainFileIds;
+    }
+
+    public function setAssetAndMainFileIds(array $assetAndMainFileIds): self
+    {
+        $this->assetAndMainFileIds = $assetAndMainFileIds;
         return $this;
     }
 }
