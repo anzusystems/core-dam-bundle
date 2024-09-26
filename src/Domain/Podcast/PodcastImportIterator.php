@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
@@ -18,6 +19,8 @@ use Generator;
 
 final readonly class PodcastImportIterator
 {
+    private const string MIN_IMPORT_FROM_MODIFIER = '- 3 months';
+
     public function __construct(
         private RssClient $client,
         private PodcastRssReader $reader,
@@ -74,7 +77,7 @@ final readonly class PodcastImportIterator
 
             return;
         }
-        $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
+        $startFromDate = $this->getImportFrom($pointer);
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
             yield new PodcastImportIteratorDto(
@@ -85,18 +88,16 @@ final readonly class PodcastImportIterator
         }
     }
 
-    private function getImportFrom(PodcastSynchronizerPointer $pointer, Podcast $podcast): ?DateTimeImmutable
+    private function getImportFrom(PodcastSynchronizerPointer $pointer): ?DateTimeImmutable
     {
-        if (null === $podcast->getDates()->getImportFrom()) {
-            return $pointer->getPubDate();
-        }
+        $minImportFrom = App::getAppDate()->modify(self::MIN_IMPORT_FROM_MODIFIER);
 
         if (null === $pointer->getPubDate()) {
-            return $podcast->getDates()->getImportFrom();
+            return $minImportFrom;
         }
 
-        return $podcast->getDates()->getImportFrom() > $pointer->getPubDate()
-            ? $podcast->getDates()->getImportFrom()
+        return $minImportFrom > $pointer->getPubDate()
+            ? $minImportFrom
             : $pointer->getPubDate();
     }
 

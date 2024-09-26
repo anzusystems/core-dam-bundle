@@ -659,6 +659,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setAuthorIds(array $authorIds): self
     {
         $this->authorIds = $authorIds;
+
         return $this;
     }
 
@@ -670,6 +671,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setMainFileIds(array $mainFileIds): self
     {
         $this->mainFileIds = $mainFileIds;
+
         return $this;
     }
 
@@ -681,6 +683,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setCreatedByIds(array $createdByIds): self
     {
         $this->createdByIds = $createdByIds;
+
         return $this;
     }
 
@@ -692,6 +695,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setAssetAndMainFileIds(array $assetAndMainFileIds): self
     {
         $this->assetAndMainFileIds = $assetAndMainFileIds;
+
         return $this;
     }
 }

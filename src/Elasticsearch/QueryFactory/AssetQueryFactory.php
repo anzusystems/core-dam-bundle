@@ -72,13 +72,14 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         if (UuidHelper::isUuid($searchDto->getText())) {
             $filter[] = $this->getAssetIdAndMainFileIdFilter([$searchDto->getText()]);
+
             // other filters should not be applied
             return $filter;
         }
 
-
         if (false === empty($searchDto->getAssetAndMainFileIds())) {
             $filter[] = $this->getAssetIdAndMainFileIdFilter($searchDto->getAssetAndMainFileIds());
+
             // other filters should not be applied
             return $filter;
         }

@@ -27,7 +27,7 @@ return static function (ContainerConfigurator $configurator): void {
                             'type' => 'text',
                             'analyzer' => 'edgegrams',
                         ],
-                    ]
+                    ],
                 ],
                 'type' => [
                     'type' => 'keyword',
