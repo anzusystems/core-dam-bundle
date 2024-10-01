@@ -9,7 +9,7 @@ use AnzuSystems\CommonBundle\Validator\Constraints\UniqueEntity;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
-use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
+use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
@@ -30,7 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
 {
-    use IdentityTrait;
+    use IdentityIntTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
 

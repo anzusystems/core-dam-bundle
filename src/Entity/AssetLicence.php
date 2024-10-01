@@ -9,7 +9,7 @@ use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
-use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
+use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
@@ -31,7 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
 class AssetLicence implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, AssetLicenceInterface, ExtSystemInterface
 {
-    use IdentityTrait;
+    use IdentityIntTrait;
     use TimeTrackingTrait;
     use UserTrackingTrait;
 

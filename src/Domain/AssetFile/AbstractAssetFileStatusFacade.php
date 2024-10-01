@@ -21,7 +21,6 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\DuplicateAssetFileException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
-use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
@@ -37,6 +36,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
+use RuntimeException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -196,9 +196,16 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile
     {
+        $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
+
         try {
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
-                $file = $this->store($assetFile, $file);
+                $file = $file ?: $this->createFile($assetFile);
+                $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
+                $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
+                // we need to lock process due to duplicity checks
+                $this->resourceLocker->lock($lockName);
+                $this->store($assetFile, $file);
             }
             if (null === $file) {
                 throw new RuntimeException(sprintf('AssetFile (%s) cant be processed without file', $assetFile->getId()));
@@ -206,8 +213,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored)) {
                 $this->chunkFileManager->clearChunks($assetFile);
                 $this->process($assetFile, $file, $dispatchPropertyRefresh);
+                $this->resourceLocker->unLock($lockName);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
+            $this->resourceLocker->unLock($lockName);
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
@@ -218,6 +227,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
+            $this->resourceLocker->unLock($lockName);
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType(),
@@ -225,12 +235,15 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (Throwable $exception) {
+            $this->resourceLocker->unLock($lockName);
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 AssetFileFailedType::Unknown,
                 $exception
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+        } finally {
+            $this->resourceLocker->unLock($lockName);
         }
 
         return $assetFile;
@@ -244,20 +257,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws TransportExceptionInterface
      * @throws Throwable
      */
-    public function store(AssetFile $assetFile, ?AdapterFile $file = null): AdapterFile
+    public function store(AssetFile $assetFile, AdapterFile $file): AdapterFile
     {
-        $file = $file ?: $this->createFile($assetFile);
-
-        $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
-        $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
-
-        $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
-        $this->resourceLocker->lock($lockName);
-
         $originAssetFile = $this->checkDuplicate($assetFile);
         if ($originAssetFile) {
-            $this->resourceLocker->unLock($lockName);
-
             throw new DuplicateAssetFileException(
                 oldAsset: $originAssetFile,
                 newAsset: $assetFile
@@ -269,9 +272,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $this->assetFileStorageOperator->save($assetFile, $file);
             $this->assetStatusManager->toStored($assetFile);
             $this->assetManager->commit();
-            $this->resourceLocker->unLock($lockName);
         } catch (Throwable $exception) {
-            $this->resourceLocker->unLock($lockName);
             $this->assetManager->rollback();
 
             throw $exception;
