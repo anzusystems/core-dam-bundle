@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Generator;
 use Throwable;
@@ -29,7 +30,15 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         private readonly PodcastImportIterator $importIterator,
         private readonly PodcastRepository $podcastRepository,
         private int $bulkSize = self::BULK_SIZE,
+        private ?DateTimeImmutable $minImportFrom = null
     ) {
+    }
+
+    public function setMinImportFrom(?DateTimeImmutable $minImportFrom): self
+    {
+        $this->minImportFrom = $minImportFrom;
+
+        return $this;
     }
 
     public function setBulkSize(int $bulkSize): self
@@ -70,7 +79,10 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         if ($job->isFullSync()) {
             $this->importFull(
                 job: $job,
-                generator: $this->importIterator->iterate(PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()))
+                generator: $this->importIterator->iterate(
+                    pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
+                    minImportFrom: $this->minImportFrom
+                )
             );
 
             return;
@@ -89,8 +101,9 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 job: $job,
                 generator: $this->importIterator->iteratePodcast(
                     pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
-                    podcastToImport: $podcast
-                )
+                    podcastToImport: $podcast,
+                    minImportFrom: $this->minImportFrom
+                ),
             );
         }
     }
