@@ -31,7 +31,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
 class AssetLicence implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, AssetLicenceInterface, ExtSystemInterface
 {
-    /** @psalm-suppress DeprecatedTrait */
     use IdentityTrait;
     use TimeTrackingTrait;
     use UserTrackingTrait;

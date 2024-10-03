@@ -30,7 +30,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
 {
-    /** @psalm-suppress DeprecatedTrait */
     use IdentityTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;

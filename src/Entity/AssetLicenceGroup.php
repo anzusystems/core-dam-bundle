@@ -33,7 +33,6 @@ class AssetLicenceGroup implements
     UserTrackingInterface,
     TimeTrackingInterface
 {
-    /** @psalm-suppress DeprecatedTrait */
     use IdentityTrait;
     use TimeTrackingTrait;
     use UserTrackingTrait;
