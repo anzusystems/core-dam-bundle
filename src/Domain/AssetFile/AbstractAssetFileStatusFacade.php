@@ -242,8 +242,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $exception
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
-        } finally {
-            $this->resourceLocker->unLock($lockName);
         }
 
         return $assetFile;

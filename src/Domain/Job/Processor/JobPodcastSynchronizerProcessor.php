@@ -18,7 +18,6 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Generator;
-use Throwable;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
@@ -55,20 +54,12 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 
     /**
      * @param JobPodcastSynchronizer $job
+     * @throws SerializerException
      */
     public function process(JobInterface $job): void
     {
-        try {
-            $this->start($job);
-            $this->entityManager->beginTransaction();
-            $this->processPodcasts($job);
-            $this->entityManager->commit();
-        } catch (Throwable $throwable) {
-            if ($this->entityManager->getConnection()->isTransactionActive()) {
-                $this->entityManager->rollback();
-            }
-            $this->finishFail($job, $throwable);
-        }
+        $this->start($job);
+        $this->processPodcasts($job);
     }
 
     /**
