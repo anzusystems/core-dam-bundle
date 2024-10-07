@@ -20,6 +20,7 @@ use Throwable;
 
 final class PodcastRssReader
 {
+    public const string RSS_DATE_FORMAT = 'D, d M Y H:i:s T';
     private const string ITUNES_KEY_KEY = 'itunes';
 
     private SimpleXMLElement $body;
@@ -91,6 +92,7 @@ final class PodcastRssReader
     {
         foreach (array_reverse($this->body->channel?->xpath('item') ?? []) as $item) {
             $item = $this->readItem($item);
+
             if ($item->getPubDate() && $from && $from > $item->getPubDate()) {
                 continue;
             }
@@ -145,7 +147,7 @@ final class PodcastRssReader
     {
         $publicationDateString = (string) $element->pubDate;
         $publicationDate = DateTimeImmutable::createFromFormat(
-            'D, d M Y H:i:s T',
+            self::RSS_DATE_FORMAT,
             $publicationDateString,
         );
 

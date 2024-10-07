@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag]
 interface AssetFileStatusInterface
 {
-    public function store(AssetFile $assetFile, ?AdapterFile $file): AdapterFile;
+    public function store(AssetFile $assetFile, AdapterFile $file): AdapterFile;
 
     public function process(AssetFile $assetFile, AdapterFile $file, bool $dispatchPropertyRefresh): AssetFile;
 

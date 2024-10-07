@@ -20,7 +20,7 @@
             <link>https://www.thisamericanlife.org/789/the-runaround</link>
             <description>3: Dobre rano description
             </description>
-            <pubDate>Tue, 07 Mar 2023 23:01:44 GMT</pubDate>
+            <pubDate>__FirstPubDatePlaceholder__</pubDate>
             <guid isPermaLink="false">fpg3</guid>
             <itunes:author>SME.sk</itunes:author>
             <enclosure url="http://core-dam.sme.localhost/download-file?file=audioa" type="audio/mpeg" />
@@ -36,7 +36,7 @@
             <link>https://www.thisamericanlife.org/789/the-runaround</link>
             <description>2: Dobre rano description
             </description>
-            <pubDate>Mon, 06 Mar 2023 23:01:44 GMT</pubDate>
+            <pubDate>__SecondPubDatePlaceholder__</pubDate>
             <guid isPermaLink="false">fpg2</guid>
             <itunes:author>SME.sk</itunes:author>
             <enclosure url="http://core-dam.sme.localhost/download-file?file=audiob" type="audio/mpeg" />
@@ -52,7 +52,7 @@
             <link>https://www.thisamericanlife.org/789/the-runaround</link>
             <description>3: Dobre rano description
             </description>
-            <pubDate>Sun, 05 Mar 2023 23:01:45 GMT</pubDate>
+            <pubDate>__ThirdPubDatePlaceholder__</pubDate>
             <guid isPermaLink="false">fpg1</guid>
             <itunes:author>SME.sk</itunes:author>
             <enclosure url="http://core-dam.sme.localhost/download-file?file=audioa" type="audio/mpeg" />

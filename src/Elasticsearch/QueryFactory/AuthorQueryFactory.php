@@ -26,11 +26,10 @@ final class AuthorQueryFactory extends AbstractQueryFactory
             return [
                 'multi_match' => [
                     'query' => $searchDto->getText(),
-                    'type' => 'bool_prefix',
+                    'type' => 'most_fields',
                     'fields' => [
                         'name',
-                        'name._2gram',
-                        'name._3gram',
+                        'name.edgegrams',
                     ],
                 ],
             ];

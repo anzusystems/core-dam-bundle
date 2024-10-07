@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
@@ -16,13 +17,15 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use DateTimeImmutable;
 use Generator;
 
-final readonly class PodcastImportIterator
+final class PodcastImportIterator
 {
+    private const string MIN_IMPORT_FROM_MODIFIER = '- 3 months';
+
     public function __construct(
-        private RssClient $client,
-        private PodcastRssReader $reader,
-        private PodcastRepository $podcastRepository,
-        private DamLogger $damLogger,
+        private readonly RssClient $client,
+        private readonly PodcastRssReader $reader,
+        private readonly PodcastRepository $podcastRepository,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -31,7 +34,7 @@ final readonly class PodcastImportIterator
      *
      * @throws SerializerException
      */
-    public function iterate(PodcastSynchronizerPointer $pointer): Generator
+    public function iterate(PodcastSynchronizerPointer $pointer, ?DateTimeImmutable $minImportFrom = null): Generator
     {
         $podcastToImport = $this->getPodcastToImport($pointer);
         if (null === $podcastToImport) {
@@ -39,7 +42,7 @@ final readonly class PodcastImportIterator
         }
 
         while ($podcastToImport) {
-            foreach ($this->iteratePodcast($pointer, $podcastToImport) as $item) {
+            foreach ($this->iteratePodcast($pointer, $podcastToImport, $minImportFrom) as $item) {
                 yield $item;
             }
 
@@ -58,7 +61,7 @@ final readonly class PodcastImportIterator
      *
      * @throws SerializerException
      */
-    public function iteratePodcast(PodcastSynchronizerPointer $pointer, Podcast $podcastToImport): Generator
+    public function iteratePodcast(PodcastSynchronizerPointer $pointer, Podcast $podcastToImport, ?DateTimeImmutable $minImportFrom = null): Generator
     {
         try {
             $this->reader->initReader($this->client->readPodcastRss($podcastToImport));
@@ -74,7 +77,7 @@ final readonly class PodcastImportIterator
 
             return;
         }
-        $startFromDate = $this->getImportFrom($pointer, $podcastToImport);
+        $startFromDate = $this->getImportFrom($pointer, $minImportFrom);
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
             yield new PodcastImportIteratorDto(
@@ -85,18 +88,16 @@ final readonly class PodcastImportIterator
         }
     }
 
-    private function getImportFrom(PodcastSynchronizerPointer $pointer, Podcast $podcast): ?DateTimeImmutable
+    private function getImportFrom(PodcastSynchronizerPointer $pointer, ?DateTimeImmutable $minImportFrom): ?DateTimeImmutable
     {
-        if (null === $podcast->getDates()->getImportFrom()) {
-            return $pointer->getPubDate();
-        }
+        $minImportFrom = $minImportFrom ?? App::getAppDate()->modify(self::MIN_IMPORT_FROM_MODIFIER);
 
         if (null === $pointer->getPubDate()) {
-            return $podcast->getDates()->getImportFrom();
+            return $minImportFrom;
         }
 
-        return $podcast->getDates()->getImportFrom() > $pointer->getPubDate()
-            ? $podcast->getDates()->getImportFrom()
+        return $minImportFrom > $pointer->getPubDate()
+            ? $minImportFrom
             : $pointer->getPubDate();
     }
 

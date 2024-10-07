@@ -15,6 +15,15 @@ final class StringHelper
         return mb_substr($input, 0, $length);
     }
 
+    public static function getFirstChar(string $string): string
+    {
+        if (false === empty($string)) {
+            return mb_substr($string, 0, 1);
+        }
+
+        return '';
+    }
+
     public static function normalize(string $input, StringNormalizerConfiguration $configuration): string
     {
         if ($configuration->isTrim()) {
@@ -33,7 +42,7 @@ final class StringHelper
         ?int $length = null,
         bool $trim = true,
     ): string {
-        $string = htmlspecialchars(strip_tags($input));
+        $string = strip_tags($input);
         if ($length) {
             $string = self::parseLength($string, $length);
         }

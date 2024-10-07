@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\UuidHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
@@ -40,6 +41,10 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
+        if (UuidHelper::isUuid($searchDto->getText())) {
+            return parent::getMust($searchDto, $extSystem);
+        }
+
         if ($searchDto->getText()) {
             return [
                 'multi_match' => [
@@ -61,6 +66,23 @@ final class AssetQueryFactory extends AbstractQueryFactory
     protected function getFilter(SearchDtoInterface $searchDto): array
     {
         $filter = [];
+        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
+            $this->applyLicenceCollectionFilter($filter, $searchDto);
+        }
+
+        if (UuidHelper::isUuid($searchDto->getText())) {
+            $filter[] = $this->getAssetIdAndMainFileIdFilter([$searchDto->getText()]);
+
+            // other filters should not be applied
+            return $filter;
+        }
+
+        if (false === empty($searchDto->getAssetAndMainFileIds())) {
+            $filter[] = $this->getAssetIdAndMainFileIdFilter($searchDto->getAssetAndMainFileIds());
+
+            // other filters should not be applied
+            return $filter;
+        }
 
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
@@ -107,8 +129,17 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === empty($searchDto->getAssetIds())) {
             $filter[] = ['terms' => ['fileIds' => $searchDto->getAssetIds()]];
         }
+        if (false === empty($searchDto->getMainFileIds())) {
+            $filter[] = ['terms' => ['mainFileId' => $searchDto->getMainFileIds()]];
+        }
         if (false === empty($searchDto->getKeywordIds())) {
             $filter[] = ['terms' => ['keywordIds.keywordId' => $searchDto->getKeywordIds()]];
+        }
+        if (false === empty($searchDto->getAuthorIds())) {
+            $filter[] = ['terms' => ['authorIds.authorId' => $searchDto->getAuthorIds()]];
+        }
+        if (false === empty($searchDto->getCreatedByIds())) {
+            $filter[] = ['terms' => ['createdById' => $searchDto->getCreatedByIds()]];
         }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
@@ -122,11 +153,19 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
-        if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
-            $this->applyLicenceCollectionFilter($filter, $searchDto);
-        }
-
         return $filter;
+    }
+
+    private function getAssetIdAndMainFileIdFilter(array $ids): array
+    {
+        return [
+            'bool' => [
+                'should' => [
+                    ['terms' => ['id' => $ids]],
+                    ['terms' => ['mainFileId' => $ids]],
+                ],
+            ],
+        ];
     }
 
     private function applyLicenceCollectionFilter(array &$filter, AssetAdmSearchLicenceCollectionDto $dto): void

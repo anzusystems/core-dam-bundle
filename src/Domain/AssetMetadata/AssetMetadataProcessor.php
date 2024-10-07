@@ -75,6 +75,6 @@ final class AssetMetadataProcessor
 
     private function parseValue(string $value): string
     {
-        return htmlspecialchars(strip_tags($value));
+        return strip_tags($value);
     }
 }
