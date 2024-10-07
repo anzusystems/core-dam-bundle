@@ -42,7 +42,7 @@ final class StringHelper
         ?int $length = null,
         bool $trim = true,
     ): string {
-        $string = htmlspecialchars(strip_tags($input));
+        $string = strip_tags($input);
         if ($length) {
             $string = self::parseLength($string, $length);
         }
