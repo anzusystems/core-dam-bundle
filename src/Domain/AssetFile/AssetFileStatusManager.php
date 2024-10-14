@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Contracts\Service\Attribute\Required;
 use Throwable;
@@ -63,6 +64,10 @@ final class AssetFileStatusManager extends AssetFileManager
      */
     public function toProcessed(AssetFile $assetFile): AssetFile
     {
+        if ($assetFile->getAsset()->getAttributes()->getStatus()->is(AssetStatus::Draft)) {
+            $assetFile->getAsset()->getAttributes()->setStatus(AssetStatus::WithFile);
+        }
+
         return $this->changeTransition(
             assetFile: $assetFile,
             status: AssetFileProcessStatus::Processed,
