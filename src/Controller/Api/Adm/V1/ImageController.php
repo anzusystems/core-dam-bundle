@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
@@ -25,16 +26,20 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
+use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Doctrine\Common\Collections\Collection;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,6 +56,7 @@ final class ImageController extends AbstractApiController
         private readonly AssetFileDownloadFacade $assetFileDownloadFacade,
         private readonly ImagePositionFacade $imagePositionFacade,
         private readonly AssetFileRouteFacade $routeFacade,
+        private readonly ImageCopyFacade $imageCopyFacade,
     ) {
     }
 
@@ -270,6 +276,33 @@ final class ImageController extends AbstractApiController
 
         return $this->okResponse(
             $this->assetFileDownloadFacade->decorateDownloadLink($image)
+        );
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     *
+     * @param Collection<int, ImageCopyDto> $copyList
+     */
+    #[Route(
+        path: '/copy-to-licence',
+        name: 'copy_image',
+        methods: [Request::METHOD_PATCH]
+    )]
+    #[OAParameterPath('image'), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
+    public function copy(#[SerializeIterableParam(type: ImageCopyDto::class)] Collection $copyList): JsonResponse
+    {
+        // todo at first assert length (performance impact)
+
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE);
+        foreach ($copyList as $copyDto) {
+            // todo target licence access
+            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $copyDto->getAsset()->getLicence());
+            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $copyDto->getTargetAssetLicence());
+        }
+
+        return $this->okResponse(
+            $this->imageCopyFacade->copyList($copyList)
         );
     }
 

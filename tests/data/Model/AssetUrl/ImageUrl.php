@@ -43,6 +43,11 @@ final class ImageUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/image/{$imageId}/asset/{$assetId}/main";
     }
 
+    public function copy(string $assetFileId, int $licenceId): string
+    {
+        return "/api/adm/v{$this->version}/image/{$assetFileId}/copy/{$licenceId}";
+    }
+
     public function getSerializeClassString(): string
     {
         return ImageFileAdmDetailDto::class;

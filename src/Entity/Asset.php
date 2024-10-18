@@ -401,4 +401,19 @@ class Asset implements
     {
         return self::getResourceName();
     }
+
+    public function hasSameFilesIdentityString(Asset $asset): bool
+    {
+        return $asset->getFilesIdentityString() === $this->getFilesIdentityString();
+    }
+
+    public function getFilesIdentityString(): string
+    {
+        $identityParts = [];
+        foreach ($this->getSlots() as $slot) {
+            $identityParts[] = $slot->getName() . $slot->getAssetFile()?->getAssetAttributes()->getChecksum();
+        }
+
+        return implode('_', $identityParts);
+    }
 }

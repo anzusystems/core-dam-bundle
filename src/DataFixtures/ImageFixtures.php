@@ -24,6 +24,8 @@ final class ImageFixtures extends AbstractAssetFileFixtures
     public const string IMAGE_ID_1_2 = '892d7b56-7423-4428-86a0-2d366685d823';
     public const string IMAGE_ID_2 = 'd9cb26ab-81bd-4804-9f86-fb629673b1b1';
     public const string IMAGE_ID_3 = '7d7456dd-80cf-4d09-9ba8-b647d8895358';
+
+    public const string IMAGE_ID_4 = '7d7456dd-80cf-4d09-9ba8-b647d8895345';
     public const string IMAGE_UPLOADING_ID_4 = '7d7456dd-80cf-4d09-9ba8-b647d8895359';
 
     public function __construct(
@@ -114,6 +116,20 @@ final class ImageFixtures extends AbstractAssetFileFixtures
             $file,
             $licence,
             self::IMAGE_ID_3
+        );
+        $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
+
+        yield $image;
+
+        /** @var AssetLicence $secondaryLicences */
+        $secondaryLicences = $this->licenceRepository->find(AssetLicenceFixtures::SECONDARY_LICENCE_ID);
+
+        $file = $this->getFile($fileSystem, 'text_image_200x200.jpg');
+        $image = $this->imageFactory->createFromFile(
+            $file,
+            $secondaryLicences,
+            self::IMAGE_ID_4
         );
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);

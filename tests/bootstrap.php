@@ -25,6 +25,8 @@ $kernel->boot();
 $app = new Application($kernel);
 $app->setAutoExit(false);
 
+return;
+
 $output = new ConsoleOutput();
 
 # Clear cache

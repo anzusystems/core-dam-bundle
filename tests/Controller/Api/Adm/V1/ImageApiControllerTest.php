@@ -242,6 +242,17 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         ];
     }
 
+    public function testCopy(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->patch((new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(
+            ImageFixtures::IMAGE_ID_1_1,
+            AssetLicenceFixtures::SECONDARY_LICENCE_ID
+        ));
+
+        dump($response->getContent());
+    }
 
     public function testFinishUploadFailed(): void
     {
