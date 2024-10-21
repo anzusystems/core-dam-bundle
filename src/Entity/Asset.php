@@ -411,8 +411,10 @@ class Asset implements
     {
         $identityParts = [];
         foreach ($this->getSlots() as $slot) {
-            $identityParts[] = $slot->getName() . $slot->getAssetFile()?->getAssetAttributes()->getChecksum();
+            $identityParts[$slot->getName()] =
+                $slot->getName() . ':' . $slot->getAssetFile()->getAssetAttributes()->getChecksum();
         }
+        ksort($identityParts);
 
         return implode('_', $identityParts);
     }

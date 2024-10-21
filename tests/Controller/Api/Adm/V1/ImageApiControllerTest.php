@@ -6,20 +6,17 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as TestImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
-use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\AudioUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
@@ -27,7 +24,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ImageApiControllerTest extends AbstractAssetFileApiController
 {
-    private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
+    private const string TEST_DATA_FILENAME = 'metadata_image.jpeg';
 
 
     protected ImageUrlFactory $imageUrlFactory;
@@ -246,10 +243,29 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
     {
         $client = $this->getApiClient(User::ID_ADMIN);
 
-        $response = $client->patch((new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(
-            ImageFixtures::IMAGE_ID_1_1,
-            AssetLicenceFixtures::SECONDARY_LICENCE_ID
-        ));
+        $imageFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1);
+        $duplicateFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_3);
+        $conflictFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
+
+        // todo validate asset type/different ext system
+
+        $response = $client->patch((
+            new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(),
+            [
+                [
+                   'asset' => (string) $imageFile->getAsset()?->getId(),
+                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
+                ],
+                [
+                   'asset' => (string) $duplicateFile->getAsset()?->getId(),
+                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
+                ],
+                [
+                   'asset' => (string) $conflictFile->getAsset()?->getId(),
+                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
+                ]
+            ]
+        );
 
         dump($response->getContent());
     }

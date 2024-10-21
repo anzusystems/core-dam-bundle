@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 final class ImageCopyFacade
@@ -26,13 +29,18 @@ final class ImageCopyFacade
      */
     public function copyList(Collection $collection)
     {
+        $res = [];
         foreach ($collection as $imageCopyDto) {
             $resDto = $this->prepareCopyResult($imageCopyDto);
+            $res[] = $resDto;
         }
+
+        return new ArrayCollection($res);
     }
 
     private function prepareCopyResult(ImageCopyDto $copyDto): ImageCopyResultDto
     {
+        /** @var array<string, Asset> $foundAssets */
         $foundAssets = [];
         foreach ($copyDto->getAsset()->getSlots() as $slot) {
             $foundAssetFile = $this->imageFileRepository->findProcessedByChecksumAndLicence(
@@ -40,10 +48,14 @@ final class ImageCopyFacade
                 licence: $copyDto->getTargetAssetLicence()
             );
 
-            $foundAssets[$foundAssetFile->getAsset()->getId()] = $foundAssetFile->getAsset();
+            if (null === $foundAssetFile) {
+                continue;
+            }
+
+            $foundAssets[(string) $foundAssetFile->getAsset()?->getId()] = $foundAssetFile->getAsset();
         }
 
-        $firstFoundAsset = $foundAssets[0] ?? null;
+        $firstFoundAsset = $foundAssets[(string) array_key_first($foundAssets)] ?? null;
 
         if (null === $firstFoundAsset) {
             return ImageCopyResultDto::create(
@@ -67,7 +79,7 @@ final class ImageCopyFacade
             targetAssetLicence: $copyDto->getTargetAssetLicence(),
             result: AssetFileCopyResult::Exists,
             mainAssetFile: $firstFoundAsset->getMainFile(),
-            assetConflicts: array_values($foundAssets)
+            foundAsset: $firstFoundAsset,
         );
     }
 }

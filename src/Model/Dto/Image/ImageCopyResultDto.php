@@ -27,7 +27,10 @@ final class ImageCopyResultDto
     private Asset $asset;
 
     #[Serialize(handler: EntityIdHandler::class)]
-    private ?AssetFile $assetFile = null;
+    private ?Asset $foundAsset = null;
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?AssetFile $foundMainFile = null;
 
     #[Serialize(handler: EntityIdHandler::class)]
     private AssetLicence $targetAssetLicence;
@@ -49,6 +52,7 @@ final class ImageCopyResultDto
         AssetLicence $targetAssetLicence,
         AssetFileCopyResult $result,
         ?AssetFile $mainAssetFile = null,
+        ?Asset $foundAsset = null,
         array $assetConflicts = []
     ): ImageCopyResultDto
     {
@@ -56,7 +60,8 @@ final class ImageCopyResultDto
             ->setAsset($asset)
             ->setTargetAssetLicence($targetAssetLicence)
             ->setResult($result)
-            ->setAssetFile($mainAssetFile)
+            ->setFoundAsset($foundAsset)
+            ->setFoundMainFile($mainAssetFile)
             ->setAssetConflicts(new ArrayCollection($assetConflicts))
         ;
     }
@@ -83,14 +88,14 @@ final class ImageCopyResultDto
         return $this;
     }
 
-    public function getAssetFile(): ?AssetFile
+    public function getFoundMainFile(): ?AssetFile
     {
-        return $this->assetFile;
+        return $this->foundMainFile;
     }
 
-    public function setAssetFile(?AssetFile $assetFile): self
+    public function setFoundMainFile(?AssetFile $foundMainFile): self
     {
-        $this->assetFile = $assetFile;
+        $this->foundMainFile = $foundMainFile;
         return $this;
     }
 
@@ -113,6 +118,17 @@ final class ImageCopyResultDto
     public function setAssetConflicts(Collection $assetConflicts): self
     {
         $this->assetConflicts = $assetConflicts;
+        return $this;
+    }
+
+    public function getFoundAsset(): ?Asset
+    {
+        return $this->foundAsset;
+    }
+
+    public function setFoundAsset(?Asset $foundAsset): self
+    {
+        $this->foundAsset = $foundAsset;
         return $this;
     }
 }

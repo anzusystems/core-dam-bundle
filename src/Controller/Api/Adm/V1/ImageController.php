@@ -290,7 +290,7 @@ final class ImageController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('image'), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
-    public function copy(#[SerializeIterableParam(type: ImageCopyDto::class)] Collection $copyList): JsonResponse
+    public function copyToLicence(#[SerializeIterableParam(type: ImageCopyDto::class)] Collection $copyList): JsonResponse
     {
         // todo at first assert length (performance impact)
 
