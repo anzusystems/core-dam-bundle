@@ -78,7 +78,7 @@ final class AssetFileStatusManager extends AssetFileManager
     /**
      * @throws SerializerException
      */
-    public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType, Throwable $throwable): AssetFile
+    public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType, ?Throwable $throwable = null): AssetFile
     {
         $this->changeTransition($assetFile, AssetFileProcessStatus::Failed, $failedType);
 
@@ -88,7 +88,7 @@ final class AssetFileStatusManager extends AssetFileManager
                 'Asset file (%s) process failed reason (%s). (%s',
                 (string) $assetFile->getId(),
                 $failedType->toString(),
-                $throwable->getMessage()
+                $throwable?->getMessage()
             ),
             exception: $throwable
         );

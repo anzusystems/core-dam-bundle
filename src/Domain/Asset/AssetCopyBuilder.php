@@ -24,8 +24,6 @@ class AssetCopyBuilder extends AbstractManager
 
     public function buildDraftAssetCopy(Asset $asset, AssetLicence $assetLicence, bool $flush = true): Asset
     {
-        // todo NOTIF!
-        // todo setup main file
         $assetCopy = $asset->__copy();
         $assetCopy->getAttributes()->setStatus(AssetStatus::Draft);
         $this->trackCreation($assetCopy);

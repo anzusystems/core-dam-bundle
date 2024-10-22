@@ -9,15 +9,18 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileCopyBuilder;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator;
 use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\ImageFileOptimalResizeCopyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
@@ -42,6 +45,8 @@ final class ImageCopyFacade
         private readonly AssetFileCopyBuilder $assetFileCopyBuilder,
         private readonly AssetPropertiesRefresher $refresher,
         private readonly AssetManager $assetManager,
+        private readonly AssetFileEventDispatcher $assetFileEventDispatcher,
+        private readonly AssetFileStatusManager $assetFileStatusManager,
     ) {
     }
 
@@ -107,8 +112,9 @@ final class ImageCopyFacade
             throw $exception;
         }
 
-        // todo send notification
-        // todo if copied dispatch message/mark as with file
+        foreach ($copyAsset->getSlots() as $slot) {
+            $this->assetFileEventDispatcher->dispatchAssetFileChanged($slot->getAssetFile());
+        }
     }
 
     private function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
@@ -173,7 +179,10 @@ final class ImageCopyFacade
                 continue;
             }
 
-            // todo failed ... not found!
+            $this->assetFileStatusManager->toFailed(
+                $targetSlot->getAssetFile(),
+                AssetFileFailedType::Unknown
+            );
         }
     }
 
