@@ -35,7 +35,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @psalm-method DamUser getModifiedBy()
  */
 #[ORM\Entity(repositoryClass: AssetRepository::class)]
-#[ORM\Index(fields: ['attributes.status', 'createdAt', 'assetFlags.autoDeleteUnprocessed'], name: 'IDX_status_created_auto_delete')]
+#[ORM\Index(name: 'IDX_status_created_auto_delete', fields: ['attributes.status', 'createdAt', 'assetFlags.autoDeleteUnprocessed'])]
 class Asset implements
     TimeTrackingInterface,
     UuidIdentifiableInterface,

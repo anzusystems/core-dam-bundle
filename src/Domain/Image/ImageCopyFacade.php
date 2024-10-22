@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
@@ -12,9 +13,10 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOpe
 use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\ImageFileOptimalResizeCopyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
@@ -28,6 +30,8 @@ final class ImageCopyFacade
 {
     use MessageBusAwareTrait;
     use IndexManagerAwareTrait;
+    use ValidatorAwareTrait;
+    private const int BULK_COPY_SIZE = 20;
 
     public function __construct(
         private readonly ImageFileRepository $imageFileRepository,
@@ -43,10 +47,16 @@ final class ImageCopyFacade
 
     /**
      * @param Collection<int, ImageCopyDto> $collection
+     * @return Collection<int, AssetFileCopyResultDto>
+     *
      * @throws Throwable
      */
-    public function copyList(Collection $collection): Collection
+    public function prepareCopyList(Collection $collection): Collection
     {
+        $this->validateMaxBulkCount($collection);
+        $this->validator->validate($collection);
+
+        /** @var AssetFileCopyResultDto[] $res */
         $res = [];
 
         try {
@@ -78,15 +88,16 @@ final class ImageCopyFacade
         return new ArrayCollection($res);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function copyAssetFiles(Asset $asset, Asset $copyAsset): void
     {
         try {
             $this->entityManager->beginTransaction();
-
             $this->copyAssetSlots($asset, $copyAsset);
             $this->assetManager->updateExisting(asset: $copyAsset, trackModification: false);
             $this->indexManager->index($asset);
-
             $this->entityManager->commit();
         } catch (Throwable $exception) {
             if ($this->entityManager->getConnection()->isTransactionActive()) {
@@ -96,10 +107,11 @@ final class ImageCopyFacade
             throw $exception;
         }
 
+        // todo send notification
         // todo if copied dispatch message/mark as with file
     }
 
-    private function prepareCopy(ImageCopyDto $copyDto): ImageCopyResultDto
+    private function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
     {
         /** @var array<string, Asset> $foundAssets */
         $foundAssets = [];
@@ -121,7 +133,7 @@ final class ImageCopyFacade
         if (null === $firstFoundAsset) {
             $assetCopy = $this->assetCopyBuilder->buildDraftAssetCopy($copyDto->getAsset(), $copyDto->getTargetAssetLicence());
 
-            return ImageCopyResultDto::create(
+            return AssetFileCopyResultDto::create(
                 asset: $copyDto->getAsset(),
                 targetAssetLicence: $copyDto->getTargetAssetLicence(),
                 result: AssetFileCopyResult::Copying,
@@ -131,7 +143,7 @@ final class ImageCopyFacade
         }
 
         if (count($foundAssets) > 1 || false === $firstFoundAsset->hasSameFilesIdentityString($copyDto->getAsset())) {
-            return ImageCopyResultDto::create(
+            return AssetFileCopyResultDto::create(
                 asset: $copyDto->getAsset(),
                 targetAssetLicence: $copyDto->getTargetAssetLicence(),
                 result: AssetFileCopyResult::NotAllowed,
@@ -139,7 +151,7 @@ final class ImageCopyFacade
             );
         }
 
-        return ImageCopyResultDto::create(
+        return AssetFileCopyResultDto::create(
             asset: $copyDto->getAsset(),
             targetAssetLicence: $copyDto->getTargetAssetLicence(),
             result: AssetFileCopyResult::Exists,
@@ -162,6 +174,16 @@ final class ImageCopyFacade
             }
 
             // todo failed ... not found!
+        }
+    }
+
+    /**
+     * @param Collection<int, ImageCopyDto> $dtoList
+     */
+    private function validateMaxBulkCount(Collection $dtoList): void
+    {
+        if ($dtoList->count() > self::BULK_COPY_SIZE) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_BULK_SIZE_EXCEEDED);
         }
     }
 }

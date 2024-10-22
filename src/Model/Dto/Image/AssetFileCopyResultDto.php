@@ -13,11 +13,15 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-final class ImageCopyResultDto
+final class AssetFileCopyResultDto
 {
     #[Serialize(handler: EntityIdHandler::class)]
     private Asset $asset;
+
+    #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $targetAsset = null;
+
+    #[Serialize(handler: EntityIdHandler::class)]
     private ?AssetFile $targetMainFile = null;
 
     #[Serialize(handler: EntityIdHandler::class)]
@@ -28,12 +32,6 @@ final class ImageCopyResultDto
 
     #[Serialize(handler: EntityIdHandler::class)]
     private Collection $assetConflicts;
-
-    public function __construct()
-    {
-        $this->setAsset(new Asset());
-        $this->setTargetAssetLicence(new AssetLicence());
-    }
 
     public static function create(
         Asset $asset,
@@ -114,7 +112,6 @@ final class ImageCopyResultDto
         return $this;
     }
 
-    #[Serialize(handler: EntityIdHandler::class)]
     public function getTargetAsset(): ?Asset
     {
         return $this->targetAsset;

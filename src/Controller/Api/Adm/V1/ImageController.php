@@ -43,6 +43,7 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Throwable;
 
 #[Route(path: '/image', name: 'adm_image_v1_')]
 #[OA\Tag('Image')]
@@ -279,9 +280,10 @@ final class ImageController extends AbstractApiController
     }
 
     /**
-     * @throws ForbiddenOperationException
-     *
      * @param Collection<int, ImageCopyDto> $copyList
+     * @throws Throwable
+     *
+     * @throws ForbiddenOperationException
      */
     #[Route(
         path: '/copy-to-licence',
@@ -301,7 +303,7 @@ final class ImageController extends AbstractApiController
         }
 
         return $this->okResponse(
-            $this->imageCopyFacade->copyList($copyList)
+            $this->imageCopyFacade->prepareCopyList($copyList)
         );
     }
 

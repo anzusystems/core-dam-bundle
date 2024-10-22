@@ -23,7 +23,6 @@ final readonly class AssetFileCopyBuilder
      */
     public function copy(AssetFile $assetFile, AssetFile $targetAssetFile): void
     {
-        // todo copy attributes
         $targetAssetFile->setAssetAttributes(clone $assetFile->getAssetAttributes());
         $this->assetFileStorageOperator->copyToAssetFile($assetFile, $targetAssetFile);
         if ($assetFile instanceof ImageFile && $targetAssetFile instanceof ImageFile) {
