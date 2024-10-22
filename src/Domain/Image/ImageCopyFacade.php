@@ -72,7 +72,7 @@ final class ImageCopyFacade
 
             foreach ($collection as $imageCopyDto) {
                 $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_READ, $imageCopyDto->getAsset()->getLicence());
-                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $imageCopyDto->getTargetAssetLicence);
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $imageCopyDto->getTargetAssetLicence());
 
                 $resDto = $this->prepareCopy($imageCopyDto);
                 $res[] = $resDto;
