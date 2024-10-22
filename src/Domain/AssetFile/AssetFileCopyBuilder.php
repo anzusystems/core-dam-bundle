@@ -28,6 +28,8 @@ final readonly class AssetFileCopyBuilder
         $this->assetFileStorageOperator->copyToAssetFile($assetFile, $targetAssetFile);
         if ($assetFile instanceof ImageFile && $targetAssetFile instanceof ImageFile) {
             $this->imageFileCopyBuilder->copy($assetFile, $targetAssetFile);
+
+            return;
         }
 
         throw new RuntimeException(
