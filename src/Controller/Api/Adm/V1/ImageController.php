@@ -32,9 +32,11 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExt
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Chunk\ChunkAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest as OADamRequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -290,17 +292,10 @@ final class ImageController extends AbstractApiController
         name: 'copy_image',
         methods: [Request::METHOD_PATCH]
     )]
-    #[OAParameterPath('image'), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
+    #[OADamRequest([ImageCopyDto::class]), OAResponse([AssetFileCopyResultDto::class]), OAResponseValidation]
     public function copyToLicence(#[SerializeIterableParam(type: ImageCopyDto::class)] Collection $copyList): JsonResponse
     {
-        // todo at first assert length (performance impact)
-
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE);
-        foreach ($copyList as $copyDto) {
-            // todo target licence access
-            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $copyDto->getAsset()->getLicence());
-            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $copyDto->getTargetAssetLicence());
-        }
 
         return $this->okResponse(
             $this->imageCopyFacade->prepareCopyList($copyList)

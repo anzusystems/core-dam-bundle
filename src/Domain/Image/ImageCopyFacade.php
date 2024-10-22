@@ -22,6 +22,8 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\CoreDamBundle\Security\AccessDenier;
+use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -47,6 +49,7 @@ final class ImageCopyFacade
         private readonly AssetManager $assetManager,
         private readonly AssetFileEventDispatcher $assetFileEventDispatcher,
         private readonly AssetFileStatusManager $assetFileStatusManager,
+        private readonly AccessDenier $accessDenier,
     ) {
     }
 
@@ -68,6 +71,9 @@ final class ImageCopyFacade
             $this->entityManager->beginTransaction();
 
             foreach ($collection as $imageCopyDto) {
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_READ, $imageCopyDto->getAsset()->getLicence());
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $imageCopyDto->getTargetAssetLicence);
+
                 $resDto = $this->prepareCopy($imageCopyDto);
                 $res[] = $resDto;
             }
