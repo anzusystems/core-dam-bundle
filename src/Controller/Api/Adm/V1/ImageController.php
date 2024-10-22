@@ -28,7 +28,6 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidExtSystemConfigurationException;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmFinishDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmDetailDecorator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Audio\AudioFileAdmDetailDto;

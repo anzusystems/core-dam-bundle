@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;

@@ -56,6 +56,17 @@ class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterfa
         $this->setTitle('');
     }
 
+    public function __copy(): self
+    {
+        return (new self())
+            ->setPointX($this->getPointX())
+            ->setPointY($this->getPointY())
+            ->setPercentageWidth($this->getPercentageWidth())
+            ->setPercentageHeight($this->getPercentageHeight())
+            ->setTitle($this->getTitle())
+        ;
+    }
+
     public function getPointX(): int
     {
         return $this->pointX;
@@ -131,16 +142,5 @@ class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterfa
     public function getLicence(): AssetLicence
     {
         return $this->image->getLicence();
-    }
-
-    public function __copy(): self
-    {
-        return (new self())
-            ->setPointX($this->getPointX())
-            ->setPointY($this->getPointY())
-            ->setPercentageWidth($this->getPercentageWidth())
-            ->setPercentageHeight($this->getPercentageHeight())
-            ->setTitle($this->getTitle())
-        ;
     }
 }

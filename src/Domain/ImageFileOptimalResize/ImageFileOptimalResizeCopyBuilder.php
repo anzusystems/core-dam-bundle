@@ -5,15 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Controller\AbstractImageController;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
-use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
-use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 
 final class ImageFileOptimalResizeCopyBuilder extends AbstractManager
 {
@@ -37,11 +31,11 @@ final class ImageFileOptimalResizeCopyBuilder extends AbstractManager
         $resizeCopy->setImage($targetImageFile);
         $targetImageFile->getResizes()->add($resizeCopy);
 
-        dump('New resize path: '.$targetPath);
-
         $this->fileSystemProvider->getFilesystemByStorable($resizeCopy)->writeStream(
             location: $targetPath,
             contents: $this->fileSystemProvider->getFilesystemByStorable($resize)->readStream($resize->getFilePath())
         );
+
+        $this->optimalResizeManager->create($resizeCopy, false);
     }
 }

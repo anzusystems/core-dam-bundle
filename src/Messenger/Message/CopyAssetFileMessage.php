@@ -14,8 +14,7 @@ final class CopyAssetFileMessage
     public function __construct(
         Asset $asset,
         Asset $copyAsset,
-    )
-    {
+    ) {
         $this->assetId = (string) $asset->getId();
         $this->copyAssetId = (string) $copyAsset->getId();
     }

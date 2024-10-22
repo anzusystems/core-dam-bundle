@@ -118,7 +118,6 @@ class Asset implements
         $this->setExtSystem(null);
     }
 
-
     public function __copy(): self
     {
         return (new self())
@@ -428,7 +427,7 @@ class Asset implements
         return self::getResourceName();
     }
 
-    public function hasSameFilesIdentityString(Asset $asset): bool
+    public function hasSameFilesIdentityString(self $asset): bool
     {
         return $asset->getFilesIdentityString() === $this->getFilesIdentityString();
     }

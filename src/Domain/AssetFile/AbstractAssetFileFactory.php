@@ -108,7 +108,7 @@ abstract class AbstractAssetFileFactory
     public function createForAsset(Asset $asset): AssetFile
     {
         $assetFile = match ($asset->getAssetType()) {
-            AssetType::Image =>  $this->createBlankImage($asset->getLicence()),
+            AssetType::Image => $this->createBlankImage($asset->getLicence()),
             AssetType::Video => $this->createBlankVideo($asset->getLicence()),
             AssetType::Audio => $this->createBlankAudio($asset->getLicence()),
             AssetType::Document => $this->createBlankDocument($asset->getLicence()),

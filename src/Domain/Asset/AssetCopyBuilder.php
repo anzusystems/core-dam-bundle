@@ -8,29 +8,38 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageFileCopyBuilder;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
-use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\NonUniqueResultException;
 
 class AssetCopyBuilder extends AbstractManager
 {
     public function __construct(
-        private readonly ImageFileCopyBuilder $imageFileCopyBuilder,
         private readonly AssetMetadataManager $assetMetadataManager,
-        private readonly ImageManager $imageManager,
         private readonly AssetFileFactory $assetFileFactory,
         private readonly AssetSlotManager $assetSlotManager,
     ) {
     }
 
-    public function copyDraft(Asset $asset, AssetLicence $assetLicence, bool $flush = true): Asset
+    public function buildAssetFilesCopy(Asset $asset, Asset $copyAsset)
+    {
+        foreach ($copyAsset->getSlots() as $targetSlot) {
+            $assetSlot = $asset->getSlots()->findFirst(
+                fn (int $index, AssetSlot $assetSlot) => $assetSlot->getName() === $targetSlot->getName()
+            );
+
+            if ($assetSlot instanceof AssetSlot) {
+                $this->copyAssetSlot($assetSlot, $targetSlot);
+
+                continue;
+            }
+
+            // todo failed ... not found!
+        }
+    }
+
+    public function buildDraftAssetCopy(Asset $asset, AssetLicence $assetLicence, bool $flush = true): Asset
     {
         // todo NOTIF!
         // todo setup main file
@@ -58,21 +67,20 @@ class AssetCopyBuilder extends AbstractManager
 
     private function copySlots(Asset $asset, Asset $assetCopy): void
     {
-        $assetCopy->setSlots(
-            $asset->getSlots()->map(
-                fn (AssetSlot $slot): AssetSlot => $this->copySlotToAsset($slot, $assetCopy)
-            )
-        );
+        foreach ($asset->getSlots() as $assetSlot) {
+            $slotCopy = $this->copySlotToAsset($assetSlot, $assetCopy);
+            $assetCopy->addSlot($slotCopy);
+            $slotCopy->setAsset($assetCopy);
+        }
     }
 
     private function copySlotToAsset(AssetSlot $assetSlot, Asset $assetCopy): AssetSlot
     {
         $slotCopy = $assetSlot->__copy();
+        $blankAssetFile = $this->assetFileFactory->createForAsset($assetCopy);
+        $blankAssetFile->setAsset($assetCopy);
+        $blankAssetFile->addSlot($slotCopy);
         $this->assetSlotManager->create($slotCopy, false);
-        $assetFile = $this->assetFileFactory->createForAsset($assetCopy);
-        $assetSlot->setAsset($assetCopy);
-        $assetFile->addSlot($slotCopy);
-
 
         return $slotCopy;
     }

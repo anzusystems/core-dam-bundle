@@ -58,7 +58,6 @@ class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, Use
         $this->setDocument(null);
     }
 
-
     public function __copy(): self
     {
         return (new self())

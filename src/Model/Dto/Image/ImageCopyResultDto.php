@@ -7,15 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\Author;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterface;
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\CustomDataInterface;
-use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -25,12 +17,8 @@ final class ImageCopyResultDto
 {
     #[Serialize(handler: EntityIdHandler::class)]
     private Asset $asset;
-
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?Asset $foundAsset = null;
-
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?AssetFile $foundMainFile = null;
+    private ?Asset $targetAsset = null;
+    private ?AssetFile $targetMainFile = null;
 
     #[Serialize(handler: EntityIdHandler::class)]
     private AssetLicence $targetAssetLicence;
@@ -51,17 +39,16 @@ final class ImageCopyResultDto
         Asset $asset,
         AssetLicence $targetAssetLicence,
         AssetFileCopyResult $result,
-        ?AssetFile $mainAssetFile = null,
-        ?Asset $mainAsset = null,
+        ?AssetFile $targetMainFile = null,
+        ?Asset $targetAsset = null,
         array $assetConflicts = []
-    ): ImageCopyResultDto
-    {
-        return (new self)
+    ): self {
+        return (new self())
             ->setAsset($asset)
             ->setTargetAssetLicence($targetAssetLicence)
             ->setResult($result)
-            ->setFoundAsset($mainAsset)
-            ->setFoundMainFile($mainAssetFile)
+            ->setTargetAsset($targetAsset)
+            ->setTargetMainFile($targetMainFile)
             ->setAssetConflicts(new ArrayCollection($assetConflicts))
         ;
     }
@@ -74,6 +61,7 @@ final class ImageCopyResultDto
     public function setTargetAssetLicence(AssetLicence $targetAssetLicence): self
     {
         $this->targetAssetLicence = $targetAssetLicence;
+
         return $this;
     }
 
@@ -85,17 +73,20 @@ final class ImageCopyResultDto
     public function setAsset(Asset $asset): self
     {
         $this->asset = $asset;
+
         return $this;
     }
 
-    public function getFoundMainFile(): ?AssetFile
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getTargetMainFile(): ?AssetFile
     {
-        return $this->foundMainFile;
+        return $this->targetMainFile;
     }
 
-    public function setFoundMainFile(?AssetFile $foundMainFile): self
+    public function setTargetMainFile(?AssetFile $targetMainFile): self
     {
-        $this->foundMainFile = $foundMainFile;
+        $this->targetMainFile = $targetMainFile;
+
         return $this;
     }
 
@@ -107,6 +98,7 @@ final class ImageCopyResultDto
     public function setResult(AssetFileCopyResult $result): self
     {
         $this->result = $result;
+
         return $this;
     }
 
@@ -118,17 +110,20 @@ final class ImageCopyResultDto
     public function setAssetConflicts(Collection $assetConflicts): self
     {
         $this->assetConflicts = $assetConflicts;
+
         return $this;
     }
 
-    public function getFoundAsset(): ?Asset
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getTargetAsset(): ?Asset
     {
-        return $this->foundAsset;
+        return $this->targetAsset;
     }
 
-    public function setFoundAsset(?Asset $foundAsset): self
+    public function setTargetAsset(?Asset $targetAsset): self
     {
-        $this->foundAsset = $foundAsset;
+        $this->targetAsset = $targetAsset;
+
         return $this;
     }
 }

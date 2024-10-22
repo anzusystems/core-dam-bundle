@@ -41,6 +41,15 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
         parent::__construct();
     }
 
+    public function __copy(): self
+    {
+        $assetFile = (new self())
+            ->setAttributes(clone $this->getAttributes())
+        ;
+
+        return parent::copyBase($assetFile);
+    }
+
     public function getImagePreview(): ?ImagePreview
     {
         return $this->imagePreview;
@@ -100,14 +109,5 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
         $slot->setAssetFile($this);
 
         return $this;
-    }
-
-    public function __copy(): self
-    {
-        $assetFile = (new self)
-            ->setAttributes(clone $this->getAttributes())
-        ;
-
-        return parent::copyBase($assetFile);
     }
 }

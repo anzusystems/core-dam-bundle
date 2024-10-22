@@ -32,6 +32,15 @@ class AudioFile extends AssetFile
         parent::__construct();
     }
 
+    public function __copy(): self
+    {
+        $assetFile = (new self())
+            ->setAttributes(clone $this->getAttributes())
+        ;
+
+        return parent::copyBase($assetFile);
+    }
+
     public function getAttributes(): AudioAttributes
     {
         return $this->attributes;
@@ -79,14 +88,5 @@ class AudioFile extends AssetFile
         $slot->setAssetFile($this);
 
         return $this;
-    }
-
-    public function __copy(): self
-    {
-        $assetFile = (new self)
-            ->setAttributes(clone $this->getAttributes())
-        ;
-
-        return parent::copyBase($assetFile);
     }
 }

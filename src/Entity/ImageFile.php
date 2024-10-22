@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
-use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ImageAttributes;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -41,6 +40,20 @@ class ImageFile extends AssetFile
         $this->setSlots(new ArrayCollection());
         $this->setLicence(new AssetLicence());
         parent::__construct();
+    }
+
+    public function __copy(): self
+    {
+        $regionsOfInterest = $this->getRegionsOfInterest()->map(
+            static fn (RegionOfInterest $regionOfInterest): RegionOfInterest => $regionOfInterest->__copy()
+        );
+
+        $assetFile = (new self())
+            ->setImageAttributes(clone $this->getImageAttributes())
+            ->setRegionsOfInterest($regionsOfInterest)
+        ;
+
+        return parent::copyBase($assetFile);
     }
 
     /**
@@ -126,19 +139,5 @@ class ImageFile extends AssetFile
         $slot->setAssetFile($this);
 
         return $this;
-    }
-
-    public function __copy(): self
-    {
-        $regionsOfInterest = $this->getRegionsOfInterest()->map(
-            static fn (RegionOfInterest $regionOfInterest): RegionOfInterest => $regionOfInterest->__copy()
-        );
-
-        $assetFile = (new self)
-            ->setImageAttributes(clone $this->getImageAttributes())
-            ->setRegionsOfInterest($regionsOfInterest)
-        ;
-
-        return parent::copyBase($assetFile);
     }
 }

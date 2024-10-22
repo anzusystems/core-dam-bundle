@@ -45,6 +45,16 @@ class ImageFileOptimalResize implements UuidIdentifiableInterface, FileSystemSto
         $this->setOriginal(false);
     }
 
+    public function __copy(): self
+    {
+        return (new self())
+            ->setWidth($this->getWidth())
+            ->setHeight($this->getHeight())
+            ->setRequestedSize($this->getRequestedSize())
+            ->setOriginal($this->isOriginal())
+        ;
+    }
+
     public function getRequestedSize(): int
     {
         return $this->requestedSize;
@@ -125,15 +135,5 @@ class ImageFileOptimalResize implements UuidIdentifiableInterface, FileSystemSto
     public function getExtSystem(): ExtSystem
     {
         return $this->getImage()->getExtSystem();
-    }
-
-    public function __copy(): self
-    {
-        return (new self())
-            ->setWidth($this->getWidth())
-            ->setHeight($this->getHeight())
-            ->setRequestedSize($this->getRequestedSize())
-            ->setOriginal($this->isOriginal())
-        ;
     }
 }

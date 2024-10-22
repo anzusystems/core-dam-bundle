@@ -32,6 +32,15 @@ class DocumentFile extends AssetFile
         parent::__construct();
     }
 
+    public function __copy(): self
+    {
+        $assetFile = (new self())
+            ->setAttributes(clone $this->getAttributes())
+        ;
+
+        return parent::copyBase($assetFile);
+    }
+
     public function getAttributes(): DocumentAttributes
     {
         return $this->attributes;
@@ -79,14 +88,5 @@ class DocumentFile extends AssetFile
         $slot->setAssetFile($this);
 
         return $this;
-    }
-
-    public function __copy(): self
-    {
-        $assetFile = (new self)
-            ->setAttributes(clone $this->getAttributes())
-        ;
-
-        return parent::copyBase($assetFile);
     }
 }

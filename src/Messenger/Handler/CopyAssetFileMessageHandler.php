@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
-use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -14,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Throwable;
 
 #[AsMessageHandler]
 final class CopyAssetFileMessageHandler
@@ -30,10 +28,10 @@ final class CopyAssetFileMessageHandler
         private readonly ImageCopyFacade $imageCopyFacade,
         private readonly string $userEntityClass,
         private readonly EntityManagerInterface $entityManager,
-//        private readonly AssetRepository $assetRepository,
-//        private readonly AssetPropertiesRefresher $refresher,
-//        private readonly AssetManager $manager,
-//        private readonly DamLogger $damLogger,
+        //        private readonly AssetRepository $assetRepository,
+        //        private readonly AssetPropertiesRefresher $refresher,
+        //        private readonly AssetManager $manager,
+        //        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -52,6 +50,6 @@ final class CopyAssetFileMessageHandler
             return;
         }
 
-        $this->imageCopyFacade->copyAsset($asset, $copyAsset);
+        $this->imageCopyFacade->copyAssetFiles($asset, $copyAsset);
     }
 }
