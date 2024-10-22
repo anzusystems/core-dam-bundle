@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -17,10 +18,10 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: AssetSlotRepository::class)]
-#[ORM\Index(fields: ['name'], name: 'IDX_name')]
-#[ORM\Index(fields: ['flags.default'], name: 'IDX_default')]
+#[ORM\Index(name: 'IDX_name', fields: ['name'])]
+#[ORM\Index(name: 'IDX_default', fields: ['flags.default'])]
 #[ORM\UniqueConstraint(name: 'UNIQ_asset_file_asset_name', fields: ['asset', 'name'])]
-class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
+class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, CopyableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -55,6 +56,15 @@ class AssetSlot implements UuidIdentifiableInterface, TimeTrackingInterface, Use
         $this->setAudio(null);
         $this->setVideo(null);
         $this->setDocument(null);
+    }
+
+
+    public function __copy(): self
+    {
+        return (new self())
+            ->setName($this->getName())
+            ->setFlags(clone $this->getFlags())
+        ;
     }
 
     public function getFlags(): AssetSlotFlags

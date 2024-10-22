@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -13,7 +14,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ImageFileOptimalResizeRepository::class)]
-class ImageFileOptimalResize implements UuidIdentifiableInterface, FileSystemStorableInterface
+class ImageFileOptimalResize implements UuidIdentifiableInterface, FileSystemStorableInterface, CopyableInterface
 {
     use UuidIdentityTrait;
 
@@ -124,5 +125,15 @@ class ImageFileOptimalResize implements UuidIdentifiableInterface, FileSystemSto
     public function getExtSystem(): ExtSystem
     {
         return $this->getImage()->getExtSystem();
+    }
+
+    public function __copy(): self
+    {
+        return (new self())
+            ->setWidth($this->getWidth())
+            ->setHeight($this->getHeight())
+            ->setRequestedSize($this->getRequestedSize())
+            ->setOriginal($this->isOriginal())
+        ;
     }
 }

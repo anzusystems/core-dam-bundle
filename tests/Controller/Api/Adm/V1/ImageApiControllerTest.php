@@ -248,20 +248,21 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $conflictFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
 
         // todo validate asset type/different ext system
+        // todo only with_file can be copied
 
         $response = $client->patch((
             new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(),
             [
                 [
-                   'asset' => (string) $imageFile->getAsset()?->getId(),
+                   'asset' => (string) $imageFile->getAsset()->getId(),
                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
                 ],
                 [
-                   'asset' => (string) $duplicateFile->getAsset()?->getId(),
+                   'asset' => (string) $duplicateFile->getAsset()->getId(),
                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
                 ],
                 [
-                   'asset' => (string) $conflictFile->getAsset()?->getId(),
+                   'asset' => (string) $conflictFile->getAsset()->getId(),
                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
                 ]
             ]

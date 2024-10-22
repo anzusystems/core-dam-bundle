@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetFileMetadataProcessMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AudioFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DocumentFileChangeStateMessage;
@@ -108,6 +109,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $distributionRemoteProcessedCheckTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$distributionRemoteProcessedCheckTopic}";
         $assetPropertyRefreshTopic = '%env(MESSENGER_PROPERTY_REFRESH_TOPIC)%';
         $assetPropertyRefreshTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetPropertyRefreshTopic}";
+        $assetCopyTopic = '%env(MESSENGER_ASSET_COPY_TOPIC)%';
+        $assetCopyTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetCopyTopic}";
 
         $container->prependExtensionConfig('framework', [
             'messenger' => [
@@ -362,6 +365,30 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                         ],
                     ],
+                    $assetCopyTopic => [
+                        'dsn' => $assetCopyTopicDsn,
+                        'options' => [
+                            'topic' => [
+                                'name' => $assetCopyTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $assetCopyTopic,
+                                        'topic' => $assetCopyTopic,
+                                    ],
+                                ],
+                            ],
+                            'subscription' => [
+                                'name' => $assetCopyTopic,
+                                'options' => [
+                                    'labels' => [
+                                        'application' => $applicationName,
+                                        'name' => $assetCopyTopic,
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
                 'routing' => [
                     VideoFileChangeStateMessage::class => $videoFileChangeStateTopic,
@@ -374,6 +401,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     DistributionRemoteProcessingCheckMessage::class => $distributionRemoteProcessedCheckTopic,
                     JwVideoThumbnailPosterMessage::class => $distributionRemoteProcessedCheckTopic,
                     AssetRefreshPropertiesMessage::class => $assetPropertyRefreshTopic,
+                    CopyAssetFileMessage::class => $assetCopyTopic,
                 ],
             ],
         ]);

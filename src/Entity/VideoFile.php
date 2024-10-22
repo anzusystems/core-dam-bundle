@@ -30,7 +30,7 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'video', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: AssetSlot::class, mappedBy: 'video', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()
@@ -100,5 +100,14 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
         $slot->setAssetFile($this);
 
         return $this;
+    }
+
+    public function __copy(): self
+    {
+        $assetFile = (new self)
+            ->setAttributes(clone $this->getAttributes())
+        ;
+
+        return parent::copyBase($assetFile);
     }
 }

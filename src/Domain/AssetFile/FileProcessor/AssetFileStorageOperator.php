@@ -42,4 +42,25 @@ final class AssetFileStorageOperator
 
         return $assetFile;
     }
+
+    public function copyToAssetFile(AssetFile $sourceAssetFile, AssetFile $targetAssetFile): void
+    {
+        $path = $this->nameGenerator->generatePath(
+            $this->fileHelper->guessExtension($sourceAssetFile->getAssetAttributes()->getMimeType()),
+            true
+        );
+
+        dump('New path: '. $path->getRelativePath());
+
+        $sourceFileSystem = $this->fileSystemProvider->getFilesystemByStorable($sourceAssetFile);
+        $targetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($targetAssetFile);
+
+        $targetFileSystem->writeStream(
+            $path->getRelativePath(),
+            $sourceFileSystem->readStream($sourceAssetFile->getFilePath())
+        );
+
+        $targetAssetFile->getAssetAttributes()
+            ->setFilePath($path->getRelativePath());
+    }
 }

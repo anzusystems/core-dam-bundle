@@ -52,7 +52,7 @@ final class ImageCopyResultDto
         AssetLicence $targetAssetLicence,
         AssetFileCopyResult $result,
         ?AssetFile $mainAssetFile = null,
-        ?Asset $foundAsset = null,
+        ?Asset $mainAsset = null,
         array $assetConflicts = []
     ): ImageCopyResultDto
     {
@@ -60,7 +60,7 @@ final class ImageCopyResultDto
             ->setAsset($asset)
             ->setTargetAssetLicence($targetAssetLicence)
             ->setResult($result)
-            ->setFoundAsset($foundAsset)
+            ->setFoundAsset($mainAsset)
             ->setFoundMainFile($mainAssetFile)
             ->setAssetConflicts(new ArrayCollection($assetConflicts))
         ;

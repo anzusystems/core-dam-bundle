@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -16,7 +17,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CustomFormRepository::class)]
-class AssetMetadata implements TimeTrackingInterface, UuidIdentifiableInterface, UserTrackingInterface
+class AssetMetadata implements TimeTrackingInterface, UuidIdentifiableInterface, UserTrackingInterface, CopyableInterface
 {
     use TimeTrackingTrait;
     use UuidIdentityTrait;
@@ -39,6 +40,15 @@ class AssetMetadata implements TimeTrackingInterface, UuidIdentifiableInterface,
         $this->setCustomData([]);
         $this->setKeywordSuggestions([]);
         $this->setAuthorSuggestions([]);
+    }
+
+    public function __copy(): self
+    {
+        return (new self())
+            ->setCustomData($this->getCustomData())
+            ->setKeywordSuggestions($this->getKeywordSuggestions())
+            ->setAuthorSuggestions($this->getAuthorSuggestions())
+        ;
     }
 
     public function getCustomData(): array

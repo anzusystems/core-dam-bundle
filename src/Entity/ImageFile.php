@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ImageAttributes;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
@@ -18,18 +19,18 @@ class ImageFile extends AssetFile
     #[ORM\Embedded(class: ImageAttributes::class)]
     private ImageAttributes $imageAttributes;
 
-    #[ORM\OneToMany(mappedBy: 'image', targetEntity: ImageFileOptimalResize::class)]
+    #[ORM\OneToMany(targetEntity: ImageFileOptimalResize::class, mappedBy: 'image')]
     #[ORM\OrderBy(value: ['requestedSize' => App::ORDER_ASC])]
     private Collection $resizes;
 
-    #[ORM\OneToMany(mappedBy: 'image', targetEntity: RegionOfInterest::class)]
+    #[ORM\OneToMany(targetEntity: RegionOfInterest::class, mappedBy: 'image')]
     private Collection $regionsOfInterest;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'image', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: AssetSlot::class, mappedBy: 'image', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()
@@ -125,5 +126,19 @@ class ImageFile extends AssetFile
         $slot->setAssetFile($this);
 
         return $this;
+    }
+
+    public function __copy(): self
+    {
+        $regionsOfInterest = $this->getRegionsOfInterest()->map(
+            static fn (RegionOfInterest $regionOfInterest): RegionOfInterest => $regionOfInterest->__copy()
+        );
+
+        $assetFile = (new self)
+            ->setImageAttributes(clone $this->getImageAttributes())
+            ->setRegionsOfInterest($regionsOfInterest)
+        ;
+
+        return parent::copyBase($assetFile);
     }
 }

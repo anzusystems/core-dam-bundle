@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageStatusFacade;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -102,6 +103,18 @@ abstract class AbstractAssetFileFactory
         );
 
         return $assetFile;
+    }
+
+    public function createForAsset(Asset $asset): AssetFile
+    {
+        $assetFile = match ($asset->getAssetType()) {
+            AssetType::Image =>  $this->createBlankImage($asset->getLicence()),
+            AssetType::Video => $this->createBlankVideo($asset->getLicence()),
+            AssetType::Audio => $this->createBlankAudio($asset->getLicence()),
+            AssetType::Document => $this->createBlankDocument($asset->getLicence()),
+        };
+
+        return $this->assetFileManager->create($assetFile, false);
     }
 
     /**
