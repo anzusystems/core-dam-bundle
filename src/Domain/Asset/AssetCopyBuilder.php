@@ -22,23 +22,6 @@ class AssetCopyBuilder extends AbstractManager
     ) {
     }
 
-    public function buildAssetFilesCopy(Asset $asset, Asset $copyAsset)
-    {
-        foreach ($copyAsset->getSlots() as $targetSlot) {
-            $assetSlot = $asset->getSlots()->findFirst(
-                fn (int $index, AssetSlot $assetSlot) => $assetSlot->getName() === $targetSlot->getName()
-            );
-
-            if ($assetSlot instanceof AssetSlot) {
-                $this->copyAssetSlot($assetSlot, $targetSlot);
-
-                continue;
-            }
-
-            // todo failed ... not found!
-        }
-    }
-
     public function buildDraftAssetCopy(Asset $asset, AssetLicence $assetLicence, bool $flush = true): Asset
     {
         // todo NOTIF!

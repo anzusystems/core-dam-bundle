@@ -107,6 +107,7 @@ abstract class AbstractAssetFileFactory
 
     public function createForAsset(Asset $asset): AssetFile
     {
+        /** @var T $assetFile */
         $assetFile = match ($asset->getAssetType()) {
             AssetType::Image => $this->createBlankImage($asset->getLicence()),
             AssetType::Video => $this->createBlankVideo($asset->getLicence()),

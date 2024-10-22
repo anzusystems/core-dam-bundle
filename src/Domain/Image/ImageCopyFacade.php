@@ -67,10 +67,10 @@ final class ImageCopyFacade
         }
 
         foreach ($res as $imageCopyResultDto) {
-            if ($imageCopyResultDto->getResult()->is(AssetFileCopyResult::Copying) && $imageCopyResultDto->getFoundAsset()) {
+            if ($imageCopyResultDto->getResult()->is(AssetFileCopyResult::Copying) && $imageCopyResultDto->getTargetAsset()) {
                 $this->messageBus->dispatch(new CopyAssetFileMessage(
                     $imageCopyResultDto->getAsset(),
-                    $imageCopyResultDto->getFoundAsset()
+                    $imageCopyResultDto->getTargetAsset()
                 ));
             }
         }
@@ -113,7 +113,7 @@ final class ImageCopyFacade
                 continue;
             }
 
-            $foundAssets[(string) $foundAssetFile->getAsset()?->getId()] = $foundAssetFile->getAsset();
+            $foundAssets[(string) $foundAssetFile->getAsset()->getId()] = $foundAssetFile->getAsset();
         }
 
         $firstFoundAsset = $foundAssets[(string) array_key_first($foundAssets)] ?? null;

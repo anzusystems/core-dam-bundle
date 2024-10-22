@@ -36,6 +36,7 @@
         <RedundantCast errorLevel="suppress"/>
         <MoreSpecificReturnType errorLevel="suppress"/>
         <LessSpecificReturnStatement errorLevel="suppress"/>
+        <DeprecatedTrait errorLevel="suppress"/>
         <MissingConstructor errorLevel="suppress"/>
         <PropertyNotSetInConstructor errorLevel="suppress"/>
         <UnsafeInstantiation errorLevel="suppress"/>
