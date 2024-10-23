@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -18,8 +19,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RegionOfInterestRepository::class)]
-#[ORM\Index(fields: ['position'], name: 'IDX_position')]
-class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, PositionableInterface, AssetLicenceInterface
+#[ORM\Index(name: 'IDX_position', fields: ['position'])]
+class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, PositionableInterface, AssetLicenceInterface, CopyableInterface
 {
     use UuidIdentityTrait;
     use TimeTrackingTrait;
@@ -53,6 +54,17 @@ class RegionOfInterest implements UuidIdentifiableInterface, UserTrackingInterfa
         $this->setPercentageWidth(0.0);
         $this->setPercentageHeight(0.0);
         $this->setTitle('');
+    }
+
+    public function __copy(): self
+    {
+        return (new self())
+            ->setPointX($this->getPointX())
+            ->setPointY($this->getPointY())
+            ->setPercentageWidth($this->getPercentageWidth())
+            ->setPercentageHeight($this->getPercentageHeight())
+            ->setTitle($this->getTitle())
+        ;
     }
 
     public function getPointX(): int

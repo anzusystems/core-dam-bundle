@@ -22,7 +22,7 @@ class AudioFile extends AssetFile
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     private Asset $asset;
 
-    #[ORM\OneToMany(mappedBy: 'audio', targetEntity: AssetSlot::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: AssetSlot::class, mappedBy: 'audio', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
     public function __construct()
@@ -30,6 +30,15 @@ class AudioFile extends AssetFile
         $this->setAttributes(new AudioAttributes());
         $this->setSlots(new ArrayCollection());
         parent::__construct();
+    }
+
+    public function __copy(): self
+    {
+        $assetFile = (new self())
+            ->setAttributes(clone $this->getAttributes())
+        ;
+
+        return parent::copyBase($assetFile);
     }
 
     public function getAttributes(): AudioAttributes

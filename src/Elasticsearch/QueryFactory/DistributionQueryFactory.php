@@ -18,7 +18,6 @@ final class DistributionQueryFactory extends AbstractQueryFactory
 
     /**
      * @param DistributionAdmSearchDto $searchDto
-
      * @psalm-suppress PossiblyNullReference
      */
     protected function getFilter(SearchDtoInterface $searchDto): array

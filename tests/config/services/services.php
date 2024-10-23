@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\AnzuSystemsCommonBundle;
 use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
@@ -18,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Domain\DistributionCategory\DistributionCategoryMa
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -95,6 +97,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->arg('$fileSystemProvider', service(FileSystemProvider::class))
         ->arg('$facadeProvider', service(AssetFileStatusFacadeProvider::class))
         ->arg('$assetSlotFactory', service(AssetSlotFactory::class))
+        ->arg('$assetFilePositionFacade', service(ImagePositionFacade::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 

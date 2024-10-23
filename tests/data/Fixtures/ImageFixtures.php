@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Data\Fixtures;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
@@ -29,6 +31,10 @@ final class ImageFixtures extends AbstractAssetFileFixtures
     public const string IMAGE_ID_2_1 = '8e7456dd-80cf-4d09-9ba8-b647d8895358';
     public const string IMAGE_ID_3 = '8e7456dd-80cf-4d09-9ba8-b647d8895359';
 
+    public const string IMAGE_ID_5 = '7d7456dd-80cf-4d09-9ba8-a647d8895345';
+
+    public const string IMAGE_ID_4 = '7d7456dd-80cf-4d09-9ba8-b647d8895345';
+
     public function __construct(
         private readonly ImageManager $imageManager,
         private readonly ImageFactory $imageFactory,
@@ -36,6 +42,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly AssetSlotFactory $assetSlotFactory,
+        private readonly ImagePositionFacade $assetFilePositionFacade,
     ) {
     }
 
@@ -108,6 +115,32 @@ final class ImageFixtures extends AbstractAssetFileFixtures
             $file,
             $licence,
             self::IMAGE_ID_3
+        );
+        $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
+
+        yield $image;
+
+        /** @var AssetLicence $secondaryLicence */
+        $secondaryLicence = $this->licenceRepository->find(AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE);
+
+        $file = $this->getFile($fileSystem, 'text_image_192x108.jpg');
+        $image = $this->imageFactory->createFromFile(
+            $file,
+            $secondaryLicence,
+            self::IMAGE_ID_5
+        );
+        $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
+        $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
+        $this->assetFilePositionFacade->setToSlot($image->getAsset(), $image, 'free');
+
+        yield $image;
+
+        $file = $this->getFile($fileSystem, 'text_image_200x200.jpg');
+        $image = $this->imageFactory->createFromFile(
+            $file,
+            $secondaryLicence,
+            self::IMAGE_ID_4
         );
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -28,9 +29,9 @@ use Doctrine\ORM\Mapping as ORM;
  * @psalm-method DamUser getModifiedBy()
  */
 #[ORM\Entity(repositoryClass: AssetFileRepository::class)]
-#[ORM\Index(fields: ['licence', 'assetAttributes.originExternalProvider'], name: 'IDX_licence_attributes_external_provider')]
-#[ORM\Index(fields: ['assetAttributes.status'], name: 'IDX_attributes_status')]
-#[ORM\Index(fields: ['licence', 'assetAttributes.status', 'assetAttributes.checksum'], name: 'IDX_licence_attributes_status_checksum')]
+#[ORM\Index(name: 'IDX_licence_attributes_external_provider', fields: ['licence', 'assetAttributes.originExternalProvider'])]
+#[ORM\Index(name: 'IDX_attributes_status', fields: ['assetAttributes.status'])]
+#[ORM\Index(name: 'IDX_licence_attributes_status_checksum', fields: ['licence', 'assetAttributes.status', 'assetAttributes.checksum'])]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,
@@ -39,21 +40,22 @@ abstract class AssetFile implements
     UserTrackingInterface,
     FileSystemStorableInterface,
     NotifiableInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    CopyableInterface
 {
     use TimeTrackingTrait;
     use UuidIdentityTrait;
     use UserTrackingTrait;
     use NotifyToTrait;
 
-    #[ORM\OneToMany(mappedBy: 'assetFile', targetEntity: Chunk::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: Chunk::class, mappedBy: 'assetFile', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\OrderBy(value: ['offset' => App::ORDER_ASC])]
     protected Collection $chunks;
 
     #[ORM\OneToOne(targetEntity: AssetFileMetadata::class)]
     protected AssetFileMetadata $metadata;
 
-    #[ORM\OneToMany(mappedBy: 'targetAssetFile', targetEntity: AssetFileRoute::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: AssetFileRoute::class, mappedBy: 'targetAssetFile', fetch: App::DOCTRINE_EXTRA_LAZY)]
     protected Collection $routes;
 
     #[ORM\OneToOne(targetEntity: AssetFileRoute::class)]
@@ -186,5 +188,21 @@ abstract class AssetFile implements
     public function getExtSystem(): ExtSystem
     {
         return $this->getLicence()->getExtSystem();
+    }
+
+    protected function copyBase(self $assetFile): static
+    {
+        $this->setAssetAttributes(new AssetFileAttributes());
+        $this->setCreatedAt(App::getAppDate());
+        $this->setModifiedAt(App::getAppDate());
+        $this->setChunks(new ArrayCollection());
+        $this->setFlags(new AssetFileFlags());
+        $this->setRoutes(new ArrayCollection());
+        $this->setMainRoute(null);
+
+        return $assetFile
+            ->setAssetAttributes(clone $this->getAssetAttributes())
+            ->setFlags(clone $this->getFlags())
+        ;
     }
 }

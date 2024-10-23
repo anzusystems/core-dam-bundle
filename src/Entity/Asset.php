@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\Contracts\Entity\Interfaces\CopyableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
@@ -34,7 +35,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @psalm-method DamUser getModifiedBy()
  */
 #[ORM\Entity(repositoryClass: AssetRepository::class)]
-#[ORM\Index(fields: ['attributes.status', 'createdAt', 'assetFlags.autoDeleteUnprocessed'], name: 'IDX_status_created_auto_delete')]
+#[ORM\Index(name: 'IDX_status_created_auto_delete', fields: ['attributes.status', 'createdAt', 'assetFlags.autoDeleteUnprocessed'])]
 class Asset implements
     TimeTrackingInterface,
     UuidIdentifiableInterface,
@@ -42,7 +43,8 @@ class Asset implements
     ExtSystemIndexableInterface,
     NotifiableInterface,
     AssetCustomFormProvidableInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    CopyableInterface
 {
     use TimeTrackingTrait;
     use UuidIdentityTrait;
@@ -60,10 +62,10 @@ class Asset implements
     #[ORM\ManyToMany(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $keywords;
 
-    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: PodcastEpisode::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: PodcastEpisode::class, mappedBy: 'asset', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $episodes;
 
-    #[ORM\OneToMany(mappedBy: 'asset', targetEntity: VideoShowEpisode::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: VideoShowEpisode::class, mappedBy: 'asset', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $videoEpisodes;
 
     #[ORM\Embedded(class: AssetTexts::class)]
@@ -114,6 +116,29 @@ class Asset implements
         $this->setMainFile(null);
         $this->setAssetFileProperties(new AssetFileProperties());
         $this->setExtSystem(null);
+    }
+
+    public function __copy(): self
+    {
+        return (new self())
+            ->setAttributes(clone $this->getAttributes())
+            ->setTexts(clone $this->getTexts())
+            ->setAssetFlags(clone $this->getAssetFlags())
+            ->setAssetFileProperties(clone $this->getAssetFileProperties())
+            ->setMetadata($this->getMetadata()->__copy())
+//        ->setSlots(clone $this->getSlots())
+            ->setAuthors($this->getAuthors())
+            ->setKeywords($this->getKeywords())
+            ->setDistributionCategory($this->getDistributionCategory())
+            ->setMainFile(null)
+
+            ->setExtSystem($this->getExtSystem())
+        ;
+    }
+
+    public function __clone()
+    {
+
     }
 
     public function getMainFile(): ?AssetFile
@@ -400,5 +425,22 @@ class Asset implements
     public static function getIndexName(): string
     {
         return self::getResourceName();
+    }
+
+    public function hasSameFilesIdentityString(self $asset): bool
+    {
+        return $asset->getFilesIdentityString() === $this->getFilesIdentityString();
+    }
+
+    public function getFilesIdentityString(): string
+    {
+        $identityParts = [];
+        foreach ($this->getSlots() as $slot) {
+            $identityParts[$slot->getName()] =
+                $slot->getName() . ':' . $slot->getAssetFile()->getAssetAttributes()->getChecksum();
+        }
+        ksort($identityParts);
+
+        return implode('_', $identityParts);
     }
 }

@@ -46,20 +46,19 @@ final class AssetLicenceFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
-        $existingLicence = $this->assetLicenceRepository->find(self::DEFAULT_LICENCE_ID);
-        if ($existingLicence) {
-            return;
-        }
-
         /** @var ExtSystem $cmsExtSystem */
         $cmsExtSystem = $this->entityManager->find(
             ExtSystem::class,
             1
         );
 
-        yield (new AssetLicence())
-            ->setId(self::DEFAULT_LICENCE_ID)
-            ->setExtId('1')
-            ->setExtSystem($cmsExtSystem);
+        $existingLicence = $this->assetLicenceRepository->find(self::DEFAULT_LICENCE_ID);
+        if (null === $existingLicence) {
+            yield (new AssetLicence())
+                ->setId(self::DEFAULT_LICENCE_ID)
+                ->setExtId('1')
+                ->setExtSystem($cmsExtSystem);
+        }
+
     }
 }

@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Helper\UuidHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
@@ -41,7 +40,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
-        if (UuidHelper::isUuid($searchDto->getText())) {
+        if (is_string($searchDto->getIdInText())) {
             return parent::getMust($searchDto, $extSystem);
         }
 
@@ -70,8 +69,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
             $this->applyLicenceCollectionFilter($filter, $searchDto);
         }
 
-        if (UuidHelper::isUuid($searchDto->getText())) {
-            $filter[] = $this->getAssetIdAndMainFileIdFilter([$searchDto->getText()]);
+        if (is_string($searchDto->getIdInText())) {
+            $filter[] = $this->getAssetIdAndMainFileIdFilter([$searchDto->getIdInText()]);
 
             // other filters should not be applied
             return $filter;

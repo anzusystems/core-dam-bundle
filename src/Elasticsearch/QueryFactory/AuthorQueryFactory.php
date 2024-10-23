@@ -40,7 +40,6 @@ final class AuthorQueryFactory extends AbstractQueryFactory
 
     /**
      * @param AuthorAdmSearchDto $searchDto
-
      * @psalm-suppress PossiblyNullReference
      */
     protected function getFilter(SearchDtoInterface $searchDto): array

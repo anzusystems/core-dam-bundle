@@ -19,6 +19,8 @@ final class AssetLicenceFixtures extends AbstractFixtures
 {
     public const int LICENCE_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 1;
     public const int LICENCE_2_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 2;
+    public const int FIRST_SYS_SECONDARY_LICENCE = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 3;
+
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
@@ -70,5 +72,13 @@ final class AssetLicenceFixtures extends AbstractFixtures
             ->setId(self::LICENCE_2_ID)
             ->setExtId('5')
             ->setExtSystem($blogExtSystem);
+
+        /** @var ExtSystem $cmsExtSystem */
+        $cmsExtSystem = $this->entityManager->find(ExtSystem::class, 1);
+
+        yield (new AssetLicence())
+            ->setId(self::FIRST_SYS_SECONDARY_LICENCE)
+            ->setExtId('2')
+            ->setExtSystem($cmsExtSystem);
     }
 }
