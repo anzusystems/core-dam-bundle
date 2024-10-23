@@ -115,72 +115,75 @@ class AssetAdmSearchDto extends AbstractSearchDto
     protected Collection $licences;
 
     #[Serialize]
-    private ?int $shortestDimensionFrom = null;
+    protected ?int $shortestDimensionFrom = null;
 
     #[Serialize]
-    private ?int $shortestDimensionUntil = null;
+    protected ?int $shortestDimensionUntil = null;
 
     #[Serialize]
-    private ?int $pixelSizeFrom = null;
+    protected ?int $pixelSizeFrom = null;
 
     #[Serialize]
-    private ?int $pixelSizeUntil = null;
+    protected ?int $pixelSizeUntil = null;
 
     #[Serialize]
-    private ?int $widthFrom = null;
+    protected ?int $widthFrom = null;
 
     #[Serialize]
-    private ?int $widthUntil = null;
+    protected ?int $widthUntil = null;
 
     #[Serialize]
-    private ?int $heightFrom = null;
+    protected ?int $heightFrom = null;
 
     #[Serialize]
-    private ?int $heightUntil = null;
+    protected ?int $heightUntil = null;
 
     #[Serialize]
-    private ?int $ratioWidthFrom = null;
+    protected ?int $ratioWidthFrom = null;
 
     #[Serialize]
-    private ?int $ratioWidthUntil = null;
+    protected ?int $ratioWidthUntil = null;
 
     #[Serialize]
-    private ?int $ratioHeightFrom = null;
+    protected ?int $ratioHeightFrom = null;
 
     #[Serialize]
-    private ?int $ratioHeightUntil = null;
-
-    #[Serialize]
-    #[Assert\Range(notInRangeMessage: ValidationException::ERROR_FIELD_INVALID, min: 0, max: 360)]
-    private ?int $rotationFrom = null;
+    protected ?int $ratioHeightUntil = null;
 
     #[Serialize]
     #[Assert\Range(notInRangeMessage: ValidationException::ERROR_FIELD_INVALID, min: 0, max: 360)]
-    private ?int $rotationUntil = null;
+    protected ?int $rotationFrom = null;
 
     #[Serialize]
-    private ?int $durationFrom = null;
+    #[Assert\Range(notInRangeMessage: ValidationException::ERROR_FIELD_INVALID, min: 0, max: 360)]
+    protected ?int $rotationUntil = null;
 
     #[Serialize]
-    private ?int $durationUntil = null;
+    protected ?int $durationFrom = null;
 
     #[Serialize]
-    private ?int $bitrateFrom = null;
+    protected ?int $durationUntil = null;
 
     #[Serialize]
-    private ?int $bitrateUntil = null;
+    protected ?int $bitrateFrom = null;
 
     #[Serialize]
-    private ?int $slotsCountFrom = null;
+    protected ?int $bitrateUntil = null;
 
     #[Serialize]
-    private ?int $slotsCountUntil = null;
+    protected ?int $slotsCountFrom = null;
 
     #[Serialize]
-    private ?DateTimeImmutable $createdAtFrom = null;
+    protected ?int $slotsCountUntil = null;
 
     #[Serialize]
-    private ?DateTimeImmutable $createdAtUntil = null;
+    protected ?DateTimeImmutable $createdAtFrom = null;
+
+    #[Serialize]
+    protected ?DateTimeImmutable $createdAtUntil = null;
+
+    #[Serialize]
+    protected ?bool $mainFileSingleUse = null;
     private ?string $idInText = null;
     private bool $resolvedIdInText = false;
 
@@ -711,6 +714,18 @@ class AssetAdmSearchDto extends AbstractSearchDto
         }
 
         return $this->idInText;
+    }
+
+    public function isMainFileSingleUse(): ?bool
+    {
+        return $this->mainFileSingleUse;
+    }
+
+    public function setMainFileSingleUse(?bool $mainFileSingleUse): self
+    {
+        $this->mainFileSingleUse = $mainFileSingleUse;
+
+        return $this;
     }
 
     private function resolveIdFromText(): ?string

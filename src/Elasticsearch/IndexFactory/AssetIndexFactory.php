@@ -70,6 +70,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'pixelSize' => $entity->getAssetFileProperties()->getWidth() * $entity->getAssetFileProperties()->getHeight(),
             'width' => $entity->getAssetFileProperties()->getWidth(),
             'height' => $entity->getAssetFileProperties()->getHeight(),
+            'mainFileSingleUse' => $entity->getMainFile()?->getFlags()->isSingleUse(),
             'ratioWidth' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getWidth() / $gcd) : App::ZERO,
             'ratioHeight' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getHeight() / $gcd) : App::ZERO,
             ...$this->assetMetadataCustomData->buildFromEntity($entity),
