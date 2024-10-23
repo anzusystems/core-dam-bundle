@@ -5,9 +5,18 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Helper;
 
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Url;
+use Symfony\Component\Routing\Requirement\Requirement;
 
 final class UrlHelper
 {
+    public static function getImageIdFromUrl(string $url): ?string
+    {
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        preg_match('/^\/image\/w\d+\-h\d+(-c\d+)?(-q\d+)?\/(?<imageId>' . Requirement::UUID . ')\.jpg$/', $path, $matches);
+
+        return $matches['imageId'] ?? null;
+    }
+
     public static function concatPathWithDomain(string $domain, string $path): string
     {
         if (str_ends_with($domain, '/')) {

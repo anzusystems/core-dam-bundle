@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Requirement\Requirement;
 
 #[Route(path: '/image', name: 'image_')]
 final class ImageController extends AbstractImageController
@@ -77,7 +78,7 @@ final class ImageController extends AbstractImageController
         path: '/{requestWidth}{requestHeight}{regionOfInterestId}{quality}/{imageId}.jpg',
         name: 'get_one_file_name',
         requirements: [
-            'imageId' => '[0-9a-zA-Z-]+',
+            'imageId' => Requirement::UUID,
             'requestWidth' => 'w\d+',
             'requestHeight' => '-h\d+',
             'regionOfInterestId' => '(-c\d+)|',

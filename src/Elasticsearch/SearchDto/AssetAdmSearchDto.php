@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
+use AnzuSystems\CoreDamBundle\Helper\UuidHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
@@ -179,6 +181,8 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize]
     private ?DateTimeImmutable $createdAtUntil = null;
+    private ?string $idInText = null;
+    private bool $resolvedIdInText = false;
 
     public function getIndexName(): string
     {
@@ -697,5 +701,24 @@ class AssetAdmSearchDto extends AbstractSearchDto
         $this->assetAndMainFileIds = $assetAndMainFileIds;
 
         return $this;
+    }
+
+    public function getIdInText(): ?string
+    {
+        if (false === $this->resolvedIdInText) {
+            $this->idInText = $this->resolveIdFromText();
+            $this->resolvedIdInText = true;
+        }
+
+        return $this->idInText;
+    }
+
+    private function resolveIdFromText(): ?string
+    {
+        if (UuidHelper::isUuid($this->getText())) {
+            return $this->getText();
+        }
+
+        return UrlHelper::getImageIdFromUrl($this->getText());
     }
 }
