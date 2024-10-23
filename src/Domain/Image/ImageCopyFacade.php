@@ -108,7 +108,7 @@ final class ImageCopyFacade
             $this->entityManager->beginTransaction();
             $this->copyAssetSlots($asset, $copyAsset);
             $this->assetManager->updateExisting(asset: $copyAsset, trackModification: false);
-            $this->indexManager->index($asset);
+            $this->indexManager->index($copyAsset);
             $this->entityManager->commit();
         } catch (Throwable $exception) {
             if ($this->entityManager->getConnection()->isTransactionActive()) {
