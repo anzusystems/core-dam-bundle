@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
@@ -54,6 +55,10 @@ final class AssetMetadataBulkFacade
             );
             if ($updateDto->isDescribed()) {
                 $this->assetMetadataManager->removeSuggestions($updateDto->getAsset()->getMetadata(), false);
+            }
+            $mainFile = $asset->getMainFile();
+            if ($mainFile instanceof AssetFile) {
+                $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
             }
         }
 

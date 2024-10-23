@@ -79,6 +79,7 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $image->getAssetAttributes()->setStatus(AssetFileProcessStatus::Uploaded);
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
         $image->getAsset()->getAssetFlags()->setDescribed(true);
+        $image->getFlags()->setSingleUse(true);
 
         yield $image;
 

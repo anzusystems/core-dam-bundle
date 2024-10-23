@@ -52,6 +52,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'withProcessedFile' => [
                     'type' => 'boolean',
                 ],
+                'mainFileSingleUse' => [
+                    'type' => 'boolean',
+                ],
                 'described' => [
                     'type' => 'boolean',
                 ],

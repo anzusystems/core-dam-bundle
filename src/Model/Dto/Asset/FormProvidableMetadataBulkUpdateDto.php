@@ -27,6 +27,9 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     #[Serialize]
     private bool $described = false;
 
+    #[Serialize]
+    private bool $mainFileSingleUse = false;
+
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $customData = [];
 
@@ -135,5 +138,17 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     public function getExtSystem(): ExtSystem
     {
         return $this->getAsset()->getExtSystem();
+    }
+
+    public function isMainFileSingleUse(): bool
+    {
+        return $this->mainFileSingleUse;
+    }
+
+    public function setMainFileSingleUse(bool $mainFileSingleUse): self
+    {
+        $this->mainFileSingleUse = $mainFileSingleUse;
+
+        return $this;
     }
 }

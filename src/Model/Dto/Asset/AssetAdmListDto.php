@@ -112,4 +112,10 @@ class AssetAdmListDto extends AbstractEntityDto
     {
         return $this->getAsset()->getLicence();
     }
+
+    #[Serialize]
+    public function isMainFileSingleUse(): ?bool
+    {
+        return $this->asset->getMainFile()?->getFlags()->isSingleUse();
+    }
 }
