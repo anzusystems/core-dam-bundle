@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
-use AnzuSystems\CoreDamBundle\Controller\AbstractImageController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
+use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\OptimalResizeFactory;
 use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\DefaultRegionOfInterestFactory;
@@ -17,10 +17,13 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Image\Filter\FilterStack;
 use AnzuSystems\CoreDamBundle\Image\Filter\RotateFilter;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class ImageRotator
 {
+    use FileHelperTrait;
+
     public const float CLOCK_ANGLE = 360.0;
     public const float MIRROR_ANGLE = 180.0;
 
@@ -99,7 +102,10 @@ final class ImageRotator
             ->setWidth($this->imageManipulator->getWidth())
             ->setHeight($this->imageManipulator->getHeight());
 
-        $path = $tmpFilesystem->getTmpFileName(AbstractImageController::CROP_EXTENSION);
+        $path = $tmpFilesystem->getTmpFileName(
+            $this->fileHelper->guessExtension(CropProcessor::getCropMimeType($resize->getImage()))
+        );
+
         $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($path));
         // move old file to stash and write new file
         $this->fileStash->add($resize);

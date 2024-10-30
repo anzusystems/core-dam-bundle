@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube;
 
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
@@ -140,6 +141,7 @@ final class YoutubeApiClient
     public function setThumbnail(
         string $distributionService,
         string $distributionId,
+        ImageFile $imageFile,
         string $imageData,
     ): void {
         $client = $this->clientProvider->getClient($distributionService);
@@ -149,7 +151,7 @@ final class YoutubeApiClient
             $youtubeService = new Google_Service_YouTube($client);
             $response = $youtubeService->thumbnails->set($distributionId, [
                 'data' => $imageData,
-                'mimeType' => CropProcessor::DEFAULT_MIME_TYPE,
+                'mimeType' => CropProcessor::getCropMimeType($imageFile),
             ]);
         } catch (Throwable $exception) {
             $this->damLogger->error(

@@ -32,7 +32,7 @@ class Keyword implements UuidIdentifiableInterface, UserTrackingInterface, TimeT
 
     public const int NAME_MAX_LENGTH = 255;
 
-    #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH)]
+    #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH, options: ['collation' => 'utf8mb4_bin'])]
     #[Serialize]
     #[Assert\Length(
         min: 2,

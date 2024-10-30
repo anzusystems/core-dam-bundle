@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Controller;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DomainProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
@@ -16,6 +17,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\FileNameHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -26,8 +28,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractImageController extends AbstractPublicController
 {
-    public const string CROP_EXTENSION = 'jpeg';
-    public const string DEFAULT_CROP_MIME_TYPE = 'image/jpeg';
+    use FileHelperTrait;
 
     protected DomainProvider $domainProvider;
     protected ImageFileRepository $imageFileRepository;
@@ -80,14 +81,6 @@ abstract class AbstractImageController extends AbstractPublicController
             assetFile: $image,
         )->setStatusCode(Response::HTTP_OK);
         $this->assetFileCacheManager->setCache($response, $image);
-
-        return $response;
-    }
-
-    protected function okResponse(string $content, AssetFile $asset): Response
-    {
-        $response = $this->getImageResponse($content, $asset)->setStatusCode(Response::HTTP_OK);
-        $this->assetFileCacheManager->setCache($response, $asset);
 
         return $response;
     }
@@ -160,20 +153,20 @@ abstract class AbstractImageController extends AbstractPublicController
         return $response;
     }
 
-    private function getImageResponse(string $content, AssetFile $assetFile): Response
+    private function getImageResponse(string $content, ImageFile $assetFile): Response
     {
         return new Response($content, Response::HTTP_OK, [
-            'Content-Type' => self::DEFAULT_CROP_MIME_TYPE,
-            'Content-Disposition' => $this->makeDisposition($assetFile),
+            'Content-Type' => CropProcessor::getCropMimeType($assetFile),
+            'Content-Disposition' => $this->mageImageCropDisposition($assetFile),
             'Content-Length' => strlen($content),
         ]);
     }
 
-    private function makeDisposition(AssetFile $assetFile): string
+    private function mageImageCropDisposition(ImageFile $assetFile): string
     {
         $fileName = FileNameHelper::changeFileExtension(
             (string) $assetFile->getId(),
-            self::CROP_EXTENSION
+            $this->fileHelper->guessExtension(CropProcessor::getCropMimeType($assetFile)),
         );
 
         return HeaderUtils::makeDisposition(
