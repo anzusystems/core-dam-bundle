@@ -52,7 +52,7 @@ final class VispImageManipulator extends AbstractImageManipulator
     {
         try {
             $this->disableCache();
-            $this->image = Image::newFromFile($scrPath, ['access' => 'sequential']);
+            $this->image = Image::newFromFile($scrPath);
         } catch (Exception $exception) {
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_READ_FAILED, $exception);
         }

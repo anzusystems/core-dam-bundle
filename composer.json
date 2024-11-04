@@ -23,7 +23,7 @@
     "google/apiclient": "^2.12",
     "google/cloud-pubsub": "^1.39",
     "html2text/html2text": "^4.3",
-    "jcupitt/vips": "^2.0",
+    "jcupitt/vips": "^1.0",
     "league/flysystem": "^3.7",
     "league/flysystem-google-cloud-storage": "^3.7",
     "petitpress/gps-messenger-bundle": "^2.0",
