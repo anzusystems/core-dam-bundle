@@ -257,7 +257,6 @@ final class VispImageManipulator extends AbstractImageManipulator
     {
         if (true === $clean) {
             $this->image = null;
-            \Vips\Config::shutDown();
         }
     }
 
@@ -266,5 +265,6 @@ final class VispImageManipulator extends AbstractImageManipulator
         Config::CacheSetMax(0);
         Config::CacheSetMaxFiles(0);
         Config::CacheSetMaxMem(0);
+        Config::ConcurrencySet(1);
     }
 }
