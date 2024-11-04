@@ -16,14 +16,13 @@ use AnzuSystems\CoreDamBundle\Image\Filter\QualityFilter;
 use AnzuSystems\CoreDamBundle\Image\Filter\ResizeFilter;
 use AnzuSystems\CoreDamBundle\Image\ImageManipulatorInterface;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\ImageMimeTypes;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use League\Flysystem\FilesystemException;
 
 final class CropProcessor
 {
     use FileHelperTrait;
-
-    public const string DEFAULT_MIME_TYPE = 'image/jpeg';
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
@@ -70,10 +69,19 @@ final class CropProcessor
             ])
         );
 
-        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension(self::DEFAULT_MIME_TYPE));
+        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension($this->getCropMimeType($image)));
         $this->cropCache->store($image, $imageCrop, $content);
 
         return $content;
+    }
+
+    public static function getCropMimeType(ImageFile $image): string
+    {
+        if ($image->getAssetAttributes()->getMimeType() === ImageMimeTypes::MimePng->value) {
+            return ImageMimeTypes::MimePng->value;
+        }
+
+        return ImageMimeTypes::MimeJpeg->value;
     }
 
     /**

@@ -36,7 +36,7 @@ final class AssetFileDeleteEventSubscriber implements EventSubscriberInterface
         if ($event->getType()->is(AssetType::Image)) {
             if (false === empty($event->getAssetFile()->getFilePath())) {
                 $this->cropCache->removeCacheByOriginFilePath(
-                    $event->getAssetFile()->getExtSystem(),
+                    $event->getAssetFile()->getExtSystem()->getSlug(),
                     $event->getAssetFile()->getFilePath()
                 );
             }

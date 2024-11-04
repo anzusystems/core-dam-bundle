@@ -187,6 +187,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
         $this->client->setThumbnail(
             distributionService: $distribution->getDistributionService(),
             distributionId: $distribution->getExtId(),
+            imageFile: $imageFile,
             imageData: $this->cropFacade->applyCropPayloadToDefaultRoi(
                 image: $imageFile,
                 cropPayload: (new RequestedCropDto())

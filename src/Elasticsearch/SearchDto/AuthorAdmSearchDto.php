@@ -21,6 +21,14 @@ final class AuthorAdmSearchDto extends AbstractSearchDto
     #[Serialize]
     protected ?string $type = null;
 
+    public function __construct()
+    {
+        $this->setOrder([
+            'reviewed' => 'desc',
+            '_score' => 'desc',
+        ]);
+    }
+
     public function getIndexName(): string
     {
         return Author::getResourceName();
