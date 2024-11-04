@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Jcupitt\Vips\Exception;
 use Jcupitt\Vips\Image;
+use Jcupitt\Vips\Config;
 use League\Flysystem\FilesystemException;
 use Throwable;
 
@@ -38,13 +39,20 @@ final class VispImageManipulator extends AbstractImageManipulator
         parent::__construct($filterProcessorStack);
     }
 
+    public function loadThumbnail(string $path, int $width): void
+    {
+        $this->disableCache();
+        $this->image = Image::thumbnail($path, $width);
+    }
+
     /**
      * @throws ImageManipulatorException
      */
     public function loadFile(string $scrPath): void
     {
         try {
-            $this->image = Image::newFromFile($scrPath);
+            $this->disableCache();
+            $this->image = Image::newFromFile($scrPath, ['access' => 'sequential']);
         } catch (Exception $exception) {
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_READ_FAILED, $exception);
         }
@@ -53,6 +61,7 @@ final class VispImageManipulator extends AbstractImageManipulator
     public function loadContent(string $resource): void
     {
         try {
+            $this->disableCache();
             $this->image = Image::newFromBuffer($resource);
         } catch (Exception $exception) {
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_READ_FAILED, $exception);
@@ -101,6 +110,8 @@ final class VispImageManipulator extends AbstractImageManipulator
                 (int) round($b),
             );
         } catch (Throwable) {
+            $this->clean($clean);
+
             $this->damLogger->info(
                 DamLogger::NAMESPACE_VISP,
                 'Failed compute most dominant color',
@@ -192,6 +203,7 @@ final class VispImageManipulator extends AbstractImageManipulator
 
     public function autorotate(array $options = []): void
     {
+        $this->ensureImage();
         $this->image = $this->image->autorot($options);
     }
 
@@ -231,11 +243,6 @@ final class VispImageManipulator extends AbstractImageManipulator
         return (int) $this->image->height;
     }
 
-    public function loadThumbnail(string $path, int $width): void
-    {
-        $this->image = Image::thumbnail($path, $width);
-    }
-
     /**
      * @throws ImageManipulatorException
      */
@@ -246,10 +253,18 @@ final class VispImageManipulator extends AbstractImageManipulator
         }
     }
 
-    private function clean(bool $clean = true): void
+    public function clean(bool $clean = true): void
     {
         if (true === $clean) {
             $this->image = null;
+            \Vips\Config::shutDown();
         }
+    }
+
+    private function disableCache(): void
+    {
+        Config::CacheSetMax(0);
+        Config::CacheSetMaxFiles(0);
+        Config::CacheSetMaxMem(0);
     }
 }

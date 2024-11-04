@@ -71,7 +71,7 @@ final class OptimalResizeFactory extends AbstractManager
         $tmpFilesystem->ensureDirectory($tmpPath);
         // Write rotated crop file
         $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($tmpPath), false);
-        // Write file to target storage
+//        // Write file to target storage
         $assetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($imageFile);
         $storagePath = $this->createOptimalCropPath($imageFile, $size, $imageFile->getImageAttributes()->getRotation());
         $assetFileSystem->writeStream($storagePath, $tmpFilesystem->readStream($tmpPath));
@@ -84,6 +84,8 @@ final class OptimalResizeFactory extends AbstractManager
 
         $optimalResize->setImage($imageFile);
         $imageFile->getResizes()->add($optimalResize);
+
+        $this->imageManipulator->clean();
 
         return $this->optimalResizeManager->create($optimalResize, false);
     }

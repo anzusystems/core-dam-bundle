@@ -47,13 +47,15 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         $imageFile = $this->getImage($assetFile);
         $this->imageManipulator->loadFile($file->getRealPath());
 
+        // todo temporary stops compute MDC
         $imageFile->getImageAttributes()
             ->setAnimated($this->imageManipulator->isAnimated())
-            ->setMostDominantColor($this->imageManipulator->getMostDominantColor())
+//            ->setMostDominantColor($this->imageManipulator->getMostDominantColor())
         ;
 
         $this->optimalCropsProcessor->process($imageFile, $file);
         $this->defaultRoiProcessor->process($imageFile, $file);
+        $this->imageManipulator->clean();
 
         return $imageFile;
     }
