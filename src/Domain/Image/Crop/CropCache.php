@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
@@ -60,7 +59,7 @@ final class CropCache
     public function removeCache(ImageFile $image): void
     {
         $this->removeCacheByOriginFilePath(
-            $image->getExtSystem(),
+            $image->getExtSystem()->getSlug(),
             $image->getAssetAttributes()->getFilePath()
         );
     }
@@ -68,10 +67,10 @@ final class CropCache
     /**
      * @throws FilesystemException
      */
-    public function removeCacheByOriginFilePath(ExtSystem $extSystem, string $path): void
+    public function removeCacheByOriginFilePath(string $extSystemSlug, string $path): void
     {
         $this->fileSystemProvider
-            ->getCropFilesystemByExtSystemSlug($extSystem->getSlug())
+            ->getCropFilesystemByExtSystemSlug($extSystemSlug)
             ->deleteDirectory(
                 $this->getCacheDir($path)
             );
