@@ -117,6 +117,13 @@ final class FileSystemProvider
         return $filesystem;
     }
 
+    public function getStorageNameBySlugAndType(string $slug, AssetType $type): string
+    {
+        $extSystemConfig = $this->extSystemConfigurationProvider->getAssetConfiguration($slug, $type);
+
+        return $extSystemConfig->getStorageName();
+    }
+
     public function getStorageNameByStorable(FileSystemStorableInterface $storable): string
     {
         $extSystemConfig = $this->extSystemConfigurationProvider->getAssetConfiguration(
