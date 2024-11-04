@@ -10,9 +10,9 @@ use AnzuSystems\CoreDamBundle\Image\FilterProcessor\Stack\FilterProcessorStack;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Jcupitt\Vips\Config;
 use Jcupitt\Vips\Exception;
 use Jcupitt\Vips\Image;
-use Jcupitt\Vips\Config;
 use League\Flysystem\FilesystemException;
 use Throwable;
 
@@ -243,6 +243,13 @@ final class VispImageManipulator extends AbstractImageManipulator
         return (int) $this->image->height;
     }
 
+    public function clean(bool $clean = true): void
+    {
+        if (true === $clean) {
+            $this->image = null;
+        }
+    }
+
     /**
      * @throws ImageManipulatorException
      */
@@ -250,13 +257,6 @@ final class VispImageManipulator extends AbstractImageManipulator
     {
         if (null === $this->image) {
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_CLOSED);
-        }
-    }
-
-    public function clean(bool $clean = true): void
-    {
-        if (true === $clean) {
-            $this->image = null;
         }
     }
 

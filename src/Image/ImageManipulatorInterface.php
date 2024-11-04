@@ -60,4 +60,6 @@ interface ImageManipulatorInterface
      * @throws ImageManipulatorException
      */
     public function applyFilterStack(FilterStack $filterStack): void;
+
+    public function clean(bool $clean = true): void;
 }
