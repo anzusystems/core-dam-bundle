@@ -123,7 +123,7 @@ final class ImageCopyFacade
         }
     }
 
-    private function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
+    public function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
     {
         /** @var array<string, Asset> $foundAssets */
         $foundAssets = [];
@@ -172,7 +172,7 @@ final class ImageCopyFacade
         );
     }
 
-    private function copyAssetSlots(Asset $asset, Asset $copyAsset): void
+    public function copyAssetSlots(Asset $asset, Asset $copyAsset): void
     {
         foreach ($copyAsset->getSlots() as $targetSlot) {
             $assetSlot = $asset->getSlots()->findFirst(

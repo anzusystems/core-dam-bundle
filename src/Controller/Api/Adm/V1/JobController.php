@@ -11,6 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -32,6 +33,24 @@ final class JobController extends AbstractJobController
     #[Route('/podcast-synchronizer', 'create_job_podcast_synchronizer', methods: [Request::METHOD_POST])]
     #[OARequest(JobPodcastSynchronizer::class), OAResponseCreated(JobPodcastSynchronizer::class), OAResponseValidation]
     public function createPodcastSynchronizer(#[SerializeParam] JobPodcastSynchronizer $job): JsonResponse
+    {
+        AnzuApp::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted($this->getCreateAcl());
+
+        return $this->createdResponse(
+            $this->jobFacade->create($job)
+        );
+    }
+
+    /**
+     * Create JobPodcastSynchronizer item.
+     *
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/image-copy', 'create_job_image_copy', methods: [Request::METHOD_POST])]
+    #[OARequest(JobImageCopy::class), OAResponseCreated(JobImageCopy::class), OAResponseValidation]
+    public function createImageCopyJob(#[SerializeParam] JobImageCopy $job): JsonResponse
     {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());
