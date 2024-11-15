@@ -18,7 +18,7 @@ final readonly class JobImageCopyFactory
     }
 
     /**
-     * @param Collection<array-key, Asset> $assets
+     * @param Collection<int|string, Asset> $assets
      */
     public function createPodcastSynchronizerJob(AssetLicence $licence, Collection $assets): JobImageCopy
     {

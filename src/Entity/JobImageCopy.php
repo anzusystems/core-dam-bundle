@@ -50,7 +50,7 @@ class JobImageCopy extends Job
     }
 
     /**
-     * @param Collection<int, JobImageCopyItem> $items
+     * @param Collection<int|string, JobImageCopyItem> $items
      */
     public function setItems(Collection $items): self
     {

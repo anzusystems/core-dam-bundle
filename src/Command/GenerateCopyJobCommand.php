@@ -102,6 +102,7 @@ final class GenerateCopyJobCommand extends Command
         $progress = new ProgressBar($output);
         $progress->start();
 
+        /** @var array<int|string, Asset> $assets */
         $assets = [];
         while (false === $csv->eof()) {
             $row = $csv->fgetcsv();
@@ -117,7 +118,7 @@ final class GenerateCopyJobCommand extends Command
 
             $assets[(string) $assetFile->getAsset()->getId()] = $assetFile->getAsset();
             if (count($assets) >= self::MAX_ASSETS_PER_JOB) {
-                $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection(array_values($assets)));
+                $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
                 $assets = [];
                 $this->entityManager->clear();
                 /** @var AssetLicence $licence */
@@ -128,7 +129,7 @@ final class GenerateCopyJobCommand extends Command
         }
 
         if (false === empty($assets)) {
-            $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection(array_values($assets)));
+            $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
         }
 
         $progress->finish();
