@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Command;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFactory;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
@@ -116,7 +117,7 @@ final class GenerateCopyJobCommand extends Command
 
             $assets[(string) $assetFile->getAsset()->getId()] = $assetFile->getAsset();
             if (count($assets) >= self::MAX_ASSETS_PER_JOB) {
-                $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
+                $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection(array_values($assets)));
                 $assets = [];
                 $this->entityManager->clear();
                 /** @var AssetLicence $licence */
@@ -127,7 +128,7 @@ final class GenerateCopyJobCommand extends Command
         }
 
         if (false === empty($assets)) {
-            $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
+            $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection(array_values($assets)));
         }
 
         $progress->finish();
