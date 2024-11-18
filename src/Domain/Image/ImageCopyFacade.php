@@ -158,7 +158,7 @@ final class ImageCopyFacade
             return AssetFileCopyResultDto::create(
                 asset: $copyDto->getAsset(),
                 targetAssetLicence: $copyDto->getTargetAssetLicence(),
-                result: AssetFileCopyStatus::Unassigned,
+                result: AssetFileCopyStatus::NotAllowed,
                 assetConflicts: array_values($foundAssets)
             );
         }
