@@ -10,10 +10,12 @@ use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use Throwable;
 
 final class AuthorSuggester extends AbstractSuggester
 {
@@ -22,6 +24,7 @@ final class AuthorSuggester extends AbstractSuggester
         private readonly AuthorFactory $authorFactory,
         private readonly AuthorFacade $authorFacade,
         private readonly EntityManagerInterface $entityManager,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -58,7 +61,12 @@ final class AuthorSuggester extends AbstractSuggester
 
         // 2. Entity doesn't exist, create it.
         $author = $this->authorFactory->create($name, $extSystem);
-        $this->authorFacade->create($author);
+
+        try {
+            $this->authorFacade->create($author);
+        } catch (Throwable $exception) {
+            $this->damLogger->info(DamLogger::NAMESPACE_ASSET_FILE_PROCESS, 'Cannot create author: ' . $name . ' ' . $exception->getMessage());
+        }
 
         return $ids;
     }
