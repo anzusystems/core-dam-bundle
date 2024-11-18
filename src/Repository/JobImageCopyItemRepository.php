@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Order;
@@ -18,15 +19,16 @@ use Doctrine\Common\Collections\Order;
  */
 final class JobImageCopyItemRepository extends AbstractAnzuRepository
 {
-    public function findByJob(JobImageCopy $jobImageCopy, int $idFrom = 0, int $limit = 10): Collection
+    public function findUnassignedByJob(JobImageCopy $jobImageCopy, int $idFrom = 0, int $limit = 10): Collection
     {
-        // todo status
         return new ArrayCollection(
             $this->createQueryBuilder('entity')
                 ->andWhere('IDENTITY(entity.job) = :jobId')
                 ->andWhere('entity.id > :idFrom')
+                ->andWhere('entity.status = :status')
                 ->setParameter('jobId', (int) $jobImageCopy->getId())
                 ->setParameter('idFrom', $idFrom)
+                ->setParameter('status', AssetFileCopyStatus::Unassigned->value)
                 ->addOrderBy('entity.id', Order::Ascending->value)
                 ->setMaxResults($limit)
                 ->getQuery()

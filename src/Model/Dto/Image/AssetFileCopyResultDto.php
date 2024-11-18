@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -28,7 +28,7 @@ final class AssetFileCopyResultDto
     private AssetLicence $targetAssetLicence;
 
     #[Serialize]
-    private AssetFileCopyResult $result;
+    private AssetFileCopyStatus $result;
 
     #[Serialize(handler: EntityIdHandler::class)]
     private Collection $assetConflicts;
@@ -36,7 +36,7 @@ final class AssetFileCopyResultDto
     public static function create(
         Asset $asset,
         AssetLicence $targetAssetLicence,
-        AssetFileCopyResult $result,
+        AssetFileCopyStatus $result,
         ?AssetFile $targetMainFile = null,
         ?Asset $targetAsset = null,
         array $assetConflicts = []
@@ -88,12 +88,12 @@ final class AssetFileCopyResultDto
         return $this;
     }
 
-    public function getResult(): AssetFileCopyResult
+    public function getResult(): AssetFileCopyStatus
     {
         return $this->result;
     }
 
-    public function setResult(AssetFileCopyResult $result): self
+    public function setResult(AssetFileCopyStatus $result): self
     {
         $this->result = $result;
 

@@ -6,11 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobImageCopyItemRepository::class)]
+#[ORM\Index(name: 'STATUS_IDX', fields: ['status'])]
 class JobImageCopyItem implements IdentifiableInterface
 {
     use IdentityIntTrait;
@@ -21,8 +22,8 @@ class JobImageCopyItem implements IdentifiableInterface
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     private ?Asset $targetAsset = null;
 
-    #[ORM\Column(enumType: AssetFileCopyResult::class)]
-    private AssetFileCopyResult $result;
+    #[ORM\Column(enumType: AssetFileCopyStatus::class)]
+    private AssetFileCopyStatus $status;
 
     #[ORM\ManyToOne(targetEntity: JobImageCopy::class, inversedBy: 'items')]
     private JobImageCopy $job;
@@ -31,7 +32,7 @@ class JobImageCopyItem implements IdentifiableInterface
     {
         $this->setSourceAsset(new Asset());
         $this->setTargetAsset(null);
-        $this->setResult(AssetFileCopyResult::Default);
+        $this->setStatus(AssetFileCopyStatus::Default);
         $this->setJob(new JobImageCopy());
     }
 
@@ -59,14 +60,14 @@ class JobImageCopyItem implements IdentifiableInterface
         return $this;
     }
 
-    public function getResult(): AssetFileCopyResult
+    public function getStatus(): AssetFileCopyStatus
     {
-        return $this->result;
+        return $this->status;
     }
 
-    public function setResult(AssetFileCopyResult $result): self
+    public function setStatus(AssetFileCopyStatus $status): self
     {
-        $this->result = $result;
+        $this->status = $status;
 
         return $this;
     }

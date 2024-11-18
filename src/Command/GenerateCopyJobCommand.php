@@ -40,7 +40,7 @@ final class GenerateCopyJobCommand extends Command
     private const string LICENCE_ID_ARG = 'licence';
     private const string USERS_FILE_PATH_DEFAULT = 'image_split.csv';
 
-    private const int MAX_ASSETS_PER_JOB = 1_000;
+    private const int MAX_ASSETS_PER_JOB = 20;
 
     public function __construct(
         private readonly Connection $damMediaApiMigConnection,

@@ -9,6 +9,8 @@ use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 
 final readonly class JobPodcastSynchronizerFactory
 {
+    private const int PRIORITY_NORMAL = 1;
+
     public function __construct(
         private JobManager $jobManager
     ) {
@@ -18,6 +20,7 @@ final readonly class JobPodcastSynchronizerFactory
     {
         $job = (new JobPodcastSynchronizer())
             ->setPodcastId($podcastId)
+            ->setPriority(self::PRIORITY_NORMAL)
             ->setFullSync($fullSync);
 
         $this->jobManager->create($job);

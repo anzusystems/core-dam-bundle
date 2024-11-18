@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobImageCopyResult;
 use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
 use Doctrine\Common\Collections\Collection;
@@ -48,7 +48,7 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         $this->start($job);
 
         try {
-            $res = $this->jobImageCopyItemRepository->findByJob($job, (int) $job->getLastBatchProcessedRecord(), $this->bulkSize);
+            $res = $this->jobImageCopyItemRepository->findUnassignedByJob($job, (int) $job->getLastBatchProcessedRecord(), $this->bulkSize);
             $lastProcessedRecord = '';
             foreach ($res as $copyItem) {
                 $this->processItem($copyItem);
@@ -74,10 +74,11 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         $notAllowedCount = $previousResult->getNotAllowedCount();
 
         foreach ($items as $item) {
-            match ($item->getResult()) {
-                AssetFileCopyResult::Copying => $copyCount++,
-                AssetFileCopyResult::Exists => $existsCount++,
-                AssetFileCopyResult::NotAllowed => $notAllowedCount++,
+            match ($item->getStatus()) {
+                AssetFileCopyStatus::Copy => $copyCount++,
+                AssetFileCopyStatus::Exists => $existsCount++,
+                AssetFileCopyStatus::Unassigned => $notAllowedCount++,
+                AssetFileCopyStatus::NotAllowed => null
             };
         }
 
@@ -100,14 +101,14 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
             ->setTargetAssetLicence($item->getJob()->getLicence())
         ;
         $copyDtoRes = $this->imageCopyFacade->prepareCopy($copyDto);
-        if ($copyDtoRes->getResult()->is(AssetFileCopyResult::Copying) && $copyDtoRes->getTargetAsset()) {
+        if ($copyDtoRes->getResult()->is(AssetFileCopyStatus::Copy) && $copyDtoRes->getTargetAsset()) {
             $this->imageCopyFacade->copyAssetFiles(
                 $copyDtoRes->getAsset(),
                 $copyDtoRes->getTargetAsset(),
             );
         }
 
-        $item->setResult($copyDtoRes->getResult());
+        $item->setStatus($copyDtoRes->getResult());
         $item->setTargetAsset($copyDtoRes->getTargetAsset());
     }
 }
