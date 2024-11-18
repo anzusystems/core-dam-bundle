@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\KeywordAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
+use AnzuSystems\CoreDamBundle\Exception\KeywordExistsException;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -74,9 +75,11 @@ final class KeywordController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_CREATE, $keyword);
 
-        return $this->createdResponse(
-            $this->keywordFacade->create($keyword)
-        );
+        try {
+            return $this->createdResponse($this->keywordFacade->create($keyword));
+        } catch (KeywordExistsException $exception) {
+            return $this->okResponse($exception->getExistingKeyword());
+        }
     }
 
     /**

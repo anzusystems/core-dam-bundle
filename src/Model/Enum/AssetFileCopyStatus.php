@@ -5,13 +5,14 @@ namespace AnzuSystems\CoreDamBundle\Model\Enum;
 use AnzuSystems\Contracts\Model\Enum\BaseEnumTrait;
 use AnzuSystems\Contracts\Model\Enum\EnumInterface;
 
-enum AssetFileCopyResult: string implements EnumInterface
+enum AssetFileCopyStatus: string implements EnumInterface
 {
     use BaseEnumTrait;
 
     case Exists = 'exists';
-    case Copying = 'copying';
+    case Copy = 'copy';
     case NotAllowed = 'notAllowed';
+    case Unassigned = 'unassigned';
 
-    public const self Default = self::NotAllowed;
+    public const self Default = self::Unassigned;
 }

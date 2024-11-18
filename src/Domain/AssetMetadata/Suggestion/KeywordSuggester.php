@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
+use AnzuSystems\CoreDamBundle\Exception\KeywordExistsException;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -58,7 +59,12 @@ final class KeywordSuggester extends AbstractSuggester
 
         // 2. Entity doesn't exist, create it.
         $keyword = $this->keywordFactory->create($name, $extSystem);
-        $this->keywordFacade->create($keyword);
+
+        try {
+            $this->keywordFacade->create($keyword);
+        } catch (KeywordExistsException $exception) {
+            $ids[] = (string) $exception->getExistingKeyword()->getId();
+        }
 
         return $ids;
     }

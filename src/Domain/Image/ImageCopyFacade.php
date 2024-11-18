@@ -19,7 +19,7 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
@@ -88,7 +88,7 @@ final class ImageCopyFacade
         }
 
         foreach ($res as $imageCopyResultDto) {
-            if ($imageCopyResultDto->getResult()->is(AssetFileCopyResult::Copying) && $imageCopyResultDto->getTargetAsset()) {
+            if ($imageCopyResultDto->getResult()->is(AssetFileCopyStatus::Copy) && $imageCopyResultDto->getTargetAsset()) {
                 $this->messageBus->dispatch(new CopyAssetFileMessage(
                     $imageCopyResultDto->getAsset(),
                     $imageCopyResultDto->getTargetAsset()
@@ -123,7 +123,7 @@ final class ImageCopyFacade
         }
     }
 
-    private function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
+    public function prepareCopy(ImageCopyDto $copyDto): AssetFileCopyResultDto
     {
         /** @var array<string, Asset> $foundAssets */
         $foundAssets = [];
@@ -148,7 +148,7 @@ final class ImageCopyFacade
             return AssetFileCopyResultDto::create(
                 asset: $copyDto->getAsset(),
                 targetAssetLicence: $copyDto->getTargetAssetLicence(),
-                result: AssetFileCopyResult::Copying,
+                result: AssetFileCopyStatus::Copy,
                 targetMainFile: $assetCopy->getMainFile(),
                 targetAsset: $assetCopy,
             );
@@ -158,7 +158,7 @@ final class ImageCopyFacade
             return AssetFileCopyResultDto::create(
                 asset: $copyDto->getAsset(),
                 targetAssetLicence: $copyDto->getTargetAssetLicence(),
-                result: AssetFileCopyResult::NotAllowed,
+                result: AssetFileCopyStatus::NotAllowed,
                 assetConflicts: array_values($foundAssets)
             );
         }
@@ -166,13 +166,13 @@ final class ImageCopyFacade
         return AssetFileCopyResultDto::create(
             asset: $copyDto->getAsset(),
             targetAssetLicence: $copyDto->getTargetAssetLicence(),
-            result: AssetFileCopyResult::Exists,
+            result: AssetFileCopyStatus::Exists,
             targetMainFile: $firstFoundAsset->getMainFile(),
             targetAsset: $firstFoundAsset,
         );
     }
 
-    private function copyAssetSlots(Asset $asset, Asset $copyAsset): void
+    public function copyAssetSlots(Asset $asset, Asset $copyAsset): void
     {
         foreach ($copyAsset->getSlots() as $targetSlot) {
             $assetSlot = $asset->getSlots()->findFirst(

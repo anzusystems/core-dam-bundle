@@ -273,7 +273,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = json_decode($response->getContent(), true);
 
-        $copyingItem = array_values(array_filter($content, static fn (array $item) => $item['result'] === 'copying'))[0] ?? null;
+        $copyingItem = array_values(array_filter($content, static fn (array $item) => $item['result'] === 'copy'))[0] ?? null;
         $this->assertNotNull($copyingItem);
         if ($copyingItem) {
             $this->assertSame($copyingItem['asset'], (string) $imageFile->getAsset()->getId());

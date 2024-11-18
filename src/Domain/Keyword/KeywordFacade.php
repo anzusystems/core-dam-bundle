@@ -7,7 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Keyword;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
+use AnzuSystems\CoreDamBundle\Exception\KeywordExistsException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
 
@@ -18,15 +20,22 @@ final class KeywordFacade
 
     public function __construct(
         private readonly KeywordManager $keywordManager,
+        private readonly KeywordRepository $keywordRepository,
     ) {
     }
 
     /**
      * @throws ValidationException
+     * @throws KeywordExistsException
      */
     public function create(Keyword $keyword): Keyword
     {
         $this->validator->validate($keyword);
+
+        $existingKeyword = $this->keywordRepository->findOneByNameAndExtSystem($keyword->getName(), $keyword->getExtSystem());
+        if ($existingKeyword) {
+            throw new KeywordExistsException($existingKeyword);
+        }
 
         try {
             $this->keywordManager->beginTransaction();
