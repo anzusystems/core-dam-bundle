@@ -10,11 +10,11 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
 use League\Flysystem\FilesystemException;
 
-final class CropCache
+final readonly class CropCache
 {
     public function __construct(
-        private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
+        private FileSystemProvider $fileSystemProvider,
+        private NameGenerator $nameGenerator,
     ) {
     }
 
@@ -69,11 +69,14 @@ final class CropCache
      */
     public function removeCacheByOriginFilePath(string $extSystemSlug, string $path): void
     {
+        $cacheDir = $this->getCacheDir($path);
+        if (0 === strlen($cacheDir)) {
+            return;
+        }
+
         $this->fileSystemProvider
             ->getCropFilesystemByExtSystemSlug($extSystemSlug)
-            ->deleteDirectory(
-                $this->getCacheDir($path)
-            );
+            ->deleteDirectory($cacheDir);
     }
 
     private function getCacheDir(string $path): string
