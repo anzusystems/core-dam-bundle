@@ -11,10 +11,12 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Exception\KeywordExistsException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
+use Throwable;
 
 final class KeywordSuggester extends AbstractSuggester
 {
@@ -23,6 +25,7 @@ final class KeywordSuggester extends AbstractSuggester
         private readonly KeywordFactory $keywordFactory,
         private readonly KeywordFacade $keywordFacade,
         private readonly EntityManagerInterface $entityManager,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -64,6 +67,8 @@ final class KeywordSuggester extends AbstractSuggester
             $this->keywordFacade->create($keyword);
         } catch (KeywordExistsException $exception) {
             $ids[] = (string) $exception->getExistingKeyword()->getId();
+        } catch (Throwable $exception) {
+            $this->damLogger->info(DamLogger::NAMESPACE_ASSET_FILE_PROCESS, 'Cannot create keyword: ' . $name . ' ' . $exception->getMessage());
         }
 
         return $ids;

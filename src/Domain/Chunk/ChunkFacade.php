@@ -45,14 +45,9 @@ final class ChunkFacade
         }
 
         $uploadedSize = (int) $uploadedFile->getSize();
-
-        //        if (1 === rand(1, 5))
-        //        {
-        //            throw new HttpException(500);
-        //        }
+        $this->chunkManager->beginTransaction();
 
         try {
-            $this->chunkManager->beginTransaction();
             $this->chunkFileManager->saveChunk($chunk, $uploadedFile);
 
             $this->assetFileCounter->incrUploadedSize($assetFile, $uploadedSize);
@@ -66,7 +61,9 @@ final class ChunkFacade
             return $chunk;
         } catch (Throwable $exception) {
             $this->assetFileCounter->resetUploadedSize($assetFile);
-            $this->chunkManager->rollback();
+            if ($this->chunkManager->isTransactionActive()) {
+                $this->chunkManager->rollback();
+            }
 
             throw new RuntimeException('asset_create_failed', 0, $exception);
         }
