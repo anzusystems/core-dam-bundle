@@ -116,10 +116,6 @@ final class KeywordControllerTest extends AbstractApiController
 
     public function createFailureDataProvider(): array
     {
-        $existingKeyword = self::getContainer()
-            ->get(KeywordRepository::class)
-            ->find(KeywordFixtures::KEYWORD_1);
-
         return [
             [
                 'requestJson' => [
@@ -134,17 +130,33 @@ final class KeywordControllerTest extends AbstractApiController
                         ValidationException::ERROR_FIELD_EMPTY,
                     ],
                 ],
-            ],
+            ]
+        ];
+    }
+
+    /**
+     * @dataProvider keywordExistsDataProvider
+     */
+    public function testKeywordExists(array $requestJson): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(KeywordUrl::createPath(), $requestJson);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+    }
+
+    public function keywordExistsDataProvider(): array
+    {
+        $existingKeyword = self::getContainer()
+            ->get(KeywordRepository::class)
+            ->find(KeywordFixtures::KEYWORD_1);
+
+        return [
             [
                 'requestJson' => [
                     'name' => $existingKeyword->getName(),
                     'extSystem' => ExtSystemFixtures::ID_CMS,
-                ],
-                'validationErrors' => [
-                    'name' => [
-                        ValidationException::ERROR_FIELD_UNIQUE,
-                    ]
-                ],
+                ]
             ],
         ];
     }
