@@ -30,12 +30,11 @@ final class KeywordFacade
      */
     public function create(Keyword $keyword): Keyword
     {
-        $this->validator->validate($keyword);
-
         $existingKeyword = $this->keywordRepository->findOneByNameAndExtSystem($keyword->getName(), $keyword->getExtSystem());
         if ($existingKeyword) {
             throw new KeywordExistsException($existingKeyword);
         }
+        $this->validator->validate($keyword);
 
         try {
             $this->keywordManager->beginTransaction();
