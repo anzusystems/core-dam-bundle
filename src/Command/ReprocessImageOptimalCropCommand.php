@@ -6,12 +6,16 @@ namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use Exception;
+use Generator;
+use SplFileObject;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
@@ -21,7 +25,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class ReprocessImageOptimalCropCommand extends Command
 {
     use OutputUtilTrait;
-    private const string IMAGE_FILE_ARG = 'image';
+    private const string IMAGE_FILE_OPT = 'image';
+
+    private const string IMAGE_ID_FILE_PATH = 'file';
     private const int MAX_ASSETS_PER_JOB = 20;
 
     public function __construct(
@@ -34,9 +40,13 @@ final class ReprocessImageOptimalCropCommand extends Command
     public function configure(): void
     {
         $this
-            ->addArgument(
-                name: self::IMAGE_FILE_ARG,
-                mode: InputArgument::REQUIRED,
+            ->addOption(
+                name: self::IMAGE_FILE_OPT,
+                mode: InputOption::VALUE_REQUIRED,
+            )
+            ->addOption(
+                name: self::IMAGE_ID_FILE_PATH,
+                mode: InputOption::VALUE_REQUIRED,
             )
         ;
     }
@@ -46,17 +56,53 @@ final class ReprocessImageOptimalCropCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $imageId = $input->getArgument(self::IMAGE_FILE_ARG);
-        $image = $this->imageFileRepository->find($imageId);
-
-        if (null === $image) {
-            $output->writeln("<error>Image not found: ({$imageId})</error>");
-
-            return Command::FAILURE;
+        $progressBar = new ProgressBar($output);
+        $progressBar->start();
+        foreach ($this->getImages($input) as $image) {
+            $this->imageFacade->reprocessOptimalCrop($image);
         }
 
-        $this->imageFacade->reprocessOptimalCrop($image);
+        $progressBar->finish();
+        $output->writeln('');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * @return Generator<ImageFile>
+     */
+    private function getImages(InputInterface $input): Generator
+    {
+        $imageId = $input->getOption(self::IMAGE_FILE_OPT);
+
+        if (is_string($imageId)) {
+            $image = $this->imageFileRepository->find($imageId);
+
+            if ($image instanceof ImageFile) {
+                yield $image;
+            }
+        }
+
+        $filePath = $input->getOption(self::IMAGE_ID_FILE_PATH);
+        if (null === $filePath || false === file_exists($filePath)) {
+            return;
+        }
+
+        $csv = new SplFileObject($filePath);
+        $csv->setFlags(SplFileObject::SKIP_EMPTY);
+
+        while (false === $csv->eof()) {
+            $row = $csv->fgetcsv();
+
+            if (false === is_array($row) || false === isset($row[0])) {
+                continue;
+            }
+
+            $image = $this->imageFileRepository->find($imageId);
+
+            if ($image instanceof ImageFile) {
+                yield $image;
+            }
+        }
     }
 }
