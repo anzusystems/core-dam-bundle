@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropCache;
+use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
@@ -34,6 +35,7 @@ final class ImageFacade extends AbstractAssetFileFacade
         private readonly ImageRotator $imageRotator,
         private readonly FileStash $fileStash,
         private readonly CropCache $cropCache,
+        private readonly OptimalCropsProcessor $optimalCropsProcessor,
     ) {
     }
 
@@ -59,6 +61,28 @@ final class ImageFacade extends AbstractAssetFileFacade
             $this->imageManager->rollback();
 
             throw new RuntimeException('image_rotate_failed', 0, $exception);
+        }
+
+        return $image;
+    }
+
+    public function reprocessOptimalCrop(ImageFile $image): ImageFile
+    {
+        $this->imageManager->beginTransaction();
+
+        try {
+            $event = $this->createEvent($image);
+            $this->optimalCropsProcessor->reprocess($image);
+            $this->cropCache->removeCache($image);
+            $this->imageManager->commit();
+
+            $this->dispatcher->dispatch($event);
+        } catch (Throwable $exception) {
+            if ($this->imageManager->isTransactionActive()) {
+                $this->imageManager->rollback();
+            }
+
+            throw new RuntimeException('image_process_optimal_crop_failed', 0, $exception);
         }
 
         return $image;
@@ -111,13 +135,13 @@ final class ImageFacade extends AbstractAssetFileFacade
 
     private function createEvent(ImageFile $image): ManipulatedImageEvent
     {
-        return $this->dispatcher->dispatch(new ManipulatedImageEvent(
+        return new ManipulatedImageEvent(
             imageId: (string) $image->getId(),
             roiPositions: CollectionHelper::traversableToIds(
                 traversable: $image->getRegionsOfInterest(),
                 getIdAction: fn (RegionOfInterest $regionOfInterest): int => $regionOfInterest->getPosition()
             ),
             extSystem: $image->getExtSystem()->getSlug()
-        ));
+        );
     }
 }

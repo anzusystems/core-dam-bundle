@@ -9,16 +9,40 @@ use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\OptimalResizeFactory
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
+use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 
-final class OptimalCropsProcessor
+final readonly class OptimalCropsProcessor
 {
     public function __construct(
-        private readonly ConfigurationProvider $configurationProvider,
-        private readonly OptimalResizeFactory $optimalResizeFactory,
+        private ConfigurationProvider $configurationProvider,
+        private OptimalResizeFactory $optimalResizeFactory,
+        private FileSystemProvider $fileSystemProvider,
     ) {
+    }
+
+    /**
+     * @throws FilesystemExceptionAlias
+     */
+    public function reprocess(ImageFile $image): ImageFile
+    {
+        $tmpFileSystem = $this->fileSystemProvider->getTmpFileSystem();
+        $originFile = AdapterFile::createFromBaseFile(
+            file: $tmpFileSystem->writeTmpFileFromStream(
+                resource: $this->fileSystemProvider->getFilesystemByStorable($image)->readStream(
+                    location: $image->getAssetAttributes()->getFilePath()
+                )
+            ),
+            filesystem: $tmpFileSystem
+        );
+
+        foreach ($image->getResizes() as $resize) {
+            $this->optimalResizeFactory->processOptimalResize($resize, $originFile);
+        }
+
+        return $image;
     }
 
     /**

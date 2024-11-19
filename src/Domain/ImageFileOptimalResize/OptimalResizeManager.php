@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
+use Doctrine\Common\Collections\ArrayCollection;
 
 final class OptimalResizeManager extends AbstractManager
 {
@@ -31,5 +32,7 @@ final class OptimalResizeManager extends AbstractManager
             $this->stash->add($resize);
             $this->entityManager->remove($resize);
         }
+
+        $assetFile->setResizes(new ArrayCollection([]));
     }
 }

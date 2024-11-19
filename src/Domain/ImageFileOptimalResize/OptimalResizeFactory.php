@@ -57,36 +57,46 @@ final class OptimalResizeFactory extends AbstractManager
      */
     public function createCrop(ImageFile $imageFile, AdapterFile $file, int $size): ImageFileOptimalResize
     {
-        $optimalResize = new ImageFileOptimalResize();
-        // load file to Visp
-        $this->imageManipulator->loadThumbnail($file->getRealPath(), $size);
+        $optimalResize = (new ImageFileOptimalResize())
+            ->setRequestedSize($size)
+            ->setImage($imageFile)
+        ;
+
+        $this->processOptimalResize($optimalResize, $file);
+        $imageFile->getResizes()->add($optimalResize);
+
+        return $this->optimalResizeManager->create($optimalResize, false);
+    }
+
+    public function processOptimalResize(ImageFileOptimalResize $resize, AdapterFile $file): void
+    {
+        $this->imageManipulator->loadThumbnail($file->getRealPath(), $resize->getRequestedSize());
         $this->imageManipulator->autorotate();
 
         // Prepare path and folder for Visp to write crop file
         $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();
         $tmpPath = $tmpFilesystem->getTmpFileName(
-            $this->fileHelper->guessExtension(CropProcessor::getCropMimeType($imageFile))
+            $this->fileHelper->guessExtension(CropProcessor::getCropMimeType($resize->getImage()))
         );
 
         $tmpFilesystem->ensureDirectory($tmpPath);
         // Write rotated crop file
         $this->imageManipulator->writeToFile($tmpFilesystem->extendPath($tmpPath), false);
-        //        // Write file to target storage
-        $assetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($imageFile);
-        $storagePath = $this->createOptimalCropPath($imageFile, $size, $imageFile->getImageAttributes()->getRotation());
+        // Write file to target storage
+        $assetFileSystem = $this->fileSystemProvider->getFilesystemByStorable($resize->getImage());
+        $storagePath = $this->createOptimalCropPath(
+            $resize->getImage(),
+            $resize->getRequestedSize(),
+            $resize->getImage()->getImageAttributes()->getRotation()
+        );
         $assetFileSystem->writeStream($storagePath, $tmpFilesystem->readStream($tmpPath));
 
-        $optimalResize
+        $resize
             ->setWidth($this->imageManipulator->getWidth())
             ->setHeight($this->imageManipulator->getHeight())
             ->setFilePath($storagePath)
-            ->setRequestedSize($size);
-
-        $optimalResize->setImage($imageFile);
-        $imageFile->getResizes()->add($optimalResize);
+        ;
 
         $this->imageManipulator->clean();
-
-        return $this->optimalResizeManager->create($optimalResize, false);
     }
 }
