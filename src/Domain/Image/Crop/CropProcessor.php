@@ -48,7 +48,6 @@ final class CropProcessor
             optimalResize: $optimalResize,
             imageCrop: $imageCrop
         );
-        //        dd($optimalResize->getFilePath());
 
         $fileStream = $this->fileSystemProvider
             ->getFilesystemByStorable($image)

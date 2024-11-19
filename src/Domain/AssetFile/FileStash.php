@@ -15,11 +15,6 @@ class FileStash
      */
     private array $fileDeleteStash = [];
 
-    /**
-     * @var array<string, array<int, string>>
-     */
-    private array $backup = [];
-
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
     ) {
