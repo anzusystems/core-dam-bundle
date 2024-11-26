@@ -101,10 +101,12 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
             ->setTargetAssetLicence($item->getJob()->getLicence())
         ;
         $copyDtoRes = $this->imageCopyFacade->prepareCopy($copyDto);
+
         if ($copyDtoRes->getResult()->is(AssetFileCopyStatus::Copy) && $copyDtoRes->getTargetAsset()) {
             $this->imageCopyFacade->copyAssetFiles(
-                $copyDtoRes->getAsset(),
-                $copyDtoRes->getTargetAsset(),
+                asset: $copyDtoRes->getAsset(),
+                copyAsset: $copyDtoRes->getTargetAsset(),
+                copyTrackingFields: true
             );
         }
 

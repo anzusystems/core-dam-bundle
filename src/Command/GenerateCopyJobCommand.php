@@ -36,11 +36,11 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 final class GenerateCopyJobCommand extends Command
 {
     use OutputUtilTrait;
-    private const string USERS_FILE_PATH_OPT = 'file';
+    private const string IMAGE_FILE_PATH_OPT = 'file';
     private const string LICENCE_ID_ARG = 'licence';
-    private const string USERS_FILE_PATH_DEFAULT = 'image_split.csv';
+    private const string IMAGE_IDS_CSV = 'image_ids.csv';
 
-    private const int MAX_ASSETS_PER_JOB = 20;
+    private const int MAX_ASSETS_PER_JOB = 1_000;
 
     public function __construct(
         private readonly Connection $damMediaApiMigConnection,
@@ -62,9 +62,9 @@ final class GenerateCopyJobCommand extends Command
                 mode: InputArgument::REQUIRED,
             )
             ->addOption(
-                name: self::USERS_FILE_PATH_OPT,
+                name: self::IMAGE_FILE_PATH_OPT,
                 mode: InputOption::VALUE_REQUIRED,
-                default: AnzuApp::getDataDir() . '/' . self::USERS_FILE_PATH_DEFAULT
+                default: AnzuApp::getDataDir() . '/' . self::IMAGE_IDS_CSV
             );
     }
 
@@ -82,7 +82,7 @@ final class GenerateCopyJobCommand extends Command
 
             return Command::FAILURE;
         }
-        $filePath = $input->getOption(self::USERS_FILE_PATH_OPT);
+        $filePath = $input->getOption(self::IMAGE_FILE_PATH_OPT);
         if (false === file_exists($filePath)) {
             $output->writeln("<error>File not found at path: ({$filePath})</error>");
 

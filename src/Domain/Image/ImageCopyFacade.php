@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
+use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
@@ -102,12 +104,15 @@ final class ImageCopyFacade
     /**
      * @throws Throwable
      */
-    public function copyAssetFiles(Asset $asset, Asset $copyAsset): void
+    public function copyAssetFiles(Asset $asset, Asset $copyAsset, bool $copyTrackingFields = false): void
     {
         try {
             $this->entityManager->beginTransaction();
             $this->copyAssetSlots($asset, $copyAsset);
             $this->assetManager->updateExisting(asset: $copyAsset, trackModification: false);
+            if ($copyTrackingFields) {
+                $this->copyTrackingFieldsToAsset($asset, $copyAsset);
+            }
             $this->indexManager->index($copyAsset);
             $this->entityManager->commit();
         } catch (Throwable $exception) {
@@ -200,5 +205,36 @@ final class ImageCopyFacade
         if ($dtoList->count() > self::BULK_COPY_SIZE) {
             throw new ForbiddenOperationException(ForbiddenOperationException::DETAIL_BULK_SIZE_EXCEEDED);
         }
+    }
+
+    private function copyTrackingFieldsToAsset(Asset $fromAsset, Asset $toAsset): void
+    {
+        $this->copyTrackingFields($fromAsset, $toAsset);
+        $this->copyTrackingFields($fromAsset->getMetadata(), $toAsset->getMetadata());
+
+        foreach ($fromAsset->getSlots() as $fromSlot) {
+            $targetSlot = $toAsset->getSlots()->findFirst(
+                fn (int $index, AssetSlot $assetSlot) => $assetSlot->getName() === $fromSlot->getName()
+            );
+            if (false === $targetSlot instanceof AssetSlot) {
+                continue;
+            }
+
+            $this->copyTrackingFields($fromSlot, $targetSlot);
+            $this->copyTrackingFields($fromSlot->getAssetFile(), $targetSlot->getAssetFile());
+            $this->copyTrackingFields($fromSlot->getAssetFile()->getMetadata(), $targetSlot->getAssetFile()->getMetadata());
+        }
+    }
+
+    private function copyTrackingFields(
+        UserTrackingInterface&TimeTrackingInterface $fromEntity,
+        UserTrackingInterface&TimeTrackingInterface $toEntity,
+    ): void {
+        $toEntity
+            ->setCreatedBy($fromEntity->getCreatedBy())
+            ->setModifiedBy($fromEntity->getModifiedBy())
+            ->setCreatedAt($fromEntity->getCreatedAt())
+            ->setModifiedAt($fromEntity->getModifiedAt())
+        ;
     }
 }

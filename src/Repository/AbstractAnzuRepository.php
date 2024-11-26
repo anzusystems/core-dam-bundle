@@ -9,7 +9,11 @@ use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Order;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
@@ -71,6 +75,26 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
         }
     }
 
+    public function getAll(string $idFrom = '', string $idUntil = '', int $limit = 500): Collection
+    {
+        return new ArrayCollection(
+            $this->getAllQuery('entity', $idFrom, $idUntil)
+                ->orderBy('entity.id', Order::Ascending->value)
+                ->setMaxResults($limit)
+                ->getQuery()->getResult()
+        );
+    }
+
+    public function getAllCount(string $idFrom = '', string $idUntil = ''): int
+    {
+        try {
+            return (int) $this->getAllQuery('count(entity)', $idFrom, $idUntil)
+                ->getQuery()->getSingleScalarResult();
+        } catch (ORMException) {
+            return 0;
+        }
+    }
+
     /**
      * @return class-string<T>
      */
@@ -81,6 +105,28 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
         return $queryBuilder
             ->andWhere('IDENTITY(entity.extSystem) = :extSystemId')
             ->setParameter('extSystemId', $extSystemId);
+    }
+
+    protected function getAllQuery(
+        string $select = 'entity',
+        string $idFrom = '',
+        string $idUntil = '',
+    ): QueryBuilder {
+        $query = $this->getEntityManager()->createQueryBuilder()
+            ->select($select)
+            ->from($this->getEntityClass(), 'entity')
+        ;
+
+        if (false === ('' === $idFrom)) {
+            $query->andWhere('entity.id >= :idFrom')
+                ->setParameter('idFrom', $idFrom, Types::STRING);
+        }
+        if (false === ('' === $idUntil)) {
+            $query->andWhere('entity.id <= :idUntil')
+                ->setParameter('idUntil', $idUntil, Types::STRING);
+        }
+
+        return $query;
     }
 
     private function getAllForIndexRebuildQuery(RebuildIndexConfig $config): QueryBuilder
