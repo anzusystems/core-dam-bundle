@@ -227,14 +227,20 @@ final class ImageCopyFacade
     }
 
     private function copyTrackingFields(
-        UserTrackingInterface & TimeTrackingInterface $fromEntity,
-        UserTrackingInterface & TimeTrackingInterface $toEntity,
+        UserTrackingInterface | TimeTrackingInterface $fromEntity,
+        UserTrackingInterface | TimeTrackingInterface $toEntity,
     ): void {
-        $toEntity
-            ->setCreatedBy($fromEntity->getCreatedBy())
-            ->setModifiedBy($fromEntity->getModifiedBy())
-            ->setCreatedAt($fromEntity->getCreatedAt())
-            ->setModifiedAt($fromEntity->getModifiedAt())
-        ;
+        if ($fromEntity instanceof TimeTrackingInterface && $toEntity instanceof TimeTrackingInterface) {
+            $toEntity
+                ->setCreatedAt($fromEntity->getCreatedAt())
+                ->setModifiedAt($fromEntity->getModifiedAt())
+            ;
+        }
+        if ($fromEntity instanceof UserTrackingInterface && $toEntity instanceof UserTrackingInterface) {
+            $toEntity
+                ->setCreatedBy($fromEntity->getCreatedBy())
+                ->setModifiedBy($fromEntity->getModifiedBy())
+            ;
+        }
     }
 }
