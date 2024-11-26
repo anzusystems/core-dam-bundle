@@ -47,7 +47,7 @@ class JobImageCopyItem implements IdentifiableInterface
         return $this;
     }
 
-    public function getTargetAssetId(): string
+    public function getTargetAssetId(): ?string
     {
         return $this->targetAssetId;
     }

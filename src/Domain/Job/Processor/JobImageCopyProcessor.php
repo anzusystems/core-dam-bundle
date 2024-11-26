@@ -120,6 +120,6 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         }
 
         $item->setStatus($copyDtoRes->getResult());
-        $item->setTargetAssetId((string) $copyDtoRes->getTargetAsset()->getId());
+        $item->setTargetAssetId((string) $copyDtoRes->getTargetAsset()?->getId());
     }
 }
