@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
-use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;

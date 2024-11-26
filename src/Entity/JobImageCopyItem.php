@@ -8,6 +8,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobImageCopyItemRepository::class)]
@@ -16,11 +17,11 @@ class JobImageCopyItem implements IdentifiableInterface
 {
     use IdentityIntTrait;
 
-    #[ORM\ManyToOne(targetEntity: Asset::class)]
-    private Asset $sourceAsset;
+    #[ORM\Column(type: Types::STRING, length: 36)]
+    private string $sourceAssetId = '';
 
-    #[ORM\ManyToOne(targetEntity: Asset::class)]
-    private ?Asset $targetAsset = null;
+    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    private ?string $targetAssetId = null;
 
     #[ORM\Column(enumType: AssetFileCopyStatus::class)]
     private AssetFileCopyStatus $status;
@@ -30,32 +31,30 @@ class JobImageCopyItem implements IdentifiableInterface
 
     public function __construct()
     {
-        $this->setSourceAsset(new Asset());
-        $this->setTargetAsset(null);
         $this->setStatus(AssetFileCopyStatus::Default);
         $this->setJob(new JobImageCopy());
     }
 
-    public function getSourceAsset(): Asset
+    public function getSourceAssetId(): string
     {
-        return $this->sourceAsset;
+        return $this->sourceAssetId;
     }
 
-    public function setSourceAsset(Asset $sourceAsset): self
+    public function setSourceAssetId(string $sourceAssetId): self
     {
-        $this->sourceAsset = $sourceAsset;
+        $this->sourceAssetId = $sourceAssetId;
 
         return $this;
     }
 
-    public function getTargetAsset(): ?Asset
+    public function getTargetAssetId(): string
     {
-        return $this->targetAsset;
+        return $this->targetAssetId;
     }
 
-    public function setTargetAsset(?Asset $targetAsset): self
+    public function setTargetAssetId(string $targetAssetId): self
     {
-        $this->targetAsset = $targetAsset;
+        $this->targetAssetId = $targetAssetId;
 
         return $this;
     }
