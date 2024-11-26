@@ -26,7 +26,7 @@ final readonly class JobImageCopyFactory
             ->setLicence($licence)
             ->setItems(
                 $assets->map(
-                    fn (Asset $asset): JobImageCopyItem => (new JobImageCopyItem())->setSourceAsset($asset)
+                    fn (Asset $asset): JobImageCopyItem => (new JobImageCopyItem())->setSourceAssetId((string) $asset->getId())
                 )
             )
         ;

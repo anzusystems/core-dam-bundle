@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobImageCopyResult;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
@@ -26,6 +27,7 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
     public function __construct(
         private readonly ImageCopyFacade $imageCopyFacade,
         private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
+        private readonly AssetRepository $assetRepository,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -96,8 +98,15 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
 
     private function processItem(JobImageCopyItem $item): void
     {
+        $sourceAsset = $this->assetRepository->find($item->getSourceAssetId());
+        if (null === $sourceAsset) {
+            $item->setStatus(AssetFileCopyStatus::NotAllowed);
+
+            return;
+        }
+
         $copyDto = (new ImageCopyDto())
-            ->setAsset($item->getSourceAsset())
+            ->setAsset($sourceAsset)
             ->setTargetAssetLicence($item->getJob()->getLicence())
         ;
         $copyDtoRes = $this->imageCopyFacade->prepareCopy($copyDto);
@@ -111,6 +120,6 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         }
 
         $item->setStatus($copyDtoRes->getResult());
-        $item->setTargetAsset($copyDtoRes->getTargetAsset());
+        $item->setTargetAssetId((string) $copyDtoRes->getTargetAsset()?->getId());
     }
 }

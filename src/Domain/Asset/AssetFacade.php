@@ -104,14 +104,17 @@ class AssetFacade
 
     public function toDeleting(Asset $asset): void
     {
+        $this->assetManager->beginTransaction();
+
         try {
-            $this->assetManager->beginTransaction();
             $this->assetStatusManager->toDeleting($asset);
             $this->assetManager->commit();
 
             $this->messageBus->dispatch(new AssetChangeStateMessage($asset));
         } catch (Throwable $exception) {
-            $this->assetManager->rollback();
+            if ($this->assetManager->isTransactionActive()) {
+                $this->assetManager->rollback();
+            }
 
             throw new RuntimeException('asset_deleting_failed', 0, $exception);
         }
@@ -119,9 +122,9 @@ class AssetFacade
 
     public function delete(Asset $asset): void
     {
-        try {
-            $this->assetManager->beginTransaction();
+        $this->assetManager->beginTransaction();
 
+        try {
             $deleteId = (string) $asset->getId();
 
             $this->deleteWithFiles($asset);
@@ -132,7 +135,9 @@ class AssetFacade
             $this->assetFileDeleteEventDispatcher->dispatchAll();
             $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $exception) {
-            $this->assetManager->rollback();
+            if ($this->assetManager->isTransactionActive()) {
+                $this->assetManager->rollback();
+            }
 
             throw new RuntimeException('asset_delete_failed', 0, $exception);
         }
