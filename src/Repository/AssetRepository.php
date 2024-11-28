@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use DateTimeInterface;
@@ -24,6 +25,17 @@ use Doctrine\ORM\QueryBuilder;
  */
 final class AssetRepository extends AbstractAnzuRepository
 {
+    public function findByAuthor(Author $author): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->innerJoin('entity.authors', 'author')
+                ->where('author.id = :id')
+                ->setParameter('id', $author->getId())
+                ->getQuery()
+                ->getResult()
+        );
+    }
     public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): Collection
     {
         return new ArrayCollection(

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
@@ -17,7 +18,7 @@ final readonly class AuthorProvider
     ) {
     }
 
-    public function provideAuthor(string $title, ExtSystem $extSystem): ?Author
+    public function provideByTitle(string $title, ExtSystem $extSystem): ?Author
     {
         $title = StringHelper::parseString(input: $title, length: Author::NAME_MAX_LENGTH);
         if (empty($title)) {
@@ -39,4 +40,14 @@ final readonly class AuthorProvider
                 ->setName($title),
         );
     }
+
+    public function provideCurrentAuthorToColl(Asset $asset, Author $author): void
+    {
+
+    }
+
+//    public function ()
+//    {
+//
+//    }
 }

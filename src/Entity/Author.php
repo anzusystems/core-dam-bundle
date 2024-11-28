@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AuthorFlags;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -47,14 +48,18 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
 
     /**
      * If asset uses author and has defined currentAuthors, this relation should be replaced
+     * todo current author should be final author without parents!
      */
-    #[ORM\ManyToMany(targetEntity: Author::class, inversedBy: 'childAuthors')]
+    #[ORM\ManyToMany(targetEntity: Author::class, inversedBy: 'childAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinTable('author_is_current_author')]
+    #[Serialize(handler: EntityIdHandler::class)]
     private Collection $currentAuthors;
 
     /**
      * Inverse side of currentAuthors
      */
-    #[ORM\ManyToMany(targetEntity: Author::class, mappedBy: 'currentAuthors')]
+    #[ORM\ManyToMany(targetEntity: Author::class, mappedBy: 'currentAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[Serialize(handler: EntityIdHandler::class)]
     private Collection $childAuthors;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
@@ -182,7 +187,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function addCurrentAuthor(Author $author): self
     {
         if (false === $this->currentAuthors->contains($author)) {
-            $this->childAuthors->add($author);
+            $this->currentAuthors->add($author);
         }
 
         return $this;

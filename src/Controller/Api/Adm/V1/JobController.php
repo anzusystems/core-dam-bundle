@@ -11,6 +11,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -25,8 +26,6 @@ use Symfony\Component\Routing\Annotation\Route;
 final class JobController extends AbstractJobController
 {
     /**
-     * Create JobPodcastSynchronizer item.
-     *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
@@ -43,14 +42,28 @@ final class JobController extends AbstractJobController
     }
 
     /**
-     * Create JobPodcastSynchronizer item.
-     *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
     #[Route('/image-copy', 'create_job_image_copy', methods: [Request::METHOD_POST])]
     #[OARequest(JobImageCopy::class), OAResponseCreated(JobImageCopy::class), OAResponseValidation]
     public function createImageCopyJob(#[SerializeParam] JobImageCopy $job): JsonResponse
+    {
+        AnzuApp::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted($this->getCreateAcl());
+
+        return $this->createdResponse(
+            $this->jobFacade->create($job)
+        );
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/author-current-optimize', 'create_job_author_current_optimize', methods: [Request::METHOD_POST])]
+    #[OARequest(JobAuthorCurrentOptimize::class), OAResponseCreated(JobAuthorCurrentOptimize::class), OAResponseValidation]
+    public function createAuthorCurrentJob(#[SerializeParam] JobAuthorCurrentOptimize $job): JsonResponse
     {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());

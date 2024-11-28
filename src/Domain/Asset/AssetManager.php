@@ -6,9 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetManager extends AbstractManager
@@ -87,6 +89,19 @@ class AssetManager extends AbstractManager
         $this->colUpdate(
             oldCollection: $asset->getAuthors(),
             newCollection: $dto->getAuthors(),
+            addElementFn: function (Collection $oldCollection, Author $author): bool {
+                if (false === $author->getCurrentAuthors()->isEmpty()) {
+                    foreach ($author->getCurrentAuthors() as $currentAuthor) {
+                        $oldCollection->add($currentAuthor);
+                    }
+
+                    return true;
+                }
+
+                $oldCollection->add($author);
+
+                return true;
+            },
         );
 
         return $this->updateExisting($asset, $flush);
