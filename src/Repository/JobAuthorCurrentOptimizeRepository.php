@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
-use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 
 /**
  * @extends AbstractAnzuRepository<JobAuthorCurrentOptimize>

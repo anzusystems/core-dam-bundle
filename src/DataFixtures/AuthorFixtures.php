@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
-use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
