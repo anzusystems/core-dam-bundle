@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Repository\JobAuthorCurrentOptimizeRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: JobAuthorCurrentOptimizeRepository::class)]
 class JobAuthorCurrentOptimize extends Job
@@ -19,6 +20,12 @@ class JobAuthorCurrentOptimize extends Job
 
     #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
     #[Serialize]
+    #[Assert\When(
+        expression: 'false === this.isProcessAll()',
+        constraints: [
+            new Assert\NotNull(),
+        ]
+    )]
     private ?string $authorId = null;
 
     public function isProcessAll(): bool
