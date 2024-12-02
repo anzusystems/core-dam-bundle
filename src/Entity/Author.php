@@ -50,7 +50,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
      * If asset uses author and has defined currentAuthors, this relation should be replaced
      * todo current author should be final author without parents!
      */
-    #[ORM\ManyToMany(targetEntity: Author::class, inversedBy: 'childAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'childAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinTable('author_is_current_author')]
     #[Serialize(handler: EntityIdHandler::class)]
     private Collection $currentAuthors;
@@ -58,7 +58,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     /**
      * Inverse side of currentAuthors
      */
-    #[ORM\ManyToMany(targetEntity: Author::class, mappedBy: 'currentAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'currentAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[Serialize(handler: EntityIdHandler::class)]
     private Collection $childAuthors;
 
@@ -164,6 +164,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setCurrentAuthors(Collection $currentAuthors): self
     {
         $this->currentAuthors = $currentAuthors;
+
         return $this;
     }
 
@@ -175,7 +176,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
         return $this->childAuthors;
     }
 
-    public function addChildAuthor(Author $author): self
+    public function addChildAuthor(self $author): self
     {
         if (false === $this->childAuthors->contains($author)) {
             $this->childAuthors->add($author);
@@ -184,7 +185,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
         return $this;
     }
 
-    public function addCurrentAuthor(Author $author): self
+    public function addCurrentAuthor(self $author): self
     {
         if (false === $this->currentAuthors->contains($author)) {
             $this->currentAuthors->add($author);
@@ -199,10 +200,11 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setChildAuthors(Collection $childAuthors): self
     {
         $this->childAuthors = $childAuthors;
+
         return $this;
     }
 
-    public function removeChildAuthor(Author $author): self
+    public function removeChildAuthor(self $author): self
     {
         if ($this->childAuthors->contains($author)) {
             $this->childAuthors->removeElement($author);
@@ -211,7 +213,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
         return $this;
     }
 
-    public function removeCurrentAuthor(Author $author): self
+    public function removeCurrentAuthor(self $author): self
     {
         if ($this->currentAuthors->contains($author)) {
             $this->currentAuthors->removeElement($author);

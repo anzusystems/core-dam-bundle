@@ -41,13 +41,25 @@ final readonly class AuthorProvider
         );
     }
 
-    public function provideCurrentAuthorToColl(Asset $asset, Author $author): void
+    public function provideCurrentAuthorToColl(Asset $asset): bool
     {
+        $changedCurrentAuthors = false;
+        foreach ($asset->getAuthors() as $assetAuthor) {
+            if ($assetAuthor->getCurrentAuthors()->isEmpty()) {
+                continue;
+            }
 
+            $changedCurrentAuthors = true;
+
+            foreach ($assetAuthor->getCurrentAuthors() as $currentAuthor) {
+                $asset->getAuthors()->add($currentAuthor);
+            }
+
+            if (false === $assetAuthor->getFlags()->isReviewed()) {
+                $asset->getAuthors()->removeElement($assetAuthor);
+            }
+        }
+
+        return $changedCurrentAuthors;
     }
-
-//    public function ()
-//    {
-//
-//    }
 }

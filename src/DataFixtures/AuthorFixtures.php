@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
@@ -100,7 +101,7 @@ final class AuthorFixtures extends AbstractFixtures
         $childAuthor = (new Author())
             ->setId(self::AUTHOR_4)
             ->setName('AgencyA/AuthorB')
-            ->setCurrentAuthors(new ArrayCollection([$author5, $author6]))
+            ->setCurrentAuthors(CollectionHelper::newCollection([$author5, $author6]))
             ->setExtSystem($cmsExtSystem);
         $childAuthor->getFlags()->setReviewed(false);
 

@@ -13,6 +13,7 @@ use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -25,13 +26,17 @@ use Doctrine\ORM\QueryBuilder;
  */
 final class AssetRepository extends AbstractAnzuRepository
 {
-    public function findByAuthor(Author $author): Collection
+    public function findByAuthor(Author $author, string $fromId = '', int $limit = 100): Collection
     {
         return new ArrayCollection(
             $this->createQueryBuilder('entity')
                 ->innerJoin('entity.authors', 'author')
                 ->where('author.id = :id')
+                ->andWhere('entity.id > :fromId')
                 ->setParameter('id', $author->getId())
+                ->setParameter('fromId', $fromId)
+                ->addOrderBy('entity.id', Order::Ascending->value)
+                ->setMaxResults($limit)
                 ->getQuery()
                 ->getResult()
         );

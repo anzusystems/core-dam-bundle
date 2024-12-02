@@ -6,23 +6,20 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CoreDamBundle\Repository\JobAuthorCurrentOptimizeRepository;
-use AnzuSystems\CoreDamBundle\Repository\JobImageCopyRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobAuthorCurrentOptimizeRepository::class)]
 class JobAuthorCurrentOptimize extends Job
 {
-    #[ORM\Column(type: Types::BOOLEAN)]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
     private bool $processAll = false;
 
-    #[ORM\Column(type: Types::JSON)]
+    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
     #[Serialize]
-    private array $authorIds = [];
+    private ?string $authorId = null;
 
     public function isProcessAll(): bool
     {
@@ -32,17 +29,19 @@ class JobAuthorCurrentOptimize extends Job
     public function setProcessAll(bool $processAll): self
     {
         $this->processAll = $processAll;
+
         return $this;
     }
 
-    public function getAuthorIds(): array
+    public function getAuthorId(): ?string
     {
-        return $this->authorIds;
+        return $this->authorId;
     }
 
-    public function setAuthorIds(array $authorIds): self
+    public function setAuthorId(?string $authorId): self
     {
-        $this->authorIds = $authorIds;
+        $this->authorId = $authorId;
+
         return $this;
     }
 }

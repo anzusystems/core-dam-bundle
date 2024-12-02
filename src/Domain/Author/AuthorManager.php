@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use Doctrine\Common\Collections\Collection;
 

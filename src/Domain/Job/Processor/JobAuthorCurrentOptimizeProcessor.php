@@ -7,18 +7,15 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
-use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
-use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
-use AnzuSystems\CoreDamBundle\Model\ValueObject\JobImageCopyResult;
+use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
 
@@ -26,13 +23,14 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
 {
     use EntityManagerAwareTrait;
 
-    private const int ASSET_BULK_SIZE = 10;
+    private const int ASSET_BULK_SIZE = 500;
 
     public function __construct(
         private readonly ImageCopyFacade $imageCopyFacade,
         private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
         private readonly AssetRepository $assetRepository,
         private readonly AuthorRepository $authorRepository,
+        private readonly AuthorProvider $authorProvider,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -52,60 +50,61 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
      */
     public function process(JobInterface $job): void
     {
-//        $this->start($job);
+        $this->start($job);
 
         try {
-            /** @var Collection<int, Author> $currentAuthorColl */
-            $authors = new ArrayCollection(array_values(
-                array_filter(
-                    array_map(fn(string $id): ?Author => $this->authorRepository->find($id), $job->getAuthorIds()),
-                )
-            ));
-
-            foreach ($authors as $author) {
-                $this->processAuthor($author);
-            }
+            $job->isProcessAll()
+                ? $this->processAll($job)
+                : $this->processAuthor($job)
+            ;
+            $this->entityManager->clear();
         } catch (Throwable $e) {
             $this->finishFail($job, $e->getMessage());
         }
     }
 
-    private function processAuthor(Author $author): void
+    private function processAll(JobAuthorCurrentOptimize $job): void
     {
-        $assets = $this->assetRepository->findByAuthor($author);
-        dd($assets->count());
+        $lastId = $job->getLastBatchProcessedRecord();
+        $assets = $this->assetRepository->getAll(idFrom: $lastId, limit: $this->bulkSize);
+
+        $this->processAssetsCollection($job, $assets, $lastId);
+    }
+
+    private function processAuthor(JobAuthorCurrentOptimize $job): void
+    {
+        /** @var Author $author */
+        $author = $this->authorRepository->find($job->getAuthorId());
+
+        $lastId = $job->getLastBatchProcessedRecord();
+        $assets = $this->assetRepository->findByAuthor($author, $lastId, $this->bulkSize);
+
+        $this->processAssetsCollection($job, $assets, $lastId);
     }
 
     /**
-     * @param Collection<int, JobImageCopyItem> $items
+     * @param Collection<int, Asset> $assets
      */
-    private function finishCycle(JobImageCopy $job, Collection $items, string $lastProcessedRecord = ''): void
+    private function processAssetsCollection(JobAuthorCurrentOptimize $job, Collection $assets, string $lastId = ''): void
     {
-        $previousResult = JobImageCopyResult::fromString($job->getResult());
-        $job->setBatchProcessedIterationCount($items->count() + $job->getBatchProcessedIterationCount());
-
-        $existsCount = $previousResult->getExistsCount();
-        $copyCount = $previousResult->getCopyCount();
-        $notAllowedCount = $previousResult->getNotAllowedCount();
-
-        foreach ($items as $item) {
-            match ($item->getStatus()) {
-                AssetFileCopyStatus::Copy => $copyCount++,
-                AssetFileCopyStatus::Exists => $existsCount++,
-                AssetFileCopyStatus::Unassigned => $notAllowedCount++,
-                AssetFileCopyStatus::NotAllowed => null
-            };
+        $changedAuthorsCount = 0;
+        foreach ($assets as $asset) {
+            if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
+                $changedAuthorsCount++;
+            }
+            $lastId = (string) $asset->getId();
         }
 
-        $this->getManagedJob($job)->setResult((new JobImageCopyResult(
-            copyCount: $copyCount,
-            existsCount: $existsCount,
-            notAllowedCount: $notAllowedCount
-        ))->toString());
+        $count = $assets->count();
+        $resultBefore = JobAuthorCurrentOptimizeResult::fromString($job->getResult());
+        $resultNew = new JobAuthorCurrentOptimizeResult(
+            $resultBefore->getOptimizedCount() + $changedAuthorsCount,
+            $resultBefore->getTotalCount() + $assets->count(),
+        );
+        $this->getManagedJob($job)->setResult($resultNew->toString());
 
-        $items->count() === $this->bulkSize
-            ? $this->toAwaitingBatchProcess($job, $lastProcessedRecord)
-            : $this->finishSuccess($job)
-        ;
+        $count === $this->bulkSize
+            ? $this->toAwaitingBatchProcess($job, $lastId)
+            : $this->finishSuccess($job);
     }
 }
