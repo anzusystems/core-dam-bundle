@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AuthorFlags;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -18,6 +19,8 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -43,6 +46,22 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     )]
     private string $name;
 
+    /**
+     * If asset uses author and has defined currentAuthors, this relation should be replaced
+     * todo current author should be final author without parents!
+     */
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'childAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinTable('author_is_current_author')]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private Collection $currentAuthors;
+
+    /**
+     * Inverse side of currentAuthors
+     */
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'currentAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private Collection $childAuthors;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
     private string $identifier;
@@ -67,6 +86,8 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
         $this->setIdentifier('');
         $this->setFlags(new AuthorFlags());
         $this->setType(AuthorType::Default);
+        $this->setCurrentAuthors(new ArrayCollection());
+        $this->setChildAuthors(new ArrayCollection());
     }
 
     public function getName(): string
@@ -125,6 +146,78 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setType(AuthorType $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Author>
+     */
+    public function getCurrentAuthors(): Collection
+    {
+        return $this->currentAuthors;
+    }
+
+    /**
+     * @param Collection<int, Author> $currentAuthors
+     */
+    public function setCurrentAuthors(Collection $currentAuthors): self
+    {
+        $this->currentAuthors = $currentAuthors;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Author>
+     */
+    public function getChildAuthors(): Collection
+    {
+        return $this->childAuthors;
+    }
+
+    public function addChildAuthor(self $author): self
+    {
+        if (false === $this->childAuthors->contains($author)) {
+            $this->childAuthors->add($author);
+        }
+
+        return $this;
+    }
+
+    public function addCurrentAuthor(self $author): self
+    {
+        if (false === $this->currentAuthors->contains($author)) {
+            $this->currentAuthors->add($author);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param Collection<int, Author> $childAuthors
+     */
+    public function setChildAuthors(Collection $childAuthors): self
+    {
+        $this->childAuthors = $childAuthors;
+
+        return $this;
+    }
+
+    public function removeChildAuthor(self $author): self
+    {
+        if ($this->childAuthors->contains($author)) {
+            $this->childAuthors->removeElement($author);
+        }
+
+        return $this;
+    }
+
+    public function removeCurrentAuthor(self $author): self
+    {
+        if ($this->currentAuthors->contains($author)) {
+            $this->currentAuthors->removeElement($author);
+        }
 
         return $this;
     }

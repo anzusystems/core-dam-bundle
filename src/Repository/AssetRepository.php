@@ -6,12 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -24,6 +26,21 @@ use Doctrine\ORM\QueryBuilder;
  */
 final class AssetRepository extends AbstractAnzuRepository
 {
+    public function findByAuthor(Author $author, string $fromId = '', int $limit = 100): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->innerJoin('entity.authors', 'author')
+                ->where('author.id = :id')
+                ->andWhere('entity.id > :fromId')
+                ->setParameter('id', $author->getId())
+                ->setParameter('fromId', $fromId)
+                ->addOrderBy('entity.id', Order::Ascending->value)
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
+    }
     public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): Collection
     {
         return new ArrayCollection(

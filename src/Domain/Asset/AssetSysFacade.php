@@ -148,7 +148,7 @@ final class AssetSysFacade
     public function setupAuthors(AssetFile $assetFile, AssetFileSysUrlCreateDto $dto): void
     {
         foreach ($dto->getAuthors() as $authorName) {
-            $author = $this->authorProvider->provideAuthor($authorName, $assetFile->getExtSystem());
+            $author = $this->authorProvider->provideByTitle($authorName, $assetFile->getExtSystem());
             if ($author instanceof Author) {
                 $assetFile->getAsset()->addAuthor($author);
             }

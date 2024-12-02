@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
@@ -17,7 +18,7 @@ final readonly class AuthorProvider
     ) {
     }
 
-    public function provideAuthor(string $title, ExtSystem $extSystem): ?Author
+    public function provideByTitle(string $title, ExtSystem $extSystem): ?Author
     {
         $title = StringHelper::parseString(input: $title, length: Author::NAME_MAX_LENGTH);
         if (empty($title)) {
@@ -38,5 +39,27 @@ final readonly class AuthorProvider
                 ->setExtSystem($extSystem)
                 ->setName($title),
         );
+    }
+
+    public function provideCurrentAuthorToColl(Asset $asset): bool
+    {
+        $changedCurrentAuthors = false;
+        foreach ($asset->getAuthors() as $assetAuthor) {
+            if ($assetAuthor->getCurrentAuthors()->isEmpty()) {
+                continue;
+            }
+
+            $changedCurrentAuthors = true;
+
+            foreach ($assetAuthor->getCurrentAuthors() as $currentAuthor) {
+                $asset->getAuthors()->add($currentAuthor);
+            }
+
+            if (false === $assetAuthor->getFlags()->isReviewed()) {
+                $asset->getAuthors()->removeElement($assetAuthor);
+            }
+        }
+
+        return $changedCurrentAuthors;
     }
 }
