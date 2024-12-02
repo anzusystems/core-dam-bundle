@@ -50,7 +50,7 @@ abstract class DamUser extends AnzuUser
 
     public function getUserIdentifier(): string
     {
-        return (string) $this->getId();
+        return (string) ($this->getId() ?? 0);
     }
 
     /**
