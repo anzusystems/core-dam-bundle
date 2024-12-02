@@ -75,6 +75,11 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     {
         /** @var Author $author */
         $author = $this->authorRepository->find($job->getAuthorId());
+        if (null === $author) {
+            $this->finishFail($job, 'Author not found');
+
+            return;
+        }
 
         $lastId = $job->getLastBatchProcessedRecord();
         $assets = $this->assetRepository->findByAuthor($author, $lastId, $this->bulkSize);
