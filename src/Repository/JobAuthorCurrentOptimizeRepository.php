@@ -8,10 +8,10 @@ use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 
 /**
- * @extends AbstractAnzuRepository<JobImageCopy>
+ * @extends AbstractAnzuRepository<JobAuthorCurrentOptimize>
  *
- * @method JobImageCopy|null find($id, $lockMode = null, $lockVersion = null)
- * @method JobImageCopy|null findOneBy(array $criteria, array $orderBy = null)
+ * @method JobAuthorCurrentOptimize|null find($id, $lockMode = null, $lockVersion = null)
+ * @method JobAuthorCurrentOptimize|null findOneBy(array $criteria, array $orderBy = null)
  */
 final class JobAuthorCurrentOptimizeRepository extends AbstractAnzuRepository
 {
