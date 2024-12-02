@@ -73,7 +73,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
 
     private function processAuthor(JobAuthorCurrentOptimize $job): void
     {
-        /** @var Author $author */
+        /** @var Author|null $author */
         $author = $this->authorRepository->find($job->getAuthorId());
         if (null === $author) {
             $this->finishFail($job, 'Author not found');
