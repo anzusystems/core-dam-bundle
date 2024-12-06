@@ -47,6 +47,7 @@ final class AuthorCleanPhrase implements
     #[Serialize]
     private string $phrase;
 
+    // TODO REPLACEMENT SHOULD BE DIRECT RELATION?
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
         max: 255,

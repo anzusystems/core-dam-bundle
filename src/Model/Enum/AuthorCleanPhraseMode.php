@@ -13,6 +13,7 @@ enum AuthorCleanPhraseMode: string implements EnumInterface
 
     case Remove = 'remove';
     case Replace = 'replace';
+    case Split = 'split';
 
     public const AuthorCleanPhraseMode Default = self::Remove;
 }
