@@ -24,7 +24,7 @@ final class ValidRegexValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, YoutubeDistribution::class);
         }
 
-        if (false === @preg_match($value, '')) {
+        if (false === @preg_match('~' . $value . '~', '')) {
             $this->context
                 ->buildViolation($constraint->message)
                 ->addViolation()

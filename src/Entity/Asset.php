@@ -116,6 +116,7 @@ class Asset implements
         $this->setMainFile(null);
         $this->setAssetFileProperties(new AssetFileProperties());
         $this->setExtSystem(null);
+        $this->setLicence(new AssetLicence());
     }
 
     public function __copy(): self

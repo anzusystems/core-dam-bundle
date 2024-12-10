@@ -20,12 +20,20 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
 {
     public function __construct(
         private readonly AuthorCleanPhraseManager $manager,
+        private readonly AuthorFixtures $authorFixtures,
     ) {
     }
 
     public static function getIndexKey(): string
     {
         return AuthorCleanPhrase::class;
+    }
+
+    public static function getDependencies(): array
+    {
+        return [
+            AuthorFixtures::class
+        ];
     }
 
     public function load(ProgressBar $progressBar): void
@@ -68,23 +76,45 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
 
         yield (new AuthorCleanPhrase())
             ->setExtSystem($cmsExtSystem)
-            ->setPhrase('/^[\+]?[\d\s-]{1,20}$/')
+            ->setPhrase('[\+]?\d[\d\s-]{8,12}\d')
             ->setMode(AuthorCleanPhraseMode::Remove)
             ->setType(AuthorCleanPhraseType::Regex)
         ;
 
         yield (new AuthorCleanPhrase())
             ->setExtSystem($cmsExtSystem)
-            ->setPhrase('AgencyA')
-            ->setReplacement('AgencyA')
-            ->setMode(AuthorCleanPhraseMode::Replace)
+            ->setPhrase('[a-zA-Z]+(\.[a-zA-Z]+)?@[a-zA-Z]+(\.[a-zA-Z]+)')
+            ->setMode(AuthorCleanPhraseMode::Remove)
+            ->setType(AuthorCleanPhraseType::Regex)
+        ;
+
+        yield (new AuthorCleanPhrase())
+            ->setExtSystem($cmsExtSystem)
+            ->setPhrase('©')
+            ->setMode(AuthorCleanPhraseMode::Remove)
             ->setType(AuthorCleanPhraseType::Word)
         ;
 
         yield (new AuthorCleanPhrase())
             ->setExtSystem($cmsExtSystem)
+            ->setPhrase('(c)')
+            ->setMode(AuthorCleanPhraseMode::Remove)
+            ->setType(AuthorCleanPhraseType::Word)
+        ;
+
+        yield (new AuthorCleanPhrase())
+            ->setExtSystem($cmsExtSystem)
+            ->setPhrase('photo')
+            ->setMode(AuthorCleanPhraseMode::Remove)
+            ->setType(AuthorCleanPhraseType::Word)
+        ;
+
+        $author = $this->authorFixtures->getOneFromRegistry(AuthorFixtures::AUTHOR_5);
+
+        yield (new AuthorCleanPhrase())
+            ->setExtSystem($cmsExtSystem)
             ->setPhrase('AgencyA -')
-            ->setReplacement('AgencyA')
+            ->setAuthorReplacement($author)
             ->setMode(AuthorCleanPhraseMode::Replace)
             ->setType(AuthorCleanPhraseType::Word)
         ;
@@ -92,7 +122,7 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
         yield (new AuthorCleanPhrase())
             ->setExtSystem($cmsExtSystem)
             ->setPhrase('AgencyA-')
-            ->setReplacement('AgencyA')
+            ->setAuthorReplacement($author)
             ->setMode(AuthorCleanPhraseMode::Replace)
             ->setType(AuthorCleanPhraseType::Word)
         ;

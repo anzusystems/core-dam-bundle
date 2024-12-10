@@ -37,6 +37,11 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             metadata: $metadata
         );
 
+        $this->suggestWithTags($assetFile, $tags);
+    }
+
+    protected function suggestWithTags(AssetFile $assetFile, array $tags): void
+    {
         $originAsset = $assetFile->getAsset();
         $suggestions = [];
         $iteration = 0;

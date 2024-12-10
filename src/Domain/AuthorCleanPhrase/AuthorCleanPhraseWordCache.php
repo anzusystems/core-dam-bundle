@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
@@ -15,8 +16,10 @@ use Psr\Cache\CacheItemPoolInterface;
 
 final class AuthorCleanPhraseWordCache extends AbstractManager
 {
+    public const string PHRASE_ID_PREFIX = '_phrase_id_';
     private const int MAX_REGEX_LENGTH = 2000;
     private const string DELIMITER = '~';
+
     private int $maxSingleRegexLength = self::MAX_REGEX_LENGTH;
 
     public function __construct(
@@ -32,25 +35,37 @@ final class AuthorCleanPhraseWordCache extends AbstractManager
         return $this;
     }
 
-    public function getList(AuthorCleanPhraseMode $mode): array
+    public static function getCacheKey(AuthorCleanPhraseType $type, AuthorCleanPhraseMode $mode): string
     {
-        // TODO only specific types can be cached
-        $item = $this->coreDamBundleAuthorCleanPhraseCache->getItem($mode->value);
+        return $type->value . '_' . $mode->value;
+    }
+
+    // word remove
+    // regex remove
+    // word split
+    // word replace
+
+    // todo validate cache key combination
+    public function getList(AuthorCleanPhraseType $type, AuthorCleanPhraseMode $mode): array
+    {
+        $item = $this->coreDamBundleAuthorCleanPhraseCache->getItem(self::getCacheKey($type, $mode));
 
         if ($item->isHit()) {
             return $item->get();
         }
 
-        return $this->buildCache($mode, $item);
+        return $this->buildCache($type, $mode, $item);
     }
 
-    private function buildCache(AuthorCleanPhraseMode $mode, CacheItemInterface $item): array
+    private function buildCache(AuthorCleanPhraseType $type, AuthorCleanPhraseMode $mode, CacheItemInterface $item): array
     {
-        $phrases = $this->repository->findAllByTypeAndMode(AuthorCleanPhraseType::Word, $mode);
+        $phrases = $this->repository->findAllByTypeAndMode($type, $mode);
 
         $regexes = array_map(
             fn (array $phrases): string => $this->buildSingleRegex($phrases),
-            $this->groupPhrases($phrases)
+            $type->is(AuthorCleanPhraseType::Word)
+                ? $this->groupPhrases($phrases)
+                : $phrases->map(fn (AuthorCleanPhrase $phrase): array => [$phrase])->getValues()
         );
 
         $item->set($regexes);
@@ -71,7 +86,6 @@ final class AuthorCleanPhraseWordCache extends AbstractManager
         $lastGroupSum = 0;
 
         foreach ($phrases as $phrase) {
-            // todo MBSTR vs NON MB STR
             $phraseLen = strlen($phrase->getPhrase());
 
             if ($lastGroupSum + $phraseLen > $this->maxSingleRegexLength) {
@@ -101,12 +115,19 @@ final class AuthorCleanPhraseWordCache extends AbstractManager
         }
 
         return sprintf(
-            '%s(%s)%sui',
+            '%s%s%sui',
             self::DELIMITER,
             implode(
                 '|',
                 array_map(
-                    fn (AuthorCleanPhrase $phrase): string => preg_quote($phrase->getPhrase(), self::DELIMITER),
+                    fn (AuthorCleanPhrase $phrase): string =>
+                    sprintf(
+                        '(?P<%s>%s)',
+                        self::PHRASE_ID_PREFIX . $phrase->getId(),
+                        $phrase->getType()->is(AuthorCleanPhraseType::Regex)
+                            ? $phrase->getPhrase()
+                            : preg_quote($phrase->getPhrase(), self::DELIMITER)
+                    ),
                     $phrases
                 )
             ),

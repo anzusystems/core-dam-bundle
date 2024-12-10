@@ -47,22 +47,17 @@ final class AuthorCleanPhrase implements
     #[Serialize]
     private string $phrase;
 
-    // TODO REPLACEMENT SHOULD BE DIRECT RELATION?
-    #[ORM\Column(type: Types::STRING, length: 255)]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
-    )]
+    // todo Assert ext system equals
+    #[ORM\ManyToOne(targetEntity: Author::class)]
     #[Assert\When(
         expression: 'this->getMode()->is(remove)',
         constraints: [
-            new Assert\Url(message: ValidationException::ERROR_FIELD_URL),
-            new Assert\Length(min: 2, max: 255, minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX),
+            new Assert\NotNull(),
         ],
-        values: ['remove' => AuthorCleanPhraseMode::Remove]
+        values: ['remove' => AuthorCleanPhraseMode::Replace]
     )]
     #[Serialize]
-    private string $replacement;
+    private ?Author $authorReplacement = null;
 
     #[ORM\Column(enumType: AuthorCleanPhraseType::class)]
     #[Serialize]
@@ -75,7 +70,6 @@ final class AuthorCleanPhrase implements
     public function __construct()
     {
         $this->setPhrase('');
-        $this->setReplacement('');
         $this->setType(AuthorCleanPhraseType::Default);
         $this->setMode(AuthorCleanPhraseMode::Default);
         $this->setExtSystem(new ExtSystem());
@@ -89,17 +83,6 @@ final class AuthorCleanPhrase implements
     public function setPhrase(string $phrase): self
     {
         $this->phrase = $phrase;
-        return $this;
-    }
-
-    public function getReplacement(): string
-    {
-        return $this->replacement;
-    }
-
-    public function setReplacement(string $replacement): self
-    {
-        $this->replacement = $replacement;
         return $this;
     }
 
@@ -133,6 +116,17 @@ final class AuthorCleanPhrase implements
     public function setExtSystem(ExtSystem $extSystem): self
     {
         $this->extSystem = $extSystem;
+        return $this;
+    }
+
+    public function getAuthorReplacement(): ?Author
+    {
+        return $this->authorReplacement;
+    }
+
+    public function setAuthorReplacement(?Author $authorReplacement): self
+    {
+        $this->authorReplacement = $authorReplacement;
         return $this;
     }
 }

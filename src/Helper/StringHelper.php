@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Helper;
 
 use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\StringNormalizerConfiguration;
+use Random\RandomException;
 use Symfony\Component\String\ByteString;
 use Symfony\Component\String\Exception\InvalidArgumentException as UnicodeInvalidArgumentException;
 
