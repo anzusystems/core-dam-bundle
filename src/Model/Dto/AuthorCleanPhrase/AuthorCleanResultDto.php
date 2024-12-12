@@ -1,22 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase;
 
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\Collection;
 
-final readonly class ProcessStringDto
+final readonly class AuthorCleanResultDto
 {
     /**
      * @param Collection<string, Author> $authors
      */
     public function __construct(
-        private  string $string,
+        private string $name,
         private array $authorNames,
         private Collection $authors,
     ) {
     }
 
+    #[Serialize]
     public function getAuthorNames(): array
     {
         return $this->authorNames;
@@ -25,13 +30,15 @@ final readonly class ProcessStringDto
     /**
      * @return Collection<string, Author>
      */
+    #[Serialize(handler: EntityIdHandler::class)]
     public function getAuthors(): Collection
     {
         return $this->authors;
     }
 
-    public function getString(): string
+    #[Serialize]
+    public function getName(): string
     {
-        return $this->string;
+        return $this->name;
     }
 }

@@ -32,7 +32,7 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
     public static function getDependencies(): array
     {
         return [
-            AuthorFixtures::class
+            AuthorFixtures::class,
         ];
     }
 

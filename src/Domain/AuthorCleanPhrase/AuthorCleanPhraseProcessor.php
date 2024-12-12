@@ -5,36 +5,38 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\Cache\AbstractAuthorCleanPhraseBuilder;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\Cache\AuthorCleanPhraseCache;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
-use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\ProcessStringDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorCleanResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
-use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
 
 final class AuthorCleanPhraseProcessor extends AbstractManager
 {
     public function __construct(
-        private readonly AuthorCleanPhraseWordCache $cleanPhraseWordCache,
+        private readonly AuthorCleanPhraseCache $cleanPhraseWordCache,
         private readonly AuthorCleanPhraseRepository $repository,
     ) {
     }
 
-    public function processString(string $string): ProcessStringDto
+    public function processString(string $string, ExtSystem $extSystem): AuthorCleanResultDto
     {
-        $authorParts = $this->split($string);
-        $authorParts = $this->removeWords($authorParts);
+        $authorParts = $this->split($string, $extSystem);
+        $authorParts = $this->removeWords($authorParts, $extSystem);
 
-        return $this->replace($string, $authorParts);
+        return $this->replace($string, $authorParts, $extSystem);
     }
 
-    public function replace(string $string, array $authorParts): ProcessStringDto
+    public function replace(string $string, array $authorParts, ExtSystem $extSystem): AuthorCleanResultDto
     {
         $replace = $this->cleanPhraseWordCache->getList(
             type: AuthorCleanPhraseType::Word,
-            mode:AuthorCleanPhraseMode::Replace
+            mode: AuthorCleanPhraseMode::Replace,
+            extSystem: $extSystem
         );
         $repository = $this->repository;
         $authorIdReplacements = [];
@@ -42,10 +44,10 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
         foreach ($authorParts as $index => $author) {
             $match = preg_replace_callback(
                 $replace,
-                function (array $matches) use ($repository, &$authorIdReplacements): string {
+                function (array $matches) use (&$authorIdReplacements): string {
                     foreach ($matches as $key => $match) {
-                        if (str_starts_with((string) $key, AuthorCleanPhraseWordCache::PHRASE_ID_PREFIX)) {
-                            $id = (int) ltrim((string) $key, AuthorCleanPhraseWordCache::PHRASE_ID_PREFIX);
+                        if (str_starts_with((string) $key, AbstractAuthorCleanPhraseBuilder::PHRASE_ID_PREFIX)) {
+                            $id = (int) ltrim((string) $key, AbstractAuthorCleanPhraseBuilder::PHRASE_ID_PREFIX);
                             $phrase = $this->repository->find($id);
                             if ($phrase instanceof AuthorCleanPhrase && $phrase->getAuthorReplacement()) {
                                 $authorIdReplacements[(string) $phrase->getAuthorReplacement()->getId()] = $phrase->getAuthorReplacement();
@@ -65,7 +67,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
             }
         }
 
-        return new ProcessStringDto(
+        return new AuthorCleanResultDto(
             $string,
             $authorParts,
             CollectionHelper::newCollection($authorIdReplacements)
@@ -75,15 +77,17 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     /**
      * @param array<int, string> $strings
      */
-    private function removeWords(array $strings): array
+    private function removeWords(array $strings, ExtSystem $extSystem): array
     {
         $wordRegexes = $this->cleanPhraseWordCache->getList(
             type: AuthorCleanPhraseType::Word,
-            mode: AuthorCleanPhraseMode::Remove
+            mode: AuthorCleanPhraseMode::Remove,
+            extSystem: $extSystem
         );
         $removeRegexes = $this->cleanPhraseWordCache->getList(
             type: AuthorCleanPhraseType::Regex,
-            mode: AuthorCleanPhraseMode::Remove
+            mode: AuthorCleanPhraseMode::Remove,
+            extSystem: $extSystem
         );
 
         $regexes = [...$wordRegexes, ...$removeRegexes];
@@ -102,15 +106,16 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     /**
      * @return array<int, string>
      */
-    private function split(string $string): array
+    private function split(string $string, ExtSystem $extSystem): array
     {
         $patterns = $this->cleanPhraseWordCache->getList(
             type: AuthorCleanPhraseType::Word,
-            mode: AuthorCleanPhraseMode::Split
+            mode: AuthorCleanPhraseMode::Split,
+            extSystem: $extSystem
         );
 
         foreach ($patterns as $pattern) {
-            return array_map('trim', preg_split($pattern, $string, -1, PREG_SPLIT_NO_EMPTY));
+            return array_map('trim', preg_split($pattern, $string));
         }
 
         return [trim($string)];

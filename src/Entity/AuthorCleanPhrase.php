@@ -1,15 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AnzuSystems\CoreDamBundle\Entity;
 
-use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AuthorCleanPhraseFlags;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
@@ -26,11 +32,14 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class AuthorCleanPhrase implements
     IdentifiableInterface,
     UserTrackingInterface,
-    TimeTrackingInterface
+    TimeTrackingInterface,
+    ExtSystemInterface,
+    PositionableInterface
 {
     use IdentityIntTrait;
     use UserTrackingTrait;
     use TimeTrackingTrait;
+    use PositionTrait;
 
     #[ORM\ManyToOne(targetEntity: ExtSystem::class)]
     #[Serialize(handler: EntityIdHandler::class)]
@@ -50,13 +59,13 @@ final class AuthorCleanPhrase implements
     // todo Assert ext system equals
     #[ORM\ManyToOne(targetEntity: Author::class)]
     #[Assert\When(
-        expression: 'this->getMode()->is(remove)',
+        expression: 'this.getMode().is(remove)',
         constraints: [
             new Assert\NotNull(),
         ],
         values: ['remove' => AuthorCleanPhraseMode::Replace]
     )]
-    #[Serialize]
+    #[Serialize(handler: EntityIdHandler::class)]
     private ?Author $authorReplacement = null;
 
     #[ORM\Column(enumType: AuthorCleanPhraseType::class)]
@@ -67,12 +76,17 @@ final class AuthorCleanPhrase implements
     #[Serialize]
     private AuthorCleanPhraseMode $mode;
 
+    #[ORM\Embedded]
+    #[Serialize]
+    private AuthorCleanPhraseFlags $flags;
+
     public function __construct()
     {
         $this->setPhrase('');
         $this->setType(AuthorCleanPhraseType::Default);
         $this->setMode(AuthorCleanPhraseMode::Default);
         $this->setExtSystem(new ExtSystem());
+        $this->setFlags(new AuthorCleanPhraseFlags());
     }
 
     public function getPhrase(): string
@@ -83,6 +97,7 @@ final class AuthorCleanPhrase implements
     public function setPhrase(string $phrase): self
     {
         $this->phrase = $phrase;
+
         return $this;
     }
 
@@ -94,6 +109,7 @@ final class AuthorCleanPhrase implements
     public function setType(AuthorCleanPhraseType $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -105,6 +121,7 @@ final class AuthorCleanPhrase implements
     public function setMode(AuthorCleanPhraseMode $mode): self
     {
         $this->mode = $mode;
+
         return $this;
     }
 
@@ -116,6 +133,7 @@ final class AuthorCleanPhrase implements
     public function setExtSystem(ExtSystem $extSystem): self
     {
         $this->extSystem = $extSystem;
+
         return $this;
     }
 
@@ -127,6 +145,19 @@ final class AuthorCleanPhrase implements
     public function setAuthorReplacement(?Author $authorReplacement): self
     {
         $this->authorReplacement = $authorReplacement;
+
+        return $this;
+    }
+
+    public function getFlags(): AuthorCleanPhraseFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(AuthorCleanPhraseFlags $flags): self
+    {
+        $this->flags = $flags;
+
         return $this;
     }
 }

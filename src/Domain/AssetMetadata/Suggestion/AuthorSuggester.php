@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFactory;
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
-use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseWordCache;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -41,7 +40,7 @@ final class AuthorSuggester extends AbstractSuggester
                 continue;
             }
 
-            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadata[$tagName]);
+            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadata[$tagName], $assetFile->getExtSystem());
             $authorsSuggestions = array_merge($authorsSuggestions, $processStringDto->getAuthorNames());
             $processStringDto->getAuthors()->map(
                 fn (Author $author) => $assetFile->getAsset()->addAuthor($author)

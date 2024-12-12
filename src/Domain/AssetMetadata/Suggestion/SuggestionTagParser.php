@@ -14,8 +14,6 @@ final class SuggestionTagParser
     public function parse(ExtSystemAssetTypeExifMetadataConfiguration $configuration, array $metadata): array
     {
         foreach ($configuration->getAutocompleteFromMetadataTags() as $tagName => $separator) {
-            dump($tagName);
-
             // 1. Tag not found or empty, continue to the next one
             if (empty($metadata[$tagName])) {
                 continue;

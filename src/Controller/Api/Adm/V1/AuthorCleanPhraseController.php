@@ -16,8 +16,12 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseFacade;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
-use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorCleanResultDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorNameDto;
+use AnzuSystems\CoreDamBundle\Repository\Decorator\AuthorCleanPhraseRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\ORM\Exception\ORMException;
@@ -33,7 +37,8 @@ final class AuthorCleanPhraseController extends AbstractApiController
 {
     public function __construct(
         private readonly AuthorCleanPhraseFacade $authorCleanPhraseFacade,
-        private readonly AuthorCleanPhraseRepository $repository,
+        private readonly AuthorCleanPhraseRepositoryDecorator $repositoryDecorator,
+        private readonly AuthorCleanPhraseProcessor $processor,
     ) {
     }
 
@@ -44,6 +49,8 @@ final class AuthorCleanPhraseController extends AbstractApiController
     #[OAParameterPath('authorCleanPhrase'), OAResponse(AuthorCleanPhrase::class)]
     public function getOne(AuthorCleanPhrase $authorCleanPhrase): JsonResponse
     {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_READ, $authorCleanPhrase);
+
         return $this->okResponse($authorCleanPhrase);
     }
 
@@ -52,12 +59,14 @@ final class AuthorCleanPhraseController extends AbstractApiController
      *
      * @throws ORMException
      */
-    #[Route('', 'get_list', methods: [Request::METHOD_GET])]
+    #[Route('/ext-system/{extSystem}', 'get_list', methods: [Request::METHOD_GET])]
     #[OAResponse([AuthorCleanPhrase::class])]
-    public function getList(#[SerializeParam] ApiParams $apiParams): JsonResponse
+    public function getList(#[SerializeParam] ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_READ, $extSystem);
+
         return $this->okResponse(
-            $this->repository->findByApiParamsWithInfiniteListing($apiParams),
+            $this->repositoryDecorator->findByApiParams($apiParams, $extSystem),
         );
     }
 
@@ -92,6 +101,17 @@ final class AuthorCleanPhraseController extends AbstractApiController
 
         return $this->okResponse(
             $this->authorCleanPhraseFacade->update($authorCleanPhrase, $newAuthorCleanPhrase)
+        );
+    }
+
+    #[Route('/ext-system/{extSystem}/playground', 'playground', methods: [Request::METHOD_PATCH])]
+    #[OARequest(AuthorNameDto::class), OAResponse(AuthorCleanResultDto::class)]
+    public function playground(#[SerializeParam] AuthorNameDto $dto, ExtSystem $extSystem): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_READ);
+
+        return $this->okResponse(
+            $this->processor->processString($dto->getName(), $extSystem)
         );
     }
 

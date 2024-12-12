@@ -23,6 +23,10 @@ final class AuthorCleanPhraseManager extends AbstractManager
         $bannedPhrase
             ->setPhrase($newBannedPhrase->getPhrase())
             ->setType($newBannedPhrase->getType())
+            ->setMode($newBannedPhrase->getMode())
+            ->setAuthorReplacement($newBannedPhrase->getAuthorReplacement())
+            ->setPosition($newBannedPhrase->getPosition())
+            ->setFlags($newBannedPhrase->getFlags())
         ;
         $this->trackModification($bannedPhrase);
         $this->flush($flush);
