@@ -179,13 +179,13 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
                         'wordBoundary' => true,
                     ],
                 ],
-                'testAuthorString' => 'test',
+                'testAuthorString' => 'test; test again; test',
                 'expectedProcessResultBefore' => [
-                    'authorNames' => ['test'],
+                    'authorNames' => ['test', 'test again'],
                     'authors' => [],
                 ],
                 'expectedProcessResultAfter' => [
-                    'authorNames' => [],
+                    'authorNames' => ['again'],
                     'authors' => [],
                 ]
             ],

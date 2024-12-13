@@ -38,7 +38,6 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
             mode: AuthorCleanPhraseMode::Replace,
             extSystem: $extSystem
         );
-        $repository = $this->repository;
         $authorIdReplacements = [];
 
         foreach ($authorParts as $index => $author) {
@@ -69,7 +68,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
 
         return new AuthorCleanResultDto(
             $string,
-            $authorParts,
+            array_unique(array_filter($authorParts)),
             CollectionHelper::newCollection($authorIdReplacements)
         );
     }
