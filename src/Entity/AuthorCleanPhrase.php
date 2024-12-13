@@ -24,12 +24,11 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorCleanPhraseRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_ext_system_phrase', fields: ['phrase', 'extSystem'])]
-#[UniqueEntity(fields: ['phrase', 'extSystem'], message: ValidationException::ERROR_FIELD_UNIQUE)]
+#[BaseAppAssert\UniqueEntity(fields: ['phrase', 'extSystem'])]
 final class AuthorCleanPhrase implements
     IdentifiableInterface,
     UserTrackingInterface,

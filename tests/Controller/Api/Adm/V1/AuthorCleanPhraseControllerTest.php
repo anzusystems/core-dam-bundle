@@ -94,6 +94,9 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
                     'phrase' => [
                         ValidationException::ERROR_FIELD_UNIQUE,
                     ],
+                    'extSystem' => [
+                        ValidationException::ERROR_FIELD_UNIQUE,
+                    ],
                 ]
             ],
             [
@@ -316,7 +319,7 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
         $result = $this->authorCleanPhraseProcessor->processString('(c); Kopyto', $extSystem);
         $this->assertSame(['Kopyto'], $result->getAuthorNames());
 
-        $response = $client->put(AuthorCleanPhraseUrl::getOne((int) $phrase->getId()), [
+        $updateData = [
             'id' => $phrase->getId(),
             'extSystem' => ExtSystemFixtures::ID_CMS,
             'phrase' => 'Kopyto',
@@ -325,10 +328,15 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
             'flags' => [
                 'wordBoundary' => true,
             ],
-        ]);
+        ];
+
+        $response = $client->put(AuthorCleanPhraseUrl::getOne((int) $phrase->getId()), $updateData);
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
 
         $result = $this->authorCleanPhraseProcessor->processString('(c); Kopyto', $extSystem);
         $this->assertSame(['(c)'], $result->getAuthorNames());
+
+        $response = $client->put(AuthorCleanPhraseUrl::getOne((int) $phrase->getId()), $updateData);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
     }
 }
