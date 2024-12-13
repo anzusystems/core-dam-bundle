@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseFacade;
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\AuthorCleanPhraseException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorCleanResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorNameDto;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\AuthorCleanPhraseRepositoryDecorator;
@@ -55,8 +56,6 @@ final class AuthorCleanPhraseController extends AbstractApiController
     }
 
     /**
-     * Get list of items.
-     *
      * @throws ORMException
      */
     #[Route('/ext-system/{extSystem}', 'get_list', methods: [Request::METHOD_GET])]
@@ -73,7 +72,9 @@ final class AuthorCleanPhraseController extends AbstractApiController
     /**
      * Create item.
      *
-     * @throws ValidationException|AppReadOnlyModeException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     * @throws AuthorCleanPhraseException
      */
     #[Route('', 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AuthorCleanPhrase::class), OAResponseCreated(AuthorCleanPhrase::class), OAResponseValidation]
@@ -88,9 +89,9 @@ final class AuthorCleanPhraseController extends AbstractApiController
     }
 
     /**
-     * Update item.
-     *
-     * @throws ValidationException|AppReadOnlyModeException
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     * @throws AuthorCleanPhraseException
      */
     #[Route('/{authorCleanPhrase}', 'update', ['authorCleanPhrase' => Requirement::DIGITS], methods: [Request::METHOD_PUT])]
     #[OAParameterPath('authorCleanPhrase'), OARequest(AuthorCleanPhrase::class), OAResponse(AuthorCleanPhrase::class), OAResponseValidation]
@@ -116,9 +117,8 @@ final class AuthorCleanPhraseController extends AbstractApiController
     }
 
     /**
-     * Delete item.
-     *
      * @throws AppReadOnlyModeException
+     * @throws AuthorCleanPhraseException
      */
     #[Route('/{authorCleanPhrase}', 'delete', ['authorCleanPhrase' => Requirement::DIGITS], methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('authorCleanPhrase'), OAResponseDeleted]

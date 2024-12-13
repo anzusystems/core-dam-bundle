@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\DBAL\Types\Types;
@@ -28,7 +29,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorCleanPhraseRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_ext_system_phrase', fields: ['phrase', 'extSystem'])]
-#[UniqueEntity(fields: ['phrase', 'extSystem'])]
+#[UniqueEntity(fields: ['phrase', 'extSystem'], message: ValidationException::ERROR_FIELD_UNIQUE)]
 final class AuthorCleanPhrase implements
     IdentifiableInterface,
     UserTrackingInterface,
@@ -48,7 +49,7 @@ final class AuthorCleanPhrase implements
 
     #[ORM\Column(type: Types::STRING, length: 255, options: ['collation' => 'utf8mb4_bin'])]
     #[Assert\Length(
-        min: 2,
+        min: 1,
         max: 255,
         minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
@@ -56,15 +57,15 @@ final class AuthorCleanPhrase implements
     #[Serialize]
     private string $phrase;
 
-    // todo Assert ext system equals
     #[ORM\ManyToOne(targetEntity: Author::class)]
     #[Assert\When(
-        expression: 'this.getMode().is(remove)',
+        expression: 'this.getMode().is(replace)',
         constraints: [
-            new Assert\NotNull(),
+            new Assert\NotNull(message: ValidationException::ERROR_FIELD_EMPTY),
         ],
-        values: ['remove' => AuthorCleanPhraseMode::Replace]
+        values: ['replace' => AuthorCleanPhraseMode::Replace]
     )]
+    #[AppAssert\EqualExtSystem]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?Author $authorReplacement = null;
 
@@ -73,6 +74,11 @@ final class AuthorCleanPhrase implements
     private AuthorCleanPhraseType $type;
 
     #[ORM\Column(enumType: AuthorCleanPhraseMode::class)]
+    #[Assert\Expression(
+        expression: 'this.getType().isNot(regex) or this.getMode().is(remove)',
+        message: ValidationException::ERROR_FIELD_INVALID,
+        values: ['regex' => AuthorCleanPhraseType::Regex, 'remove' => AuthorCleanPhraseMode::Remove]
+    )]
     #[Serialize]
     private AuthorCleanPhraseMode $mode;
 

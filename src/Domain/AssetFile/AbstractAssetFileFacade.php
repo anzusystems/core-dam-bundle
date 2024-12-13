@@ -230,6 +230,7 @@ abstract class AbstractAssetFileFacade
         $assetFile = $this->getFactory()->createFromAdmDto($asset->getLicence(), $createDto);
 
         $this->getManager()->beginTransaction();
+
         try {
             $this->getManager()->create($assetFile);
             $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName);

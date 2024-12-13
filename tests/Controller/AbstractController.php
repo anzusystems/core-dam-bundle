@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller;
 
 use AnzuSystems\CommonBundle\Tests\Traits\AnzuKernelTrait;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\Cache\AuthorCleanPhraseCache;
+use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Doctrine\ORM\Cache;

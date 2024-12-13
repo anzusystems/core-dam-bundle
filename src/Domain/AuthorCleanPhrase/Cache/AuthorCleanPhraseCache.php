@@ -42,6 +42,11 @@ final class AuthorCleanPhraseCache
         return $this->buildCache($type, $mode, $extSystem, $item);
     }
 
+    public function cleanCache(): void
+    {
+        $this->coreDamBundleAuthorCleanPhraseCache->clear();
+    }
+
     /**
      * @throws AuthorCleanPhraseException
      */
