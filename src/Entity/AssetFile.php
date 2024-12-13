@@ -80,7 +80,6 @@ abstract class AssetFile implements
         $this->setFlags(new AssetFileFlags());
         $this->setRoutes(new ArrayCollection());
         $this->setMainRoute(null);
-        $this->setAsset(new Asset());
     }
 
     public function __toString(): string

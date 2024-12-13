@@ -51,22 +51,13 @@ final readonly class AuthorCleanPhraseFacade
 
     /**
      * Process deletion.
+     * @throws AuthorCleanPhraseException
      */
     public function delete(AuthorCleanPhrase $bannedPhrase): bool
     {
         $deleted = $this->manager->delete($bannedPhrase);
-        //        if ($deleted && $bannedPhrase->getType()->is(BannedPhraseType::Word)) {
-        //            $this->bannedPhraseWordProvider->warmupCache();
-        //        }
+        $this->authorCleanPhraseCache->refreshCacheByPhrase($bannedPhrase);
 
         return $deleted;
-    }
-
-    public function clean(string $postTexts): string
-    {
-        return '';
-        //        return $postTexts->setContent(
-        //            $this->cleaner->getClean($postTexts->getContentRaw())
-        //        );
     }
 }

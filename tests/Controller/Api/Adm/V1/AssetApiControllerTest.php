@@ -21,8 +21,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class AssetApiControllerTest extends AbstractAssetFileApiController
 {
-    private const TEST_DATA_FILENAME = 'metadata_image.jpeg';
-    private const TEST_DATA_2_FILENAME = 'solid_image.jpeg';
+    private const string TEST_DATA_FILENAME = 'metadata_image.jpeg';
+    private const string TEST_DATA_2_FILENAME = 'solid_image.jpeg';
 
     protected ImageUrlFactory $imageUrlFactory;
 
