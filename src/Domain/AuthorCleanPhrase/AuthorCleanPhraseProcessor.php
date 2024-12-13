@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\Cache\AbstractAuthorClean
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\Cache\AuthorCleanPhraseCache;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\AuthorCleanPhraseException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorCleanResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
@@ -23,6 +24,9 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     ) {
     }
 
+    /**
+     * @throws AuthorCleanPhraseException
+     */
     public function processString(string $string, ExtSystem $extSystem): AuthorCleanResultDto
     {
         $authorParts = $this->split($string, $extSystem);
@@ -31,6 +35,9 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
         return $this->replace($string, $authorParts, $extSystem);
     }
 
+    /**
+     * @throws AuthorCleanPhraseException
+     */
     public function replace(string $string, array $authorParts, ExtSystem $extSystem): AuthorCleanResultDto
     {
         $replace = $this->cleanPhraseWordCache->getList(
@@ -75,6 +82,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
 
     /**
      * @param array<int, string> $strings
+     * @throws AuthorCleanPhraseException
      */
     private function removeWords(array $strings, ExtSystem $extSystem): array
     {
@@ -104,6 +112,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
 
     /**
      * @return array<int, string>
+     * @throws AuthorCleanPhraseException
      */
     private function split(string $string, ExtSystem $extSystem): array
     {

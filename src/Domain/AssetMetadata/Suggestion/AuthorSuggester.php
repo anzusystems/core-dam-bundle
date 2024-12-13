@@ -40,10 +40,9 @@ final class AuthorSuggester extends AbstractSuggester
                 continue;
             }
 
-            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadata[$tagName], $assetFile->getExtSystem());
-            $authorsSuggestions = array_merge($authorsSuggestions, $processStringDto->getAuthorNames());
-            $processStringDto->getAuthors()->map(
-                fn (Author $author) => $assetFile->getAsset()->addAuthor($author)
+            $authorsSuggestions = array_merge(
+                $authorsSuggestions,
+                $this->suggestOnMetadataValue($assetFile, $metadata[$tagName])
             );
         }
 
@@ -98,5 +97,28 @@ final class AuthorSuggester extends AbstractSuggester
         return $this->configurationCache ??= $this->extSystemConfigurationProvider
             ->getExtSystemConfigurationByAssetFile($assetFile)
             ->getAuthors();
+    }
+
+    /**
+     * @param non-empty-string $metadataValue
+     */
+    private function suggestOnMetadataValue(AssetFile $assetFile, string $metadataValue): array
+    {
+        try {
+            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadataValue, $assetFile->getExtSystem());
+            $processStringDto->getAuthors()->map(
+                fn (Author $author) => $assetFile->getAsset()->addAuthor($author)
+            );
+
+            return $processStringDto->getAuthorNames();
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                message: 'Failed to suggest authors on metadata value: ' . $metadataValue . ' ' . $exception->getMessage(),
+                exception: $exception
+            );
+        }
+
+        return [];
     }
 }
