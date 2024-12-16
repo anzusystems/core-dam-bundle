@@ -145,7 +145,7 @@ final class AssetController extends AbstractApiController
     #[Route('/ext-system/{extSystem}/ids/{ids}', name: 'get_by_ext_system_and_ids', methods: [Request::METHOD_GET])]
     public function getByExtSystemAndIds(
         ExtSystem $extSystem,
-        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT, itemNormalizer: 'intval')]
+        #[ArrayStringParam(itemsLimit: self::IDS_LIMIT)]
         array $ids,
     ): JsonResponse {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $extSystem);

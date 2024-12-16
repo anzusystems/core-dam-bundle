@@ -37,6 +37,20 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             metadata: $metadata
         );
 
+        $this->suggestWithTags($assetFile, $tags);
+    }
+
+    public function supports(AssetFile $assetFile): bool
+    {
+        $authorSettings = $this->getConfiguration($assetFile);
+
+        return false === $assetFile->getAsset()->getAssetFlags()->isDescribed()
+            && $authorSettings->isEnabled()
+            && false === empty($authorSettings->getAutocompleteFromMetadataTags());
+    }
+
+    protected function suggestWithTags(AssetFile $assetFile, array $tags): void
+    {
         $originAsset = $assetFile->getAsset();
         $suggestions = [];
         $iteration = 0;
@@ -51,15 +65,6 @@ abstract class AbstractSuggester implements DataSuggesterInterface
         }
 
         $this->storeSuggestionsOnAsset($originAsset, $suggestions);
-    }
-
-    public function supports(AssetFile $assetFile): bool
-    {
-        $authorSettings = $this->getConfiguration($assetFile);
-
-        return false === $assetFile->getAsset()->getAssetFlags()->isDescribed()
-            && $authorSettings->isEnabled()
-            && false === empty($authorSettings->getAutocompleteFromMetadataTags());
     }
 
     abstract protected function storeSuggestionsOnAsset(Asset $asset, array $suggestions): void;

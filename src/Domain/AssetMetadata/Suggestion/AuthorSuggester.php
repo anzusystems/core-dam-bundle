@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFactory;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -25,7 +26,27 @@ final class AuthorSuggester extends AbstractSuggester
         private readonly AuthorFacade $authorFacade,
         private readonly EntityManagerInterface $entityManager,
         private readonly DamLogger $damLogger,
+        private readonly AuthorCleanPhraseProcessor $authorCleanPhraseProcessor,
     ) {
+    }
+
+    public function suggest(AssetFile $assetFile, array $metadata): void
+    {
+        $configuration = $this->getConfiguration($assetFile);
+
+        $authorsSuggestions = [];
+        foreach ($configuration->getAutocompleteFromMetadataTags() as $tagName => $separator) {
+            if (empty($metadata[$tagName])) {
+                continue;
+            }
+
+            $authorsSuggestions = array_merge(
+                $authorsSuggestions,
+                $this->suggestOnMetadataValue($assetFile, $metadata[$tagName])
+            );
+        }
+
+        $this->suggestWithTags($assetFile, array_unique($authorsSuggestions));
     }
 
     /**
@@ -76,5 +97,28 @@ final class AuthorSuggester extends AbstractSuggester
         return $this->configurationCache ??= $this->extSystemConfigurationProvider
             ->getExtSystemConfigurationByAssetFile($assetFile)
             ->getAuthors();
+    }
+
+    /**
+     * @param non-empty-string $metadataValue
+     */
+    private function suggestOnMetadataValue(AssetFile $assetFile, string $metadataValue): array
+    {
+        try {
+            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadataValue, $assetFile->getExtSystem());
+            $processStringDto->getAuthors()->map(
+                fn (Author $author) => $assetFile->getAsset()->addAuthor($author)
+            );
+
+            return $processStringDto->getAuthorNames();
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                message: 'Failed to suggest authors on metadata value: ' . $metadataValue . ' ' . $exception->getMessage(),
+                exception: $exception
+            );
+        }
+
+        return [];
     }
 }

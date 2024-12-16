@@ -229,8 +229,9 @@ abstract class AbstractAssetFileFacade
 
         $assetFile = $this->getFactory()->createFromAdmDto($asset->getLicence(), $createDto);
 
+        $this->getManager()->beginTransaction();
+
         try {
-            $this->getManager()->beginTransaction();
             $this->getManager()->create($assetFile);
             $this->assetSlotFactory->createRelation($asset, $assetFile, $slotName);
 
@@ -239,7 +240,9 @@ abstract class AbstractAssetFileFacade
 
             return $assetFile;
         } catch (Throwable $exception) {
-            $this->getManager()->rollback();
+            if ($this->getManager()->isTransactionActive()) {
+                $this->getManager()->rollback();
+            }
 
             throw new RuntimeException('image_create_failed', 0, $exception);
         }
