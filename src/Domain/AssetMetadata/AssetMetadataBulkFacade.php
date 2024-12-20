@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
@@ -29,6 +29,7 @@ final class AssetMetadataBulkFacade
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AssetManager $assetManager,
         private readonly AccessDenier $accessDenier,
+        private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
     ) {
     }
 
@@ -49,17 +50,9 @@ final class AssetMetadataBulkFacade
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
-            $this->assetMetadataManager->updateFromCustomData($asset, $updateDto->getCustomData(), false);
             $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
-                asset: $this->assetManager->updateFromMetadataBulkDto($asset, $updateDto, false)
+                asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, false)
             );
-            if ($updateDto->isDescribed()) {
-                $this->assetMetadataManager->removeSuggestions($updateDto->getAsset()->getMetadata(), false);
-            }
-            $mainFile = $asset->getMainFile();
-            if ($mainFile instanceof AssetFile) {
-                $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
-            }
         }
 
         $this->assetManager->flush();
@@ -83,11 +76,16 @@ final class AssetMetadataBulkFacade
     private function checkPermissions(FormProvidableMetadataBulkUpdateDto $updateDto): void
     {
         $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $updateDto->getAsset());
-        foreach ($updateDto->getAuthors() as $author) {
-            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $author);
+        if (false === $updateDto->isAuthorsUndefined()) {
+            foreach ($updateDto->getAuthors() as $author) {
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $author);
+            }
         }
-        foreach ($updateDto->getKeywords() as $keyword) {
-            $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_KEYWORD_READ, $keyword);
+
+        if (false === $updateDto->isKeywordsUndefined()) {
+            foreach ($updateDto->getKeywords() as $keyword) {
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_KEYWORD_READ, $keyword);
+            }
         }
     }
 }

@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
-use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
 
@@ -16,7 +14,6 @@ class AssetManager extends AbstractManager
 {
     public function __construct(
         private readonly AssetPropertiesRefresher $propertiesRefresher,
-        private readonly AuthorProvider $authorProvider,
     ) {
     }
 
@@ -70,28 +67,5 @@ class AssetManager extends AbstractManager
         $this->flush($flush);
 
         return true;
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     */
-    public function updateFromMetadataBulkDto(
-        Asset $asset,
-        FormProvidableMetadataBulkUpdateDto $dto,
-        bool $flush = true
-    ): Asset {
-        $asset->getAssetFlags()
-            ->setDescribed($dto->isDescribed());
-        $this->colUpdate(
-            oldCollection: $asset->getKeywords(),
-            newCollection: $dto->getKeywords(),
-        );
-        $this->colUpdate(
-            oldCollection: $asset->getAuthors(),
-            newCollection: $dto->getAuthors(),
-        );
-        $this->authorProvider->provideCurrentAuthorToColl($asset);
-
-        return $this->updateExisting($asset, $flush);
     }
 }

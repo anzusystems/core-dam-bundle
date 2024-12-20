@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterfa
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\CustomDataInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ResourceCustomFormProvidableInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
+use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use Doctrine\ORM\NonUniqueResultException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\Validator\Constraint;
@@ -45,6 +46,10 @@ class CustomDataValidator extends ConstraintValidator
 
         if (false === ($value instanceof CustomDataInterface)) {
             throw new UnexpectedTypeException($constraint, ResourceCustomFormProvidableInterface::class);
+        }
+
+        if ($value instanceof FormProvidableMetadataBulkUpdateDto && $value->isCustomDataUndefined()) {
+            return;
         }
 
         $this->validateForm(

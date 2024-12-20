@@ -27,7 +27,7 @@ final class AssetValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, FormProvidableMetadataBulkUpdateDto::class);
         }
 
-        if (false === $value->isDescribed()) {
+        if ($value->isDescribedUndefined() || false === $value->isDescribed()) {
             return;
         }
 
@@ -36,9 +36,10 @@ final class AssetValidator extends ConstraintValidator
         $authorsConfig = $configuration->getAuthors();
 
         if (
-            $keywordsConfig->isEnabled()
-            && $keywordsConfig->isRequired()
-            && $value->getKeywords()->isEmpty()
+            false === $value->isKeywordsUndefined() &&
+            $keywordsConfig->isEnabled() &&
+            $keywordsConfig->isRequired() &&
+            $value->getKeywords()->isEmpty()
         ) {
             $this->context
                 ->buildViolation(ValidationException::ERROR_FIELD_EMPTY)
@@ -47,9 +48,10 @@ final class AssetValidator extends ConstraintValidator
         }
 
         if (
-            $authorsConfig->isEnabled()
-            && $authorsConfig->isRequired()
-            && $value->getAuthors()->isEmpty()
+            false === $value->isAuthorsUndefined() &&
+            $authorsConfig->isEnabled() &&
+            $authorsConfig->isRequired() &&
+            $value->getAuthors()->isEmpty()
         ) {
             $this->context
                 ->buildViolation(ValidationException::ERROR_FIELD_EMPTY)

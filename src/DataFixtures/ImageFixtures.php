@@ -8,10 +8,15 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -32,12 +37,14 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         private readonly AssetLicenceRepository $licenceRepository,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
+        private readonly AuthorRepository $authorRepository,
+        private readonly KeywordRepository $keywordRepository,
     ) {
     }
 
     public static function getDependencies(): array
     {
-        return [AssetLicenceFixtures::class];
+        return [AssetLicenceFixtures::class, AuthorFixtures::class, KeywordFixtures::class];
     }
 
     public static function getIndexKey(): string
@@ -64,6 +71,10 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $fileSystem = $this->fileSystemProvider->createLocalFilesystem(self::DATA_PATH);
         /** @var AssetLicence $licence */
         $licence = $this->licenceRepository->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        /** @var Keyword $keyword */
+        $keyword = $this->keywordRepository->find(KeywordFixtures::KEYWORD_1);
+        /** @var Author $author */
+        $author = $this->authorRepository->find(AuthorFixtures::AUTHOR_1);
 
         $file = $this->getFile($fileSystem, 'text_image_108x192.png');
         $image = $this->imageFactory->createFromFile(
@@ -80,6 +91,8 @@ final class ImageFixtures extends AbstractAssetFileFixtures
         $this->facadeProvider->getStatusFacade($image)->storeAndProcess($image, $file);
         $image->getAsset()->getAssetFlags()->setDescribed(true);
         $image->getFlags()->setSingleUse(true);
+        $image->getAsset()->setAuthors(new ArrayCollection([$author]));
+        $image->getAsset()->setKeywords(new ArrayCollection([$keyword]));
 
         yield $image;
 
