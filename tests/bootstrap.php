@@ -36,8 +36,6 @@ $input = new ArrayInput([
 $input->setInteractive(false);
 $app->run($input, $output);
 
-return;
-
 # Database drop
 $input = new ArrayInput([
     'command' => 'doctrine:database:drop',
