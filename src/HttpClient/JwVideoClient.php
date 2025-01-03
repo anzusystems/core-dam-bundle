@@ -45,7 +45,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '_JwVideoDistribution_ create thumbnail',
+            message: '[JwVideoDistribution] create thumbnail',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/",
             method: Request::METHOD_POST,
             headers: [
@@ -84,7 +84,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '_JwVideoDistribution_ get thumbnail',
+            message: '[JwVideoDistribution] get thumbnail',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",
@@ -107,7 +107,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '_JwVideoDistribution_ set poster',
+            message: '[JwVideoDistribution] set poster',
             url: "/v2/sites/{$configuration->getSiteId()}/thumbnails/{$thumbnailId}",
             method: Request::METHOD_PATCH,
             headers: [
@@ -145,7 +145,7 @@ final class JwVideoClient implements LoggerAwareInterface
 
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '_JwVideoDistribution_ create video object',
+            message: '[JwVideoDistribution] create video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media",
             method: Request::METHOD_POST,
             headers: [
@@ -181,7 +181,7 @@ final class JwVideoClient implements LoggerAwareInterface
                     ],
                 ]
             );
-            $this->damLogger->info('_JwVideoDistribution_', 'Prepare multipart upload for upload (%s)', $dto->getUploadId());
+            $this->damLogger->info('JwVideoDistribution', 'Prepare multipart upload for upload (%s)', $dto->getUploadId());
 
             $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
 
@@ -241,7 +241,7 @@ final class JwVideoClient implements LoggerAwareInterface
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
-            message: '_JwVideoDistribution_ get video object',
+            message: '[JwVideoDistribution] get video object',
             url: "/v2/sites/{$configuration->getSiteId()}/media/{$distribution->getExtId()}/",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",

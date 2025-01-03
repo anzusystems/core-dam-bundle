@@ -257,9 +257,11 @@ abstract class Distribution implements
         return $this->asset;
     }
 
-    public function setAsset(?Asset $asset): void
+    public function setAsset(?Asset $asset): static
     {
         $this->asset = $asset;
+
+        return $this;
     }
 
     public function getAssetFile(): ?AssetFile
@@ -267,9 +269,11 @@ abstract class Distribution implements
         return $this->assetFile;
     }
 
-    public function setAssetFile(?AssetFile $assetFile): void
+    public function setAssetFile(?AssetFile $assetFile): static
     {
         $this->assetFile = $assetFile;
+
+        return $this;
     }
 
     public function getExtSystem(): ExtSystem

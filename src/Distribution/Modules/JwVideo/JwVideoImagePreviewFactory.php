@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 
 final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
 {
@@ -29,8 +30,21 @@ final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
         if ($assetFile instanceof AudioFile) {
             return $this->getAudioPreviewUrl($assetFile);
         }
+        if ($assetFile instanceof VideoFile) {
+            return $this->getVideoPreviewUrl($assetFile);
+        }
 
         return null;
+    }
+
+    private function getVideoPreviewUrl(VideoFile $assetFile): ?string
+    {
+        $imagePreview = $assetFile->getImagePreview();
+        if (null === $imagePreview) {
+            return null;
+        }
+
+        return $this->generateUrl($imagePreview->getImageFile());
     }
 
     private function getAudioPreviewUrl(AudioFile $audioFile): ?string
