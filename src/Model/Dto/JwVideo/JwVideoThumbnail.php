@@ -18,6 +18,9 @@ final class JwVideoThumbnail
     #[Serialize(serializedName: 'error_message')]
     private ?string $errorMessage = null;
 
+    #[Serialize(serializedName: 'upload_link')]
+    private string $link = '';
+
     public function __construct()
     {
         $this->setId('');
@@ -58,5 +61,17 @@ final class JwVideoThumbnail
     public function getErrorMessage(): ?string
     {
         return $this->errorMessage;
+    }
+
+    public function getLink(): string
+    {
+        return $this->link;
+    }
+
+    public function setLink(string $link): self
+    {
+        $this->link = $link;
+
+        return $this;
     }
 }
