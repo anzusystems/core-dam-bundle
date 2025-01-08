@@ -41,7 +41,26 @@ final class JwVideoClient implements LoggerAwareInterface
     ) {
     }
 
-    public function createThumbnail(JwDistributionServiceConfiguration $configuration, string $imageUrl, string $jwId): JwVideoThumbnail
+    public function uploadFile(string $link, string $fileData): void
+    {
+        $response = $this->client->request(
+            Request::METHOD_PUT,
+            $link,
+            [
+                'body' => $fileData,
+                'headers' => [
+                    'Content-Length' => strlen($fileData),
+                    'Content-Type' => '',
+                ],
+                'timeout' => self::UPLOAD_TIMEOUT,
+                'max_duration' => self::UPLOAD_DURATION,
+            ]
+        );
+
+        $response->getContent();
+    }
+
+    public function createThumbnail(JwDistributionServiceConfiguration $configuration, string $jwId): JwVideoThumbnail
     {
         $response = $this->loggedRequest(
             client: $this->jwPlayerApiClient,
@@ -62,9 +81,9 @@ final class JwVideoClient implements LoggerAwareInterface
                     ],
                 ],
                 'upload' => [
-                    'method' => 'fetch',
+                    'method' => 'direct',
+                    'source_type' => 'custom_upload',
                     'thumbnail_type' => 'static',
-                    'download_url' => $imageUrl,
                 ],
             ]
         );
@@ -181,7 +200,7 @@ final class JwVideoClient implements LoggerAwareInterface
                     ],
                 ]
             );
-            $this->damLogger->info('JwVideoDistribution', 'Prepare multipart upload for upload (%s)', $dto->getUploadId());
+            $this->damLogger->info('JwVideoDistribution', sprintf('Prepare multipart upload for upload (%s)', $dto->getUploadId()));
 
             $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
 
@@ -190,21 +209,7 @@ final class JwVideoClient implements LoggerAwareInterface
             foreach ($listData->getParts() as $part) {
                 $chunk = fread($handle, self::CHUNK_SIZE);
 
-                $response = $this->client->request(
-                    Request::METHOD_PUT,
-                    $part->getLink(),
-                    [
-                        'body' => $chunk,
-                        'headers' => [
-                            'Content-Length' => strlen($chunk),
-                            'Content-Type' => '',
-                        ],
-                        'timeout' => self::UPLOAD_TIMEOUT,
-                        'max_duration' => self::UPLOAD_DURATION,
-                    ]
-                );
-
-                $response->getContent();
+                $this->uploadFile($part->getLink(), $chunk);
             }
 
             fclose($handle);

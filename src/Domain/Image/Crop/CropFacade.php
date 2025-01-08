@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
@@ -24,6 +25,7 @@ final readonly class CropFacade
         private CropProcessor $cropProcessor,
         private AllowListConfiguration $allowListConfiguration,
         private RegionOfInterestRepository $regionOfInterestRepository,
+        private ConfigurationProvider $configurationProvider
     ) {
     }
 
@@ -48,6 +50,31 @@ final readonly class CropFacade
         }
 
         return $this->applyCropPayload($image, $cropPayload, $roi, $validate);
+    }
+
+    /**
+     * @throws InvalidCropException
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     */
+    public function applyCropByTag(
+        ImageFile $image,
+        string $tag,
+    ): string {
+        $cropAllowItem = $this->configurationProvider->getFirstTaggedAllowItem($tag);
+
+        if (null === $cropAllowItem) {
+            throw new DomainException(sprintf('Tag (%s) not found', $tag));
+        }
+
+        return $this->applyCropPayloadToDefaultRoi(
+            image: $image,
+            cropPayload: (new RequestedCropDto())
+                ->setRoi(0)
+                ->setRequestWidth($cropAllowItem->getWidth())
+                ->setRequestHeight($cropAllowItem->getHeight()),
+            validate: false,
+        );
     }
 
     /**

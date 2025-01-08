@@ -62,10 +62,10 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         $file = $this->getLocalFileCopy($assetFile);
         $this->jwVideoClient->uploadVideoObject($createVideoDto, $file);
 
-        $url = $this->jwVideoImagePreviewFactory->getThumbnailUrl($assetFile);
-        if ($url) {
+        $imagePreview = $this->jwVideoImagePreviewFactory->getImagePreview($assetFile);
+        if ($imagePreview) {
             $this->jwVideoThumbnail->setVideoThumbnail(
-                imageUrl: $url,
+                imageFile: $imagePreview->getImageFile(),
                 videoId: $createVideoDto->getId(),
                 distribService: $distribution->getDistributionService()
             );

@@ -10,14 +10,12 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\ImagePreview;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 
 final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
 {
-    public const string DISTRIBUTION_CROP_TAG = 'jw_distribution';
-
     public function __construct(
         protected ConfigurationProvider $configurationProvider,
         protected ImageUrlFactory $imageUrlFactory,
@@ -25,59 +23,25 @@ final class JwVideoImagePreviewFactory extends AbstractDistributionDtoFactory
     ) {
     }
 
-    public function getThumbnailUrl(AssetFile $assetFile): ?string
+    public function getImagePreview(AssetFile $assetFile): ?ImagePreview
     {
         if ($assetFile instanceof AudioFile) {
-            return $this->getAudioPreviewUrl($assetFile);
+            return $this->getAudioImagePreview($assetFile);
         }
         if ($assetFile instanceof VideoFile) {
-            return $this->getVideoPreviewUrl($assetFile);
+            return $assetFile->getImagePreview();
         }
 
         return null;
     }
 
-    private function getVideoPreviewUrl(VideoFile $assetFile): ?string
-    {
-        $imagePreview = $assetFile->getImagePreview();
-        if (null === $imagePreview) {
-            return null;
-        }
-
-        return $this->generateUrl($imagePreview->getImageFile());
-    }
-
-    private function getAudioPreviewUrl(AudioFile $audioFile): ?string
+    private function getAudioImagePreview(AudioFile $audioFile): ?ImagePreview
     {
         $episode = $audioFile->getAsset()->getEpisodes()->first();
         if (false === ($episode instanceof PodcastEpisode)) {
             return null;
         }
 
-        $imagePreview =
-            $episode->getPodcast()->getAltImage() ??
-            $episode->getPodcast()->getImagePreview();
-
-        if (null === $imagePreview) {
-            return null;
-        }
-
-        return $this->generateUrl($imagePreview->getImageFile());
-    }
-
-    private function generateUrl(ImageFile $imageFile): ?string
-    {
-        $cropAllowItem = $this->configurationProvider->getFirstTaggedAllowItem(self::DISTRIBUTION_CROP_TAG);
-
-        if (null === $cropAllowItem) {
-            return null;
-        }
-        $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($imageFile->getExtSystem()->getSlug());
-
-        return $config->getAdminDomain() . $this->imageUrlFactory->generatePublicUrl(
-            imageId: (string) $imageFile->getId(),
-            width: $cropAllowItem->getWidth(),
-            height: $cropAllowItem->getHeight(),
-        );
+        return $episode->getPodcast()->getAltImage() ?? $episode->getPodcast()->getImagePreview();
     }
 }
