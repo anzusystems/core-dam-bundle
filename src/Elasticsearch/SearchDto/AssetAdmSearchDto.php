@@ -25,6 +25,9 @@ class AssetAdmSearchDto extends AbstractSearchDto
     #[Serialize]
     protected string $text = '';
 
+    #[Serialize]
+    protected string $title = '';
+
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $assetAndMainFileIds = [];
@@ -190,6 +193,17 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function getIndexName(): string
     {
         return Asset::getResourceName();
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): self
+    {
+        $this->title = $title;
+        return $this;
     }
 
     public function getAssetIds(): array

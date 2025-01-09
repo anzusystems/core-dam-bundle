@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory\AssetDBALIndexFactory;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileProperties;
@@ -18,12 +19,14 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetDBALRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -44,7 +47,8 @@ class Asset implements
     NotifiableInterface,
     AssetCustomFormProvidableInterface,
     AssetLicenceInterface,
-    CopyableInterface
+    CopyableInterface,
+    DBALIndexableInterface
 {
     use TimeTrackingTrait;
     use UuidIdentityTrait;
@@ -53,6 +57,11 @@ class Asset implements
 
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $authors;
+
+    // todo validation (sigling should
+    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?Asset $siblingToAsset;
 
     #[ORM\OneToOne(targetEntity: AssetFile::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
@@ -133,11 +142,6 @@ class Asset implements
 
             ->setExtSystem($this->getExtSystem())
         ;
-    }
-
-    public function __clone()
-    {
-
     }
 
     public function getMainFile(): ?AssetFile
@@ -441,5 +445,26 @@ class Asset implements
         ksort($identityParts);
 
         return implode('_', $identityParts);
+    }
+
+    public function getSiblingToAsset(): ?Asset
+    {
+        return $this->siblingToAsset;
+    }
+
+    public function setSiblingToAsset(?Asset $siblingToAsset): self
+    {
+        $this->siblingToAsset = $siblingToAsset;
+        return $this;
+    }
+
+    public static function getDBALIndexFactoryClassName(): string
+    {
+        return AssetDBALIndexFactory::class;
+    }
+
+    public static function getRepositoryClassName(): string
+    {
+        return AssetDBALRepository::class;
     }
 }

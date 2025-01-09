@@ -27,6 +27,16 @@ final class Color implements ValueObjectInterface
         $this->black = $black;
     }
 
+    public static function fromString(string $color): self
+    {
+        list($r, $g, $b) = sscanf($color, "#%02x%02x%02x");
+        if (null === $r || null === $g || null === $b) {
+            return new self();
+        }
+
+        return new self($r, $g, $b);
+    }
+
     public function __toString(): string
     {
         return sprintf(
