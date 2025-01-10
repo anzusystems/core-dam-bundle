@@ -58,11 +58,6 @@ class Asset implements
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $authors;
 
-    // todo validation (sigling should
-    #[ORM\ManyToOne(targetEntity: self::class)]
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?Asset $siblingToAsset;
-
     #[ORM\OneToOne(targetEntity: AssetFile::class)]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize(handler: EntityIdHandler::class)]
@@ -445,18 +440,6 @@ class Asset implements
         ksort($identityParts);
 
         return implode('_', $identityParts);
-    }
-
-    public function getSiblingToAsset(): ?self
-    {
-        return $this->siblingToAsset;
-    }
-
-    public function setSiblingToAsset(?self $siblingToAsset): self
-    {
-        $this->siblingToAsset = $siblingToAsset;
-
-        return $this;
     }
 
     public static function getDBALIndexFactoryClassName(): string
