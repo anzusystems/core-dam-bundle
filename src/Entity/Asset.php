@@ -59,7 +59,7 @@ class Asset implements
     private Collection $authors;
 
     // todo validation (sigling should
-    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[ORM\ManyToOne(targetEntity: self::class)]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $siblingToAsset;
 
@@ -447,14 +447,15 @@ class Asset implements
         return implode('_', $identityParts);
     }
 
-    public function getSiblingToAsset(): ?Asset
+    public function getSiblingToAsset(): ?self
     {
         return $this->siblingToAsset;
     }
 
-    public function setSiblingToAsset(?Asset $siblingToAsset): self
+    public function setSiblingToAsset(?self $siblingToAsset): self
     {
         $this->siblingToAsset = $siblingToAsset;
+
         return $this;
     }
 

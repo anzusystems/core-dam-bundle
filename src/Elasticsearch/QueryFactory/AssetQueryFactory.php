@@ -34,7 +34,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
     protected function getMust(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $customDataFields = $this->customFormProvider->provideAllSearchableElementsForExtSystem($extSystem->getSlug())->map(
-            fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyName($element)
+            fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
         )->toArray();
 
         $customDataFields = array_unique($customDataFields);

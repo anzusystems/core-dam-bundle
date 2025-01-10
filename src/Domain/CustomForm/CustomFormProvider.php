@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\CustomForm;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetCustomForm;
 use AnzuSystems\CoreDamBundle\Entity\CustomForm;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterface;
@@ -34,6 +35,14 @@ final class CustomFormProvider extends AbstractManager
                 fn (CustomForm $customForm): string => (string) $customForm->getId()
             )->getValues()
         );
+    }
+
+    /**
+     * @return Collection<int, AssetCustomForm>
+     */
+    public function provideAllSearchableElementsForExtSystemId(int $extSystemId): Collection
+    {
+        return $this->assetCustomFormRepository->findAllByExtSystem($extSystemId);
     }
 
     /**

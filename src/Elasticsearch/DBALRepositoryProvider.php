@@ -10,14 +10,14 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Symfony\Component\DependencyInjection\Attribute\TaggedLocator;
+use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 
 final class DBALRepositoryProvider
 {
     private ContainerInterface $dbalRepositories;
 
     public function __construct(
-        #[TaggedLocator(tag: DBALIndexableRepositoryInterface::class)]
+        #[AutowireLocator(DBALIndexableRepositoryInterface::class)]
         ContainerInterface $dbalRepositories,
     ) {
         $this->dbalRepositories = $dbalRepositories;

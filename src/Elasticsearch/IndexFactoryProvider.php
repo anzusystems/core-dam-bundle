@@ -10,8 +10,8 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory\IndexFactoryInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 
@@ -21,7 +21,6 @@ final class IndexFactoryProvider
      * @var iterable<class-string<IndexFactoryInterface>, IndexFactoryInterface>
      */
     private iterable $indexFactories;
-
     private ContainerInterface $dbalIndexFactories;
 
     public function __construct(

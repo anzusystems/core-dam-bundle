@@ -47,6 +47,17 @@ final class AssetCustomFormRepository extends AbstractAnzuRepository
         );
     }
 
+    public function findAllByExtSystem(int $extSystemId): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->where('IDENTITY(entity.extSystem) = :extSystemId')
+                ->setParameter('extSystemId', $extSystemId)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     protected function getEntityClass(): string
     {
         return AssetCustomForm::class;

@@ -136,10 +136,12 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
             ->from($this->getEntityClass(), 'entity')
         ;
 
-        if ($config->hasExtSystemSlug()) {
+        if (is_int($config->getCurrentExtSystemId())) {
             $this->extSystemIdReindexCache ??= $this->getEntityManager()
                 ->getRepository(ExtSystem::class)
-                ->getIdBySlug($config->getExtSystemSlug());
+                ->find($config->getCurrentExtSystemId())
+                ?->getId()
+            ;
             $queryBuilder = $this->appendRebuildIndexQueryForExtSystem($queryBuilder, $this->extSystemIdReindexCache);
         }
         if ($config->hasIdFrom() || $config->hasLastProcessedId()) {

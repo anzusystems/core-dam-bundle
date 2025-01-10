@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository\DBALRepository;
 
-
+use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\CustomForm\AssetSearchableElementsCache;
+use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Repository\DBALIndexableRepositoryInterface;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\DateTimeHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
@@ -15,26 +16,18 @@ use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuDBALRepository;
 use Doctrine\Common\Collections\Order;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\QueryBuilder as ORMQueryBuilder;
-use Symfony\Component\Uid\Uuid;
 use Throwable;
 
 final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DBALIndexableRepositoryInterface
 {
-
     private const string TABLE_NAME = 'asset';
 
     public function __construct(
-//        private readonly ArticleAuthorRepository $articleAuthorRepository,
-//        private readonly ArticleKeywordRepository $articleKeywordRepository,
-//        private readonly ArticleOwnerRepository $articleOwnerRepository,
-//        private readonly ArticleRouteKindRepository $articleRouteKindRepository,
-//        private readonly ArticleKindStandardCompleteStageRepository $articleKindStandardCompleteStageRepository,
-//        private readonly ArticleKindStandardActiveStageRepository $articleKindStandardActiveStageRepository,
-//        private readonly ImageRepository $imageRepository,
         private readonly AssetKeywordDBALRepository $assetKeywordRepository,
         private readonly AssetAuthorDBALRepository $assetAuthorRepository,
         private readonly AssetAssetSlotDBALRepository $assetAssetSlotRepository,
         private readonly AssetPodcastDBALRepository $assetPodcastRepository,
+        private readonly AssetSearchableElementsCache $assetSearchableElementsCache,
     ) {
     }
 
@@ -54,7 +47,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         try {
             return (int) $qb->fetchOne();
         } catch (Throwable) {
-            return 0;
+            return App::ZERO;
         }
     }
 
@@ -64,13 +57,13 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         /** @noinspection PhpDqlBuilderUnknownModelInspection */
         $qb
             ->select('
-                entity.id, entity.main_file_id,
+                entity.id, entity.main_file_id, entity.ext_system_id,
                 entity.attributes_asset_type, entity.attributes_status,
                 entity.asset_flags_described, entity.asset_flags_visible, entity.asset_flags_generated_by_system,
                 entity.asset_file_properties_slot_names, entity.asset_file_properties_distributes_in_services,
                 entity.asset_file_properties_from_rss, entity.asset_file_properties_width, entity.asset_file_properties_height,
                 entity.created_at, entity.modified_at,
-                entity.created_by_id, entity.licence_id, entity.main_file_id,
+                entity.created_by_id, entity.licence_id,
                 asf.asset_attributes_origin_file_name, asf.asset_attributes_mime_type, asf.asset_attributes_size,
                 image.image_attributes_rotation, image.image_attributes_most_dominant_color, image.image_attributes_width, image.image_attributes_height,
                 video.attributes_rotation, video.attributes_duration video_attributes_duration, video.attributes_width, 
@@ -106,6 +99,11 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         $assetSlotMap = $this->assetAssetSlotRepository->getByAsset($ids);
 
         foreach ($data as $index => $item) {
+            $data[$index]['custom_data'] = $this->getSearchableCustomData(
+                json_decode($item['custom_data'], true),
+                $item['ext_system_id'],
+                $item['attributes_asset_type']
+            );
             $data[$index]['created_at'] = DateTimeHelper::datetimeOrNull($item['created_at']);
             $data[$index]['modified_at'] = DateTimeHelper::datetimeOrNull($item['modified_at']);
             $data[$index]['keyword_ids'] = $keywordMap[$item['id']]['ids'] ?? [];
@@ -125,11 +123,8 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
 
     protected function applyRebuildIndexConfig(ORMQueryBuilder|QueryBuilder $qb, RebuildIndexConfig $config): ORMQueryBuilder|QueryBuilder
     {
-        $extSystemId = $config->getExtSystemId();
-        if (is_int($extSystemId)) {
-            $qb->andWhere('entity.ext_system_id = :extSystemId')
-                ->setParameter('extSystemId', $extSystemId);
-        }
+        $qb->andWhere('entity.ext_system_id = :extSystemId')
+            ->setParameter('extSystemId', $config->getCurrentExtSystemId());
 
         if ($config->hasIdFrom() || $config->hasLastProcessedId()) {
             $idFromCompareCharacter = $config->hasLastProcessedId() ? '>' : '>=';
@@ -143,5 +138,21 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         }
 
         return $qb;
+    }
+
+    private function getSearchableCustomData(array $customData, int $extSystemId, string $assetType): array
+    {
+        $properties = $this->assetSearchableElementsCache->getSearchableCustomFormProperties(
+            $extSystemId,
+            $assetType
+        );
+
+        $searchableCustomData = [];
+        foreach ($properties as $property) {
+            $searchableCustomData[CustomDataIndexDefinitionFactory::getIndexKeyNameByProperty($property)] =
+                $customData[$property] ?? null;
+        }
+
+        return $searchableCustomData;
     }
 }

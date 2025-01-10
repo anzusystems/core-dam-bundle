@@ -27,16 +27,6 @@ final class Color implements ValueObjectInterface
         $this->black = $black;
     }
 
-    public static function fromString(string $color): self
-    {
-        list($r, $g, $b) = sscanf($color, "#%02x%02x%02x");
-        if (null === $r || null === $g || null === $b) {
-            return new self();
-        }
-
-        return new self($r, $g, $b);
-    }
-
     public function __toString(): string
     {
         return sprintf(
@@ -45,6 +35,17 @@ final class Color implements ValueObjectInterface
             (int) round($this->green),
             (int) round($this->black),
         );
+    }
+
+    public static function fromString(string $color): self
+    {
+        $rgbParts = sscanf($color, '#%02x%02x%02x');
+
+        if (isset($rgbParts[0], $rgbParts[1], $rgbParts[2])) {
+            return new self((int) $rgbParts[0], (int) $rgbParts[1], (int) $rgbParts[2]);
+        }
+
+        return new self();
     }
 
     public function getColorDist(self $color): int

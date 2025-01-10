@@ -27,7 +27,7 @@ final class AssetMetadataCustomData
         );
 
         foreach ($searchableElements as $searchableElement) {
-            $data[CustomDataIndexDefinitionFactory::getIndexKeyName($searchableElement)] =
+            $data[CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($searchableElement)] =
                 $entity->getMetadata()->getCustomData()[$searchableElement->getProperty()] ?? null;
         }
 

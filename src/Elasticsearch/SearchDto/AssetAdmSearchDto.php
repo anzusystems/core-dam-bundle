@@ -203,6 +203,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 

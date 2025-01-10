@@ -13,7 +13,7 @@ interface DBALIndexableRepositoryInterface
     /**
      * @return array{
      *     array{
-     *          id: int
+     *          id: string
      *      }
      * }
      */

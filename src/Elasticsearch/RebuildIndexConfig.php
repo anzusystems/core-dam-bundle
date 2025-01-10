@@ -23,8 +23,8 @@ final class RebuildIndexConfig
      * @var class-string
      */
     private string $entityName;
-
-    private ?int $extSystemId = null;
+    private int $currentExtSystemId;
+    private string $currentExtSystemSlug;
 
     public function __construct(
         private readonly string $indexName,
@@ -66,14 +66,27 @@ final class RebuildIndexConfig
         return $this;
     }
 
-    public function getExtSystemId(): ?int
+    public function getCurrentExtSystemSlug(): string
     {
-        return $this->extSystemId;
+        return $this->currentExtSystemSlug;
     }
 
-    public function setExtSystemId(?int $extSystemId): self
+    public function setCurrentExtSystemSlug(string $currentExtSystemSlug): self
     {
-        $this->extSystemId = $extSystemId;
+        $this->currentExtSystemSlug = $currentExtSystemSlug;
+
+        return $this;
+    }
+
+    public function getCurrentExtSystemId(): int
+    {
+        return $this->currentExtSystemId;
+    }
+
+    public function setCurrentExtSystemId(int $currentExtSystemId): self
+    {
+        $this->currentExtSystemId = $currentExtSystemId;
+
         return $this;
     }
 

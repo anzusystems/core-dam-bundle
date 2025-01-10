@@ -32,15 +32,20 @@ final class CustomDataIndexDefinitionFactory
         foreach ($elements as $element) {
             $indexBuilder = $this->getIndexBuilder($element);
 
-            $definitions[$this->getIndexKeyName($element)] = $indexBuilder->getIndexDefinition($element);
+            $definitions[$this->getIndexKeyNameByElement($element)] = $indexBuilder->getIndexDefinition($element);
         }
 
         return $definitions;
     }
 
-    public static function getIndexKeyName(CustomFormElement $element): string
+    public static function getIndexKeyNameByElement(CustomFormElement $element): string
     {
-        return self::METADATA_PREFIX . $element->getProperty();
+        return self::getIndexKeyNameByProperty($element->getProperty());
+    }
+
+    public static function getIndexKeyNameByProperty(string $property): string
+    {
+        return self::METADATA_PREFIX . $property;
     }
 
     private function getIndexBuilder(CustomFormElement $customFormElement): IndexBuilderInterface

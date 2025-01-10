@@ -7,8 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\NonUniqueResultException;
-use Doctrine\ORM\NoResultException;
 
 /**
  * @extends AbstractAnzuRepository<ExtSystem>
@@ -23,20 +21,6 @@ final class ExtSystemRepository extends AbstractAnzuRepository
     public function findOneBySlug(string $slug): ?ExtSystem
     {
         return $this->findOneBy(['slug' => $slug]);
-    }
-
-    /**
-     * @throws NonUniqueResultException
-     * @throws NoResultException
-     */
-    public function getIdBySlug(string $slug): int
-    {
-        return $this->createQueryBuilder('entity')
-            ->select('entity.id')
-            ->where('entity.slug = :slug')
-            ->setParameter('slug', $slug)
-            ->getQuery()
-            ->getSingleScalarResult();
     }
 
     /**

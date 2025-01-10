@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\ClosestColorProvider;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
+use DateTimeImmutable;
 
 final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
 {
@@ -20,6 +21,45 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
     /**
      * @param array{
      *     id: int,
+     *     main_file_id: int,
+     *     ext_system_id: int,
+     *     attributes_asset_type: string,
+     *     attributes_status: string,
+     *     asset_flags_described: int,
+     *     asset_flags_visible: int,
+     *     asset_flags_generated_by_system: int,
+     *     asset_file_properties_slot_names: string,
+     *     asset_file_properties_distributes_in_services: string,
+     *     asset_file_properties_from_rss: int,
+     *     asset_file_properties_width: int,
+     *     asset_file_properties_height: int,
+     *     created_at: DateTimeImmutable,
+     *     modified_at: DateTimeImmutable,
+     *     created_by_id: int,
+     *     licence_id: int,
+     *     asset_attributes_origin_file_name: string,
+     *     asset_attributes_mime_type: string,
+     *     asset_attributes_size: int,
+     *     image_attributes_rotation: int,
+     *     image_attributes_most_dominant_color: ?Color,
+     *     image_attributes_width: int,
+     *     image_attributes_height: int,
+     *     attributes_rotation: int,
+     *     video_attributes_duration: int,
+     *     attributes_width: int,
+     *     attributes_height: int,
+     *     video_codec_name: string,
+     *     video_attributes_bitrate: int,
+     *     attributes_page_count: int,
+     *     audio_attributes_duration: int,
+     *     audio_attributes_codec_name: string,
+     *     audio_attributes_bitrate: int,
+     *     flags_single_use: int,
+     *     custom_data: array<string, ?string>,
+     *     keyword_ids: string[],
+     *     author_ids: string[],
+     *     file_ids: string[],
+     *     podcast_ids: string[],
      * } $array
      */
     public function buildFromArray(
@@ -33,8 +73,8 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             $array['asset_file_properties_height'],
         );
 
-        $width = $array['asset_file_properties_width'];
-        $height = $array['asset_file_properties_height'];
+        $width = (int) $array['asset_file_properties_width'];
+        $height = (int) $array['asset_file_properties_height'];
 
         return [
             'id' => $array['id'],
@@ -78,6 +118,7 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             'bitrate' => $array['video_attributes_bitrate'] ?? $array['audio_attributes_bitrate'],
             'podcastIds' => $array['podcast_ids'],
             'inPodcast' => false === empty($array['podcast_ids']),
+            ...$array['custom_data'],
         ];
     }
 }

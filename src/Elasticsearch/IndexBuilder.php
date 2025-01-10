@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
-use AnzuSystems\Contracts\Entity\Interfaces\IndexableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\AnzuElasticSearchException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\InvalidRecordException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
-use App\App;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\NonUniqueResultException;
 use Elastic\Elasticsearch\Client;
@@ -43,21 +44,9 @@ final class IndexBuilder
         IndexDefinitionFactory $indexDefinitionFactory,
         private readonly DBALRepositoryProvider $repositoryProvider,
         private readonly ExtSystemRepository $extSystemRepository,
+        private readonly CustomFormProvider $customFormProvider,
     ) {
         $this->indexDefinitions = $indexDefinitionFactory->buildIndexDefinitions($indexMappings);
-    }
-
-    public function updateConfigData(RebuildIndexConfig $config): void
-    {
-        $config->setEntityName($this->indexSettings->getEntityClassName($config->getIndexName()));
-
-        if ($config->hasExtSystemSlug()) {
-            $siteGroup = $this->extSystemRepository->findOneBySlug($config->getExtSystemSlug());
-            if (null === $siteGroup) {
-                throw new InvalidArgumentException(sprintf('Ext system with slug (%s) not found', $config->getExtSystemSlug()));
-            }
-            $config->setExtSystemId((int) $siteGroup->getId());
-        }
     }
 
     /**
@@ -74,12 +63,35 @@ final class IndexBuilder
 
             return;
         }
-        $this->updateConfigData($config);
 
-        if ($config->isDrop()) {
-            $this->dropAndCreateIndex($config);
+        $config->setEntityName($this->indexSettings->getEntityClassName($config->getIndexName()));
+
+        foreach ($this->getExtSystemsToIndexRebuild($config) as $extSystem) {
+            $config->setCurrentExtSystemId((int) $extSystem->getId());
+            $config->setCurrentExtSystemSlug($extSystem->getSlug());
+
+            if ($config->isDrop()) {
+                $this->dropAndCreateIndex($config);
+            }
+            $this->buildIndex($config);
         }
-        $this->buildIndex($config);
+    }
+
+    /**
+     * @return array<int, ExtSystem>
+     */
+    private function getExtSystemsToIndexRebuild(RebuildIndexConfig $config): array
+    {
+        if ($config->hasExtSystemSlug()) {
+            $extSystem = $this->extSystemRepository->findOneBySlug($config->getExtSystemSlug());
+            if (null === $extSystem) {
+                throw new InvalidArgumentException(sprintf('Ext system with slug (%s) not found', $config->getExtSystemSlug()));
+            }
+
+            return [$extSystem];
+        }
+
+        return $this->extSystemRepository->findAll();
     }
 
     /**
@@ -87,24 +99,23 @@ final class IndexBuilder
      */
     private function dropAndCreateIndex(RebuildIndexConfig $config): void
     {
-        foreach ($this->getFullIndexNamesToRebuild($config) as $indexNameFullName) {
-            $this->writeln(sprintf('Recreating index <info>%s</info>', $indexNameFullName));
+        $indexNameFullName = $this->indexSettings->getFullIndexNameByConfig($config);
+        $this->writeln(sprintf('Recreating index <info>%s</info>', $indexNameFullName));
 
-            try {
-                $this->client->indices()->delete([
-                    'index' => $indexNameFullName,
-                ]);
-            } catch (ClientResponseException $exception) {
-                // Not found index is OK
-                if (Response::HTTP_NOT_FOUND !== $exception->getResponse()->getStatusCode()) {
-                    throw $exception;
-                }
-            }
-            $this->client->indices()->create([
+        try {
+            $this->client->indices()->delete([
                 'index' => $indexNameFullName,
-                'body' => $this->getIndexSettings($indexNameFullName),
             ]);
+        } catch (ClientResponseException $exception) {
+            // Not found index is OK
+            if (Response::HTTP_NOT_FOUND !== $exception->getResponse()->getStatusCode()) {
+                throw $exception;
+            }
         }
+        $this->client->indices()->create([
+            'index' => $indexNameFullName,
+            'body' => $this->getIndexSettings($indexNameFullName),
+        ]);
     }
 
     /**
@@ -113,15 +124,14 @@ final class IndexBuilder
      */
     private function buildIndex(RebuildIndexConfig $config): void
     {
-        $this->writeln(sprintf('Indexing <info>%s</info>...', $config->getIndexName()));
+        $fullIndexName = $this->indexSettings->getFullIndexNameByConfig($config);
+        $this->writeln(sprintf('Indexing <info>%s</info>...', $fullIndexName));
 
         /** @var AbstractAnzuRepository<BaseIdentifiableInterface> $repository */
         $repository = $this->entityManager->getRepository($this->indexSettings->getEntityClassName($config->getIndexName()));
         $count = $repository->getAllCountForIndexRebuild($config);
         $progressBar = $this->outputUtil->createProgressBar($count);
         $this->configureProgressBar($progressBar);
-
-        $indexName = $this->indexSettings->getFullIndexNameByConfig($config);
 
         $payload = [
             'body' => [],
@@ -133,7 +143,7 @@ final class IndexBuilder
             try {
                 $payload['body'][] = [
                     'index' => [
-                        '_index' => $indexName,
+                        '_index' => $fullIndexName,
                         '_id' => $item['id'],
                     ],
                 ];
@@ -202,20 +212,20 @@ final class IndexBuilder
         $progressBar->finish();
     }
 
-    /**
-     * @return list<string>
-     */
-    private function getFullIndexNamesToRebuild(RebuildIndexConfig $config): array
-    {
-        if ($config->hasExtSystemSlug()) {
-            return [$this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $config->getExtSystemSlug())];
-        }
-
-        return array_map(
-            fn (string $extSystemSlug) => $this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $extSystemSlug),
-            $this->extSystemConfigurationProvider->getExtSystemSlugs()
-        );
-    }
+    //    /**
+    //     * @return list<string>
+    //     */
+    //    private function getFullIndexNamesToRebuild(RebuildIndexConfig $config): array
+    //    {
+    //        if ($config->hasExtSystemSlug()) {
+    //            return [$this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $config->getExtSystemSlug())];
+    //        }
+    //
+    //        return array_map(
+    //            fn (string $extSystemSlug) => $this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $extSystemSlug),
+    //            $this->extSystemConfigurationProvider->getExtSystemSlugs()
+    //        );
+    //    }
 
     private function configureProgressBar(ProgressBar $progressBar): void
     {
@@ -235,7 +245,6 @@ final class IndexBuilder
         return array_keys($this->indexMappings);
     }
 
-
     /**
      * @return Generator<int, array>
      *
@@ -244,7 +253,7 @@ final class IndexBuilder
      */
     private function iterateDoctrineRepository(RebuildIndexConfig $config): Generator
     {
-        /** @var class-string<IndexableInterface> $className */
+        /** @var class-string<ExtSystemIndexableInterface> $className */
         $className = $config->getEntityName();
         /** @var AbstractAnzuRepository $repository */
         $repository = $this->entityManager->getRepository($className);
@@ -254,6 +263,7 @@ final class IndexBuilder
         $progressBar->start();
 
         do {
+            /** @var Collection<int, ExtSystemIndexableInterface> $items */
             $items = $repository->getAllForIndexRebuild($config);
             foreach ($items as $item) {
                 yield $indexFactory->buildFromEntity($item);
@@ -267,7 +277,6 @@ final class IndexBuilder
 
         $progressBar->finish();
     }
-
 
     private function getProgressBar(OutputInterface $output, int $totalCount): ProgressBar
     {
