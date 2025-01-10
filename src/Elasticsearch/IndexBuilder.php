@@ -69,6 +69,7 @@ final class IndexBuilder
         foreach ($this->getExtSystemsToIndexRebuild($config) as $extSystem) {
             $config->setCurrentExtSystemId((int) $extSystem->getId());
             $config->setCurrentExtSystemSlug($extSystem->getSlug());
+            $config->setLastProcessedId(null);
 
             if ($config->isDrop()) {
                 $this->dropAndCreateIndex($config);
@@ -211,21 +212,6 @@ final class IndexBuilder
 
         $progressBar->finish();
     }
-
-    //    /**
-    //     * @return list<string>
-    //     */
-    //    private function getFullIndexNamesToRebuild(RebuildIndexConfig $config): array
-    //    {
-    //        if ($config->hasExtSystemSlug()) {
-    //            return [$this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $config->getExtSystemSlug())];
-    //        }
-    //
-    //        return array_map(
-    //            fn (string $extSystemSlug) => $this->indexSettings->getFullIndexNameBySlug($config->getIndexName(), $extSystemSlug),
-    //            $this->extSystemConfigurationProvider->getExtSystemSlugs()
-    //        );
-    //    }
 
     private function configureProgressBar(ProgressBar $progressBar): void
     {
