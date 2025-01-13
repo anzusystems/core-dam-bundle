@@ -43,7 +43,7 @@ enum ImageOrientation: string implements EnumInterface
         );
     }
 
-    private static function getOrientation(int $width, int $height): self
+    public static function getOrientation(int $width, int $height): self
     {
         if ($width > $height) {
             return self::Landscape;

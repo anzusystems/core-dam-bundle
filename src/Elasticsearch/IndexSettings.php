@@ -42,6 +42,11 @@ final readonly class IndexSettings
         return $this->getFullIndexNameBySlug($entity::getIndexName(), $entity->getExtSystem()->getSlug());
     }
 
+    public function getFullIndexNameByConfig(RebuildIndexConfig $config): string
+    {
+        return $this->getFullIndexNameBySlug($config->getEntityName()::getIndexName(), $config->getCurrentExtSystemSlug());
+    }
+
     public function hasElasticLanguageDictionary(Language $language): bool
     {
         return in_array(

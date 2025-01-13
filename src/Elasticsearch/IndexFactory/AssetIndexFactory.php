@@ -146,7 +146,6 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'orientation' => ImageOrientation::fromVideo($videoFile)->toString(),
             'codecName' => $videoFile->getAttributes()->getCodecName(),
             'bitrate' => $videoFile->getAttributes()->getBitrate(),
-
         ];
     }
 

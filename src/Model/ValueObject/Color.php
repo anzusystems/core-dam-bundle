@@ -37,6 +37,17 @@ final class Color implements ValueObjectInterface
         );
     }
 
+    public static function fromString(string $color): self
+    {
+        $rgbParts = sscanf($color, '#%02x%02x%02x');
+
+        if (isset($rgbParts[0], $rgbParts[1], $rgbParts[2])) {
+            return new self((int) $rgbParts[0], (int) $rgbParts[1], (int) $rgbParts[2]);
+        }
+
+        return new self();
+    }
+
     public function getColorDist(self $color): int
     {
         return $this->getDist($color->getRed(), $color->getGreen(), $color->getBlack());

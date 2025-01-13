@@ -30,10 +30,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: DistributionRepository::class)]
 #[AppAssert\Distribution]
 #[ORM\InheritanceType('SINGLE_TABLE')]
-#[ORM\Index(fields: ['assetFileId'], name: 'IDX_asset_file_id')]
-#[ORM\Index(fields: ['assetId'], name: 'IDX_asset_id')]
-#[ORM\Index(fields: ['assetFileId', 'distributionService'], name: 'IDX_asset_file_id_distribution_service')]
-#[ORM\Index(fields: ['status'], name: 'IDX_status')]
+#[ORM\Index(name: 'IDX_asset_file_id', fields: ['assetFileId'])]
+#[ORM\Index(name: 'IDX_asset_id', fields: ['assetId'])]
+#[ORM\Index(name: 'IDX_asset_file_id_distribution_service', fields: ['assetFileId', 'distributionService'])]
+#[ORM\Index(name: 'IDX_status', fields: ['status'])]
 abstract class Distribution implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
@@ -84,6 +84,11 @@ abstract class Distribution implements
     #[Serialize]
     protected DistributionFailReason $failReason;
 
+    // todo make non nullable after release
+    #[ORM\ManyToOne]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?ExtSystem $extSystem;
+
     #[ORM\Column(type: Types::JSON)]
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $distributionData;
@@ -95,6 +100,7 @@ abstract class Distribution implements
     public function __construct()
     {
         $this->setAssetId('');
+        $this->setExtSystem(null);
         $this->setAssetFileId('');
         $this->setDistributionService('');
         $this->setStatus(DistributionProcessStatus::Default);
@@ -276,9 +282,16 @@ abstract class Distribution implements
         return $this;
     }
 
+    public function setExtSystem(?ExtSystem $extSystem): static
+    {
+        $this->extSystem = $extSystem;
+
+        return $this;
+    }
+
     public function getExtSystem(): ExtSystem
     {
         // todo after release, make assetFile non nullable
-        return $this->assetFile?->getExtSystem() ?? new ExtSystem();
+        return $this->extSystem ?? $this->assetFile?->getExtSystem() ?? new ExtSystem();
     }
 }

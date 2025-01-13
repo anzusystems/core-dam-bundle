@@ -48,6 +48,7 @@ abstract class AbstractDistributionFacade
     {
         $distribution->setAssetId((string) $assetFile->getAsset()->getId());
         $distribution->setAssetFileId((string) $assetFile->getId());
+        $distribution->setExtSystem($assetFile->getExtSystem());
         $distribution->setAsset($assetFile->getAsset());
         $distribution->setAssetFile($assetFile);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use Symfony\Component\Console\Input\InputInterface;
 
 final class RebuildIndexConfig
@@ -17,6 +18,13 @@ final class RebuildIndexConfig
 
     private ?string $lastProcessedId = null;
     private ?string $maxId = null;
+
+    /**
+     * @var class-string
+     */
+    private string $entityName;
+    private int $currentExtSystemId;
+    private string $currentExtSystemSlug;
 
     public function __construct(
         private readonly string $indexName,
@@ -38,6 +46,48 @@ final class RebuildIndexConfig
             noDrop: (bool) $input->getOption(self::OPT_NO_DROP),
             batchSize: (int) $input->getOption(self::OPT_BATCH),
         );
+    }
+
+    /**
+     * @return class-string<ExtSystemIndexableInterface>
+     */
+    public function getEntityName(): string
+    {
+        return $this->entityName;
+    }
+
+    /**
+     * @param class-string $entityName
+     */
+    public function setEntityName(string $entityName): self
+    {
+        $this->entityName = $entityName;
+
+        return $this;
+    }
+
+    public function getCurrentExtSystemSlug(): string
+    {
+        return $this->currentExtSystemSlug;
+    }
+
+    public function setCurrentExtSystemSlug(string $currentExtSystemSlug): self
+    {
+        $this->currentExtSystemSlug = $currentExtSystemSlug;
+
+        return $this;
+    }
+
+    public function getCurrentExtSystemId(): int
+    {
+        return $this->currentExtSystemId;
+    }
+
+    public function setCurrentExtSystemId(int $currentExtSystemId): self
+    {
+        $this->currentExtSystemId = $currentExtSystemId;
+
+        return $this;
     }
 
     public function getIndexName(): string

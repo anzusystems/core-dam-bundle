@@ -35,6 +35,7 @@ final class DistributionBodyBuilder
 
         $targetDistribution->setAssetFileId((string) $assetFile->getId());
         $targetDistribution->setAssetId((string) $assetFile->getAsset()->getId());
+        $targetDistribution->setExtSystem($assetFile->getExtSystem());
     }
 
     public function getKeywords(AssetFile $assetFile): array
