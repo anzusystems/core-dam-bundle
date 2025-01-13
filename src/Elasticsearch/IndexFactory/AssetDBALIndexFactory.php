@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\IndexFactory;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Image\ClosestColorProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\ImageOrientation;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use DateTimeImmutable;
@@ -105,20 +106,42 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             'originFileName' => $array['asset_attributes_origin_file_name'],
             'mimeType' => $array['asset_attributes_mime_type'],
             'size' => $array['asset_attributes_size'],
-            // AssetFileSpecifics
-            'rotation' => $array['image_attributes_rotation'] ?? $array['attributes_rotation'],
-            'mostDominantColor' => $array['image_attributes_most_dominant_color']?->toString(),
-            'closestMostDominantColor' => $array['image_attributes_most_dominant_color'] instanceof Color
-                ? $this->closestColorProvider->provideClosestColor($array['image_attributes_most_dominant_color'])
-                : null,
-            'orientation' => ImageOrientation::getOrientation($width, $height)->toString(),
-            'pageCount' => $array['attributes_page_count'],
-            'duration' => $array['video_attributes_duration'] ?? $array['audio_attributes_duration'],
-            'codecName' => $array['video_codec_name'] ?? $array['audio_attributes_codec_name'],
-            'bitrate' => $array['video_attributes_bitrate'] ?? $array['audio_attributes_bitrate'],
-            'podcastIds' => $array['podcast_ids'],
-            'inPodcast' => false === empty($array['podcast_ids']),
             ...$array['custom_data'],
+            ...$this->getSpecificFields($array)
         ];
+    }
+
+    private function getSpecificFields(array $array): array
+    {
+        $width = (int) $array['asset_file_properties_width'];
+        $height = (int) $array['asset_file_properties_height'];
+
+        return match($array['attributes_asset_type']) {
+            AssetType::IMAGE => [
+                'rotation' => $array['image_attributes_rotation'],
+                'mostDominantColor' => $array['image_attributes_most_dominant_color']?->toString(),
+                'closestMostDominantColor' => $array['image_attributes_most_dominant_color'] instanceof Color
+                    ? $this->closestColorProvider->provideClosestColor($array['image_attributes_most_dominant_color'])->toString()
+                    : null,
+                'orientation' => ImageOrientation::getOrientation($width, $height)->toString(),
+            ],
+            AssetType::DOCUMENT => [
+                'pageCount' => $array['attributes_page_count'],
+            ],
+            AssetType::AUDIO => [
+                'duration' => $array['audio_attributes_duration'],
+                'codecName' => $array['audio_attributes_codec_name'],
+                'bitrate' => $array['audio_attributes_bitrate'],
+                'podcastIds' => $array['podcast_ids'],
+                'inPodcast' => false === empty($array['podcast_ids']),
+            ],
+            AssetType::VIDEO => [
+                'rotation' => $array['attributes_rotation'],
+                'duration' => $array['video_attributes_duration'],
+                'codecName' => $array['video_codec_name'],
+                'bitrate' => $array['video_attributes_bitrate'],
+                'orientation' => ImageOrientation::getOrientation($width, $height)->toString(),
+            ]
+        };
     }
 }
