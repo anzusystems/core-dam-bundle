@@ -26,6 +26,6 @@ final class AssetPodcastDBALRepository extends AbstractAnzuDBALRepository
             ->setParameter('assetId', $assetId)
         ;
 
-        return $qb->fetchAllAssociative();
+        return $qb->fetchFirstColumn();
     }
 }
