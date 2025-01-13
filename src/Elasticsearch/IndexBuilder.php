@@ -69,6 +69,7 @@ final class IndexBuilder
         foreach ($this->getExtSystemsToIndexRebuild($config) as $extSystem) {
             $config->setCurrentExtSystemId((int) $extSystem->getId());
             $config->setCurrentExtSystemSlug($extSystem->getSlug());
+            $config->setLastProcessedId(null);
 
             if ($config->isDrop()) {
                 $this->dropAndCreateIndex($config);

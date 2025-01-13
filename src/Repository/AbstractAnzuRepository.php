@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CommonBundle\Repository\AbstractAnzuRepository as BaseAbstractAnzuRepository;
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;

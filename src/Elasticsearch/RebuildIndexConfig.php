@@ -145,7 +145,7 @@ final class RebuildIndexConfig
         return $this->batchSize;
     }
 
-    public function setLastProcessedId(string $lastProcessedId): self
+    public function setLastProcessedId(?string $lastProcessedId): self
     {
         $this->lastProcessedId = $lastProcessedId;
 
