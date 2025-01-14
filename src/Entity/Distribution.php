@@ -84,11 +84,6 @@ abstract class Distribution implements
     #[Serialize]
     protected DistributionFailReason $failReason;
 
-    // todo make non nullable after release
-    #[ORM\ManyToOne]
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?ExtSystem $extSystem;
-
     #[ORM\Column(type: Types::JSON)]
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $distributionData;
@@ -96,6 +91,11 @@ abstract class Distribution implements
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     #[Serialize]
     protected ?DateTimeImmutable $publishAt;
+
+    // todo make non nullable after release
+    #[ORM\ManyToOne]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?ExtSystem $extSystem;
 
     public function __construct()
     {

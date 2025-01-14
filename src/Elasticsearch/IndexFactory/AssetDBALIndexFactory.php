@@ -107,7 +107,7 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             'mimeType' => $array['asset_attributes_mime_type'],
             'size' => $array['asset_attributes_size'],
             ...$array['custom_data'],
-            ...$this->getSpecificFields($array)
+            ...$this->getSpecificFields($array),
         ];
     }
 
@@ -116,7 +116,7 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
         $width = (int) $array['asset_file_properties_width'];
         $height = (int) $array['asset_file_properties_height'];
 
-        return match($array['attributes_asset_type']) {
+        return match ($array['attributes_asset_type']) {
             AssetType::IMAGE => [
                 'rotation' => $array['image_attributes_rotation'],
                 'mostDominantColor' => $array['image_attributes_most_dominant_color']?->toString(),
