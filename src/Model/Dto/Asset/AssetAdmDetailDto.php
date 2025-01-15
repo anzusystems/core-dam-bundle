@@ -149,4 +149,10 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     {
         return $this->asset->getMainFile();
     }
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    public function getSiblingToAsset(): ?Asset
+    {
+        return $this->asset->getSiblingToAsset();
+    }
 }

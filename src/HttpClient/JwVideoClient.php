@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaCdnDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaGetDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoMediaUploadDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\JwVideoThumbnail;
@@ -36,6 +37,7 @@ final class JwVideoClient implements LoggerAwareInterface
     public function __construct(
         private readonly HttpClientInterface $client,
         private readonly HttpClientInterface $jwPlayerApiClient,
+        private readonly HttpClientInterface $jwPlayerCdnApiClient,
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
         private readonly DamLogger $damLogger,
     ) {
@@ -236,6 +238,26 @@ final class JwVideoClient implements LoggerAwareInterface
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
         }
+    }
+
+    public function getVideoAssetData(JwDistributionServiceConfiguration $configuration, string $jwId): JwVideoMediaCdnDto
+    {
+        $response = $this->loggedRequest(
+            client: $this->jwPlayerCdnApiClient,
+            message: '[JwVideoDistribution] get cdn video object',
+            url: "/v2/media/$jwId",
+            headers: [
+                'Authorization' => "Bearer {$configuration->getSecretV2()}",
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ],
+        );
+
+        if ($response->hasError()) {
+            throw new RuntimeException('JwVideoDistribution get cdn video failed');
+        }
+
+        return $this->serializer->deserialize($response->getContent(), JwVideoMediaCdnDto::class);
     }
 
     /**

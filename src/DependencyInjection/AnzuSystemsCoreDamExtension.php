@@ -440,6 +440,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             'jwPlayer.api.client' => [
                                 'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_API_CLIENT],
                             ],
+                            'jwPlayer.cdnApi.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_CDN_API_CLIENT],
+                            ],
                             'unsplash.api.client' => [
                                 'base_uri' => $configSettings[SettingsConfiguration::UNSPLASH_API_CLIENT],
                                 'headers' => [

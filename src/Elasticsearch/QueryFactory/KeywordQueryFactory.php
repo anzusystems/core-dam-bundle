@@ -42,7 +42,7 @@ final class KeywordQueryFactory extends AbstractQueryFactory
      * @param KeywordAdmSearchDto $searchDto
      * @psalm-suppress PossiblyNullReference
      */
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $filter = [];
 

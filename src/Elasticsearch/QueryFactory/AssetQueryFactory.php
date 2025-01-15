@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
@@ -12,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
@@ -40,6 +42,23 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $customDataFields = array_unique($customDataFields);
         $customDataFields = array_merge($customDataFields, ['title']);
 
+        if (
+            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
+            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
+
+        ) {
+            $customDataKey = CustomDataIndexDefinitionFactory::getIndexKeyNameByProperty($searchDto->getCustomDataKey());
+            if (in_array($customDataKey, $customDataFields, true)) {
+                return [
+                    'match' => [
+                        $customDataKey => [
+                            'query' => $searchDto->getCustomDataValue(),
+                        ]
+                    ],
+                ];
+            }
+        }
+
         if (is_string($searchDto->getIdInText())) {
             return parent::getMust($searchDto, $extSystem);
         }
@@ -62,7 +81,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
      *
      * @psalm-suppress PossiblyNullReference
      */
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $filter = [];
         if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {
@@ -82,6 +101,23 @@ final class AssetQueryFactory extends AbstractQueryFactory
             // other filters should not be applied
             return $filter;
         }
+//
+//        if (
+//            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
+//            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
+//        ) {
+//            // TODO cache this
+//            $customDataFields = $this->customFormProvider->provideAllSearchableElementsForExtSystem($extSystem->getSlug())->map(
+//                fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
+//            )->toArray();
+//            $customDataFields = array_unique($customDataFields);
+//
+//            if (in_array($searchDto->getCustomDataKey(), $customDataFields, true)) {
+//                $filter[] = ['term' => [$searchDto->getCustomDataKey() => $searchDto->getCustomDataValue()]];
+//            }
+//        }
+
+//        dd($filter);
 
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];

@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 
 final class DistributionQueryFactory extends AbstractQueryFactory
 {
@@ -20,7 +21,7 @@ final class DistributionQueryFactory extends AbstractQueryFactory
      * @param DistributionAdmSearchDto $searchDto
      * @psalm-suppress PossiblyNullReference
      */
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $filter = [];
 

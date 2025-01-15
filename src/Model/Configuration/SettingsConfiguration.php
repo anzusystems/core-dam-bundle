@@ -32,6 +32,7 @@ final class SettingsConfiguration
     public const string LIMITED_ASSET_LICENCE_FILES_COUNT = 'limited_asset_licence_files_count';
     public const string UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
     public const string JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
+    public const string JW_PLAYER_CDN_API_CLIENT = 'jw_player_cdn_api_client_host';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,

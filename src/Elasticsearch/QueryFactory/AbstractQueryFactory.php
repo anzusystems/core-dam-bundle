@@ -28,7 +28,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
                 'query' => [
                     'bool' => [
                         'must' => $this->getMust($searchDto, $extSystem),
-                        'filter' => $this->getFilter($searchDto),
+                        'filter' => $this->getFilter($searchDto, $extSystem),
                         'must_not' => $this->getMustNot($searchDto),
                     ],
                 ],
@@ -58,7 +58,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
         return $filter;
     }
 
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         return [];
     }

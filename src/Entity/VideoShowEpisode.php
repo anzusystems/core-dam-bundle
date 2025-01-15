@@ -25,8 +25,8 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VideoShowEpisodeRepository::class)]
-#[ORM\Index(fields: ['videoShow', 'position'], name: 'IDX_video_show_position')]
-#[ORM\Index(fields: ['position'], name: 'IDX_position')]
+#[ORM\Index(name: 'IDX_video_show_position', fields: ['videoShow', 'position'])]
+#[ORM\Index(name: 'IDX_position', fields: ['position'])]
 class VideoShowEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
