@@ -16,18 +16,18 @@ final class ExtSystemDocumentTypeConfiguration extends ExtSystemAssetTypeConfigu
     {
         return parent::getFromArrayConfiguration($config)
             ->setPublicStorage($config[self::DOCUMENT_PUBLIC_STORAGE] ?? '')
-            ->setPublicDomainName(
+            ->setPublicDomain(
                 $config[self::PUBLIC_DOMAIN_NAME] ?? ''
             )
         ;
     }
 
-    public function getPublicDomainName(): string
+    public function getPublicDomain(): string
     {
         return $this->publicDomainName;
     }
 
-    public function setPublicDomainName(string $publicDomainName): static
+    public function setPublicDomain(string $publicDomainName): static
     {
         $this->publicDomainName = $publicDomainName;
 

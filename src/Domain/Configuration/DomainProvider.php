@@ -40,6 +40,6 @@ readonly class DomainProvider
             return false;
         }
 
-        return $this->domainAndHostEquals($config->getPublicDomainName());
+        return $this->domainAndHostEquals($config->getPublicDomain());
     }
 }

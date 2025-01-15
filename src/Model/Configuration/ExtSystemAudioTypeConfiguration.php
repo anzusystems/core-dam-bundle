@@ -36,17 +36,17 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
                     $config[self::PODCAST_EPISODE_ENTITY_MAP_KEY] ?? []
                 )
             )
-            ->setPublicDomainName(
+            ->setPublicDomain(
                 $config[self::PUBLIC_DOMAIN_NAME] ?? ''
             );
     }
 
-    public function getPublicDomainName(): string
+    public function getPublicDomain(): string
     {
         return $this->publicDomainName;
     }
 
-    public function setPublicDomainName(string $publicDomainName): static
+    public function setPublicDomain(string $publicDomainName): static
     {
         $this->publicDomainName = $publicDomainName;
 
