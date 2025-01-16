@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\Traits\PublicImageLinksTrait;
 
-final class PublicLinksTagCollectionHandler extends LinksTagCollectionHandler
+class PublicLinksTagCollectionHandler extends LinksTagCollectionHandler
 {
     use PublicImageLinksTrait;
 }

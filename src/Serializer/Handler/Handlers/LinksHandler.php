@@ -116,7 +116,7 @@ class LinksHandler extends AbstractHandler
         return $res;
     }
 
-    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
+    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): string|array
     {
         $imageId = (string) $imageFile->getId();
 
@@ -141,7 +141,7 @@ class LinksHandler extends AbstractHandler
         int $requestedWidth,
         int $requestedHeight,
         string $title,
-    ): array {
+    ): string|array {
         return [
             'type' => $type,
             'url' => $url,
