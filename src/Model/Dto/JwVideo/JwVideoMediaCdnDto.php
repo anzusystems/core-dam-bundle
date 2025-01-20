@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\JwVideo;
 
-use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -33,6 +32,7 @@ final class JwVideoMediaCdnDto
     public function setTitle(string $title): self
     {
         $this->title = $title;
+
         return $this;
     }
 
@@ -44,6 +44,7 @@ final class JwVideoMediaCdnDto
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
         return $this;
     }
 
@@ -58,6 +59,7 @@ final class JwVideoMediaCdnDto
     public function setPlaylist(Collection $playlist): self
     {
         $this->playlist = $playlist;
+
         return $this;
     }
 }

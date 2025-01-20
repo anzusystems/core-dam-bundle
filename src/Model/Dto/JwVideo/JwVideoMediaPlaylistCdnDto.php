@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\JwVideo;
 
-use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -33,6 +32,7 @@ final class JwVideoMediaPlaylistCdnDto
     public function setSources(Collection $sources): self
     {
         $this->sources = $sources;
+
         return $this;
     }
 

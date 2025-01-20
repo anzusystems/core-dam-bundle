@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
@@ -53,7 +52,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
                     'match' => [
                         $customDataKey => [
                             'query' => $searchDto->getCustomDataValue(),
-                        ]
+                        ],
                     ],
                 ];
             }
@@ -101,23 +100,23 @@ final class AssetQueryFactory extends AbstractQueryFactory
             // other filters should not be applied
             return $filter;
         }
-//
-//        if (
-//            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
-//            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
-//        ) {
-//            // TODO cache this
-//            $customDataFields = $this->customFormProvider->provideAllSearchableElementsForExtSystem($extSystem->getSlug())->map(
-//                fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
-//            )->toArray();
-//            $customDataFields = array_unique($customDataFields);
-//
-//            if (in_array($searchDto->getCustomDataKey(), $customDataFields, true)) {
-//                $filter[] = ['term' => [$searchDto->getCustomDataKey() => $searchDto->getCustomDataValue()]];
-//            }
-//        }
+        //
+        //        if (
+        //            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
+        //            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
+        //        ) {
+        //            // TODO cache this
+        //            $customDataFields = $this->customFormProvider->provideAllSearchableElementsForExtSystem($extSystem->getSlug())->map(
+        //                fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
+        //            )->toArray();
+        //            $customDataFields = array_unique($customDataFields);
+        //
+        //            if (in_array($searchDto->getCustomDataKey(), $customDataFields, true)) {
+        //                $filter[] = ['term' => [$searchDto->getCustomDataKey() => $searchDto->getCustomDataValue()]];
+        //            }
+        //        }
 
-//        dd($filter);
+        //        dd($filter);
 
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];

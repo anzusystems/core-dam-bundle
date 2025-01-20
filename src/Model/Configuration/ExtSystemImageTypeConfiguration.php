@@ -45,6 +45,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setPublicDomainName(string $publicDomainName): static
     {
         $this->publicDomainName = $publicDomainName;
+
         return $this;
     }
 
@@ -56,6 +57,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setAdminDomainName(string $adminDomainName): static
     {
         $this->adminDomainName = $adminDomainName;
+
         return $this;
     }
 

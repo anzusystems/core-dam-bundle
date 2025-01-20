@@ -67,6 +67,7 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
+
         return $this;
     }
 
@@ -78,6 +79,7 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
     public function setExtSystem(ExtSystem $extSystem): self
     {
         $this->extSystem = $extSystem;
+
         return $this;
     }
 
@@ -89,6 +91,7 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
     public function setAssetLicence(AssetLicence $assetLicence): self
     {
         $this->assetLicence = $assetLicence;
+
         return $this;
     }
 
@@ -100,6 +103,7 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
     public function setType(ExportType $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 }

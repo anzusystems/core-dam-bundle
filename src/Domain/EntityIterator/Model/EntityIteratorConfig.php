@@ -26,12 +26,12 @@ final readonly class EntityIteratorConfig
         return $this->limit;
     }
 
-    public function getFromId(): ?int
+    public function getFromId(): ?string
     {
         return $this->fromId;
     }
 
-    public function getToId(): ?int
+    public function getToId(): ?string
     {
         return $this->toId;
     }

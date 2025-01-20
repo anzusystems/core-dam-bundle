@@ -50,6 +50,7 @@ class PodcastEpisodeFlags
     public function setWebPublicExportEnabled(bool $webPublicExportEnabled): self
     {
         $this->webPublicExportEnabled = $webPublicExportEnabled;
+
         return $this;
     }
 
@@ -61,6 +62,7 @@ class PodcastEpisodeFlags
     public function setMobilePublicExportEnabled(bool $mobilePublicExportEnabled): self
     {
         $this->mobilePublicExportEnabled = $mobilePublicExportEnabled;
+
         return $this;
     }
 }

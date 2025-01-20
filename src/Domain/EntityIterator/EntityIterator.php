@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\EntityIterator;
 
-use AnzuSystems\CommonBundle\Repository\AnzuRepositoryInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\EntityIterator\Model\EntityIteratorConfig;
 use AnzuSystems\CoreDamBundle\Domain\EntityIterator\Visitor\EntityIteratorOnBatchVisitorInterface;
+use AnzuSystems\CoreDamBundle\Repository\Interfaces\AnzuRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Generator;
 use Psr\Container\ContainerExceptionInterface;

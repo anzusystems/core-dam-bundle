@@ -10,7 +10,7 @@ final class ExtSystemDocumentTypeConfiguration extends ExtSystemAssetTypeConfigu
     public const string PUBLIC_DOMAIN_NAME = 'public_domain_name';
 
     private string $publicStorage;
-    private string $publicDomainName;
+    private string $publicDomain;
 
     public static function getFromArrayConfiguration(array $config): static
     {
@@ -24,12 +24,12 @@ final class ExtSystemDocumentTypeConfiguration extends ExtSystemAssetTypeConfigu
 
     public function getPublicDomain(): string
     {
-        return $this->publicDomainName;
+        return $this->publicDomain;
     }
 
-    public function setPublicDomain(string $publicDomainName): static
+    public function setPublicDomain(string $publicDomain): static
     {
-        $this->publicDomainName = $publicDomainName;
+        $this->publicDomain = $publicDomain;
 
         return $this;
     }

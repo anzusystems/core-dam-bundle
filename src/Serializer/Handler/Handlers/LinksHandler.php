@@ -53,7 +53,6 @@ class LinksHandler extends AbstractHandler
         private readonly RequestStack $requestStack,
         private readonly AssetFileRouteGenerator $audioRouteGenerator,
         private readonly AssetFileRouteRepository $assetFileRouteRepository,
-
     ) {
     }
 
@@ -147,7 +146,7 @@ class LinksHandler extends AbstractHandler
             'url' => $url,
             'requestedWidth' => $requestedWidth,
             'requestedHeight' => $requestedHeight,
-            'title' => $title
+            'title' => $title,
         ];
     }
 

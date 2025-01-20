@@ -154,6 +154,7 @@ class PodcastEpisodeAttributes
     public function setWebOrderPosition(int $webOrderPosition): self
     {
         $this->webOrderPosition = $webOrderPosition;
+
         return $this;
     }
 
@@ -165,6 +166,7 @@ class PodcastEpisodeAttributes
     public function setMobileOrderPosition(int $mobileOrderPosition): self
     {
         $this->mobileOrderPosition = $mobileOrderPosition;
+
         return $this;
     }
 
@@ -176,6 +178,7 @@ class PodcastEpisodeAttributes
     public function setDuration(int $duration): self
     {
         $this->duration = $duration;
+
         return $this;
     }
 }

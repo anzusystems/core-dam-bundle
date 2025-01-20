@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Domain\Distribution;
 
-use AnzuSystems\CoreDamBundle\Entity\Distribution;
-use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class DistributionDataUrl
@@ -29,6 +27,7 @@ final class DistributionDataUrl
     public function setValue(?string $value): self
     {
         $this->value = $value;
+
         return $this;
     }
 }

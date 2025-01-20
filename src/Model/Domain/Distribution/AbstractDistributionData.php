@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Domain\Distribution;
 
-use AnzuSystems\CoreDamBundle\Entity\Distribution;
-use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 abstract class AbstractDistributionData
@@ -26,6 +24,7 @@ abstract class AbstractDistributionData
     public function setThumbnail(DistributionDataUrl $thumbnail): self
     {
         $this->thumbnail = $thumbnail;
+
         return $this;
     }
 }

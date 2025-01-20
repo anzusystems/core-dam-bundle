@@ -206,6 +206,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setCustomDataKey(string $customDataKey): self
     {
         $this->customDataKey = $customDataKey;
+
         return $this;
     }
 
@@ -217,6 +218,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setCustomDataValue(string $customDataValue): self
     {
         $this->customDataValue = $customDataValue;
+
         return $this;
     }
 

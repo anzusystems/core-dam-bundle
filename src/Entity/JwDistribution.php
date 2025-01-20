@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
-use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\JwTexts;
 use AnzuSystems\CoreDamBundle\Repository\JwDistributionRepository;
@@ -52,6 +51,7 @@ class JwDistribution extends Distribution
     public function setDirectSourceUrl(string $directSourceUrl): self
     {
         $this->directSourceUrl = $directSourceUrl;
+
         return $this;
     }
 

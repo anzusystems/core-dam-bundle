@@ -24,7 +24,7 @@ final class JwPlayerCustomDataFactory extends AbstractCustomDataFactory
         /** @var array $array */
         $array = $this->serializer->toArray(
             (new JwDistributionCustomData())
-                ->getThumbnail()->setValue( $this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId()))
+                ->getThumbnail()->setValue($this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId()))
         );
 
         return $array;
@@ -32,9 +32,12 @@ final class JwPlayerCustomDataFactory extends AbstractCustomDataFactory
 
     public function getCustomData(Distribution $distribution): JwDistributionCustomData
     {
-        return $this->serializer->fromArray(
+        /** @var JwDistributionCustomData $data */
+        $data = $this->serializer->fromArray(
             $distribution->getDistributionData(),
             JwDistributionCustomData::class
         );
+
+        return $data;
     }
 }

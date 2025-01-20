@@ -245,7 +245,7 @@ final class JwVideoClient implements LoggerAwareInterface
         $response = $this->loggedRequest(
             client: $this->jwPlayerCdnApiClient,
             message: '[JwVideoDistribution] get cdn video object',
-            url: "/v2/media/$jwId",
+            url: "/v2/media/{$jwId}",
             headers: [
                 'Authorization' => "Bearer {$configuration->getSecretV2()}",
                 'Content-Type' => 'application/json',

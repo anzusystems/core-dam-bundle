@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\JwVideo;
 
-use AnzuSystems\CoreDamBundle\Model\Enum\JwMediaStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class JwVideoMediaPlaylistSourceCdnDto
@@ -32,6 +31,7 @@ final class JwVideoMediaPlaylistSourceCdnDto
     public function setFile(string $file): self
     {
         $this->file = $file;
+
         return $this;
     }
 
@@ -43,6 +43,7 @@ final class JwVideoMediaPlaylistSourceCdnDto
     public function setType(string $type): self
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -54,6 +55,7 @@ final class JwVideoMediaPlaylistSourceCdnDto
     public function setHeight(int $height): self
     {
         $this->height = $height;
+
         return $this;
     }
 
@@ -65,6 +67,7 @@ final class JwVideoMediaPlaylistSourceCdnDto
     public function setWidth(int $width): self
     {
         $this->width = $width;
+
         return $this;
     }
 
@@ -76,6 +79,7 @@ final class JwVideoMediaPlaylistSourceCdnDto
     public function setFilesize(int $filesize): self
     {
         $this->filesize = $filesize;
+
         return $this;
     }
 }
