@@ -156,6 +156,13 @@ class DamPermissions
     public const string DAM_AUTHOR_CLEAN_PHRASE_UPDATE = 'dam_authorCleanPhrase_update';
     public const string DAM_AUTHOR_CLEAN_PHRASE_UI = 'dam_authorCleanPhrase_ui';
 
+    // PublicExport
+    public const string DAM_PUBLIC_EXPORT_CREATE = 'dam_publicExport_create';
+    public const string DAM_PUBLIC_EXPORT_UPDATE = 'dam_publicExport_update';
+    public const string DAM_PUBLIC_EXPORT_READ = 'dam_publicExport_read';
+    public const string DAM_PUBLIC_EXPORT_DELETE = 'dam_publicExport_delete';
+    public const string DAM_PUBLIC_EXPORT_UI = 'dam_publicExport_ui';
+
     public const array ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
@@ -256,6 +263,11 @@ class DamPermissions
         self::DAM_AUTHOR_CLEAN_PHRASE_UPDATE,
         self::DAM_AUTHOR_CLEAN_PHRASE_DELETE,
         self::DAM_AUTHOR_CLEAN_PHRASE_UI,
+        self::DAM_PUBLIC_EXPORT_CREATE,
+        self::DAM_PUBLIC_EXPORT_UPDATE,
+        self::DAM_PUBLIC_EXPORT_READ,
+        self::DAM_PUBLIC_EXPORT_DELETE,
+        self::DAM_PUBLIC_EXPORT_UI,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

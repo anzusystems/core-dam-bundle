@@ -30,9 +30,11 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
+// todo index
+
 #[ORM\Entity(repositoryClass: PodcastEpisodeRepository::class)]
-#[ORM\Index(fields: ['podcast', 'position'], name: 'IDX_podcast_position')]
-#[ORM\Index(fields: ['position'], name: 'IDX_position')]
+#[ORM\Index(name: 'IDX_podcast_position', fields: ['podcast', 'position'])]
+#[ORM\Index(name: 'IDX_position', fields: ['position'])]
 class PodcastEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
@@ -54,6 +56,10 @@ class PodcastEpisode implements
     #[AppAssert\EqualLicence]
     #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
+
+    #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    protected AssetLicence $licence;
 
     #[ORM\ManyToOne(targetEntity: Podcast::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
@@ -167,13 +173,22 @@ class PodcastEpisode implements
         return $this;
     }
 
+    public function setLicence(AssetLicence $licence): self
+    {
+        $this->licence = $licence;
+
+        return $this;
+    }
+
     public function getLicence(): AssetLicence
     {
+        // todo get from licence directly after migration
         return $this->getPodcast()->getLicence();
     }
 
     public function getExtSystem(): ExtSystem
     {
+        // todo get from licence directly after migration
         return $this->getPodcast()->getLicence()->getExtSystem();
     }
 

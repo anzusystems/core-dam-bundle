@@ -82,6 +82,10 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_CREATE,
             DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_UPDATE,
             DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_DELETE,
+            DamPermissions::DAM_PUBLIC_EXPORT_CREATE,
+            DamPermissions::DAM_PUBLIC_EXPORT_UPDATE,
+            DamPermissions::DAM_PUBLIC_EXPORT_READ,
+            DamPermissions::DAM_PUBLIC_EXPORT_DELETE,
         ];
     }
 }

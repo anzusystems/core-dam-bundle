@@ -14,9 +14,19 @@ class PodcastEpisodeFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $fromRss;
 
+    #[Serialize]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $webPublicExportEnabled;
+
+    #[Serialize]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $mobilePublicExportEnabled;
+
     public function __construct()
     {
         $this->setFromRss(false);
+        $this->setWebPublicExportEnabled(false);
+        $this->setMobilePublicExportEnabled(false);
     }
 
     #[Serialize]
@@ -29,6 +39,28 @@ class PodcastEpisodeFlags
     {
         $this->fromRss = $fromRss;
 
+        return $this;
+    }
+
+    public function isWebPublicExportEnabled(): bool
+    {
+        return $this->webPublicExportEnabled;
+    }
+
+    public function setWebPublicExportEnabled(bool $webPublicExportEnabled): self
+    {
+        $this->webPublicExportEnabled = $webPublicExportEnabled;
+        return $this;
+    }
+
+    public function isMobilePublicExportEnabled(): bool
+    {
+        return $this->mobilePublicExportEnabled;
+    }
+
+    public function setMobilePublicExportEnabled(bool $mobilePublicExportEnabled): self
+    {
+        $this->mobilePublicExportEnabled = $mobilePublicExportEnabled;
         return $this;
     }
 }
