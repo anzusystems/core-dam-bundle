@@ -10,8 +10,13 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExportTypeEnableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
@@ -27,13 +32,16 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: VideoShowEpisodeRepository::class)]
 #[ORM\Index(name: 'IDX_video_show_position', fields: ['videoShow', 'position'])]
 #[ORM\Index(name: 'IDX_position', fields: ['position'])]
+#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['licence', 'attributes.webOrderPosition', 'flags.webPublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['licence', 'attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled'])]
 class VideoShowEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
     TimeTrackingInterface,
     PositionableInterface,
     ExtSystemInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    ExportTypeEnableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -57,10 +65,28 @@ class VideoShowEpisode implements
     #[Assert\Valid]
     private VideoShowEpisodeTexts $texts;
 
+    #[Serialize]
+    #[ORM\Embedded(class: VideoShowEpisodeDates::class)]
+    #[Assert\Valid]
+    private VideoShowEpisodeDates $dates;
+
+    #[ORM\Embedded(class: VideoShowEpisodeFlags::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private VideoShowEpisodeFlags $flags;
+
+    #[ORM\Embedded(class: VideoShowEpisodeAttributes::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private VideoShowEpisodeAttributes $attributes;
+
     public function __construct()
     {
         $this->setTexts(new VideoShowEpisodeTexts());
         $this->setAsset(null);
+        $this->setDates(new VideoShowEpisodeDates());
+        $this->setFlags(new VideoShowEpisodeFlags());
+        $this->setAttributes(new VideoShowEpisodeAttributes());
     }
 
     public function getVideoShow(): VideoShow
@@ -99,6 +125,39 @@ class VideoShowEpisode implements
         return $this;
     }
 
+    public function getDates(): VideoShowEpisodeDates
+    {
+        return $this->dates;
+    }
+
+    public function setDates(VideoShowEpisodeDates $dates): self
+    {
+        $this->dates = $dates;
+        return $this;
+    }
+
+    public function getFlags(): VideoShowEpisodeFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(VideoShowEpisodeFlags $flags): self
+    {
+        $this->flags = $flags;
+        return $this;
+    }
+
+    public function getAttributes(): VideoShowEpisodeAttributes
+    {
+        return $this->attributes;
+    }
+
+    public function setAttributes(VideoShowEpisodeAttributes $attributes): self
+    {
+        $this->attributes = $attributes;
+        return $this;
+    }
+
     public function getLicence(): AssetLicence
     {
         return $this->getVideoShow()->getLicence();
@@ -107,5 +166,15 @@ class VideoShowEpisode implements
     public function getExtSystem(): ExtSystem
     {
         return $this->getVideoShow()->getLicence()->getExtSystem();
+    }
+
+    public function isWebPublicExportEnabled(): bool
+    {
+        return $this->flags->isWebPublicExportEnabled();
+    }
+
+    public function isMobilePublicExportEnabled(): bool
+    {
+        return $this->flags->isMobilePublicExportEnabled();
     }
 }

@@ -19,6 +19,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class DistributionAdmSearchDto extends AbstractSearchDto implements LicenceCollectionInterface
 {
     #[Serialize]
+    protected string $text = '';
+
+    #[Serialize]
     #[Assert\Choice(choices: [
         YoutubeDistribution::DISCRIMINATOR,
         JwDistribution::DISCRIMINATOR,
@@ -110,6 +113,17 @@ final class DistributionAdmSearchDto extends AbstractSearchDto implements Licenc
     {
         $this->licences = $licences;
 
+        return $this;
+    }
+
+    public function getText(): string
+    {
+        return $this->text;
+    }
+
+    public function setText(string $text): self
+    {
+        $this->text = $text;
         return $this;
     }
 }

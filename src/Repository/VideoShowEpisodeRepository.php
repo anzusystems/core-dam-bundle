@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
+use Doctrine\Common\Collections\Order;
 
 /**
  * @extends AbstractAnzuRepository<VideoShowEpisode>
@@ -22,7 +24,31 @@ class VideoShowEpisodeRepository extends AbstractAnzuRepository
                 'videoShow' => $videoShow->getId(),
             ],
             [
-                'position' => 'DESC',
+                'position' => Order::Descending->value,
+            ]
+        );
+    }
+
+    public function findOneLastMobile(VideoShow $videoShow): ?VideoShowEpisode
+    {
+        return $this->findOneBy(
+            [
+                'videoShow' => $videoShow->getId(),
+            ],
+            [
+                'attributes.mobileOrderPosition' => Order::Descending->value,
+            ]
+        );
+    }
+
+    public function findOneLastWeb(VideoShow $videoShow): ?VideoShowEpisode
+    {
+        return $this->findOneBy(
+            [
+                'videoShow' => $videoShow->getId(),
+            ],
+            [
+                'attributes.webOrderPosition' => Order::Descending->value,
             ]
         );
     }
