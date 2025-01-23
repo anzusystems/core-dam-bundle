@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Traits\ExportTypePositionTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastEpisodeStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
@@ -15,6 +16,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastEpisodeAttributes
 {
+    use ExportTypePositionTrait;
+
     /**
      * Audio track URL provided by external service (obtained from RSS FEED)
      */
@@ -50,14 +53,6 @@ class PodcastEpisodeAttributes
     #[Serialize]
     private int $duration = App::ZERO;
 
-    #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true, 'default' => App::ZERO])]
-    #[Serialize]
-    private int $webOrderPosition = App::ZERO;
-
-    #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true, 'default' => App::ZERO])]
-    #[Serialize]
-    private int $mobileOrderPosition = App::ZERO;
-
     public function __construct()
     {
         $this->setEpisodeNumber(null);
@@ -66,8 +61,6 @@ class PodcastEpisodeAttributes
         $this->setRssId(App::EMPTY_STRING);
         $this->setRssUrl(App::EMPTY_STRING);
         $this->setExtUrl(App::EMPTY_STRING);
-        $this->setWebOrderPosition(App::ZERO);
-        $this->setMobileOrderPosition(App::ZERO);
         $this->setDuration(App::ZERO);
     }
 
@@ -142,30 +135,6 @@ class PodcastEpisodeAttributes
     public function setExtUrl(string $extUrl): self
     {
         $this->extUrl = $extUrl;
-
-        return $this;
-    }
-
-    public function getWebOrderPosition(): int
-    {
-        return $this->webOrderPosition;
-    }
-
-    public function setWebOrderPosition(int $webOrderPosition): self
-    {
-        $this->webOrderPosition = $webOrderPosition;
-
-        return $this;
-    }
-
-    public function getMobileOrderPosition(): int
-    {
-        return $this->mobileOrderPosition;
-    }
-
-    public function setMobileOrderPosition(int $mobileOrderPosition): self
-    {
-        $this->mobileOrderPosition = $mobileOrderPosition;
 
         return $this;
     }

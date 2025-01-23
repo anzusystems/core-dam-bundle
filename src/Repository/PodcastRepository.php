@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\NonUniqueResultException;
 
 /**
@@ -15,8 +17,28 @@ use Doctrine\ORM\NonUniqueResultException;
  * @method Podcast|null find($id, $lockMode = null, $lockVersion = null)
  * @method Podcast|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class PodcastRepository extends AbstractAnzuRepository
+class PodcastRepository extends AbstractAnzuRepository
 {
+    public function findOneLastMobile(): ?Podcast
+    {
+        return $this->findOneBy(
+            [],
+            [
+                'attributes.mobileOrderPosition' => Order::Descending->value,
+            ]
+        );
+    }
+
+    public function findOneLastWeb(): ?Podcast
+    {
+        return $this->findOneBy(
+            [],
+            [
+                'attributes.webOrderPosition' => Order::Descending->value,
+            ]
+        );
+    }
+
     /**
      * @throws NonUniqueResultException
      */
@@ -24,7 +46,7 @@ final class PodcastRepository extends AbstractAnzuRepository
     {
         $qb = $this->createQueryBuilder('entity')
             ->setMaxResults(1)
-            ->orderBy('entity.id', Criteria::ASC);
+            ->orderBy('entity.id', Order::Ascending->value);
 
         if ($mode) {
             $qb->andWhere('entity.attributes.mode = :mode')

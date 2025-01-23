@@ -4,14 +4,20 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 
 class PodcastManager extends AbstractManager
 {
+    private const int ATTRIBUTES_POSITION_INCREMENT = 100;
+
     public function __construct(
-        private readonly ImagePreviewManager $imagePreviewManager
+        private readonly ImagePreviewManager $imagePreviewManager,
+        private readonly PodcastRepository $podcastRepository,
     ) {
     }
 
@@ -21,6 +27,7 @@ class PodcastManager extends AbstractManager
         if ($podcast->getImagePreview()) {
             $this->imagePreviewManager->create($podcast->getImagePreview(), false);
         }
+        $this->updateAttributesPositions($podcast);
         $this->entityManager->persist($podcast);
         $this->flush($flush);
 
@@ -55,6 +62,12 @@ class PodcastManager extends AbstractManager
             ->setExtUrl($newPodcast->getAttributes()->getExtUrl())
             ->setFileSlot($newPodcast->getAttributes()->getFileSlot())
             ->setMode($newPodcast->getAttributes()->getMode())
+            ->setMobileOrderPosition($newPodcast->getAttributes()->getMobileOrderPosition())
+            ->setWebOrderPosition($newPodcast->getAttributes()->getWebOrderPosition())
+        ;
+        $podcast->getFlags()
+            ->setMobilePublicExportEnabled($newPodcast->getFlags()->isMobilePublicExportEnabled())
+            ->setWebPublicExportEnabled($newPodcast->getFlags()->isWebPublicExportEnabled())
         ;
         $podcast->getDates()
             ->setImportFrom($newPodcast->getDates()->getImportFrom())
@@ -70,5 +83,23 @@ class PodcastManager extends AbstractManager
         $this->flush($flush);
 
         return true;
+    }
+
+    private function updateAttributesPositions(Podcast $podcast): void
+    {
+        if (App::ZERO === $podcast->getAttributes()->getMobileOrderPosition()) {
+            $lastEpisode = $this->podcastRepository->findOneLastMobile();
+
+            $podcast->getAttributes()->setMobileOrderPosition(
+                $lastEpisode?->getAttributes()->getMobileOrderPosition() + self::ATTRIBUTES_POSITION_INCREMENT
+            );
+        }
+        if (App::ZERO === $podcast->getAttributes()->getWebOrderPosition()) {
+            $lastEpisode = $this->podcastRepository->findOneLastWeb();
+
+            $podcast->getAttributes()->setWebOrderPosition(
+                $lastEpisode?->getAttributes()->getWebOrderPosition() + self::ATTRIBUTES_POSITION_INCREMENT
+            );
+        }
     }
 }

@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExportTypeEnableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
@@ -30,11 +31,11 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-// todo index
-
 #[ORM\Entity(repositoryClass: PodcastEpisodeRepository::class)]
 #[ORM\Index(name: 'IDX_podcast_position', fields: ['podcast', 'position'])]
 #[ORM\Index(name: 'IDX_position', fields: ['position'])]
+#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['licence', 'attributes.webOrderPosition', 'flags.webPublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['licence', 'attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled'])]
 class PodcastEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
@@ -42,7 +43,8 @@ class PodcastEpisode implements
     PositionableInterface,
     ExtSystemInterface,
     AssetLicenceInterface,
-    ImagePreviewableInterface
+    ImagePreviewableInterface,
+    ExportTypeEnableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -209,5 +211,15 @@ class PodcastEpisode implements
     public function getLinks(): ?AssetFile
     {
         return $this->getImagePreview()?->getImageFile();
+    }
+
+    public function isWebPublicExportEnabled(): bool
+    {
+        return $this->flags->isWebPublicExportEnabled();
+    }
+
+    public function isMobilePublicExportEnabled(): bool
+    {
+        return $this->flags->isMobilePublicExportEnabled();
     }
 }

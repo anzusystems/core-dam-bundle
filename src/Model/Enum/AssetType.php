@@ -37,4 +37,13 @@ enum AssetType: string implements EnumInterface
             self::Document => DocumentMimeTypes::CHOICES,
         };
     }
+
+    public function isAllowedSiblingType(self $siblingType): bool
+    {
+        return match ($this) {
+            self::Video => $siblingType->is(self::Audio),
+            self::Audio => $siblingType->is(self::Video),
+            default => false,
+        };
+    }
 }

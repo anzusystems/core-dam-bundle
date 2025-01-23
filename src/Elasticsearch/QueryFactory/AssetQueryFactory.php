@@ -38,8 +38,11 @@ final class AssetQueryFactory extends AbstractQueryFactory
             fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
         )->toArray();
 
-        $customDataFields = array_unique($customDataFields);
-        $customDataFields = array_merge($customDataFields, ['title']);
+        $customDataFields = array_reverse(array_values(array_unique($customDataFields)));
+
+        foreach ($customDataFields as $key => $field) {
+            $customDataFields[$key] = $field . '^' . ($key + 1);
+        }
 
         if (
             StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&

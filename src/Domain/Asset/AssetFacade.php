@@ -71,6 +71,31 @@ class AssetFacade
     /**
      * @throws ValidationException
      */
+    public function setSibling(Asset $asset, Asset $targetAsset): Asset
+    {
+        $this->assetManager->beginTransaction();
+        try {
+            // asset type validation
+            // licence validation
+
+//            $this->assetManager->update($asset, $newAssetDto);
+//            $this->assetManager->updateExisting($asset);
+//            $this->indexManager->index($asset);
+//            $this->assetManager->commit();
+        } catch (Throwable $exception) {
+            if ($this->assetManager->isTransactionActive()) {
+                $this->assetManager->rollback();
+            }
+
+            throw new RuntimeException('asset_update_subling_failed', 0, $exception);
+        }
+
+        return $asset;
+    }
+
+    /**
+     * @throws ValidationException
+     */
     public function create(AssetAdmCreateDto $assetAdmCreateDto, AssetLicence $assetLicence): Asset
     {
         $this->validator->validate($assetAdmCreateDto);

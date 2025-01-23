@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Entity\Traits\ExportTypePositionTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -15,6 +16,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class PodcastAttributes
 {
+    use ExportTypePositionTrait;
+
     /**
      * RSS feed URL
      */

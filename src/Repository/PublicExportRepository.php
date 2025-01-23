@@ -14,6 +14,13 @@ use AnzuSystems\CoreDamBundle\Entity\PublicExport;
  */
 final class PublicExportRepository extends AbstractAnzuRepository
 {
+    public function findOneBySlug(string $slug): ?PublicExport
+    {
+        return $this->findOneBy([
+            'slug' => $slug,
+        ]);
+    }
+
     protected function getEntityClass(): string
     {
         return PublicExport::class;

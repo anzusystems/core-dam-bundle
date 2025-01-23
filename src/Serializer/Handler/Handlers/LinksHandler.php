@@ -64,16 +64,11 @@ class LinksHandler extends AbstractHandler
         if ($value instanceof AudioFile) {
             $imagePreview = $this->getImagePreview($value);
             if ($imagePreview) {
-                return [
-                    ...$this->getImageFileLinks($imagePreview, $metadata),
-                    ...$this->getAudioFileLinks($value),
-                ];
+                return $this->getImageFileLinks($imagePreview, $metadata);
             }
-
-            return $this->getAudioFileLinks($value);
         }
 
-        return null;
+        return [];
     }
 
     public function deserialize(mixed $value, Metadata $metadata): mixed

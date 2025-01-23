@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexSettings;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use stdClass;
 use Symfony\Contracts\Service\Attribute\Required;
 
@@ -34,7 +35,9 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
                 ],
                 'from' => $searchDto->getOffset(),
                 'size' => $searchDto->getLimit(),
-                'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
+                'sort' => StringHelper::isNotEmpty($searchDto->getText()) || empty($searchDto->getOrder())
+                    ? ['_score' => 'desc']
+                    : $searchDto->getOrder()
             ],
         ];
     }

@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -75,6 +76,13 @@ final class PodcastFixtures extends AbstractFixtures
             ->setAttributes(
                 (new PodcastAttributes())
                     ->setRssUrl('https://anchor.fm/s/8a651488/podcast/rss')
+                    ->setMobileOrderPosition(100)
+                    ->setWebOrderPosition(100)
+            )
+            ->setFlags(
+                (new PodcastFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setLicence($licence);
 
@@ -96,6 +104,13 @@ final class PodcastFixtures extends AbstractFixtures
             ->setAttributes(
                 (new PodcastAttributes())
                     ->setRssUrl('https://anchor.fm/s/4d8e8b48/podcast/rss')
+                    ->setMobileOrderPosition(50)
+                    ->setWebOrderPosition(200)
+            )
+            ->setFlags(
+                (new PodcastFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setLicence($licence);
 
@@ -108,6 +123,8 @@ final class PodcastFixtures extends AbstractFixtures
             ->setAttributes(
                 (new PodcastAttributes())
                     ->setRssUrl('https://anchor.fm/s/7758ecd4/podcast/rss')
+                    ->setMobileOrderPosition(300)
+                    ->setWebOrderPosition(300)
             )
             ->setLicence($licence);
 
@@ -120,6 +137,8 @@ final class PodcastFixtures extends AbstractFixtures
             ->setAttributes(
                 (new PodcastAttributes())
                     ->setRssUrl('https://anchor.fm/s/db2e247c/podcast/rss')
+                    ->setMobileOrderPosition(400)
+                    ->setWebOrderPosition(400)
             )
             ->setLicence($licence);
     }

@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoShowEpisode;
  * @method VideoShowEpisode|null find($id, $lockMode = null, $lockVersion = null)
  * @method VideoShowEpisode|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class VideoShowEpisodeRepository extends AbstractAnzuRepository
+class VideoShowEpisodeRepository extends AbstractAnzuRepository
 {
     public function findOneLastByShow(VideoShow $videoShow): ?VideoShowEpisode
     {

@@ -13,8 +13,10 @@ use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastDates;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExportTypeEnableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ImagePreviewableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -29,7 +31,9 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: PodcastRepository::class)]
-#[ORM\Index(fields: ['attributes.mode'], name: 'IDX_name')]
+#[ORM\Index(name: 'IDX_name', fields: ['attributes.mode'])]
+#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['licence', 'attributes.webOrderPosition', 'flags.webPublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['licence', 'attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled'])]
 #[AppAssert\PodcastConstraint]
 class Podcast implements
     UuidIdentifiableInterface,
@@ -37,7 +41,8 @@ class Podcast implements
     TimeTrackingInterface,
     ExtSystemInterface,
     AssetLicenceInterface,
-    ImagePreviewableInterface
+    ImagePreviewableInterface,
+    ExportTypeEnableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -79,7 +84,12 @@ class Podcast implements
     #[Assert\Valid]
     private PodcastAttributes $attributes;
 
-    #[ORM\OneToMany(mappedBy: 'podcast', targetEntity: PodcastEpisode::class)]
+    #[ORM\Embedded(class: PodcastFlags::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private PodcastFlags $flags;
+
+    #[ORM\OneToMany(targetEntity: PodcastEpisode::class, mappedBy: 'podcast')]
     private Collection $episodes;
 
     public function __construct()
@@ -90,6 +100,7 @@ class Podcast implements
         $this->setImagePreview(null);
         $this->setAltImage(null);
         $this->setDates(new PodcastDates());
+        $this->setFlags(new PodcastFlags());
     }
 
     public function getAltImage(): ?ImagePreview
@@ -191,5 +202,26 @@ class Podcast implements
     public function getAltLinks(): ?AssetFile
     {
         return $this->getAltImage()?->getImageFile();
+    }
+
+    public function getFlags(): PodcastFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(PodcastFlags $flags): self
+    {
+        $this->flags = $flags;
+        return $this;
+    }
+
+    public function isWebPublicExportEnabled(): bool
+    {
+        return $this->flags->isWebPublicExportEnabled();
+    }
+
+    public function isMobilePublicExportEnabled(): bool
+    {
+        return $this->flags->isMobilePublicExportEnabled();
     }
 }

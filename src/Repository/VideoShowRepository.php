@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoShow;
  * @method VideoShow|null find($id, $lockMode = null, $lockVersion = null)
  * @method VideoShow|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class VideoShowRepository extends AbstractAnzuRepository
+class VideoShowRepository extends AbstractAnzuRepository
 {
     protected function getEntityClass(): string
     {
