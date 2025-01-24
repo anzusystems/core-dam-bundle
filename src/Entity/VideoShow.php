@@ -17,8 +17,6 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExportTypeEnableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
-use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\VideoShowRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -114,6 +112,7 @@ class VideoShow implements
     public function setFlags(VideoShowFlags $flags): self
     {
         $this->flags = $flags;
+
         return $this;
     }
 
@@ -125,6 +124,7 @@ class VideoShow implements
     public function setAttributes(VideoShowAttributes $attributes): self
     {
         $this->attributes = $attributes;
+
         return $this;
     }
 

@@ -13,6 +13,9 @@ final class AuthorAdmSearchDto extends AbstractSearchDto
     protected string $text = '';
 
     #[Serialize]
+    protected ?bool $canBeCurrentAuthor = null;
+
+    #[Serialize]
     protected string $identifier = '';
 
     #[Serialize]
@@ -27,6 +30,18 @@ final class AuthorAdmSearchDto extends AbstractSearchDto
             'reviewed' => 'desc',
             '_score' => 'desc',
         ]);
+    }
+
+    public function isCanBeCurrentAuthor(): ?bool
+    {
+        return $this->canBeCurrentAuthor;
+    }
+
+    public function setCanBeCurrentAuthor(?bool $canBeCurrentAuthor): self
+    {
+        $this->canBeCurrentAuthor = $canBeCurrentAuthor;
+
+        return $this;
     }
 
     public function getIndexName(): string

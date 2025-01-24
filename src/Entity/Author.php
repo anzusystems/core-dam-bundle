@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Validator\Constraints\AuthorCurrentAuthor;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -28,6 +29,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 #[ORM\UniqueConstraint(fields: ['name', 'identifier', 'extSystem'])]
 #[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['identifier'])]
+#[AuthorCurrentAuthor]
 class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemIndexableInterface
 {
     use UuidIdentityTrait;
@@ -48,18 +50,17 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
 
     /**
      * If asset uses author and has defined currentAuthors, this relation should be replaced
-     * todo current author should be final author without parents!
      */
     #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'childAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinTable('author_is_current_author')]
-    #[Serialize(handler: EntityIdHandler::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: self::class)]
     private Collection $currentAuthors;
 
     /**
      * Inverse side of currentAuthors
      */
     #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'currentAuthors', fetch: App::DOCTRINE_EXTRA_LAZY)]
-    #[Serialize(handler: EntityIdHandler::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: self::class)]
     private Collection $childAuthors;
 
     #[ORM\Column(type: Types::STRING, length: 255)]

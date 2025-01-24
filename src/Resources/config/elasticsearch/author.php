@@ -19,6 +19,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'reviewed' => [
                     'type' => 'boolean',
                 ],
+                'canBeCurrentAuthor' => [
+                    'type' => 'boolean',
+                ],
                 'name' => [
                     'type' => 'text',
                     'analyzer' => 'exact_stop',

@@ -212,6 +212,7 @@ class Podcast implements
     public function setFlags(PodcastFlags $flags): self
     {
         $this->flags = $flags;
+
         return $this;
     }
 

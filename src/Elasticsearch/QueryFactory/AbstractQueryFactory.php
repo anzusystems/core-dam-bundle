@@ -37,7 +37,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
                 'size' => $searchDto->getLimit(),
                 'sort' => StringHelper::isNotEmpty($searchDto->getText()) || empty($searchDto->getOrder())
                     ? ['_score' => 'desc']
-                    : $searchDto->getOrder()
+                    : $searchDto->getOrder(),
             ],
         ];
     }

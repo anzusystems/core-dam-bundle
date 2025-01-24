@@ -10,7 +10,6 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeAttributes;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeFlags;
@@ -133,6 +132,7 @@ class VideoShowEpisode implements
     public function setDates(VideoShowEpisodeDates $dates): self
     {
         $this->dates = $dates;
+
         return $this;
     }
 
@@ -144,6 +144,7 @@ class VideoShowEpisode implements
     public function setFlags(VideoShowEpisodeFlags $flags): self
     {
         $this->flags = $flags;
+
         return $this;
     }
 
@@ -155,6 +156,7 @@ class VideoShowEpisode implements
     public function setAttributes(VideoShowEpisodeAttributes $attributes): self
     {
         $this->attributes = $attributes;
+
         return $this;
     }
 

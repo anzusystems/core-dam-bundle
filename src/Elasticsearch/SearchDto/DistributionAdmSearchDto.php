@@ -124,6 +124,7 @@ final class DistributionAdmSearchDto extends AbstractSearchDto implements Licenc
     public function setText(string $text): self
     {
         $this->text = $text;
+
         return $this;
     }
 }

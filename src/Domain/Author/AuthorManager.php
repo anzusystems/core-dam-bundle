@@ -15,13 +15,10 @@ final class AuthorManager extends AbstractManager
         $this->trackCreation($author);
         $this->entityManager->persist($author);
 
-        foreach ($author->getChildAuthors() as $childAuthor) {
-            $childAuthor->addCurrentAuthor($author);
+        foreach ($author->getCurrentAuthors() as $currentAuthor) {
+            $currentAuthor->addChildAuthor($author);
         }
-        foreach ($author->getCurrentAuthors() as $childAuthor) {
-            $childAuthor->addChildAuthor($author);
-        }
-
+        $author->getFlags()->setCanBeCurrentAuthor($author->getCurrentAuthors()->isEmpty());
         $this->flush($flush);
 
         return $author;
@@ -36,28 +33,6 @@ final class AuthorManager extends AbstractManager
             ->setFlags($newAuthor->getFlags())
             ->setType($newAuthor->getType())
         ;
-
-        $this->colUpdate(
-            oldCollection: $author->getChildAuthors(),
-            newCollection: $newAuthor->getChildAuthors(),
-            addElementFn: function (Collection $oldCollection, Author $newChildAuthor) use ($author): bool {
-                if (false === $oldCollection->contains($newChildAuthor)) {
-                    $oldCollection->add($newChildAuthor);
-                }
-                $newChildAuthor->addCurrentAuthor($author);
-
-                return true;
-            },
-            removeElementFn: function (Collection $oldCollection, Author $oldChildAuthor) use ($author): bool {
-                if ($oldCollection->contains($oldChildAuthor)) {
-                    $oldCollection->removeElement($oldChildAuthor);
-                }
-                $oldChildAuthor->removeCurrentAuthor($author);
-
-                return true;
-            }
-        );
-
         $this->colUpdate(
             oldCollection: $author->getCurrentAuthors(),
             newCollection: $newAuthor->getCurrentAuthors(),
@@ -78,6 +53,7 @@ final class AuthorManager extends AbstractManager
                 return true;
             }
         );
+        $author->getFlags()->setCanBeCurrentAuthor($author->getCurrentAuthors()->isEmpty());
 
         $this->flush($flush);
 

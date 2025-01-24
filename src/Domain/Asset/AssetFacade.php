@@ -74,14 +74,15 @@ class AssetFacade
     public function setSibling(Asset $asset, Asset $targetAsset): Asset
     {
         $this->assetManager->beginTransaction();
+
         try {
             // asset type validation
             // licence validation
 
-//            $this->assetManager->update($asset, $newAssetDto);
-//            $this->assetManager->updateExisting($asset);
-//            $this->indexManager->index($asset);
-//            $this->assetManager->commit();
+            //            $this->assetManager->update($asset, $newAssetDto);
+            //            $this->assetManager->updateExisting($asset);
+            //            $this->indexManager->index($asset);
+            //            $this->assetManager->commit();
         } catch (Throwable $exception) {
             if ($this->assetManager->isTransactionActive()) {
                 $this->assetManager->rollback();
