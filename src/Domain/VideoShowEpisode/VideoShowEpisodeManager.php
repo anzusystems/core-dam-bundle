@@ -18,14 +18,22 @@ final class VideoShowEpisodeManager extends AbstractManager
     ) {
     }
 
-    public function create(VideoShowEpisode $VideoShowEpisode, bool $flush = true): VideoShowEpisode
+    public function create(VideoShowEpisode $videoShowEpisode, bool $flush = true): VideoShowEpisode
     {
-        $this->setPosition($VideoShowEpisode);
-        $this->trackCreation($VideoShowEpisode);
-        $this->entityManager->persist($VideoShowEpisode);
+        $this->setPosition($videoShowEpisode);
+        $this->trackCreation($videoShowEpisode);
+        $this->entityManager->persist($videoShowEpisode);
         $this->flush($flush);
 
-        return $VideoShowEpisode;
+        return $videoShowEpisode;
+    }
+
+    public function updateExisting(VideoShowEpisode $videoShowEpisode, bool $flush = true): VideoShowEpisode
+    {
+        $this->trackModification($videoShowEpisode);
+        $this->flush($flush);
+
+        return $videoShowEpisode;
     }
 
     public function update(VideoShowEpisode $videoShowEpisode, VideoShowEpisode $newVideoShowEpisode, bool $flush = true): VideoShowEpisode

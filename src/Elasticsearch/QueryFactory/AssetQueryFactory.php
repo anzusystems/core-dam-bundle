@@ -40,10 +40,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         $customDataFields = array_reverse(array_values(array_unique($customDataFields)));
 
-        foreach ($customDataFields as $key => $field) {
-            $customDataFields[$key] = $field . '^' . ($key + 1);
-        }
-
         if (
             StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
             StringHelper::isNotEmpty($searchDto->getCustomDataValue())
@@ -63,6 +59,10 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         if (is_string($searchDto->getIdInText())) {
             return parent::getMust($searchDto, $extSystem);
+        }
+
+        foreach ($customDataFields as $key => $field) {
+            $customDataFields[$key] = $field . '^' . ($key + 1);
         }
 
         if ($searchDto->getText()) {
