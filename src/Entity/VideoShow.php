@@ -28,8 +28,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VideoShowRepository::class)]
 #[ORM\Index(name: 'IDX_name', fields: ['texts.title'])]
-#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['licence', 'attributes.webOrderPosition', 'flags.webPublicExportEnabled'])]
-#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['licence', 'attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['attributes.webOrderPosition', 'flags.webPublicExportEnabled', 'licence'])]
+#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled', 'licence'])]
 class VideoShow implements
     UuidIdentifiableInterface,
     UserTrackingInterface,

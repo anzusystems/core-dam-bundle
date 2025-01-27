@@ -33,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwCdnClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use Doctrine\ORM\EntityManagerInterface;
@@ -110,6 +111,11 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(JwClientMock::class);
     $services->set(HttpClientInterface::class . ' $jwPlayerApiClient', MockHttpClient::class)
         ->factory(service(JwClientMock::class));
+
+    $services->set(JwCdnClientMock::class);
+    $services->set(HttpClientInterface::class . ' $jwPlayerCdnApiClient', MockHttpClient::class)
+        ->factory(service(JwCdnClientMock::class));
+
     $services->set(BaseClient::class);
     $services->set(HttpClientInterface::class . ' $client', MockHttpClient::class)
         ->factory(service(BaseClient::class));

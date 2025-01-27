@@ -195,7 +195,7 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('https://api.jwplayer.com')
                     ->isRequired()
                 ->end()
-            ->scalarNode(SettingsConfiguration::JW_PLAYER_CDN_API_CLIENT)
+                ->scalarNode(SettingsConfiguration::JW_PLAYER_CDN_API_CLIENT)
                     ->defaultValue('https://cdn.jwplayer.com')
                     ->isRequired()
                 ->end()

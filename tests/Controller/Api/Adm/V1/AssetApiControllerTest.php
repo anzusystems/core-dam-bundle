@@ -273,7 +273,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $client = $this->getApiClient(User::ID_ADMIN);
         $response = $client->post('/api/adm/v1/asset/licence/'.AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
 
-        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode());
+        $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode(), $response->getContent());
     }
 
     private function getData(): array

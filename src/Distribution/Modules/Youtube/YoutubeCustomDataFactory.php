@@ -13,11 +13,10 @@ final class YoutubeCustomDataFactory extends AbstractCustomDataFactory
 {
     public function createDistributionData(YoutubeVideoDto $video): array
     {
+        $data = (new YoutubeDistributionCustomData());
+        $data->getThumbnail()->setValue($video->getThumbnailUrl());
         /** @var array $array */
-        $array = $this->serializer->toArray(
-            (new YoutubeDistributionCustomData())
-                ->getThumbnail()->setValue($video->getThumbnailUrl())
-        );
+        $array = $this->serializer->toArray($data);
 
         return $array;
     }

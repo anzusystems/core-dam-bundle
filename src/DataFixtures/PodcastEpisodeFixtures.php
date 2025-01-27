@@ -66,6 +66,8 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
             ->setAsset($audio->getAsset())
             ->setFlags(
                 (new PodcastEpisodeFlags())->setFromRss(true)
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setAttributes(
                 (new PodcastEpisodeAttributes())
@@ -73,11 +75,6 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
                     ->setRssId('123')
                     ->setMobileOrderPosition(200)
                     ->setWebOrderPosition(100)
-            )
-            ->setFlags(
-                (new PodcastEpisodeFlags())
-                    ->setMobilePublicExportEnabled(true)
-                    ->setWebPublicExportEnabled(true)
             )
             ->setTexts(
                 (new PodcastEpisodeTexts())

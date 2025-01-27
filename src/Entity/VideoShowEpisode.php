@@ -31,8 +31,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: VideoShowEpisodeRepository::class)]
 #[ORM\Index(name: 'IDX_video_show_position', fields: ['videoShow', 'position'])]
 #[ORM\Index(name: 'IDX_position', fields: ['position'])]
-#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['licence', 'attributes.webOrderPosition', 'flags.webPublicExportEnabled'])]
-#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['licence', 'attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_show_publication_mobile_ordering', fields: ['attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled', 'asset', 'videoShow', 'dates.publicationDate'])]
+#[ORM\Index(name: 'IDX_show_publication_web_ordering', fields: ['attributes.webOrderPosition', 'flags.webPublicExportEnabled', 'asset', 'videoShow', 'dates.publicationDate'])]
 class VideoShowEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,

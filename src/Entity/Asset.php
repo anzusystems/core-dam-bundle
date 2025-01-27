@@ -58,7 +58,6 @@ class Asset implements
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $authors;
 
-    // todo validation (sigling should
     #[ORM\ManyToOne(targetEntity: self::class)]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $siblingToAsset;
@@ -125,6 +124,7 @@ class Asset implements
         $this->setMainFile(null);
         $this->setAssetFileProperties(new AssetFileProperties());
         $this->setExtSystem(null);
+        $this->setSiblingToAsset(null);
     }
 
     public function __copy(): self

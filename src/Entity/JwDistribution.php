@@ -23,6 +23,7 @@ class JwDistribution extends Distribution
     protected JwTexts $texts;
 
     #[ORM\Column(type: Types::STRING, length: 2_048, options: ['default' => App::EMPTY_STRING])]
+    #[Serialize]
     private string $directSourceUrl = App::EMPTY_STRING;
 
     public function __construct()
