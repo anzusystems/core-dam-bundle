@@ -52,9 +52,9 @@ class PublicLinksTagCollectionHandler extends LinksTagCollectionHandler
                             'property' => 'requestedHeight',
                             'type' => SerializerHelper::getOaFriendlyType(Type::BUILTIN_TYPE_INT),
                         ]),
-                    ]
-                ]
-            ]
+                    ],
+                ],
+            ],
         ];
     }
 }

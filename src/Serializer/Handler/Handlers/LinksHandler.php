@@ -68,7 +68,7 @@ class LinksHandler extends AbstractHandler
             }
         }
 
-        return [];
+        return null;
     }
 
     public function deserialize(mixed $value, Metadata $metadata): mixed

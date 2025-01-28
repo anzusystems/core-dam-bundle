@@ -8,8 +8,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\SerializerBundle\Helper\SerializerHelper;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
-use AnzuSystems\SerializerBundle\OpenApi\SerializerModelDescriber;
-use App\Domain\Image\Model\Decorator\ImagePubDecorator;
 
 class LinksTagCollectionHandler extends LinksHandler
 {
