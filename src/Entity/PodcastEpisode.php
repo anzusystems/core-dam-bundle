@@ -34,8 +34,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PodcastEpisodeRepository::class)]
 #[ORM\Index(name: 'IDX_podcast_position', fields: ['podcast', 'position'])]
 #[ORM\Index(name: 'IDX_position', fields: ['position'])]
-#[ORM\Index(name: 'IDX_podcast_web_ordering', fields: ['attributes.webOrderPosition', 'flags.webPublicExportEnabled', 'asset', 'podcast'])]
-#[ORM\Index(name: 'IDX_podcast_mobile_ordering', fields: ['attributes.mobileOrderPosition', 'flags.mobilePublicExportEnabled', 'asset', 'podcast'])]
+#[ORM\Index(name: 'IDX_podcast_web_ordering', fields: ['attributes.webOrderPosition', 'asset', 'podcast', 'flags.webPublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_podcast_mobile_ordering', fields: ['attributes.mobileOrderPosition', 'asset', 'podcast', 'flags.mobilePublicExportEnabled'])]
 class PodcastEpisode implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
