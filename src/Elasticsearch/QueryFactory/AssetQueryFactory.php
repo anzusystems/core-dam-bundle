@@ -103,23 +103,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
             // other filters should not be applied
             return $filter;
         }
-        //
-        //        if (
-        //            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
-        //            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
-        //        ) {
-        //            // TODO cache this
-        //            $customDataFields = $this->customFormProvider->provideAllSearchableElementsForExtSystem($extSystem->getSlug())->map(
-        //                fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
-        //            )->toArray();
-        //            $customDataFields = array_unique($customDataFields);
-        //
-        //            if (in_array($searchDto->getCustomDataKey(), $customDataFields, true)) {
-        //                $filter[] = ['term' => [$searchDto->getCustomDataKey() => $searchDto->getCustomDataValue()]];
-        //            }
-        //        }
-
-        //        dd($filter);
 
         if (false === (null === $searchDto->isVisible())) {
             $filter[] = ['terms' => ['visible' => [$searchDto->isVisible()]]];
