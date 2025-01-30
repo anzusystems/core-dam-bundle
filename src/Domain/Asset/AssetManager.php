@@ -68,4 +68,32 @@ class AssetManager extends AbstractManager
 
         return true;
     }
+
+    public function removeSibling(Asset $asset, bool $flush = true): Asset
+    {
+        $asset->getSiblingToAsset()?->setSiblingToAsset(null);
+        $asset->setSiblingToAsset(null);
+
+        $this->trackModification($asset);
+        $this->flush($flush);
+
+        return $asset;
+    }
+
+    public function setSibling(Asset $asset, Asset $targetAsset, bool $flush = true): Asset
+    {
+        if ($asset->getSiblingToAsset()?->is($targetAsset) && $targetAsset->getSiblingToAsset()?->is($asset)) {
+            return $asset;
+        }
+
+        $this->removeSibling($asset, false);
+        $this->removeSibling($targetAsset, false);
+
+        $asset->setSiblingToAsset($targetAsset);
+        $targetAsset->setSiblingToAsset($asset);
+
+        $this->flush($flush);
+
+        return $asset;
+    }
 }
