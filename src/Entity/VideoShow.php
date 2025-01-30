@@ -11,8 +11,11 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowTexts;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExportTypeEnableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\VideoShowRepository;
@@ -24,13 +27,16 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VideoShowRepository::class)]
-#[ORM\Index(fields: ['texts.title'], name: 'IDX_name')]
+#[ORM\Index(name: 'IDX_name', fields: ['texts.title'])]
+#[ORM\Index(name: 'IDX_licence_web_ordering', fields: ['attributes.webOrderPosition', 'licence', 'flags.webPublicExportEnabled'])]
+#[ORM\Index(name: 'IDX_licence_mobile_ordering', fields: ['attributes.mobileOrderPosition', 'licence', 'flags.mobilePublicExportEnabled'])]
 class VideoShow implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
     TimeTrackingInterface,
     ExtSystemInterface,
-    AssetLicenceInterface
+    AssetLicenceInterface,
+    ExportTypeEnableInterface
 {
     use UuidIdentityTrait;
     use UserTrackingTrait;
@@ -46,13 +52,25 @@ class VideoShow implements
     #[Assert\Valid]
     private VideoShowTexts $texts;
 
-    #[ORM\OneToMany(mappedBy: 'videoShow', targetEntity: VideoShowEpisode::class)]
+    #[ORM\Embedded(class: VideoShowFlags::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private VideoShowFlags $flags;
+
+    #[ORM\Embedded(class: VideoShowAttributes::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private VideoShowAttributes $attributes;
+
+    #[ORM\OneToMany(targetEntity: VideoShowEpisode::class, mappedBy: 'videoShow')]
     private Collection $episodes;
 
     public function __construct()
     {
         $this->setTexts(new VideoShowTexts());
         $this->setEpisodes(new ArrayCollection());
+        $this->setFlags(new VideoShowFlags());
+        $this->setAttributes(new VideoShowAttributes());
     }
 
     public function getTexts(): VideoShowTexts
@@ -86,6 +104,30 @@ class VideoShow implements
         return $this;
     }
 
+    public function getFlags(): VideoShowFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(VideoShowFlags $flags): self
+    {
+        $this->flags = $flags;
+
+        return $this;
+    }
+
+    public function getAttributes(): VideoShowAttributes
+    {
+        return $this->attributes;
+    }
+
+    public function setAttributes(VideoShowAttributes $attributes): self
+    {
+        $this->attributes = $attributes;
+
+        return $this;
+    }
+
     public function getLicence(): AssetLicence
     {
         return $this->licence;
@@ -94,5 +136,15 @@ class VideoShow implements
     public function getExtSystem(): ExtSystem
     {
         return $this->licence->getExtSystem();
+    }
+
+    public function isWebPublicExportEnabled(): bool
+    {
+        return $this->flags->isWebPublicExportEnabled();
+    }
+
+    public function isMobilePublicExportEnabled(): bool
+    {
+        return $this->flags->isMobilePublicExportEnabled();
     }
 }

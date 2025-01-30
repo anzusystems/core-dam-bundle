@@ -42,7 +42,7 @@ final class AuthorQueryFactory extends AbstractQueryFactory
      * @param AuthorAdmSearchDto $searchDto
      * @psalm-suppress PossiblyNullReference
      */
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $filter = [];
 
@@ -57,6 +57,9 @@ final class AuthorQueryFactory extends AbstractQueryFactory
         }
         if (false === (null === $searchDto->getType())) {
             $filter[] = ['terms' => ['type' => [$searchDto->getType()]]];
+        }
+        if (false === (null === $searchDto->isCanBeCurrentAuthor())) {
+            $filter[] = ['term' => ['canBeCurrentAuthor' => $searchDto->isCanBeCurrentAuthor()]];
         }
 
         return $filter;

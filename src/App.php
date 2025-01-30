@@ -10,6 +10,8 @@ use Exception;
 final class App extends AnzuApp
 {
     public const int ZERO = 0;
+    public const string EMPTY_STRING = '';
+
     public const string DOCTRINE_EXTRA_LAZY = 'EXTRA_LAZY';
     public const string CACHE_STRATEGY = 'NONSTRICT_READ_WRITE';
     public const string DATE_TIME_API_FORMAT = 'Y-m-d\TH:i:s.u\Z';

@@ -66,11 +66,15 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
             ->setAsset($audio->getAsset())
             ->setFlags(
                 (new PodcastEpisodeFlags())->setFromRss(true)
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setAttributes(
                 (new PodcastEpisodeAttributes())
                     ->setRssUrl('http://core.dam.localhost/rssurl')
                     ->setRssId('123')
+                    ->setMobileOrderPosition(200)
+                    ->setWebOrderPosition(100)
             )
             ->setTexts(
                 (new PodcastEpisodeTexts())
@@ -81,6 +85,16 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
 
         yield (new PodcastEpisode())
             ->setId(self::EPISODE_2_ID)
+            ->setAttributes(
+                (new PodcastEpisodeAttributes())
+                    ->setMobileOrderPosition(100)
+                    ->setWebOrderPosition(200)
+            )
+            ->setFlags(
+                (new PodcastEpisodeFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
+            )
             ->setTexts(
                 (new PodcastEpisodeTexts())
                     ->setTitle('Episode 2')

@@ -34,7 +34,7 @@ final readonly class AssetFileRouteGenerator
 
         if ($config instanceof AssetFileRouteConfigurableInterface) {
             return UrlHelper::concatPathWithDomain(
-                $config->getPublicDomainName(),
+                $config->getPublicDomain(),
                 $route->getUri()->getPath()
             );
         }

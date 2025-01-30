@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
  * @method PodcastEpisode|null find($id, $lockMode = null, $lockVersion = null)
  * @method PodcastEpisode|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class PodcastEpisodeRepository extends AbstractAnzuRepository
+class PodcastEpisodeRepository extends AbstractAnzuRepository
 {
     public function findOneLastByPodcast(Podcast $podcast): ?PodcastEpisode
     {

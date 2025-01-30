@@ -25,6 +25,7 @@ final class CustomFormElementRepository extends AbstractAnzuRepository
                 ->innerJoin('entity.form', 'form')
                 ->where('entity.attributes.searchable = :true')
                 ->andWhere('IDENTITY(entity.form) in (:formIds)')
+                ->orderBy('entity.position')
                 ->setParameter('true', true)
                 ->setParameter('formIds', $ids)
                 ->getQuery()

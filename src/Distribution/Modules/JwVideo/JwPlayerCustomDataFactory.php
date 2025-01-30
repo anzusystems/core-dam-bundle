@@ -6,27 +6,37 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo;
 
 use AnzuSystems\CoreDamBundle\Distribution\Modules\AbstractCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\JwDistributionCustomData;
+use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
 final class JwPlayerCustomDataFactory extends AbstractCustomDataFactory
 {
-    public const string THUMBNAIL_DATA = 'thumbnail';
-
     public function __construct(
         private readonly JwVideoDtoFactory $jwVideoDtoFactory,
     ) {
     }
 
+    /**
+     * @throws SerializerException
+     */
     public function createDistributionData(Distribution $distribution): array
     {
-        return [
-            self::THUMBNAIL_DATA => $this->createUrl(
-                $this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId())
-            ),
-        ];
+        $data = (new JwDistributionCustomData());
+        $data->getThumbnail()->setValue($this->jwVideoDtoFactory->createThumbnailUrl($distribution->getExtId()));
+        /** @var array $array */
+        $array = $this->serializer->toArray($data);
+
+        return $array;
     }
 
-    public function getUrl(Distribution $distribution): ?string
+    public function getCustomData(Distribution $distribution): JwDistributionCustomData
     {
-        return $this->getStringValue($distribution->getDistributionData(), self::THUMBNAIL_DATA);
+        /** @var JwDistributionCustomData $data */
+        $data = $this->serializer->fromArray(
+            $distribution->getDistributionData(),
+            JwDistributionCustomData::class
+        );
+
+        return $data;
     }
 }

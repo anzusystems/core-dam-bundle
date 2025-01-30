@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -13,6 +14,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 
 class PodcastEpisodeManager extends AbstractManager
 {
+    private const int ATTRIBUTES_POSITION_MODIFIER = 10;
+
     public function __construct(
         private readonly PodcastEpisodeRepository $repository,
         private readonly ImagePreviewManager $imagePreviewManager
@@ -22,6 +25,8 @@ class PodcastEpisodeManager extends AbstractManager
     public function create(PodcastEpisode $podcastEpisode, bool $flush = true): PodcastEpisode
     {
         $this->setPosition($podcastEpisode);
+        $this->updateAttributesPositions($podcastEpisode);
+        $podcastEpisode->setLicence($podcastEpisode->getPodcast()->getLicence());
         if ($podcastEpisode->getImagePreview()) {
             $this->imagePreviewManager->create($podcastEpisode->getImagePreview(), false);
         }
@@ -61,7 +66,10 @@ class PodcastEpisodeManager extends AbstractManager
         $podcastEpisode->getAttributes()
             ->setSeasonNumber($newPodcastEpisode->getAttributes()->getSeasonNumber())
             ->setEpisodeNumber($newPodcastEpisode->getAttributes()->getEpisodeNumber())
+            ->setWebOrderPosition($newPodcastEpisode->getAttributes()->getWebOrderPosition())
+            ->setMobileOrderPosition($newPodcastEpisode->getAttributes()->getMobileOrderPosition())
             ->setExtUrl($newPodcastEpisode->getAttributes()->getExtUrl())
+            ->setDuration($newPodcastEpisode->getAttributes()->getDuration())
         ;
         $podcastEpisode->getTexts()
             ->setTitle($newPodcastEpisode->getTexts()->getTitle())
@@ -73,6 +81,11 @@ class PodcastEpisodeManager extends AbstractManager
         $podcastEpisode
             ->setAsset($newPodcastEpisode->getAsset())
         ;
+        $podcastEpisode->getFlags()
+            ->setMobilePublicExportEnabled($newPodcastEpisode->getFlags()->isMobilePublicExportEnabled())
+            ->setWebPublicExportEnabled($newPodcastEpisode->getFlags()->isWebPublicExportEnabled())
+        ;
+        $podcastEpisode->setLicence($podcastEpisode->getPodcast()->getLicence());
         $this->flush($flush);
 
         return $podcastEpisode;
@@ -91,6 +104,20 @@ class PodcastEpisodeManager extends AbstractManager
         $lastEpisode = $this->repository->findOneLastByPodcast($podcastEpisode->getPodcast());
         if ($lastEpisode) {
             $podcastEpisode->setPosition($lastEpisode->getPosition() + 1);
+        }
+    }
+
+    private function updateAttributesPositions(PodcastEpisode $podcastEpisode): void
+    {
+        if (App::ZERO === $podcastEpisode->getAttributes()->getMobileOrderPosition()) {
+            $podcastEpisode->getAttributes()->setMobileOrderPosition(
+                $podcastEpisode->getPosition() * self::ATTRIBUTES_POSITION_MODIFIER
+            );
+        }
+        if (App::ZERO === $podcastEpisode->getAttributes()->getWebOrderPosition()) {
+            $podcastEpisode->getAttributes()->setWebOrderPosition(
+                $podcastEpisode->getPosition() * self::ATTRIBUTES_POSITION_MODIFIER
+            );
         }
     }
 }

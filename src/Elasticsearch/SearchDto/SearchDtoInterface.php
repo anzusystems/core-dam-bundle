@@ -17,4 +17,5 @@ interface SearchDtoInterface
     public function getOffset(): int;
 
     public function getOrder(): array;
+    public function getText(): string;
 }

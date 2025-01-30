@@ -89,7 +89,7 @@ final class AssetFileRouteController extends AbstractImageController
 
         return $this->redirect(
             UrlHelper::concatPathWithDomain(
-                $config->getPublicDomainName(),
+                $config->getPublicDomain(),
                 $path
             )
         );

@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CoreDamBundle\Domain\VideoShow\VideoShowManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowTexts;
 use AnzuSystems\CoreDamBundle\Entity\VideoShow;
 use Generator;
@@ -59,6 +61,16 @@ final class VideoShowFixtures extends AbstractAssetFileFixtures
             ->setTexts(
                 (new VideoShowTexts())
                     ->setTitle('Rozhovory ZKH')
+            )
+            ->setAttributes(
+                (new VideoShowAttributes())
+                    ->setMobileOrderPosition(100)
+                    ->setWebOrderPosition(100)
+            )
+            ->setFlags(
+                (new VideoShowFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setLicence($licence);
     }

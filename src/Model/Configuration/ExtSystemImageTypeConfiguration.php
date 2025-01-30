@@ -7,7 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfiguration implements AssetFileRouteConfigurableInterface
 {
     public const string PUBLIC_DOMAIN_KEY = 'public_domain';
+    public const string PUBLIC_DOMAIN_NAME_KEY = 'public_domain_name';
     public const string ADMIN_DOMAIN_KEY = 'admin_domain';
+    public const string ADMIN_DOMAIN_NAME_KEY = 'admin_domain_name';
     public const string ROI_WIDTH_KEY = 'roi_width';
     public const string ROI_HEIGHT_KEY = 'roi_height';
     public const string CROP_STORAGE_NAME = 'crop_storage_name';
@@ -16,18 +18,23 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     private int $roiWidth;
     private int $roiHeight;
     private string $cropStorageName;
+    private string $publicDomain;
     private string $publicDomainName;
     private string $adminDomain;
+    private string $adminDomainName;
     private string $notFoundImageId;
 
     public static function getFromArrayConfiguration(array $config): static
     {
         return parent::getFromArrayConfiguration($config)
             ->setAdminDomain($config[self::ADMIN_DOMAIN_KEY] ?? '')
-            ->setPublicDomainName($config[self::PUBLIC_DOMAIN_KEY] ?? '')
+            ->setPublicDomain($config[self::PUBLIC_DOMAIN_KEY] ?? '')
             ->setRoiWidth($config[self::ROI_WIDTH_KEY] ?? 0)
             ->setRoiHeight($config[self::ROI_HEIGHT_KEY] ?? 0)
-            ->setCropStorageName($config[self::CROP_STORAGE_NAME] ?? '');
+            ->setCropStorageName($config[self::CROP_STORAGE_NAME] ?? '')
+            ->setPublicDomainName($config[self::PUBLIC_DOMAIN_NAME_KEY] ?? '')
+            ->setAdminDomainName($config[self::ADMIN_DOMAIN_NAME_KEY] ?? '')
+        ;
     }
 
     public function getPublicDomainName(): string
@@ -38,6 +45,30 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setPublicDomainName(string $publicDomainName): static
     {
         $this->publicDomainName = $publicDomainName;
+
+        return $this;
+    }
+
+    public function getAdminDomainName(): string
+    {
+        return $this->adminDomainName;
+    }
+
+    public function setAdminDomainName(string $adminDomainName): static
+    {
+        $this->adminDomainName = $adminDomainName;
+
+        return $this;
+    }
+
+    public function getPublicDomain(): string
+    {
+        return $this->publicDomain;
+    }
+
+    public function setPublicDomain(string $publicDomain): static
+    {
+        $this->publicDomain = $publicDomain;
 
         return $this;
     }

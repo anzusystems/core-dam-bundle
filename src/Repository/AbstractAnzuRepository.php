@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CommonBundle\Repository\AbstractAnzuRepository as BaseAbstractAnzuRepository;
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
+use AnzuSystems\CoreDamBundle\Repository\Interfaces\AnzuRepositoryInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -23,7 +24,7 @@ use Doctrine\ORM\QueryBuilder;
  * @method BaseIdentifiableInterface|null find($id, $lockMode = null, $lockVersion = null)
  * @method BaseIdentifiableInterface|null findOneBy(array $criteria, array $orderBy = null)
  */
-abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository
+abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository implements AnzuRepositoryInterface
 {
     protected ?int $extSystemIdReindexCache = null;
 

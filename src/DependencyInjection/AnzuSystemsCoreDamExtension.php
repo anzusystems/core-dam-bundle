@@ -440,6 +440,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             'jwPlayer.api.client' => [
                                 'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_API_CLIENT],
                             ],
+                            'jwPlayer.cdnApi.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::JW_PLAYER_CDN_API_CLIENT],
+                            ],
                             'unsplash.api.client' => [
                                 'base_uri' => $configSettings[SettingsConfiguration::UNSPLASH_API_CLIENT],
                                 'headers' => [
@@ -682,6 +685,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
                 if (AssetType::Image->toString() === $assetType) {
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY];
+                    $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY]);
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY]);
                 }

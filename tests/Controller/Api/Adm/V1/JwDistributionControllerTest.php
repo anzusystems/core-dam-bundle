@@ -35,7 +35,8 @@ final class JwDistributionControllerTest extends AbstractApiController
                 'description' => 'Description',
                 'author' => 'Author',
                 'keywords' => ['keyword'],
-            ]
+            ],
+            'directSourceUrl' => 'direct-url'
         ];
 
 
@@ -51,13 +52,13 @@ final class JwDistributionControllerTest extends AbstractApiController
         $this->assertSame($payload['texts']['description'], $jwDistribution->getTexts()->getDescription());
         $this->assertSame($payload['texts']['author'], $jwDistribution->getTexts()->getAuthor());
         $this->assertSame($payload['texts']['keywords'], $jwDistribution->getTexts()->getKeywords());
-
+        $this->assertSame($payload['directSourceUrl'], $jwDistribution->getDirectSourceUrl());
         $this->assertSame($payload['distributionService'], $jwDistribution->getDistributionService());
         $this->assertSame(DistributionProcessStatus::Distributed, $jwDistribution->getStatus());
         $this->assertSame([
             'thumbnail' => [
+                'value' => 'https://cdn.jwplayer.com/v2/media/123jw/poster.jpg',
                 'type' => 'url',
-                'value' => 'https://cdn.jwplayer.com/v2/media/123jw/poster.jpg'
             ]
         ], $jwDistribution->getDistributionData());
     }

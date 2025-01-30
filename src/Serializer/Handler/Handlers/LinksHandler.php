@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
@@ -16,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\Traits\AdminImageLinksTrait;
 use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
@@ -24,6 +24,8 @@ use Symfony\Component\HttpFoundation\RequestStack;
 
 class LinksHandler extends AbstractHandler
 {
+    use AdminImageLinksTrait;
+
     public const string IMAGE_TAG_LIST = 'list';
     public const string IMAGE_TAG_DETAIL = 'detail';
     public const string IMAGE_TAG_TABLE = 'table';
@@ -47,7 +49,6 @@ class LinksHandler extends AbstractHandler
 
     public function __construct(
         protected readonly ConfigurationProvider $configurationProvider,
-        protected readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         protected readonly ImageUrlFactory $imageUrlFactory,
         private readonly RequestStack $requestStack,
         private readonly AssetFileRouteGenerator $audioRouteGenerator,
@@ -58,18 +59,13 @@ class LinksHandler extends AbstractHandler
     public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): mixed
     {
         if ($value instanceof ImageFile) {
-            return $this->getImageFileLinks($value);
+            return $this->getImageFileLinks($value, $metadata);
         }
         if ($value instanceof AudioFile) {
             $imagePreview = $this->getImagePreview($value);
             if ($imagePreview) {
-                return [
-                    ...$this->getImageFileLinks($imagePreview),
-                    ...$this->getAudioFileLinks($value),
-                ];
+                return $this->getImageFileLinks($imagePreview, $metadata);
             }
-
-            return $this->getAudioFileLinks($value);
         }
 
         return null;
@@ -80,15 +76,16 @@ class LinksHandler extends AbstractHandler
         throw new SerializerException('deserialize_not_supported');
     }
 
-    protected function getImageFileLinks(ImageFile $imageFile): array
+    protected function getImageFileLinks(ImageFile $imageFile, Metadata $metadata): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return [];
         }
 
         $res = [];
-        foreach ($this->getTagsFromRequest(self::IMAGE_TAGS) as $tag) {
-            $sizeList = $this->configurationProvider->getImageAdminSizeList($tag);
+        $tags = is_string($metadata->customType) ? [$metadata->customType] : $this->getTagsFromRequest(self::IMAGE_TAGS);
+        foreach ($tags as $tag) {
+            $sizeList = $this->getTaggedList($imageFile, $tag);
 
             if (empty($sizeList)) {
                 continue;
@@ -98,39 +95,53 @@ class LinksHandler extends AbstractHandler
         }
 
         if ($imageFile->getImageAttributes()->isAnimated()) {
-            $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($imageFile->getExtSystem()->getSlug());
             $width = $imageFile->getImageAttributes()->getWidth();
             $height = $imageFile->getImageAttributes()->getHeight();
 
-            $res[self::IMAGE_KEY_ANIMATED] = [
-                'type' => self::IMAGE_LINKS_TYPE,
-                'url' => $config->getAdminDomain() . $this->imageUrlFactory->generateAnimatedUrl((string) $imageFile->getId()),
-                'requestedWidth' => $width,
-                'requestedHeight' => $imageFile->getImageAttributes()->getHeight(),
-                'title' => "{$width}x{$height}",
-            ];
+            $res[self::IMAGE_KEY_ANIMATED] = $this->serializeLinksData(
+                type: self::IMAGE_LINKS_TYPE,
+                url: $this->getDomain($imageFile) . $this->imageUrlFactory->generateAnimatedUrl((string) $imageFile->getId()),
+                requestedWidth: $width,
+                requestedHeight: $imageFile->getImageAttributes()->getHeight(),
+                title: "{$width}x{$height}",
+            );
         }
 
         return $res;
     }
 
-    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): array
+    protected function serializeImageCrop(ImageFile $imageFile, CropAllowItem $item): string|array
     {
         $imageId = (string) $imageFile->getId();
-        $config = $this->extSystemConfigurationProvider->getImageExtSystemConfiguration($imageFile->getExtSystem()->getSlug());
 
-        return [
-            'type' => self::IMAGE_LINKS_TYPE,
-            'url' => $config->getAdminDomain() . $this->imageUrlFactory->generateAllowListUrl(
+        return $this->serializeLinksData(
+            type: self::IMAGE_LINKS_TYPE,
+            url: $this->getDomain($imageFile) . $this->imageUrlFactory->generateAllowListUrl(
                 imageId: $imageId,
                 item: $item,
                 roiPosition: 0
             ),
-            'requestedWidth' => $item->getWidth(),
-            'requestedHeight' => $item->getHeight(),
-            'title' => empty($item->getTitle())
+            requestedWidth: $item->getWidth(),
+            requestedHeight: $item->getHeight(),
+            title: empty($item->getTitle())
                 ? "{$item->getWidth()}x{$item->getHeight()}"
                 : $item->getTitle(),
+        );
+    }
+
+    protected function serializeLinksData(
+        string $type,
+        string $url,
+        int $requestedWidth,
+        int $requestedHeight,
+        string $title,
+    ): string|array {
+        return [
+            'type' => $type,
+            'url' => $url,
+            'requestedWidth' => $requestedWidth,
+            'requestedHeight' => $requestedHeight,
+            'title' => $title,
         ];
     }
 

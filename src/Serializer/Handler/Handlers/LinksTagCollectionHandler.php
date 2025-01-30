@@ -6,25 +6,32 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\SerializerBundle\Metadata\Metadata;
 
-final class LinksTagCollectionHandler extends LinksHandler
+class LinksTagCollectionHandler extends LinksHandler
 {
-    protected function getImageFileLinks(ImageFile $imageFile): array
+    protected function getImageFileLinks(ImageFile $imageFile, Metadata $metadata): array
     {
         if ($imageFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
             return [];
         }
 
         $res = [];
-        foreach ($this->getTagsFromRequest(self::IMAGE_TAGS) as $tag) {
+        $tags = is_string($metadata->customType) ? [$metadata->customType] : $this->getTagsFromRequest(self::IMAGE_TAGS);
+        foreach ($tags as $tag) {
             $links = [];
-            foreach ($this->configurationProvider->getImageAdminSizeList($tag) as $allowItem) {
+            $sizeList = $this->getTaggedList($imageFile, $tag);
+
+            foreach ($sizeList as $allowItem) {
                 $links[] = $this->serializeImageCrop($imageFile, $allowItem);
             }
 
             $res[$this->getKey($tag)] = $links;
         }
 
-        return $res;
+        return is_string($metadata->customType)
+            ? $res[$this->getKey($metadata->customType)] ?? []
+            : $res
+        ;
     }
 }

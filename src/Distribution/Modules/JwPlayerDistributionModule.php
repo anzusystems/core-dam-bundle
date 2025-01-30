@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Distribution\Modules;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Distribution\AbstractDistributionModule;
+use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwDirectSourceUrlProvider;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwPlayerCustomDataFactory;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoImagePreviewFactory;
@@ -36,6 +37,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         private readonly JwPlayerCustomDataFactory $customDataFactory,
         private readonly JwVideoThumbnail $jwVideoThumbnail,
         private readonly JwVideoImagePreviewFactory $jwVideoImagePreviewFactory,
+        private readonly JwDirectSourceUrlProvider $jwDirectSourceUrlProvider,
     ) {
     }
 
@@ -80,11 +82,11 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
      */
     public function checkDistributionStatus(Distribution $distribution): void
     {
-        $video = $this->jwVideoClient->getVideoObject(
-            $this->distributionConfigurationProvider->getJwDistributionService($distribution->getDistributionService()),
-            $distribution
-        );
+        $config = $this->distributionConfigurationProvider->getJwDistributionService($distribution->getDistributionService());
+        $video = $this->jwVideoClient->getVideoObject($config, $distribution);
+
         if ($video->getStatus()->is(JwMediaStatus::Ready)) {
+            $this->jwDirectSourceUrlProvider->provideDirectSourceUrl($config, $distribution);
             $distribution->setDistributionData($this->customDataFactory->createDistributionData($distribution));
 
             return;
@@ -116,7 +118,7 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
     public function getPreviewLink(Distribution $distribution): ?string
     {
         if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
-            return $this->customDataFactory->getUrl($distribution);
+            return $this->customDataFactory->getCustomData($distribution)->getThumbnail()->getValue();
         }
 
         return null;

@@ -14,6 +14,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFacade;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetSiblingFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataBulkFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\AssetAdmElasticsearchDecorator;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
@@ -22,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
@@ -55,6 +57,7 @@ final class AssetController extends AbstractApiController
         private readonly AssetAdmElasticsearchDecorator $elasticSearch,
         private readonly AssetMetadataBulkFacade $assetMetadataBulkFacade,
         private readonly AssetAdmRepositoryDecorator $admRepositoryDecorator,
+        private readonly AssetSiblingFacade $assetSiblingFacade,
     ) {
     }
 
@@ -212,6 +215,23 @@ final class AssetController extends AbstractApiController
 
         return $this->okResponse(
             AssetAdmUpdateDto::getInstance($this->assetFacade->update($asset, $newAssetDto))
+        );
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{asset}/sibling/{targetAsset}', name: 'update_sibling', methods: [Request::METHOD_PATCH])]
+    #[Route('/{asset}/sibling', name: 'remove_sibling', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('asset'), OAParameterPath('targetAsset'), OAResponseValidation]
+    public function updateSibling(Asset $asset, ?Asset $targetAsset = null): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+
+        return $this->okResponse(
+            AssetAdmDetailDto::getInstance($this->assetSiblingFacade->updateSibling($asset, $targetAsset))
         );
     }
 

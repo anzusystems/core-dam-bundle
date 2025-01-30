@@ -26,7 +26,10 @@ class AssetAdmSearchDto extends AbstractSearchDto
     protected string $text = '';
 
     #[Serialize]
-    protected string $title = '';
+    protected string $customDataKey = '';
+
+    #[Serialize]
+    protected string $customDataValue = '';
 
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -195,14 +198,26 @@ class AssetAdmSearchDto extends AbstractSearchDto
         return Asset::getResourceName();
     }
 
-    public function getTitle(): string
+    public function getCustomDataKey(): string
     {
-        return $this->title;
+        return $this->customDataKey;
     }
 
-    public function setTitle(string $title): self
+    public function setCustomDataKey(string $customDataKey): self
     {
-        $this->title = $title;
+        $this->customDataKey = $customDataKey;
+
+        return $this;
+    }
+
+    public function getCustomDataValue(): string
+    {
+        return $this->customDataValue;
+    }
+
+    public function setCustomDataValue(string $customDataValue): self
+    {
+        $this->customDataValue = $customDataValue;
 
         return $this;
     }

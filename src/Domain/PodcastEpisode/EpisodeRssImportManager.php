@@ -221,7 +221,9 @@ final readonly class EpisodeRssImportManager
         $episode->getDates()->setPublicationDate($item->getPubDate());
         $episode->getAttributes()
             ->setRssId($item->getGuid())
-            ->setRssUrl($item->getEnclosure()->getUrl());
+            ->setRssUrl($item->getEnclosure()->getUrl())
+            ->setDuration((int) $item->getItunes()->getDuration())
+        ;
         $episode->getFlags()->setFromRss(true);
         $this->podcastEpisodeStatusManager->toImported($episode, false);
     }

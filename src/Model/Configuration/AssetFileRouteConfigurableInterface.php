@@ -6,6 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 interface AssetFileRouteConfigurableInterface
 {
-    public function getPublicDomainName(): string;
-    public function setPublicDomainName(string $publicDomainName): static;
+    public function getPublicDomain(): string;
+    public function setPublicDomain(string $publicDomain): static;
 }

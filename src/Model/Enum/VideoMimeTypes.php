@@ -21,7 +21,7 @@ enum VideoMimeTypes: string implements EnumInterface
         self::MIME_WMW_ASF,
     ];
 
-    private const string MIME_MP4 = 'video/mp4';
+    public const string MIME_MP4 = 'video/mp4';
     private const string MIME_FLV = 'video/x-flv';
     private const string MIME_3GP = 'video/3gpp';
     private const string MIME_X_MSVIDEO = 'video/x-msvideo';

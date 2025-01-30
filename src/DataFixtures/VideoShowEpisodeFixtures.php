@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CoreDamBundle\Domain\VideoShowEpisode\VideoShowEpisodeManager;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\VideoShowEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoShow;
@@ -64,6 +66,16 @@ final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
                 (new VideoShowEpisodeTexts())
                     ->setTitle('Episode with asset')
             )
+            ->setAttributes(
+                (new VideoShowEpisodeAttributes())
+                    ->setMobileOrderPosition(100)
+                    ->setWebOrderPosition(100)
+            )
+            ->setFlags(
+                (new VideoShowEpisodeFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
+            )
             ->setVideoShow($show)
             ->setAsset($videoFile->getAsset());
 
@@ -72,6 +84,16 @@ final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
             ->setTexts(
                 (new VideoShowEpisodeTexts())
                     ->setTitle('Episode without asset')
+            )
+            ->setAttributes(
+                (new VideoShowEpisodeAttributes())
+                    ->setMobileOrderPosition(100)
+                    ->setWebOrderPosition(100)
+            )
+            ->setFlags(
+                (new VideoShowEpisodeFlags())
+                    ->setMobilePublicExportEnabled(true)
+                    ->setWebPublicExportEnabled(true)
             )
             ->setVideoShow($show);
     }

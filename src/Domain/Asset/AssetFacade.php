@@ -169,6 +169,7 @@ class AssetFacade
     {
         $deleteId = (string) $asset->getId();
         $deleteBy = $asset->getNotifyTo() ?: $asset->getCreatedBy();
+        $this->assetManager->removeSibling($asset, false);
 
         foreach ($asset->getSlots() as $slot) {
             $assetFile = $slot->getAssetFile();

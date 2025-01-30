@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
@@ -37,11 +38,31 @@ final class AssetQueryFactory extends AbstractQueryFactory
             fn (CustomFormElement $element): string => CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($element)
         )->toArray();
 
-        $customDataFields = array_unique($customDataFields);
-        $customDataFields = array_merge($customDataFields, ['title']);
+        $customDataFields = array_reverse(array_values(array_unique($customDataFields)));
+
+        if (
+            StringHelper::isNotEmpty($searchDto->getCustomDataKey()) &&
+            StringHelper::isNotEmpty($searchDto->getCustomDataValue())
+
+        ) {
+            $customDataKey = CustomDataIndexDefinitionFactory::getIndexKeyNameByProperty($searchDto->getCustomDataKey());
+            if (in_array($customDataKey, $customDataFields, true)) {
+                return [
+                    'match' => [
+                        $customDataKey => [
+                            'query' => $searchDto->getCustomDataValue(),
+                        ],
+                    ],
+                ];
+            }
+        }
 
         if (is_string($searchDto->getIdInText())) {
             return parent::getMust($searchDto, $extSystem);
+        }
+
+        foreach ($customDataFields as $key => $field) {
+            $customDataFields[$key] = $field . '^' . ($key + 1);
         }
 
         if ($searchDto->getText()) {
@@ -62,7 +83,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
      *
      * @psalm-suppress PossiblyNullReference
      */
-    protected function getFilter(SearchDtoInterface $searchDto): array
+    protected function getFilter(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         $filter = [];
         if ($searchDto instanceof AssetAdmSearchLicenceCollectionDto) {

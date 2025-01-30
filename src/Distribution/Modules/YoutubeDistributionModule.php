@@ -130,7 +130,7 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
     public function getPreviewLink(Distribution $distribution): ?string
     {
         if ($distribution->getStatus()->is(DistributionProcessStatus::Distributed)) {
-            return $this->youtubeCustomDataFactory->getUrl($distribution);
+            return $this->youtubeCustomDataFactory->getCustomData($distribution)->getThumbnail()->getValue();
         }
 
         return null;
