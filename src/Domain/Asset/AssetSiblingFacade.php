@@ -21,42 +21,10 @@ final readonly class AssetSiblingFacade
     {
         $this->validateSibling($asset, $targetAsset);
 
-        $asset = null === $targetAsset
-            ? $this->removeSibling($asset)
-            : $this->setSibling($asset, $targetAsset)
+        return null === $targetAsset
+            ? $this->assetManager->removeSibling($asset)
+            : $this->assetManager->setSibling($asset, $targetAsset)
         ;
-
-        $this->assetManager->updateExisting($asset);
-
-        return $asset;
-    }
-
-    private function setSibling(Asset $asset, Asset $targetAsset): Asset
-    {
-        $previousTargetAssetSibling = $targetAsset->getSiblingToAsset();
-        if ($previousTargetAssetSibling instanceof Asset) {
-            $previousTargetAssetSibling->setSiblingToAsset(null);
-        }
-        $targetAsset->setSiblingToAsset($asset);
-
-        $previousAssetSibling = $asset->getSiblingToAsset();
-        if ($previousAssetSibling instanceof Asset) {
-            $previousAssetSibling->setSiblingToAsset(null);
-        }
-        $asset->setSiblingToAsset($targetAsset);
-
-        return $asset;
-    }
-
-    private function removeSibling(Asset $asset): Asset
-    {
-        $previousAssetSibling = $asset->getSiblingToAsset();
-        if ($previousAssetSibling instanceof Asset) {
-            $previousAssetSibling->setSiblingToAsset(null);
-        }
-        $asset->setSiblingToAsset(null);
-
-        return $asset;
     }
 
     private function validateSibling(Asset $asset, ?Asset $targetAsset = null): void
