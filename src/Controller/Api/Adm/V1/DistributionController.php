@@ -10,12 +10,14 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionPermissionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionUpdateFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\DistributionAdmElasticsearchDecorator;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Decorator\DistributionServiceAuthorization;
+use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\DistributionUpdateCollection;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -34,6 +36,7 @@ final class DistributionController extends AbstractApiController
         private readonly DistributionRepositoryDecorator $distributionRepository,
         private readonly DistributionPermissionFacade $distributionPermissionFacade,
         private readonly DistributionAdmElasticsearchDecorator $elasticSearch,
+        private readonly DistributionUpdateFacade $distributionUpdateFacade,
     ) {
     }
 
@@ -98,6 +101,17 @@ final class DistributionController extends AbstractApiController
 
         return $this->okResponse(
             $this->distributionPermissionFacade->isDistributionServiceAuthorized($distributionService)
+        );
+    }
+
+    #[Route('/asset/{asset}', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
+    public function upsertDistributions(Asset $asset, #[SerializeParam] DistributionUpdateCollection $updateCollection): JsonResponse
+    {
+//        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
+
+        return $this->okResponse(
+            $this->distributionUpdateFacade->update($asset, $updateCollection)
         );
     }
 }
