@@ -50,7 +50,6 @@ final readonly class JwDistributionUpdateFacade
     {
         $distribution = $this->setupCommon($dto, $distribution);
         $this->jwDistributionManager->updateExisting($distribution);
-        // todo update custom data
 
         return $distribution;
     }

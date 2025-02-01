@@ -42,8 +42,6 @@ final readonly class YoutubeDistributionUpdateFacade
         $distribution = $this->setupCommon($dto, $distribution);
         $this->youtubeManager->updateExisting($distribution);
 
-        // todo update custom data
-
         return $distribution;
     }
 
@@ -52,8 +50,6 @@ final readonly class YoutubeDistributionUpdateFacade
         $distribution = $this->youtubeDistributionFacade->preparePayload($dto->getAssetFile(), $dto->getDistributionService());
         $distribution = $this->setupCommon($dto, $distribution);
         $this->youtubeManager->create($distribution);
-
-        // todo update custom data
 
         return $distribution;
     }
