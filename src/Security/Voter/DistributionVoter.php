@@ -60,6 +60,7 @@ final class DistributionVoter extends AbstractVoter
     {
         return [
             DamPermissions::DAM_DISTRIBUTION_ACCESS,
+            DamPermissions::DAM_DISTRIBUTION_DELETE,
         ];
     }
 }

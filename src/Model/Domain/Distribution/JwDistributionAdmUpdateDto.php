@@ -23,6 +23,7 @@ final class JwDistributionAdmUpdateDto extends AbstractDistributionUpdateDto
     public function setDirectSourceUrl(string $directSourceUrl): self
     {
         $this->directSourceUrl = $directSourceUrl;
+
         return $this;
     }
 }

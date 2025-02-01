@@ -20,7 +20,7 @@ use DateTimeImmutable;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-class   AssetAdmSearchDto extends AbstractSearchDto
+class AssetAdmSearchDto extends AbstractSearchDto
 {
     #[Serialize]
     protected string $text = '';

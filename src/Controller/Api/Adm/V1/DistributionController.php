@@ -17,7 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Decorator\DistributionServiceAuthorization;
-use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\DistributionUpdateCollection;
+use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\AbstractDistributionUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -106,12 +106,24 @@ final class DistributionController extends AbstractApiController
 
     #[Route('/asset/{asset}', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
-    public function upsertDistributions(Asset $asset, #[SerializeParam] DistributionUpdateCollection $updateCollection): JsonResponse
+    public function upsertDistributions(Asset $asset, AbstractDistributionUpdateDto $update): JsonResponse
     {
-//        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distributionService);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $update->getDistributionService());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $update->getAssetFile());
 
         return $this->okResponse(
-            $this->distributionUpdateFacade->update($asset, $updateCollection)
+            $this->distributionUpdateFacade->upsert($asset, $update)
         );
+    }
+
+    #[Route('/{distribution}', name: 'delete', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
+    public function deleteDistribution(Distribution $distribution): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_DELETE, $distribution);
+
+        $this->distributionUpdateFacade->delete($distribution);
+
+        return $this->noContentResponse();
     }
 }
