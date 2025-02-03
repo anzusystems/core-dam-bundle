@@ -114,6 +114,7 @@ class DamPermissions
 
     // Distribution
     public const string DAM_DISTRIBUTION_ACCESS = 'dam_distribution_access';
+    public const string DAM_DISTRIBUTION_DELETE = 'dam_distribution_delete';
     public const string DAM_DISTRIBUTION_VIEW = 'dam_distribution_read';
 
     // Asset External Provider
@@ -221,6 +222,7 @@ class DamPermissions
         self::DAM_DISTRIBUTION_CATEGORY_SELECT_UI,
         self::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS,
         self::DAM_DISTRIBUTION_ACCESS,
+        self::DAM_DISTRIBUTION_DELETE,
         self::DAM_PODCAST_CREATE,
         self::DAM_PODCAST_UPDATE,
         self::DAM_PODCAST_READ,

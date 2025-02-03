@@ -10,12 +10,14 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionPermissionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionUpdateFacade;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Decorator\DistributionAdmElasticsearchDecorator;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Model\Decorator\DistributionServiceAuthorization;
+use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\AbstractDistributionUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\Decorator\DistributionRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -34,6 +36,7 @@ final class DistributionController extends AbstractApiController
         private readonly DistributionRepositoryDecorator $distributionRepository,
         private readonly DistributionPermissionFacade $distributionPermissionFacade,
         private readonly DistributionAdmElasticsearchDecorator $elasticSearch,
+        private readonly DistributionUpdateFacade $distributionUpdateFacade,
     ) {
     }
 
@@ -99,5 +102,28 @@ final class DistributionController extends AbstractApiController
         return $this->okResponse(
             $this->distributionPermissionFacade->isDistributionServiceAuthorized($distributionService)
         );
+    }
+
+    #[Route('', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
+    #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
+    public function upsertDistributions(AbstractDistributionUpdateDto $update): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $update->getDistributionService());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $update->getAssetFile());
+
+        return $this->okResponse(
+            $this->distributionUpdateFacade->upsert($update)
+        );
+    }
+
+    #[Route('/{distribution}', name: 'delete', methods: [Request::METHOD_DELETE])]
+    #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
+    public function deleteDistribution(Distribution $distribution): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_DELETE, $distribution);
+
+        $this->distributionUpdateFacade->delete($distribution);
+
+        return $this->noContentResponse();
     }
 }

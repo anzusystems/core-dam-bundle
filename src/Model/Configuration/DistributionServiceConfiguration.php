@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
+use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 
 class DistributionServiceConfiguration
@@ -124,5 +126,20 @@ class DistributionServiceConfiguration
         $this->iconPath = $iconPath;
 
         return $this;
+    }
+
+    public function isYoutubeDistributionService(): bool
+    {
+        return $this->type === YoutubeDistribution::getResourceName();
+    }
+
+    public function isJwDistributionService(): bool
+    {
+        return $this->type === JwDistribution::getResourceName();
+    }
+
+    public function isCustomDistributionService(): bool
+    {
+        return 'customDistribution' === $this->type;
     }
 }
