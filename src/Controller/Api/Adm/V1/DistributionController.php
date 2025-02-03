@@ -104,15 +104,15 @@ final class DistributionController extends AbstractApiController
         );
     }
 
-    #[Route('/asset/{asset}', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
+    #[Route('', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
-    public function upsertDistributions(Asset $asset, AbstractDistributionUpdateDto $update): JsonResponse
+    public function upsertDistributions(AbstractDistributionUpdateDto $update): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $update->getDistributionService());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $update->getAssetFile());
 
         return $this->okResponse(
-            $this->distributionUpdateFacade->upsert($asset, $update)
+            $this->distributionUpdateFacade->upsert($update)
         );
     }
 

@@ -47,6 +47,7 @@ final class DistributionUpdateFacade
         $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_READ, $distribution->getAssetFile());
 
         $this->assetManager->beginTransaction();
+
         try {
 
             $this->jwDistributionManager->delete($distribution);
@@ -68,7 +69,7 @@ final class DistributionUpdateFacade
     /**
      * @throws ValidationException
      */
-    public function upsert(Asset $asset, AbstractDistributionUpdateDto $dto): AbstractDistributionUpdateDto
+    public function upsert(AbstractDistributionUpdateDto $dto): AbstractDistributionUpdateDto
     {
         $this->validator->validate($dto);
         $this->validateDistributionService($dto);
@@ -82,8 +83,8 @@ final class DistributionUpdateFacade
 
         try {
             $this->doUpsert($dto);
-            $this->assetManager->updateExisting($asset);
-            $this->indexManager->index($asset);
+            $this->assetManager->updateExisting($dto->getAsset());
+            $this->indexManager->index($dto->getAsset());
             $this->assetManager->commit();
         } catch (Throwable $exception) {
             if ($this->assetManager->isTransactionActive()) {
