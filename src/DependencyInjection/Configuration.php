@@ -570,7 +570,7 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
                 ->end()
-                ->booleanNode('enable_crop_cache')
+                ->booleanNode(ConfigurationProvider::ENABLE_CROP_CACHE)
                     ->defaultTrue()
                 ->end()
                 ->arrayNode('crop_allow_map')

@@ -15,13 +15,23 @@ readonly class NameGenerator
     ) {
     }
 
-    public function alternatePath(string $originPath, ?string $fileNameSuffix = null, ?string $extension = null): GeneratedPath
-    {
+    public function alternatePath(
+        string $originPath,
+        ?string $fileNameSuffix = null,
+        ?string $extension = null,
+        bool $removeOldSuffix = false,
+    ): GeneratedPath {
         $pathParts = pathinfo($originPath);
         $useExtension = $extension ?? (string) ($pathParts['extension'] ?? '');
+        $originFileName = $pathParts['filename'];
+
+        if ($removeOldSuffix) {
+            $originFileName = explode('_', $originFileName)[App::ZERO];
+        }
+
         $fileName = $fileNameSuffix
-            ? $pathParts['filename'] . '_' . $fileNameSuffix . '.' . $useExtension
-            : $pathParts['filename'] . '.' . $useExtension;
+            ? $originFileName . '_' . $fileNameSuffix . '.' . $useExtension
+            : $originFileName . '.' . $useExtension;
 
         return new GeneratedPath(
             dir: $pathParts['dirname'],
@@ -41,11 +51,12 @@ readonly class NameGenerator
         );
     }
 
-    public function generatePath(?string $extension = null, bool $dateDirPath = false): GeneratedPath
+    public function generatePath(?string $extension = null, bool $dateDirPath = false, ?string $fileNameSuffix = null): GeneratedPath
     {
         return new GeneratedPath(
             dir: $this->directoryNameGenerator->generateDirectoryPath($dateDirPath ? App::getAppDate() : null),
             fileName: $this->fileNameGenerator->generateFileName(
+                fileNameSuffix: $fileNameSuffix,
                 extension: $extension
             ),
             extension: (string) $extension
