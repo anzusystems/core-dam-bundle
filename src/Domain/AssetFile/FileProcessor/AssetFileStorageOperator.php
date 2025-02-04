@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
@@ -14,6 +16,7 @@ use League\Flysystem\FilesystemException;
 final class AssetFileStorageOperator
 {
     use FileHelperTrait;
+    private const string ORIG_SUFFIX = 'orig';
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
@@ -27,8 +30,9 @@ final class AssetFileStorageOperator
     public function save(AssetFile $assetFile, AdapterFile $file): AssetFile
     {
         $path = $this->nameGenerator->generatePath(
-            $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType()),
-            true
+            extension: $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType()),
+            dateDirPath: true,
+            fileNameSuffix: $assetFile instanceof ImageFile ? self::ORIG_SUFFIX : App::EMPTY_STRING
         );
         $fileSystem = $this->fileSystemProvider->getFilesystemByStorable($assetFile);
 

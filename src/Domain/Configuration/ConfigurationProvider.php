@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 final class ConfigurationProvider
 {
     public const string IMAGE_SETTINGS_OPTIMAL_RESIZES = 'optimal_resizes';
+    public const string ENABLE_CROP_CACHE = 'enable_crop_cache';
 
     private ?SettingsConfiguration $settingsConfiguration = null;
     private ?DisplayTitleConfiguration $displayTitleConfiguration = null;
@@ -65,6 +66,15 @@ final class ConfigurationProvider
         }
 
         return [];
+    }
+
+    public function isCropCacheEnabled(): bool
+    {
+        return (bool) (
+            array_key_exists(self::ENABLE_CROP_CACHE, $this->imageSettings)
+                ? $this->imageSettings[self::ENABLE_CROP_CACHE]
+                : true
+        );
     }
 
     public function getAdminAllowListName(): string

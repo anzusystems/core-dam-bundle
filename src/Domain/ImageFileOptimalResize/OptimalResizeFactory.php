@@ -19,6 +19,7 @@ use League\Flysystem\FilesystemException as FilesystemExceptionAlias;
 final class OptimalResizeFactory extends AbstractManager
 {
     use FileHelperTrait;
+    public const int OPTIMAL_RESIZE_QUALITY = 90;
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
@@ -31,8 +32,9 @@ final class OptimalResizeFactory extends AbstractManager
     public function createOptimalCropPath(ImageFile $imageFile, int $size, float $angle): string
     {
         return $this->nameGenerator->alternatePath(
-            $imageFile->getAssetAttributes()->getFilePath(),
-            "{$angle}_{$size}"
+            originPath: $imageFile->getAssetAttributes()->getFilePath(),
+            fileNameSuffix: "{$angle}_{$size}",
+            removeOldSuffix: true,
         )->getRelativePath();
     }
 
@@ -71,6 +73,7 @@ final class OptimalResizeFactory extends AbstractManager
     public function processOptimalResize(ImageFileOptimalResize $resize, AdapterFile $file): void
     {
         $this->imageManipulator->loadThumbnail($file->getRealPath(), $resize->getRequestedSize());
+        $this->imageManipulator->setQuality(self::OPTIMAL_RESIZE_QUALITY);
         $this->imageManipulator->autorotate();
 
         // Prepare path and folder for Visp to write crop file
@@ -89,6 +92,7 @@ final class OptimalResizeFactory extends AbstractManager
             $resize->getRequestedSize(),
             $resize->getImage()->getImageAttributes()->getRotation()
         );
+
         $assetFileSystem->writeStream($storagePath, $tmpFilesystem->readStream($tmpPath));
 
         $resize

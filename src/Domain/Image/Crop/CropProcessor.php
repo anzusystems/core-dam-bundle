@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
@@ -28,6 +29,7 @@ final class CropProcessor
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly ImageManipulatorInterface $imageManipulator,
         private readonly CropCache $cropCache,
+        private readonly ConfigurationProvider $configurationProvider,
     ) {
     }
 
@@ -38,7 +40,7 @@ final class CropProcessor
      */
     public function applyCrop(ImageFile $image, ImageCropDto $imageCrop): string
     {
-        if ($this->cropCache->isStored($image, $imageCrop)) {
+        if ($this->configurationProvider->isCropCacheEnabled() && $this->cropCache->isStored($image, $imageCrop)) {
             return $this->cropCache->get($image, $imageCrop);
         }
 
@@ -70,7 +72,9 @@ final class CropProcessor
         );
 
         $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension($this->getCropMimeType($image)));
-        $this->cropCache->store($image, $imageCrop, $content);
+        if ($this->configurationProvider->isCropCacheEnabled()) {
+            $this->cropCache->store($image, $imageCrop, $content);
+        }
 
         return $content;
     }
