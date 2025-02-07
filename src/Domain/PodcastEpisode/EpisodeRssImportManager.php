@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
@@ -157,7 +158,7 @@ final readonly class EpisodeRssImportManager
         $episode = $this->podcastEpisodeFactory->createEpisodeWithAsset($audioFile->getAsset(), $podcast, false);
 
         $this->updateImage($episode, $item);
-        $this->updateEpisodeData($episode, $item);
+        $this->updateEpisodeData($episode, $item, $audioFile);
         $this->toUploaded($audioFile);
 
         return new PodcastEpisodeImportDto(
@@ -175,7 +176,7 @@ final readonly class EpisodeRssImportManager
         $audioFile->getAsset()->addEpisode($episode);
 
         $this->updateImage($episode, $item);
-        $this->updateEpisodeData($episode, $item);
+        $this->updateEpisodeData($episode, $item, $audioFile);
         $this->toUploaded($audioFile);
 
         return new PodcastEpisodeImportDto(
@@ -202,7 +203,7 @@ final readonly class EpisodeRssImportManager
         $this->audioManager->create($audioFile, false);
 
         $this->updateImage($episode, $item);
-        $this->updateEpisodeData($episode, $item);
+        $this->updateEpisodeData($episode, $item, $audioFile);
         $this->toUploaded($audioFile);
 
         return new PodcastEpisodeImportDto(
@@ -211,7 +212,7 @@ final readonly class EpisodeRssImportManager
         );
     }
 
-    private function updateEpisodeData(PodcastEpisode $episode, Item $item): void
+    private function updateEpisodeData(PodcastEpisode $episode, Item $item, AudioFile $audioFile): void
     {
         $episode->getTexts()
             ->setTitle($item->getTitle())
@@ -219,10 +220,13 @@ final readonly class EpisodeRssImportManager
             ->setRawDescription($item->getDescription())
         ;
         $episode->getDates()->setPublicationDate($item->getPubDate());
+        $duration = $item->getItunes()->getDurationInSeconds();
         $episode->getAttributes()
             ->setRssId($item->getGuid())
             ->setRssUrl($item->getEnclosure()->getUrl())
-            ->setDuration((int) $item->getItunes()->getDuration())
+            ->setDuration(
+                $duration > App::ZERO ? $duration : $audioFile->getAttributes()->getDuration()
+            )
         ;
         $episode->getFlags()->setFromRss(true);
         $this->podcastEpisodeStatusManager->toImported($episode, false);
