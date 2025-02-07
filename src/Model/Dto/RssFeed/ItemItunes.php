@@ -42,6 +42,19 @@ final class ItemItunes
         return $this->duration;
     }
 
+    /**
+     * @see https://rfwilmut.net/notes/itunes/tag/duration.html
+     */
+    public function getDurationInSeconds(): int
+    {
+        $exploded = explode(':', $this->duration);
+        if (3 === count($exploded)) {
+            return (int) $exploded[0] * 3_600 + (int) $exploded[1] * 60 + (int) $exploded[2];
+        }
+
+        return (int) $this->duration;
+    }
+
     public function setDuration(string $duration): self
     {
         $this->duration = $duration;

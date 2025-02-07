@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastEpisodeTexts;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Helper\DateTimeHelper;
+use DateTimeImmutable;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -81,6 +85,12 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
                     ->setTitle('Episode 1')
                     ->setDescription('Episode 1 description')
             )
+            ->setDates(
+                (new PodcastEpisodeDates())
+                    ->setPublicationDate(
+                        DateTimeHelper::datetimeOrNull('2024-03-01', 'Y-m-d') ?? App::getAppDate()
+                    )
+            )
             ->setPodcast($podcast);
 
         yield (new PodcastEpisode())
@@ -99,6 +109,12 @@ final class PodcastEpisodeFixtures extends AbstractFixtures
                 (new PodcastEpisodeTexts())
                     ->setTitle('Episode 2')
                     ->setDescription('Episode 2 description')
+            )
+            ->setDates(
+                (new PodcastEpisodeDates())
+                    ->setPublicationDate(
+                        DateTimeHelper::datetimeOrNull('2024-02-01', 'Y-m-d') ?? App::getAppDate()
+                    )
             )
             ->setPodcast($podcast);
     }
