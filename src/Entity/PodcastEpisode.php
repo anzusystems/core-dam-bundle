@@ -85,7 +85,9 @@ class PodcastEpisode implements
     #[Assert\Valid]
     private PodcastEpisodeAttributes $attributes;
 
+    #[Serialize]
     #[ORM\Embedded(class: PodcastEpisodeFlags::class)]
+    #[Assert\Valid]
     private PodcastEpisodeFlags $flags;
 
     #[Serialize]
@@ -194,7 +196,6 @@ class PodcastEpisode implements
         return $this->getPodcast()->getLicence()->getExtSystem();
     }
 
-    #[Serialize]
     public function getFlags(): PodcastEpisodeFlags
     {
         return $this->flags;
