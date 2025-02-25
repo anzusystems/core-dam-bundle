@@ -26,7 +26,6 @@ class PublicExportManager extends AbstractManager
             ->setType($newPublicExport->getType())
             ->setSlug($newPublicExport->getSlug())
             ->setAssetLicence($newPublicExport->getAssetLicence())
-            ->setExtSystem($newPublicExport->getAssetLicence()->getExtSystem())
         ;
 
         $this->flush($flush);

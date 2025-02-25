@@ -41,6 +41,7 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
 
     #[ORM\ManyToOne(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[BaseAppAssert\NotEmptyId]
     private ExtSystem $extSystem;
 
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
