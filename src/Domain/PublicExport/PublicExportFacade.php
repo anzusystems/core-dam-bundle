@@ -22,6 +22,7 @@ final class PublicExportFacade
      */
     public function create(PublicExport $publicExport): PublicExport
     {
+        $publicExport->setExtSystem($publicExport->getAssetLicence()->getExtSystem());
         $this->validator->validate($publicExport);
         $this->publicExportManager->create($publicExport);
 
@@ -33,6 +34,7 @@ final class PublicExportFacade
      */
     public function update(PublicExport $publicExport, PublicExport $newPublicExport): PublicExport
     {
+        $publicExport->setExtSystem($newPublicExport->getAssetLicence()->getExtSystem());
         $this->validator->validate($newPublicExport, $publicExport);
         $this->publicExportManager->update($publicExport, $newPublicExport);
 
