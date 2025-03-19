@@ -124,7 +124,7 @@ final class ImageCopyFacade
         }
 
         foreach ($copyAsset->getSlots() as $slot) {
-            $this->assetFileEventDispatcher->dispatchAssetFileChanged($slot->getAssetFile());
+            $this->assetFileEventDispatcher->dispatchAssetFileCopiedEvent($slot->getAssetFile());
         }
     }
 
