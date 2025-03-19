@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexSettings;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use stdClass;
 use Symfony\Contracts\Service\Attribute\Required;
 

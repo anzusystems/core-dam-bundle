@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Event\Subscriber;
 
 use AnzuSystems\CoreDamBundle\Event\AssetFileCopiedEvent;
-use AnzuSystems\CoreDamBundle\Event\MetadataProcessedEvent;
 use AnzuSystems\CoreDamBundle\Notification\AssetFileNotificationDispatcher;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -20,7 +19,7 @@ final readonly class AssetFileEventCopiedSubscriberSubscriber implements EventSu
     public static function getSubscribedEvents(): array
     {
         return [
-            MetadataProcessedEvent::class => 'onAssetFileCopy',
+            AssetFileCopiedEvent::class => 'onAssetFileCopy',
         ];
     }
 
