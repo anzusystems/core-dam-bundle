@@ -38,6 +38,7 @@ final class ImageCopyFacade
     use MessageBusAwareTrait;
     use IndexManagerAwareTrait;
     use ValidatorAwareTrait;
+
     private const int BULK_COPY_SIZE = 20;
 
     public function __construct(
