@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Notification;
 
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Event\AssetFileChangeStateEvent;
+use AnzuSystems\CoreDamBundle\Event\AssetFileCopiedEvent;
 use AnzuSystems\CoreDamBundle\Event\AssetFileDeleteEvent;
 use AnzuSystems\CoreDamBundle\Event\MetadataProcessedEvent;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -19,6 +20,7 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
 
     private const string EVENT_NAME_PREFIX = 'asset_file_';
     private const string EVENT_METADATA_PROCESSED_NAME = 'asset_metadata_processed';
+    private const string EVENT_ASSET_FILE_COPIED_NAME = 'asset_file_copied';
     private const string EVENT_ASSET_FILE_DELETED_NAME = 'asset_file_deleted';
 
     public function __construct(
@@ -65,6 +67,21 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
         $this->notify(
             [(int) $event->getAsset()->getNotifyTo()->getId()],
             self::EVENT_METADATA_PROCESSED_NAME,
+            AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
+        );
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function notifyAssetFileCopied(AssetFileCopiedEvent $event): void
+    {
+        if (null === $event->getAsset()->getNotifyTo()) {
+            return;
+        }
+        $this->notify(
+            [(int) $event->getAsset()->getNotifyTo()->getId()],
+            self::EVENT_ASSET_FILE_COPIED_NAME,
             AssetFileStatusAdmNotificationDecorator::getInstance($event->getAsset())
         );
     }

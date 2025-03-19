@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 
 #[AppAssert\AssetCopyEqualExtSystem]
 final class ImageCopyDto
@@ -19,10 +20,12 @@ final class ImageCopyDto
     #[Serialize(handler: EntityIdHandler::class)]
     #[AppAssert\AssetProperties(assetType: AssetType::Image)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
+    #[BaseAppAssert\NotEmptyId]
     private Asset $asset;
 
     #[Serialize(handler: EntityIdHandler::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
+    #[BaseAppAssert\NotEmptyId]
     private AssetLicence $targetAssetLicence;
 
     public function __construct()

@@ -38,6 +38,7 @@ final class ImageCopyFacade
     use MessageBusAwareTrait;
     use IndexManagerAwareTrait;
     use ValidatorAwareTrait;
+
     private const int BULK_COPY_SIZE = 20;
 
     public function __construct(
@@ -124,7 +125,7 @@ final class ImageCopyFacade
         }
 
         foreach ($copyAsset->getSlots() as $slot) {
-            $this->assetFileEventDispatcher->dispatchAssetFileChanged($slot->getAssetFile());
+            $this->assetFileEventDispatcher->dispatchAssetFileCopiedEvent($slot->getAssetFile());
         }
     }
 
