@@ -22,6 +22,10 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, ImageCopyDto::class);
         }
 
+        if (null === $value->getAsset()->getId() || null === $value->getTargetAssetLicence()->getId()) {
+            return;
+        }
+
         if ($value->getAsset()->getLicence()->getExtSystem()->isNot($value->getTargetAssetLicence()->getExtSystem())) {
             $this->context
                 ->buildViolation(ValidationException::ERROR_INVALID_LICENCE)

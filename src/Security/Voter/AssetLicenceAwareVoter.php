@@ -19,13 +19,17 @@ final class AssetLicenceAwareVoter extends AbstractVoter
 {
     use LicenceVoterTrait;
     /**
-     * @param AssetLicenceInterface $subject
+     * @param AssetLicenceInterface|null $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool
     {
         if (false === parent::permissionVote($attribute, $subject, $user)) {
             return false;
+        }
+
+        if (null === $subject) {
+            return true;
         }
 
         if (false === ($subject instanceof AssetLicenceInterface)) {
