@@ -28,6 +28,10 @@ final class AssetLicenceAwareVoter extends AbstractVoter
             return false;
         }
 
+        if (null === $subject) {
+            return true;
+        }
+
         if (false === ($subject instanceof AssetLicenceInterface)) {
             return false;
         }
