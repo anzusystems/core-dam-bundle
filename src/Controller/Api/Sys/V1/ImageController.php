@@ -13,8 +13,8 @@ use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Attributes\SerializeIterableParam;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyItemDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestItemDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest as OADamRequest;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Doctrine\Common\Collections\Collection;
@@ -34,18 +34,17 @@ final class ImageController extends AbstractApiController
     }
 
     /**
-     * @param Collection<int, JobImageCopyItemDto> $copyList
      * @throws Throwable
      *
      * @throws ForbiddenOperationException
      */
     #[Route(
-        path: '/copy-to-licence',
+        path: '/copy-job',
         name: 'copy_image',
-        methods: [Request::METHOD_PATCH]
+        methods: [Request::METHOD_POST],
     )]
-    #[OADamRequest(JobImageCopyDto::class), OAResponse(JobImageCopy::class), OAResponseValidation]
-    public function createCopyJob(#[SerializeParam] JobImageCopyDto $copyDto): JsonResponse
+    #[OADamRequest(JobImageCopyRequestDto::class), OAResponse(JobImageCopy::class), OAResponseValidation]
+    public function createCopyJob(#[SerializeParam] JobImageCopyRequestDto $copyDto): JsonResponse
     {
         return $this->okResponse(
             $this->imageCopyFacade->createFromCopyList($copyDto)

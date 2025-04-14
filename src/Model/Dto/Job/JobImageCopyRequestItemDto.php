@@ -11,7 +11,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
-final class JobImageCopyItemDto
+final class JobImageCopyRequestItemDto
 {
     #[Serialize(handler: EntityIdHandler::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]

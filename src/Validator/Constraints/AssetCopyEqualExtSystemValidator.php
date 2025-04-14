@@ -6,8 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyItemDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -26,7 +25,7 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
             return;
         }
 
-        if ($value instanceof JobImageCopyDto) {
+        if ($value instanceof JobImageCopyRequestDto) {
             $this->validateImageFileCopyDto($value);
 
             return;
@@ -49,7 +48,7 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
         }
     }
 
-    private function validateImageFileCopyDto(JobImageCopyDto $value): void
+    private function validateImageFileCopyDto(JobImageCopyRequestDto $value): void
     {
         if (null === $value->getTargetAssetLicence()->getId()) {
             return;

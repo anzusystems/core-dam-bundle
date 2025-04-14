@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[AppAssert\AssetCopyEqualExtSystem]
-final class JobImageCopyDto
+final class JobImageCopyRequestDto
 {
     #[Serialize(handler: EntityIdHandler::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
@@ -24,7 +24,7 @@ final class JobImageCopyDto
     private AssetLicence $targetAssetLicence;
 
     #[Assert\Valid]
-    #[Serialize(type: JobImageCopyItemDto::class)]
+    #[Serialize(type: JobImageCopyRequestItemDto::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Count(
         min: 1,
@@ -51,7 +51,7 @@ final class JobImageCopyDto
     }
 
     /**
-     * @return Collection<int, JobImageCopyItemDto>
+     * @return Collection<int, JobImageCopyRequestItemDto>
      */
     public function getItems(): Collection
     {
