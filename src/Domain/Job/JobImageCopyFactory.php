@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Job;
 
-use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
@@ -20,7 +19,7 @@ final readonly class JobImageCopyFactory
      */
     public function createPodcastSynchronizerJob(AssetLicence $licence, Collection $assets): JobImageCopy
     {
-       return (new JobImageCopy())
+        return (new JobImageCopy())
             ->setLicence($licence)
             ->setItems(
                 $assets->map(
@@ -37,8 +36,7 @@ final readonly class JobImageCopyFactory
             ->setAllowExtSystemCallback($allowExtSystemCallback)
             ->setItems(
                 $copyDto->getItems()->map(
-                    fn (JobImageCopyRequestItemDto $itemDto): JobImageCopyItem =>
-                    (new JobImageCopyItem())->setSourceAssetId((string) $itemDto->getImageFile()->getAsset()->getId())
+                    fn (JobImageCopyRequestItemDto $itemDto): JobImageCopyItem => (new JobImageCopyItem())->setSourceAssetId((string) $itemDto->getImageFile()->getAsset()->getId())
                 )
             )
         ;

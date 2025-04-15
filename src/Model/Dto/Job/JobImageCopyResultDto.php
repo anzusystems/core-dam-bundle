@@ -6,14 +6,20 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Job;
 
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 final class JobImageCopyResultDto
 {
-    #[Serialize]
-    private int $id = App::ZERO;
+    #[Serialize(serializedName: 'id', handler: EntityIdHandler::class)]
+    private JobImageCopy $jobImageCopy;
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    private AssetLicence $targetAssetLicence;
 
     #[Serialize]
     private int $failedCount = App::ZERO;
@@ -29,14 +35,27 @@ final class JobImageCopyResultDto
         $this->setItems(new ArrayCollection());
     }
 
-    public function getId(): int
+    public function getJobImageCopy(): JobImageCopy
     {
-        return $this->id;
+        return $this->jobImageCopy;
     }
 
-    public function setId(int $id): JobImageCopyResultDto
+    public function setJobImageCopy(JobImageCopy $jobImageCopy): self
     {
-        $this->id = $id;
+        $this->jobImageCopy = $jobImageCopy;
+
+        return $this;
+    }
+
+    public function getTargetAssetLicence(): AssetLicence
+    {
+        return $this->targetAssetLicence;
+    }
+
+    public function setTargetAssetLicence(AssetLicence $targetAssetLicence): self
+    {
+        $this->targetAssetLicence = $targetAssetLicence;
+
         return $this;
     }
 
@@ -48,6 +67,7 @@ final class JobImageCopyResultDto
     public function setFailedCount(int $failedCount): self
     {
         $this->failedCount = $failedCount;
+
         return $this;
     }
 
@@ -59,6 +79,7 @@ final class JobImageCopyResultDto
     public function setStatus(JobStatus $status): self
     {
         $this->status = $status;
+
         return $this;
     }
 

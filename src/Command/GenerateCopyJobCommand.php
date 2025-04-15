@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Command;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFacade;
-use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
