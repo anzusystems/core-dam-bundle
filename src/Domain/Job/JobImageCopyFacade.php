@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Validator\Validator;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
@@ -32,6 +33,9 @@ final readonly class JobImageCopyFacade
         return $job;
     }
 
+    /**
+     * @param Collection<array-key, Asset> $assets
+     */
     public function createPodcastSynchronizerJob(AssetLicence $licence, Collection $assets): JobImageCopy
     {
         $job = $this->imageCopyFactory->createPodcastSynchronizerJob($licence, $assets);
@@ -40,6 +44,9 @@ final readonly class JobImageCopyFacade
         return $job;
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function createFromCopyList(JobImageCopyRequestDto $dto): JobImageCopy
     {
         $this->validator->validate($dto);

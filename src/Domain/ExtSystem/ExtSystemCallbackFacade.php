@@ -24,7 +24,7 @@ final class ExtSystemCallbackFacade
 
     public function notifyFinishedJobImageCopy(JobImageCopy $jobImageCopy): void
     {
-        $this->getCallback($jobImageCopy->getLicence()->getExtSystem()->getSlug())->notifyFinishedJobImageCopy($jobImageCopy);
+        $this->getCallback($jobImageCopy->getLicence()->getExtSystem()->getSlug())?->notifyFinishedJobImageCopy($jobImageCopy);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

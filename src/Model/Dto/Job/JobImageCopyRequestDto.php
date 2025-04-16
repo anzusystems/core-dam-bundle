@@ -51,7 +51,7 @@ final class JobImageCopyRequestDto
     }
 
     /**
-     * @return Collection<int, JobImageCopyRequestItemDto>
+     * @return Collection<array-key, JobImageCopyRequestItemDto>
      */
     public function getItems(): Collection
     {

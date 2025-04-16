@@ -102,7 +102,7 @@ final class GenerateCopyJobCommand extends Command
         $progress = new ProgressBar($output);
         $progress->start();
 
-        /** @var array<int|string, Asset> $assets */
+        /** @var array<array-key, Asset> $assets */
         $assets = [];
         while (false === $csv->eof()) {
             $row = $csv->fgetcsv();

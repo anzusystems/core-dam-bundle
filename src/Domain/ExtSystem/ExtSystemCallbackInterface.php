@@ -12,5 +12,5 @@ interface ExtSystemCallbackInterface
 {
     public static function getDefaultKeyName(): string;
 
-    public function notifyFinishedJobImageCopy(JobImageCopy $jobImageCopy);
+    public function notifyFinishedJobImageCopy(JobImageCopy $jobImageCopy): void;
 }
