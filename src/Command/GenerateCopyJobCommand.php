@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
-use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFactory;
+use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -45,7 +45,7 @@ final class GenerateCopyJobCommand extends Command
     public function __construct(
         private readonly Connection $damMediaApiMigConnection,
         private readonly Connection $defaultConnection,
-        private readonly JobImageCopyFactory $imageCopyFactory,
+        private readonly JobImageCopyFacade $imageCopyFacade,
         private readonly AssetRepository $assetRepository,
         private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly AssetFileRepository $assetFileRepository,
@@ -102,7 +102,7 @@ final class GenerateCopyJobCommand extends Command
         $progress = new ProgressBar($output);
         $progress->start();
 
-        /** @var array<int|string, Asset> $assets */
+        /** @var array<array-key, Asset> $assets */
         $assets = [];
         while (false === $csv->eof()) {
             $row = $csv->fgetcsv();
@@ -118,7 +118,7 @@ final class GenerateCopyJobCommand extends Command
 
             $assets[(string) $assetFile->getAsset()->getId()] = $assetFile->getAsset();
             if (count($assets) >= self::MAX_ASSETS_PER_JOB) {
-                $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
+                $this->imageCopyFacade->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
                 $assets = [];
                 $this->entityManager->clear();
                 /** @var AssetLicence $licence */
@@ -129,7 +129,7 @@ final class GenerateCopyJobCommand extends Command
         }
 
         if (false === empty($assets)) {
-            $this->imageCopyFactory->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
+            $this->imageCopyFacade->createPodcastSynchronizerJob($licence, new ArrayCollection($assets));
         }
 
         $progress->finish();

@@ -10,6 +10,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: JobImageCopyRepository::class)]
@@ -21,6 +22,10 @@ class JobImageCopy extends Job
 
     #[ORM\OneToMany(targetEntity: JobImageCopyItem::class, mappedBy: 'job')]
     private Collection $items;
+
+    #[ORM\Column(type: Types::BOOLEAN)]
+    #[Serialize]
+    private bool $allowExtSystemCallback = false;
 
     public function __construct()
     {
@@ -50,11 +55,23 @@ class JobImageCopy extends Job
     }
 
     /**
-     * @param Collection<int|string, JobImageCopyItem> $items
+     * @param Collection<array-key, JobImageCopyItem> $items
      */
     public function setItems(Collection $items): self
     {
         $this->items = $items;
+
+        return $this;
+    }
+
+    public function isAllowExtSystemCallback(): bool
+    {
+        return $this->allowExtSystemCallback;
+    }
+
+    public function setAllowExtSystemCallback(bool $allowExtSystemCallback): self
+    {
+        $this->allowExtSystemCallback = $allowExtSystemCallback;
 
         return $this;
     }

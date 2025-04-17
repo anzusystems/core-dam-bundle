@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
@@ -28,6 +29,7 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         private readonly ImageCopyFacade $imageCopyFacade,
         private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
         private readonly AssetRepository $assetRepository,
+        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }

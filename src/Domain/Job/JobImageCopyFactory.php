@@ -8,21 +8,18 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopyItem;
+use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestItemDto;
 use Doctrine\Common\Collections\Collection;
 
 final readonly class JobImageCopyFactory
 {
-    public function __construct(
-        private JobImageCopyFacade $imageCopyFacade,
-    ) {
-    }
-
     /**
      * @param Collection<int|string, Asset> $assets
      */
     public function createPodcastSynchronizerJob(AssetLicence $licence, Collection $assets): JobImageCopy
     {
-        $job = (new JobImageCopy())
+        return (new JobImageCopy())
             ->setLicence($licence)
             ->setItems(
                 $assets->map(
@@ -30,9 +27,18 @@ final readonly class JobImageCopyFactory
                 )
             )
         ;
+    }
 
-        $this->imageCopyFacade->create($job);
-
-        return $job;
+    public function createFromCopyList(JobImageCopyRequestDto $copyDto, bool $allowExtSystemCallback = true): JobImageCopy
+    {
+        return (new JobImageCopy())
+            ->setLicence($copyDto->getTargetAssetLicence())
+            ->setAllowExtSystemCallback($allowExtSystemCallback)
+            ->setItems(
+                $copyDto->getItems()->map(
+                    fn (JobImageCopyRequestItemDto $itemDto): JobImageCopyItem => (new JobImageCopyItem())->setSourceAssetId((string) $itemDto->getImageFile()->getAsset()->getId())
+                )
+            )
+        ;
     }
 }
