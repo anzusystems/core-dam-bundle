@@ -25,6 +25,12 @@ class ExtSystemAssetTypeAdmGetDecorator
     }
 
     #[Serialize]
+    public function isEnabled(): bool
+    {
+        return $this->configuration->isEnabled();
+    }
+
+    #[Serialize]
     public function getDefaultSlotName(): string
     {
         return $this->configuration->getSlots()->getDefault();
