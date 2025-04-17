@@ -91,6 +91,9 @@ final class JobImageCopyResultDto
         return $this->items;
     }
 
+    /**
+     * @param Collection<int, JobImageCopyResultItemDto> $items
+     */
     public function setItems(Collection $items): self
     {
         $this->items = $items;
