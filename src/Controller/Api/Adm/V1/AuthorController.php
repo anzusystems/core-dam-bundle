@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -68,14 +69,15 @@ final class AuthorController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(Author::class), OAResponse(Author::class), OAResponseValidation]
-    public function create(#[SerializeParam] Author $author): JsonResponse
+    public function create(Request $request, #[SerializeParam] Author $author): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CREATE, $author);
 
-        return $this->createdResponse(
-            $this->authorFacade->create($author)
-        );
+        $author = $this->authorFacade->create($author);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
+
+        return $this->createdResponse($author);
     }
 
     /**
@@ -86,10 +88,11 @@ final class AuthorController extends AbstractApiController
      */
     #[Route('/{author}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('author'), OARequest(Author::class), OAResponse(Author::class), OAResponseValidation]
-    public function update(Author $author, #[SerializeParam] Author $newAuthor): JsonResponse
+    public function update(Request $request, Author $author, #[SerializeParam] Author $newAuthor): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_UPDATE, $author);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
 
         return $this->okResponse(
             $this->authorFacade->update($author, $newAuthor)
@@ -103,11 +106,12 @@ final class AuthorController extends AbstractApiController
      */
     #[Route(path: '/{author}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('author'), OAResponseDeleted]
-    public function delete(Author $author): JsonResponse
+    public function delete(Request $request, Author $author): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_DELETE, $author);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
         $this->authorFacade->delete($author);
 
         return $this->noContentResponse();

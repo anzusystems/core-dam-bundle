@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
@@ -97,7 +98,7 @@ final class PodcastEpisodeController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(PodcastEpisode::class), OAResponse(PodcastEpisode::class), OAResponseValidation]
-    public function create(#[SerializeParam] PodcastEpisode $podcastEpisode): JsonResponse
+    public function create(Request $request, #[SerializeParam] PodcastEpisode $podcastEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_CREATE, $podcastEpisode);
@@ -105,9 +106,10 @@ final class PodcastEpisodeController extends AbstractApiController
             $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $podcastEpisode->getAsset());
         }
 
-        return $this->createdResponse(
-            $this->podcastEpisodeFacade->create($podcastEpisode)
-        );
+        $episode = $this->podcastEpisodeFacade->create($podcastEpisode);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $episode);
+
+        return $this->createdResponse($episode);
     }
 
     /**
@@ -116,13 +118,14 @@ final class PodcastEpisodeController extends AbstractApiController
      */
     #[Route('/{podcastEpisode}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('podcastEpisode'), OARequest(PodcastEpisode::class), OAResponse(PodcastEpisode::class), OAResponseValidation]
-    public function update(PodcastEpisode $podcastEpisode, #[SerializeParam] PodcastEpisode $newPodcastEpisode): JsonResponse
+    public function update(Request $request, PodcastEpisode $podcastEpisode, #[SerializeParam] PodcastEpisode $newPodcastEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_UPDATE, $podcastEpisode);
         if ($podcastEpisode->getAsset()) {
             $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $podcastEpisode->getAsset());
         }
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $podcastEpisode);
 
         return $this->okResponse(
             $this->podcastEpisodeFacade->update($podcastEpisode, $newPodcastEpisode)
@@ -134,11 +137,11 @@ final class PodcastEpisodeController extends AbstractApiController
      */
     #[Route(path: '/{podcastEpisode}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('podcastEpisode'), OAResponseDeleted]
-    public function delete(PodcastEpisode $podcastEpisode): JsonResponse
+    public function delete(Request $request, PodcastEpisode $podcastEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_DELETE, $podcastEpisode);
-
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $podcastEpisode);
         $this->podcastEpisodeFacade->delete($podcastEpisode);
 
         return $this->noContentResponse();

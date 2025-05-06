@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseInfiniteList;
@@ -54,14 +55,14 @@ final class PodcastController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function create(#[SerializeParam] Podcast $podcast): JsonResponse
+    public function create(Request $request, #[SerializeParam] Podcast $podcast): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_CREATE, $podcast);
+        $podcast = $this->podcastFacade->create($podcast);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $podcast);
 
-        return $this->createdResponse(
-            $this->podcastFacade->create($podcast)
-        );
+        return $this->createdResponse($podcast);
     }
 
     /**
@@ -70,10 +71,11 @@ final class PodcastController extends AbstractApiController
      */
     #[Route('/{podcast}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('podcast'), OARequest(Podcast::class), OAResponse(Podcast::class), OAResponseValidation]
-    public function update(Podcast $podcast, #[SerializeParam] Podcast $newPodcast): JsonResponse
+    public function update(Request $request, Podcast $podcast, #[SerializeParam] Podcast $newPodcast): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_UPDATE, $podcast);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $podcast);
 
         return $this->okResponse(
             $this->podcastFacade->update($podcast, $newPodcast)

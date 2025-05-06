@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
@@ -61,11 +62,12 @@ final class CustomDistributionController extends AbstractApiController
      */
     #[Route(path: '/{distribution}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('distribution'), OAResponseDeleted]
-    public function delete(Distribution $distribution): JsonResponse
+    public function delete(Request $request, Distribution $distribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
         $this->customDistributionFacade->delete($distribution);
 
         return $this->noContentResponse();
@@ -78,11 +80,13 @@ final class CustomDistributionController extends AbstractApiController
      */
     #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function redistribute(Distribution $distribution, #[SerializeParam] CustomDistributionAdmDto $customDistribution): JsonResponse
+    public function redistribute(Request $request, Distribution $distribution, #[SerializeParam] CustomDistributionAdmDto $customDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
 
         return $this->okResponse(
             $this->distributionRepository->decorate(

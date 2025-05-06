@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\Attributes\ArrayStringParam;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -69,13 +70,15 @@ final class AssetController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AssetAdmCreateDto::class), OAResponseCreated(AssetAdmDetailDto::class), OAResponseValidation]
-    public function create(#[SerializeParam] AssetAdmCreateDto $assetDto, AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] AssetAdmCreateDto $assetDto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $assetLicence);
+        $asset = $this->assetFacade->create($assetDto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         return $this->createdResponse(
-            AssetAdmDetailDto::getInstance($this->assetFacade->create($assetDto, $assetLicence))
+            AssetAdmDetailDto::getInstance($asset)
         );
     }
 
@@ -208,10 +211,11 @@ final class AssetController extends AbstractApiController
      */
     #[Route('/{asset}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('author'), OARequest(AssetAdmUpdateDto::class), OAResponse(AssetAdmUpdateDto::class), OAResponseValidation]
-    public function update(Asset $asset, #[SerializeParam] AssetAdmUpdateDto $newAssetDto): JsonResponse
+    public function update(Request $request, Asset $asset, #[SerializeParam] AssetAdmUpdateDto $newAssetDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         return $this->okResponse(
             AssetAdmUpdateDto::getInstance($this->assetFacade->update($asset, $newAssetDto))
@@ -225,10 +229,11 @@ final class AssetController extends AbstractApiController
     #[Route('/{asset}/sibling/{targetAsset}', name: 'update_sibling', methods: [Request::METHOD_PATCH])]
     #[Route('/{asset}/sibling', name: 'remove_sibling', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('asset'), OAParameterPath('targetAsset'), OAResponseValidation]
-    public function updateSibling(Asset $asset, ?Asset $targetAsset = null): JsonResponse
+    public function updateSibling(Request $request, Asset $asset, ?Asset $targetAsset = null): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         return $this->okResponse(
             AssetAdmDetailDto::getInstance($this->assetSiblingFacade->updateSibling($asset, $targetAsset))
@@ -240,12 +245,13 @@ final class AssetController extends AbstractApiController
      */
     #[Route(path: '/{asset}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('asset'), OAResponseValidation]
-    public function delete(Asset $asset): JsonResponse
+    public function delete(Request $request, Asset $asset): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_DELETE, $asset);
 
         $this->assetFacade->toDeleting($asset);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         return $this->noContentResponse();
     }

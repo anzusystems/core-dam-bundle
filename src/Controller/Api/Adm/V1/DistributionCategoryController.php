@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
@@ -75,10 +76,12 @@ final class DistributionCategoryController extends AbstractApiController
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(DistributionCategory::class), OAResponseCreated(DistributionCategory::class), OAResponseValidation]
-    public function create(#[SerializeParam] DistributionCategory $distributionCategory): JsonResponse
+    public function create(Request $request, #[SerializeParam] DistributionCategory $distributionCategory): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_CREATE, $distributionCategory);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distributionCategory);
 
         return $this->createdResponse(
             $this->distributionCategoryFacade->create($distributionCategory)
@@ -94,12 +97,14 @@ final class DistributionCategoryController extends AbstractApiController
     #[Route('/{distributionCategory}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distributionCategory'), OARequest(DistributionCategory::class), OAResponse(DistributionCategory::class), OAResponseValidation]
     public function update(
+        Request $request,
         DistributionCategory $distributionCategory,
         #[SerializeParam]
         DistributionCategory $newDistributionCategory,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_UPDATE, $distributionCategory);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distributionCategory);
 
         return $this->okResponse(
             $this->distributionCategoryFacade->update($distributionCategory, $newDistributionCategory)

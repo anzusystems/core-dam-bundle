@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
@@ -97,17 +98,17 @@ final class VideoShowEpisodeController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(VideoShowEpisode::class), OAResponse(VideoShowEpisode::class), OAResponseValidation]
-    public function create(#[SerializeParam] VideoShowEpisode $videoShowEpisode): JsonResponse
+    public function create(Request $request, #[SerializeParam] VideoShowEpisode $videoShowEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_CREATE, $videoShowEpisode);
         if ($videoShowEpisode->getAsset()) {
             $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $videoShowEpisode->getAsset());
         }
+        $episode = $this->videoShowEpisodeFacade->create($videoShowEpisode);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $episode);
 
-        return $this->createdResponse(
-            $this->videoShowEpisodeFacade->create($videoShowEpisode)
-        );
+        return $this->createdResponse($episode);
     }
 
     /**
@@ -116,13 +117,14 @@ final class VideoShowEpisodeController extends AbstractApiController
      */
     #[Route('/{videoShowEpisode}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('VideoShowEpisode'), OARequest(VideoShowEpisode::class), OAResponse(VideoShowEpisode::class), OAResponseValidation]
-    public function update(VideoShowEpisode $videoShowEpisode, #[SerializeParam] VideoShowEpisode $newVideoShowEpisode): JsonResponse
+    public function update(Request $request, VideoShowEpisode $videoShowEpisode, #[SerializeParam] VideoShowEpisode $newVideoShowEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_UPDATE, $videoShowEpisode);
         if ($videoShowEpisode->getAsset()) {
             $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $videoShowEpisode->getAsset());
         }
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $videoShowEpisode);
 
         return $this->okResponse(
             $this->videoShowEpisodeFacade->update($videoShowEpisode, $newVideoShowEpisode)
@@ -134,11 +136,11 @@ final class VideoShowEpisodeController extends AbstractApiController
      */
     #[Route(path: '/{videoShowEpisode}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('VideoShowEpisode'), OAResponseDeleted]
-    public function delete(VideoShowEpisode $videoShowEpisode): JsonResponse
+    public function delete(Request $request, VideoShowEpisode $videoShowEpisode): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_SHOW_EPISODE_DELETE, $videoShowEpisode);
-
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $videoShowEpisode);
         $this->videoShowEpisodeFacade->delete($videoShowEpisode);
 
         return $this->noContentResponse();

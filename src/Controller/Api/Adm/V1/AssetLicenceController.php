@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
@@ -72,13 +73,15 @@ final class AssetLicenceController extends AbstractApiController
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AssetLicence::class), OAResponseCreated(AssetLicence::class), OAResponseValidation]
-    public function create(#[SerializeParam] AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_CREATE);
+        $assetLicence = $this->assetLicenceFacade->create($assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $assetLicence);
 
         return $this->createdResponse(
-            $this->assetLicenceFacade->create($assetLicence)
+            $assetLicence
         );
     }
 
@@ -90,10 +93,11 @@ final class AssetLicenceController extends AbstractApiController
      */
     #[Route('/{assetLicence}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('assetLicence'), OARequest(AssetLicence::class), OAResponse(AssetLicence::class), OAResponseValidation]
-    public function update(AssetLicence $assetLicence, #[SerializeParam] AssetLicence $newAssetLicence): JsonResponse
+    public function update(Request $request, AssetLicence $assetLicence, #[SerializeParam] AssetLicence $newAssetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_UPDATE, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $assetLicence);
 
         return $this->okResponse(
             $this->assetLicenceFacade->update($assetLicence, $newAssetLicence)

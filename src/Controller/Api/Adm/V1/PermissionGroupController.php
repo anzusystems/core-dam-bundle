@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Domain\PermissionGroup\PermissionGroupFacade;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -69,14 +70,14 @@ final class PermissionGroupController extends AbstractApiController
      */
     #[Route('/permission-group', 'create', methods: [Request::METHOD_POST])]
     #[OARequest(PermissionGroup::class), OAResponseCreated(PermissionGroup::class), OAResponseValidation]
-    public function create(#[SerializeParam] PermissionGroup $permissionGroup): JsonResponse
+    public function create(Request $request, #[SerializeParam] PermissionGroup $permissionGroup): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PERMISSION_GROUP_CREATE);
+        $permissionGroup = $this->permissionGroupFacade->create($permissionGroup);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $permissionGroup);
 
-        return $this->createdResponse(
-            $this->permissionGroupFacade->create($permissionGroup)
-        );
+        return $this->createdResponse($permissionGroup);
     }
 
     /**
@@ -87,10 +88,11 @@ final class PermissionGroupController extends AbstractApiController
      */
     #[Route('/permission-group/{permissionGroup}', 'update', ['permissionGroup' => '\d+'], methods: [Request::METHOD_PUT])]
     #[OAParameterPath('permissionGroup'), OARequest(PermissionGroup::class), OAResponse(PermissionGroup::class), OAResponseValidation]
-    public function update(PermissionGroup $permissionGroup, #[SerializeParam] PermissionGroup $newPermissionGroup): JsonResponse
+    public function update(Request $request, PermissionGroup $permissionGroup, #[SerializeParam] PermissionGroup $newPermissionGroup): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PERMISSION_GROUP_UPDATE, $permissionGroup);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $permissionGroup);
 
         return $this->okResponse(
             $this->permissionGroupFacade->update($permissionGroup, $newPermissionGroup)
@@ -104,11 +106,11 @@ final class PermissionGroupController extends AbstractApiController
      */
     #[Route('/permission-group/{permissionGroup}', 'delete', ['permissionGroup' => '\d+'], methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('permissionGroup'), OAResponseDeleted]
-    public function delete(PermissionGroup $permissionGroup): JsonResponse
+    public function delete(Request $request, PermissionGroup $permissionGroup): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PERMISSION_GROUP_DELETE, $permissionGroup);
-
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $permissionGroup);
         $this->permissionGroupFacade->delete($permissionGroup);
 
         return $this->noContentResponse();

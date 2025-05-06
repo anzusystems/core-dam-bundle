@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -42,14 +43,14 @@ final class JwDistributionController extends AbstractApiController
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute', methods: [Request::METHOD_POST])]
     #[OARequest(JwDistribution::class), OAParameterPath('assetFile'), OAResponse(JwDistribution::class), OAResponseValidation]
-    public function distribute(AssetFile $assetFile, #[SerializeParam] JwDistribution $jwDistribution): JsonResponse
+    public function distribute(Request $request, AssetFile $assetFile, #[SerializeParam] JwDistribution $jwDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $jwDistribution->getDistributionService());
+        $jwDistribution = $this->jwDistributionFacade->distribute($assetFile, $jwDistribution);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $jwDistribution);
 
-        return $this->okResponse(
-            $this->jwDistributionFacade->distribute($assetFile, $jwDistribution)
-        );
+        return $this->okResponse($jwDistribution);
     }
 
     /**
@@ -59,11 +60,12 @@ final class JwDistributionController extends AbstractApiController
      */
     #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function redistribute(JwDistribution $distribution, #[SerializeParam] JwDistribution $newDistribution): JsonResponse
+    public function redistribute(Request $request, JwDistribution $distribution, #[SerializeParam] JwDistribution $newDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
 
         return $this->okResponse(
             $this->jwDistributionFacade->redistribute($distribution, $newDistribution)

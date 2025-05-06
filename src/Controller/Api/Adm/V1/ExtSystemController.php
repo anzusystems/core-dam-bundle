@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -71,10 +72,11 @@ final class ExtSystemController extends AbstractApiController
      */
     #[Route('/{extSystem}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('extSystem'), OARequest(ExtSystem::class), OAResponse(ExtSystem::class), OAResponseValidation]
-    public function update(ExtSystem $extSystem, #[SerializeParam] ExtSystem $newExtSystem): JsonResponse
+    public function update(Request $request, ExtSystem $extSystem, #[SerializeParam] ExtSystem $newExtSystem): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_UPDATE, $extSystem);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $extSystem);
 
         return $this->okResponse(
             $this->extSystemFacade->update($extSystem, $newExtSystem)

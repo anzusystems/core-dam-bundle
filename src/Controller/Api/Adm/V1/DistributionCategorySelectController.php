@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -78,12 +79,14 @@ final class DistributionCategorySelectController extends AbstractApiController
     #[Route('/{distributionCategorySelect}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distributionCategorySelect'), OARequest(DistributionCategorySelect::class), OAResponse(DistributionCategorySelect::class), OAResponseValidation]
     public function update(
+        Request $request,
         DistributionCategorySelect $distributionCategorySelect,
         #[SerializeParam]
         DistributionCategorySelect $newDistributionCategorySelect,
     ): JsonResponse {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_SELECT_UPDATE, $distributionCategorySelect);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distributionCategorySelect);
 
         return $this->okResponse(
             $this->distributionCategorySelectFacade->update($distributionCategorySelect, $newDistributionCategorySelect)

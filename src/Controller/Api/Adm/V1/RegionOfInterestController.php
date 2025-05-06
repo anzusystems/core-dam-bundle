@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -53,19 +54,14 @@ final class RegionOfInterestController extends AbstractApiController
         OAResponse(RegionOfInterestAdmDetailDto::class),
         OAResponseValidation
     ]
-    public function create(ImageFile $image, #[SerializeParam] RegionOfInterestAdmDetailDto $regionOfInterest): JsonResponse
+    public function create(Request $request, ImageFile $image, #[SerializeParam] RegionOfInterestAdmDetailDto $regionOfInterest): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_CREATE, $image);
+        $regionOfInterest = $this->regionOfInterestFacade->create($image, $regionOfInterest);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $regionOfInterest);
 
-        return $this->createdResponse(
-            RegionOfInterestAdmDetailDto::getInstance(
-                $this->regionOfInterestFacade->create(
-                    $image,
-                    $regionOfInterest
-                )
-            )
-        );
+        return $this->createdResponse(RegionOfInterestAdmDetailDto::getInstance($regionOfInterest));
     }
 
     /**
@@ -109,10 +105,11 @@ final class RegionOfInterestController extends AbstractApiController
         OAResponse(RegionOfInterestAdmDetailDto::class),
         OAResponseValidation
     ]
-    public function update(RegionOfInterest $regionOfInterest, #[SerializeParam] RegionOfInterestAdmDetailDto $roiDto): JsonResponse
+    public function update(Request $request, RegionOfInterest $regionOfInterest, #[SerializeParam] RegionOfInterestAdmDetailDto $roiDto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_UPDATE, $regionOfInterest);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $regionOfInterest);
 
         return $this->okResponse(
             RegionOfInterestAdmDetailDto::getInstance($this->regionOfInterestFacade->update($regionOfInterest, $roiDto))
@@ -126,10 +123,11 @@ final class RegionOfInterestController extends AbstractApiController
      */
     #[Route(path: '/roi/{regionOfInterest}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('regionOfInterest'), OAResponseDeleted]
-    public function delete(RegionOfInterest $regionOfInterest): JsonResponse
+    public function delete(Request $request, RegionOfInterest $regionOfInterest): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_REGION_OF_INTEREST_DELETE, $regionOfInterest);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $regionOfInterest);
 
         $this->regionOfInterestFacade->delete($regionOfInterest);
 

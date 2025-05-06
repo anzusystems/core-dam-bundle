@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -78,14 +79,15 @@ final class AuthorCleanPhraseController extends AbstractApiController
      */
     #[Route('', 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AuthorCleanPhrase::class), OAResponseCreated(AuthorCleanPhrase::class), OAResponseValidation]
-    public function create(#[SerializeParam] AuthorCleanPhrase $authorCleanPhrase): JsonResponse
+    public function create(Request $request, #[SerializeParam] AuthorCleanPhrase $authorCleanPhrase): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_CREATE);
 
-        return $this->createdResponse(
-            $this->authorCleanPhraseFacade->create($authorCleanPhrase)
-        );
+        $authorCleanPhrase = $this->authorCleanPhraseFacade->create($authorCleanPhrase);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $authorCleanPhrase);
+
+        return $this->createdResponse($authorCleanPhrase);
     }
 
     /**
@@ -95,10 +97,11 @@ final class AuthorCleanPhraseController extends AbstractApiController
      */
     #[Route('/{authorCleanPhrase}', 'update', ['authorCleanPhrase' => Requirement::DIGITS], methods: [Request::METHOD_PUT])]
     #[OAParameterPath('authorCleanPhrase'), OARequest(AuthorCleanPhrase::class), OAResponse(AuthorCleanPhrase::class), OAResponseValidation]
-    public function update(AuthorCleanPhrase $authorCleanPhrase, #[SerializeParam] AuthorCleanPhrase $newAuthorCleanPhrase): JsonResponse
+    public function update(Request $request, AuthorCleanPhrase $authorCleanPhrase, #[SerializeParam] AuthorCleanPhrase $newAuthorCleanPhrase): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_UPDATE);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $authorCleanPhrase);
 
         return $this->okResponse(
             $this->authorCleanPhraseFacade->update($authorCleanPhrase, $newAuthorCleanPhrase)
@@ -122,11 +125,12 @@ final class AuthorCleanPhraseController extends AbstractApiController
      */
     #[Route('/{authorCleanPhrase}', 'delete', ['authorCleanPhrase' => Requirement::DIGITS], methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('authorCleanPhrase'), OAResponseDeleted]
-    public function delete(AuthorCleanPhrase $authorCleanPhrase): JsonResponse
+    public function delete(Request $request, AuthorCleanPhrase $authorCleanPhrase): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CLEAN_PHRASE_DELETE);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $authorCleanPhrase);
         $this->authorCleanPhraseFacade->delete($authorCleanPhrase);
 
         return $this->noContentResponse();

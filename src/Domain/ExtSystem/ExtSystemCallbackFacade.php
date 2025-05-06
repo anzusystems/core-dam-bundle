@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
@@ -25,6 +26,11 @@ final class ExtSystemCallbackFacade
     public function notifyFinishedJobImageCopy(JobImageCopy $jobImageCopy): void
     {
         $this->getCallback($jobImageCopy->getLicence()->getExtSystem()->getSlug())?->notifyFinishedJobImageCopy($jobImageCopy);
+    }
+
+    public function isImageFileUsed(ImageFile $imageFile): bool
+    {
+        return $this->getCallback($imageFile->getLicence()->getExtSystem()->getSlug())?->isImageFileUsed($imageFile) ?? false;
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

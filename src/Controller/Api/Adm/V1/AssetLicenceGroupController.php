@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
@@ -72,13 +73,15 @@ final class AssetLicenceGroupController extends AbstractApiController
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AssetLicenceGroup::class), OAResponseCreated(AssetLicenceGroup::class), OAResponseValidation]
-    public function create(#[SerializeParam] AssetLicenceGroup $licenceGroup): JsonResponse
+    public function create(Request $request, #[SerializeParam] AssetLicenceGroup $licenceGroup): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_GROUP_CREATE);
+        $licenceGroup = $this->facade->create($licenceGroup);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $licenceGroup);
 
         return $this->createdResponse(
-            $this->facade->create($licenceGroup)
+            $licenceGroup
         );
     }
 
@@ -90,10 +93,11 @@ final class AssetLicenceGroupController extends AbstractApiController
      */
     #[Route('/{assetLicenceGroup}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('assetLicence'), OARequest(AssetLicenceGroup::class), OAResponse(AssetLicenceGroup::class), OAResponseValidation]
-    public function update(AssetLicenceGroup $assetLicenceGroup, #[SerializeParam] AssetLicenceGroup $newAssetLicenceGroup): JsonResponse
+    public function update(Request $request, AssetLicenceGroup $assetLicenceGroup, #[SerializeParam] AssetLicenceGroup $newAssetLicenceGroup): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_LICENCE_GROUP_UPDATE, $assetLicenceGroup);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $assetLicenceGroup);
 
         return $this->okResponse(
             $this->facade->update($assetLicenceGroup, $newAssetLicenceGroup)

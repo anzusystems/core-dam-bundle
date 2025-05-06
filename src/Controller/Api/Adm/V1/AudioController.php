@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -64,6 +65,7 @@ final class AudioController extends AbstractApiController
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
     public function uploadFromExternalProvider(
+        Request $request,
         #[SerializeParam]
         UploadAssetFromExternalProviderDto $uploadDto,
         AssetLicence $assetLicence,
@@ -72,11 +74,10 @@ final class AudioController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $assetLicence);
 
-        return $this->createdResponse(
-            AudioFileAdmDetailDto::getInstance(
-                $this->audioFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence)
-            )
-        );
+        $audio = $this->audioFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
+
+        return $this->createdResponse(AudioFileAdmDetailDto::getInstance($audio));
     }
 
     /**
@@ -87,14 +88,15 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(AudioAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function create(#[SerializeParam] AudioAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] AudioAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $assetLicence);
 
-        return $this->createdResponse(
-            AudioFileAdmDetailDto::getInstance($this->audioFacade->createAssetFile($dto, $assetLicence))
-        );
+        $audio = $this->audioFacade->createAssetFile($dto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
+
+        return $this->createdResponse(AudioFileAdmDetailDto::getInstance($audio));
     }
 
     /**
@@ -108,14 +110,15 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(AudioAdmCreateDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, #[SerializeParam] AudioAdmCreateDto $audio, string $slotName): JsonResponse
+    public function createToAsset(Request $request, Asset $asset, #[SerializeParam] AudioAdmCreateDto $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $asset);
 
-        return $this->createdResponse(
-            AudioFileAdmDetailDto::getInstance($this->audioFacade->addAssetFileToAsset($asset, $audio, $slotName))
-        );
+        $audio = $this->audioFacade->addAssetFileToAsset($asset, $audio, $slotName);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
+
+        return $this->createdResponse(AudioFileAdmDetailDto::getInstance($audio));
     }
 
     /**
@@ -123,11 +126,13 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName')]
-    public function setToSlot(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
+    public function setToSlot(Request $request, Asset $asset, AudioFile $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($this->audioPositionFacade->setToSlot($asset, $audio, $slotName))
@@ -139,12 +144,13 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('audio'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function removeFromSlot(Asset $asset, AudioFile $audio, string $slotName): JsonResponse
+    public function removeFromSlot(Request $request, Asset $asset, AudioFile $audio, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
         $this->audioPositionFacade->removeFromSlot($asset, $audio, $slotName);
 
         return $this->noContentResponse();
@@ -155,11 +161,13 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('audio'), OAParameterPath('asset'), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function setMain(Asset $asset, AudioFile $audio): JsonResponse
+    public function setMain(Request $request, Asset $asset, AudioFile $audio): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($this->audioPositionFacade->setMainFile($asset, $audio))
@@ -174,10 +182,12 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
     #[OAParameterPath('audio'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
-    public function addChunk(AudioFile $audio, ChunkAdmCreateDto $chunk): JsonResponse
+    public function addChunk(Request $request, AudioFile $audio, ChunkAdmCreateDto $chunk): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $audio);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->createdResponse(
             $this->chunkFacade->create($chunk, $audio)
@@ -205,10 +215,12 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('audio'), OARequest(AssetAdmFinishDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, AudioFile $audio): JsonResponse
+    public function finishUpload(Request $request, #[SerializeParam] AssetAdmFinishDto $assetFinishDto, AudioFile $audio): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_CREATE, $audio);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance(
@@ -222,11 +234,12 @@ final class AudioController extends AbstractApiController
      */
     #[Route(path: '/{audio}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('audio'), OAResponseValidation]
-    public function delete(AudioFile $audio): JsonResponse
+    public function delete(Request $request, AudioFile $audio): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_DELETE, $audio);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
         $this->audioFacade->delete($audio);
 
         return $this->noContentResponse();
@@ -252,9 +265,11 @@ final class AudioController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('audio'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
-    public function makePublic(AudioFile $audio, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
+    public function makePublic(Request $request, AudioFile $audio, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->okResponse(
             AssetFileRouteAdmDetailDecorator::getInstance($this->assetFileRouteFacade->makePublicFromDto($audio, $dto))
@@ -267,10 +282,11 @@ final class AudioController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
-    public function makePrivate(AudioFile $audio): JsonResponse
+    public function makePrivate(Request $request, AudioFile $audio): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUDIO_UPDATE, $audio);
         $this->assetFileRouteFacade->makePrivate($audio);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $audio);
 
         return $this->okResponse(
             AudioFileAdmDetailDto::getInstance($audio),

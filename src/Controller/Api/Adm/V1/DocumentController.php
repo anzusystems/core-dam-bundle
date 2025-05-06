@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -64,17 +65,16 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(AudioFileAdmDetailDto::class), OAResponseValidation]
-    public function uploadFromExternalProvider(#[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
+    public function uploadFromExternalProvider(Request $request, #[SerializeParam] UploadAssetFromExternalProviderDto $uploadDto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_CREATE, $assetLicence);
 
-        return $this->createdResponse(
-            DocumentFileAdmDetailDto::getInstance(
-                $this->documentFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence)
-            )
-        );
+        $document = $this->documentFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
+
+        return $this->createdResponse(DocumentFileAdmDetailDto::getInstance($document));
     }
 
     /**
@@ -85,14 +85,15 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function create(#[SerializeParam] DocumentAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] DocumentAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_CREATE, $assetLicence);
 
-        return $this->createdResponse(
-            DocumentFileAdmDetailDto::getInstance($this->documentFacade->createAssetFile($dto, $assetLicence))
-        );
+        $document = $this->documentFacade->createAssetFile($dto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
+
+        return $this->createdResponse(DocumentFileAdmDetailDto::getInstance($document));
     }
 
     /**
@@ -107,14 +108,15 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(DocumentAdmCreateDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, #[SerializeParam] DocumentAdmCreateDto $document, string $slotName): JsonResponse
+    public function createToAsset(Request $request, Asset $asset, #[SerializeParam] DocumentAdmCreateDto $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $asset);
 
-        return $this->createdResponse(
-            DocumentFileAdmDetailDto::getInstance($this->documentFacade->addAssetFileToAsset($asset, $document, $slotName))
-        );
+        $document = $this->documentFacade->addAssetFileToAsset($asset, $document, $slotName);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
+
+        return $this->createdResponse(DocumentFileAdmDetailDto::getInstance($document));
     }
 
     /**
@@ -122,11 +124,13 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function setToSlot(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    public function setToSlot(Request $request, Asset $asset, DocumentFile $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->okResponse(
             DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setToSlot($asset, $document, $slotName))
@@ -138,12 +142,13 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('document'), OAParameterPath('asset'), OAParameterPath('slotName')]
-    public function removeFromSlot(Asset $asset, DocumentFile $document, string $slotName): JsonResponse
+    public function removeFromSlot(Request $request, Asset $asset, DocumentFile $document, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
         $this->documentPositionFacade->removeFromSlot($asset, $document, $slotName);
 
         return $this->noContentResponse();
@@ -154,11 +159,13 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('document'), OAParameterPath('asset'), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function setMain(Asset $asset, DocumentFile $document): JsonResponse
+    public function setMain(Request $request, Asset $asset, DocumentFile $document): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->okResponse(
             DocumentFileAdmDetailDto::getInstance($this->documentPositionFacade->setMainFile($asset, $document))
@@ -173,10 +180,11 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
     #[OAParameterPath('document'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
-    public function addChunk(DocumentFile $document, ChunkAdmCreateDto $chunk): JsonResponse
+    public function addChunk(Request $request, DocumentFile $document, ChunkAdmCreateDto $chunk): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->createdResponse(
             $this->chunkFacade->create($chunk, $document)
@@ -204,10 +212,11 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('document'), OARequest(AssetAdmFinishDto::class), OAResponse(DocumentFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, DocumentFile $document): JsonResponse
+    public function finishUpload(Request $request, #[SerializeParam] AssetAdmFinishDto $assetFinishDto, DocumentFile $document): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->okResponse(
             DocumentFileAdmDetailDto::getInstance(
@@ -221,11 +230,12 @@ final class DocumentController extends AbstractApiController
      */
     #[Route(path: '/{document}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('document'), OAResponseValidation]
-    public function delete(DocumentFile $document): JsonResponse
+    public function delete(Request $request, DocumentFile $document): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_DELETE, $document);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
         $this->documentFacade->delete($document);
 
         return $this->noContentResponse();
@@ -251,9 +261,10 @@ final class DocumentController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('document'), OARequest(AssetFileRouteAdmCreateDto::class), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
-    public function makePublic(DocumentFile $document, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
+    public function makePublic(Request $request, DocumentFile $document, #[SerializeParam] AssetFileRouteAdmCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->okResponse(
             AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makePublicFromDto($document, $dto))
@@ -266,10 +277,11 @@ final class DocumentController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('audio'), OAResponse(AudioFileAdmDetailDto::class)]
-    public function makePrivate(DocumentFile $document): JsonResponse
+    public function makePrivate(Request $request, DocumentFile $document): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DOCUMENT_UPDATE, $document);
         $this->routeFacade->makePrivate($document);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $document);
 
         return $this->noContentResponse();
     }

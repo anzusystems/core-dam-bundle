@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -70,13 +71,16 @@ final class KeywordController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(Keyword::class), OAResponse(Author::class), OAResponseValidation]
-    public function create(#[SerializeParam] Keyword $keyword): JsonResponse
+    public function create(Request $request, #[SerializeParam] Keyword $keyword): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_CREATE, $keyword);
 
         try {
-            return $this->createdResponse($this->keywordFacade->create($keyword));
+            $keyword = $this->keywordFacade->create($keyword);
+            AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $keyword);
+
+            return $this->createdResponse($keyword);
         } catch (KeywordExistsException $exception) {
             return $this->okResponse($exception->getExistingKeyword());
         }
@@ -90,10 +94,11 @@ final class KeywordController extends AbstractApiController
      */
     #[Route('/{keyword}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('keyword'), OARequest(Keyword::class), OAResponse(Keyword::class), OAResponseValidation]
-    public function update(Keyword $keyword, #[SerializeParam] Keyword $newKeyword): JsonResponse
+    public function update(Request $request, Keyword $keyword, #[SerializeParam] Keyword $newKeyword): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_UPDATE, $keyword);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $keyword);
 
         return $this->okResponse($this->keywordFacade->update($keyword, $newKeyword));
     }
@@ -105,10 +110,11 @@ final class KeywordController extends AbstractApiController
      */
     #[Route(path: '/{keyword}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('keyword'), OAResponseDeleted]
-    public function delete(Keyword $keyword): JsonResponse
+    public function delete(Request $request, Keyword $keyword): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_KEYWORD_DELETE, $keyword);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $keyword);
         $this->keywordFacade->delete($keyword);
 
         return $this->noContentResponse();

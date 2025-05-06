@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Controller\AbstractJobController;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -31,14 +32,14 @@ final class JobController extends AbstractJobController
      */
     #[Route('/podcast-synchronizer', 'create_job_podcast_synchronizer', methods: [Request::METHOD_POST])]
     #[OARequest(JobPodcastSynchronizer::class), OAResponseCreated(JobPodcastSynchronizer::class), OAResponseValidation]
-    public function createPodcastSynchronizer(#[SerializeParam] JobPodcastSynchronizer $job): JsonResponse
+    public function createPodcastSynchronizer(Request $request, #[SerializeParam] JobPodcastSynchronizer $job): JsonResponse
     {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());
+        $job = $this->jobFacade->create($job);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
 
-        return $this->createdResponse(
-            $this->jobFacade->create($job)
-        );
+        return $this->createdResponse($job);
     }
 
     /**
@@ -47,14 +48,14 @@ final class JobController extends AbstractJobController
      */
     #[Route('/image-copy', 'create_job_image_copy', methods: [Request::METHOD_POST])]
     #[OARequest(JobImageCopy::class), OAResponseCreated(JobImageCopy::class), OAResponseValidation]
-    public function createImageCopyJob(#[SerializeParam] JobImageCopy $job): JsonResponse
+    public function createImageCopyJob(Request $request, #[SerializeParam] JobImageCopy $job): JsonResponse
     {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());
+        $job = $this->jobFacade->create($job);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
 
-        return $this->createdResponse(
-            $this->jobFacade->create($job)
-        );
+        return $this->createdResponse($job);
     }
 
     /**
@@ -63,14 +64,14 @@ final class JobController extends AbstractJobController
      */
     #[Route('/author-current-optimize', 'create_job_author_current_optimize', methods: [Request::METHOD_POST])]
     #[OARequest(JobAuthorCurrentOptimize::class), OAResponseCreated(JobAuthorCurrentOptimize::class), OAResponseValidation]
-    public function createAuthorCurrentJob(#[SerializeParam] JobAuthorCurrentOptimize $job): JsonResponse
+    public function createAuthorCurrentJob(Request $request, #[SerializeParam] JobAuthorCurrentOptimize $job): JsonResponse
     {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());
+        $job = $this->jobFacade->create($job);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
 
-        return $this->createdResponse(
-            $this->jobFacade->create($job)
-        );
+        return $this->createdResponse($job);
     }
 
     protected function getCreateAcl(): string

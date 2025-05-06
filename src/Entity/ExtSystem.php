@@ -13,6 +13,7 @@ use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemFlags;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -57,17 +58,22 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     )]
     private string $slug;
 
-    #[ORM\OneToMany(mappedBy: 'extSystem', targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\OneToMany(targetEntity: AssetLicence::class, mappedBy: 'extSystem', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $licences;
 
     #[ORM\ManyToMany(targetEntity: DamUser::class, mappedBy: 'adminToExtSystems', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $adminUsers;
 
+    #[ORM\Embedded]
+    #[Serialize]
+    private ExtSystemFlags $flags;
+
     public function __construct()
     {
         $this->setName('');
         $this->setSlug('');
+        $this->setFlags(new ExtSystemFlags());
         $this->setLicences(new ArrayCollection());
         $this->setAdminUsers(new ArrayCollection());
     }
@@ -139,5 +145,15 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     public function getExtSystem(): self
     {
         return $this;
+    }
+
+    public function getFlags(): ExtSystemFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(ExtSystemFlags $flags): void
+    {
+        $this->flags = $flags;
     }
 }

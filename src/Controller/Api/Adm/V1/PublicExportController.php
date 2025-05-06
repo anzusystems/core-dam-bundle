@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -71,14 +72,14 @@ final class PublicExportController extends AbstractApiController
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(PublicExport::class), OAResponse(PublicExport::class), OAResponseValidation]
-    public function create(#[SerializeParam] PublicExport $publicExport): JsonResponse
+    public function create(Request $request, #[SerializeParam] PublicExport $publicExport): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PUBLIC_EXPORT_CREATE, $publicExport);
+        $publicExport = $this->publicExportFacade->create($publicExport);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $publicExport);
 
-        return $this->createdResponse(
-            $this->publicExportFacade->create($publicExport)
-        );
+        return $this->createdResponse($publicExport);
     }
 
     /**
@@ -89,10 +90,11 @@ final class PublicExportController extends AbstractApiController
      */
     #[Route('/{publicExport}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('publicExport'), OARequest(PublicExport::class), OAResponse(PublicExport::class), OAResponseValidation]
-    public function update(PublicExport $publicExport, #[SerializeParam] PublicExport $newPublicExport): JsonResponse
+    public function update(Request $request, PublicExport $publicExport, #[SerializeParam] PublicExport $newPublicExport): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PUBLIC_EXPORT_UPDATE, $publicExport);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $publicExport);
 
         return $this->okResponse(
             $this->publicExportFacade->update($publicExport, $newPublicExport)
@@ -106,11 +108,11 @@ final class PublicExportController extends AbstractApiController
      */
     #[Route(path: '/{publicExport}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('publicExport'), OAResponseDeleted]
-    public function delete(PublicExport $publicExport): JsonResponse
+    public function delete(Request $request, PublicExport $publicExport): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PUBLIC_EXPORT_DELETE, $publicExport);
-
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $publicExport);
         $this->publicExportFacade->delete($publicExport);
 
         return $this->noContentResponse();

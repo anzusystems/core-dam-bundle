@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Sys\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -43,13 +44,13 @@ final class AssetFileController extends AbstractApiController
      */
     #[Route('', 'create', methods: [Request::METHOD_POST])]
     #[OARequest(AssetFileSysPathCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
-    public function create(#[SerializeParam] AssetFileSysPathCreateDto $dto): JsonResponse
+    public function create(Request $request, #[SerializeParam] AssetFileSysPathCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $dto);
+        $assetFile = $this->assetSysFacade->createFromFileDto($dto);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $assetFile);
 
-        return $this->okResponse(
-            AssetFileSysDetailDecorator::getInstance($this->assetSysFacade->createFromFileDto($dto))
-        );
+        return $this->okResponse(AssetFileSysDetailDecorator::getInstance($assetFile));
     }
 
     /**
@@ -60,13 +61,13 @@ final class AssetFileController extends AbstractApiController
      */
     #[Route('/from-url', 'create_from_url', methods: [Request::METHOD_POST])]
     #[OARequest(AssetFileSysUrlCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
-    public function createFromUrl(#[SerializeParam] AssetFileSysUrlCreateDto $dto): JsonResponse
+    public function createFromUrl(Request $request, #[SerializeParam] AssetFileSysUrlCreateDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $dto);
+        $assetFile = $this->assetSysFacade->createFromUrlDto($dto);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $assetFile);
 
-        return $this->okResponse(
-            AssetFileSysDetailDecorator::getInstance($this->assetSysFacade->createFromUrlDto($dto))
-        );
+        return $this->okResponse(AssetFileSysDetailDecorator::getInstance($assetFile));
     }
 
     #[Route('/{assetFile}', 'get_one', methods: [Request::METHOD_GET])]

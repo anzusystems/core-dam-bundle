@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -66,6 +67,7 @@ final class VideoController extends AbstractApiController
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
     public function uploadFromExternalProvider(
+        Request $request,
         #[SerializeParam]
         UploadAssetFromExternalProviderDto $uploadDto,
         AssetLicence $assetLicence,
@@ -73,12 +75,10 @@ final class VideoController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_CREATE, $assetLicence);
+        $video = $this->videoFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
-        return $this->createdResponse(
-            VideoFileAdmDetailDto::getInstance(
-                $this->videoFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence)
-            )
-        );
+        return $this->createdResponse(VideoFileAdmDetailDto::getInstance($video));
     }
 
     /**
@@ -89,14 +89,14 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function create(#[SerializeParam] VideoAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] VideoAdmCreateDto $dto, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_CREATE, $assetLicence);
+        $video = $this->videoFacade->createAssetFile($dto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
-        return $this->createdResponse(
-            VideoFileAdmDetailDto::getInstance($this->videoFacade->createAssetFile($dto, $assetLicence))
-        );
+        return $this->createdResponse(VideoFileAdmDetailDto::getInstance($video));
     }
 
     /**
@@ -107,11 +107,12 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('video'), OARequest(VideoAdmUpdateDto::class), OAResponse(VideoAdmUpdateDto::class), OAResponseValidation]
-    public function update(VideoFile $video, #[SerializeParam] VideoAdmUpdateDto $newVideo): JsonResponse
+    public function update(Request $request, VideoFile $video, #[SerializeParam] VideoAdmUpdateDto $newVideo): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
         $newVideo->setVideoFile($video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->okResponse(
             VideoAdmUpdateDto::getInstance($this->videoFacade->update($video, $newVideo))
@@ -123,11 +124,12 @@ final class VideoController extends AbstractApiController
      */
     #[Route('/{video}/distribution-preview/{distribution}', name: 'set_distribution_preview', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OAParameterPath('distribution'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function setDistributionPreview(VideoFile $video, Distribution $distribution): JsonResponse
+    public function setDistributionPreview(Request $request, VideoFile $video, Distribution $distribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance(
@@ -161,14 +163,14 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(VideoAdmCreateDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, #[SerializeParam] VideoAdmCreateDto $video, string $slotName): JsonResponse
+    public function createToAsset(Request $request, Asset $asset, #[SerializeParam] VideoAdmCreateDto $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $asset);
+        $video = $this->videoFacade->addAssetFileToAsset($asset, $video, $slotName);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
-        return $this->createdResponse(
-            VideoFileAdmDetailDto::getInstance($this->videoFacade->addAssetFileToAsset($asset, $video, $slotName))
-        );
+        return $this->createdResponse(VideoFileAdmDetailDto::getInstance($video));
     }
 
     /**
@@ -176,11 +178,12 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function setToSlot(Asset $asset, VideoFile $video, string $slotName): JsonResponse
+    public function setToSlot(Request $request, Asset $asset, VideoFile $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->okResponse(
             VideoFileAdmDetailDto::getInstance($this->videoPositionFacade->setToSlot($asset, $video, $slotName))
@@ -192,11 +195,12 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('video'), OAParameterPath('asset'), OAParameterPath('slotName')]
-    public function removeFromSlot(Asset $asset, VideoFile $video, string $slotName): JsonResponse
+    public function removeFromSlot(Request $request, Asset $asset, VideoFile $video, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         $this->videoPositionFacade->removeFromSlot($asset, $video, $slotName);
 
@@ -208,11 +212,12 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OAParameterPath('asset'), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function setMain(Asset $asset, VideoFile $video): JsonResponse
+    public function setMain(Request $request, Asset $asset, VideoFile $video): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->okResponse(
             VideoFileAdmDetailDto::getInstance($this->videoPositionFacade->setMainFile($asset, $video))
@@ -227,10 +232,11 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
     #[OAParameterPath('video'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
-    public function addChunk(VideoFile $video, ChunkAdmCreateDto $chunk): JsonResponse
+    public function addChunk(Request $request, VideoFile $video, ChunkAdmCreateDto $chunk): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->createdResponse(
             $this->chunkFacade->create($chunk, $video)
@@ -257,10 +263,11 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('video'), OARequest(AssetAdmFinishDto::class), OAResponse(VideoFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, VideoFile $video): JsonResponse
+    public function finishUpload(Request $request, #[SerializeParam] AssetAdmFinishDto $assetFinishDto, VideoFile $video): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_UPDATE, $video);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
 
         return $this->okResponse(
             VideoFileAdmDetailDto::getInstance(
@@ -274,11 +281,11 @@ final class VideoController extends AbstractApiController
      */
     #[Route(path: '/{video}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('video'), OAResponseValidation]
-    public function delete(VideoFile $video): JsonResponse
+    public function delete(Request $request, VideoFile $video): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_VIDEO_DELETE, $video);
-
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $video);
         $this->videoFacade->delete($video);
 
         return $this->noContentResponse();

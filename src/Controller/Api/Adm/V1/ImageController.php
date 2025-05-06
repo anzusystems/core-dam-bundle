@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -71,6 +72,7 @@ final class ImageController extends AbstractApiController
     #[Route(path: '/licence/{assetLicence}/external-provider', name: 'upload_from_external_provider', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(UploadAssetFromExternalProviderDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
     public function uploadFromExternalProvider(
+        Request $request,
         #[SerializeParam]
         UploadAssetFromExternalProviderDto $uploadDto,
         AssetLicence $assetLicence,
@@ -79,11 +81,10 @@ final class ImageController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_EXTERNAL_PROVIDER_ACCESS, $uploadDto->getExternalProvider());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $assetLicence);
 
-        return $this->createdResponse(
-            ImageFileAdmDetailDto::getInstance(
-                $this->imageFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence)
-            )
-        );
+        $image = $this->imageFacade->createAssetFilesFromExternalProvider($uploadDto, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
+
+        return $this->createdResponse(ImageFileAdmDetailDto::getInstance($image));
     }
 
     /**
@@ -94,14 +95,14 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/licence/{assetLicence}', name: 'create', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function create(#[SerializeParam] ImageAdmCreateDto $image, AssetLicence $assetLicence): JsonResponse
+    public function create(Request $request, #[SerializeParam] ImageAdmCreateDto $image, AssetLicence $assetLicence): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $assetLicence);
+        $image = $this->imageFacade->createAssetFile($image, $assetLicence);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
-        return $this->createdResponse(
-            ImageFileAdmDetailDto::getInstance($this->imageFacade->createAssetFile($image, $assetLicence))
-        );
+        return $this->createdResponse(ImageFileAdmDetailDto::getInstance($image));
     }
 
     /**
@@ -115,14 +116,15 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}/slot-name/{slotName}', name: 'create_to_asset', methods: [Request::METHOD_POST])]
     #[OAParameterPath('assetLicence'), OARequest(ImageAdmCreateDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function createToAsset(Asset $asset, #[SerializeParam] ImageAdmCreateDto $image, string $slotName): JsonResponse
+    public function createToAsset(Request $request, Asset $asset, #[SerializeParam] ImageAdmCreateDto $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $asset);
 
-        return $this->createdResponse(
-            ImageFileAdmDetailDto::getInstance($this->imageFacade->addAssetFileToAsset($asset, $image, $slotName))
-        );
+        $image = $this->imageFacade->addAssetFileToAsset($asset, $image, $slotName);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
+
+        return $this->createdResponse(ImageFileAdmDetailDto::getInstance($image));
     }
 
     /**
@@ -130,11 +132,12 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'set_to_slot', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function setToSlot(Asset $asset, ImageFile $image, string $slotName): JsonResponse
+    public function setToSlot(Request $request, Asset $asset, ImageFile $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setToSlot($asset, $image, $slotName))
@@ -146,11 +149,12 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/asset/{asset}/slot-name/{slotName}', name: 'remote_from_slot', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('image'), OAParameterPath('asset'), OAParameterPath('slotName')]
-    public function removeFromSlot(Asset $asset, ImageFile $image, string $slotName): JsonResponse
+    public function removeFromSlot(Request $request, Asset $asset, ImageFile $image, string $slotName): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         $this->imagePositionFacade->removeFromSlot($asset, $image, $slotName);
 
@@ -162,11 +166,12 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/asset/{asset}/main', name: 'set_main', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OAParameterPath('asset'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function setMain(Asset $asset, ImageFile $image): JsonResponse
+    public function setMain(Request $request, Asset $asset, ImageFile $image): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance($this->imagePositionFacade->setMainFile($asset, $image))
@@ -181,10 +186,11 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/chunk', name: 'add_chunk', methods: [Request::METHOD_POST])]
     #[OAParameterPath('image'), OARequest(ChunkAdmCreateDto::class), OAResponse(Chunk::class), OAResponseValidation]
-    public function addChunk(ImageFile $image, ChunkAdmCreateDto $chunk): JsonResponse
+    public function addChunk(Request $request, ImageFile $image, ChunkAdmCreateDto $chunk): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->createdResponse(
             $this->chunkFacade->create($chunk, $image)
@@ -212,10 +218,11 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/uploaded', name: 'finish_upload', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OARequest(AssetAdmFinishDto::class), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function finishUpload(#[SerializeParam] AssetAdmFinishDto $assetFinishDto, ImageFile $image): JsonResponse
+    public function finishUpload(Request $request, #[SerializeParam] AssetAdmFinishDto $assetFinishDto, ImageFile $image): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_CREATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance(
@@ -229,10 +236,11 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}/rotate/{angle}', name: 'rotate', requirements: ['angle' => '(90)|(180)|(270)'], methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('image'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function rotate(ImageFile $image, float $angle): JsonResponse
+    public function rotate(Request $request, ImageFile $image, float $angle): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance(
@@ -246,10 +254,11 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('image'), OAResponse(ImageFileAdmDetailDto::class), OAResponseValidation]
-    public function update(ImageFile $image, #[SerializeParam] ImageFileAdmDetailDto $dto): JsonResponse
+    public function update(Request $request, ImageFile $image, #[SerializeParam] ImageFileAdmDetailDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             ImageFileAdmDetailDto::getInstance($this->imageFacade->update($image, $dto))
@@ -261,10 +270,11 @@ final class ImageController extends AbstractApiController
      */
     #[Route(path: '/{image}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('image'), OAResponseValidation]
-    public function delete(ImageFile $image): JsonResponse
+    public function delete(Request $request, ImageFile $image): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_DELETE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
         $this->imageFacade->delete($image);
 
         return $this->noContentResponse();
@@ -311,9 +321,10 @@ final class ImageController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('image'), OAResponse(AssetFileRouteAdmDetailDecorator::class), OAResponseValidation]
-    public function makePublic(ImageFile $image): JsonResponse
+    public function makePublic(Request $request, ImageFile $image): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
 
         return $this->okResponse(
             AssetFileRouteAdmDetailDecorator::getInstance($this->routeFacade->makeImagePublic($image))
@@ -326,9 +337,10 @@ final class ImageController extends AbstractApiController
         methods: [Request::METHOD_PATCH]
     )]
     #[OAParameterPath('image'), OAResponse(AudioFileAdmDetailDto::class)]
-    public function makePrivate(ImageFile $image): JsonResponse
+    public function makePrivate(Request $request, ImageFile $image): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_IMAGE_UPDATE, $image);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $image);
         $this->routeFacade->makePrivate($image);
 
         return $this->noContentResponse();

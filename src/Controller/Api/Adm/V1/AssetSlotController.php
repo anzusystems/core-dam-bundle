@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -49,9 +50,10 @@ final class AssetSlotController extends AbstractApiController
      */
     #[Route(path: '/asset/{asset}', name: 'update', methods: [Request::METHOD_PATCH])]
     #[OARequest([AssetSlotMinimalAdmDto::class]), OAResponse([AssetSlotAdmListDecorator::class]), OAResponseValidation]
-    public function update(Asset $asset, #[SerializeIterableParam(type: AssetSlotMinimalAdmDto::class)] Collection $list): JsonResponse
+    public function update(Request $request, Asset $asset, #[SerializeIterableParam(type: AssetSlotMinimalAdmDto::class)] Collection $list): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         return $this->okResponse(
             $this->assetSlotFacade->update($asset, $list)

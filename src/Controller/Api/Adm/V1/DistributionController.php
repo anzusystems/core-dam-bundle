@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
@@ -106,10 +107,13 @@ final class DistributionController extends AbstractApiController
 
     #[Route('', name: 'asset_update_distributions', methods: [Request::METHOD_PATCH])]
     #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
-    public function upsertDistributions(AbstractDistributionUpdateDto $update): JsonResponse
+    public function upsertDistributions(Request $request, AbstractDistributionUpdateDto $update): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $update->getDistributionService());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $update->getAssetFile());
+        if ($update->getDistribution()) {
+            AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $update->getDistribution());
+        }
 
         return $this->okResponse(
             $this->distributionUpdateFacade->upsert($update)
@@ -118,10 +122,11 @@ final class DistributionController extends AbstractApiController
 
     #[Route('/{distribution}', name: 'delete', methods: [Request::METHOD_DELETE])]
     #[OAParameterPath('distributionService'), OAResponse([DistributionServiceAuthorization::class])]
-    public function deleteDistribution(Distribution $distribution): JsonResponse
+    public function deleteDistribution(Request $request, Distribution $distribution): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_DELETE, $distribution);
 
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
         $this->distributionUpdateFacade->delete($distribution);
 
         return $this->noContentResponse();

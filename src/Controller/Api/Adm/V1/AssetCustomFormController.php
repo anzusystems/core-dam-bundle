@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
@@ -105,9 +106,10 @@ final class AssetCustomFormController extends AbstractApiController
      */
     #[Route(path: '/{form}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('form'), OARequest(AssetCustomForm::class), OAResponse(AssetCustomForm::class), OAResponseValidation]
-    public function update(AssetCustomForm $form, #[SerializeParam] AssetCustomForm $newForm): JsonResponse
+    public function update(Request $request, AssetCustomForm $form, #[SerializeParam] AssetCustomForm $newForm): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_CUSTOM_FORM_UPDATE, $form);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $form);
 
         return $this->okResponse(
             $this->customFormFacade->update($form, $newForm)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
@@ -141,15 +142,15 @@ final class YoutubeDistributionController extends AbstractApiController
      */
     #[Route('/asset-file/{assetFile}/distribute', name: 'distribute', methods: [Request::METHOD_POST])]
     #[OARequest(YoutubeDistribution::class), OAParameterPath('assetFile'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function distribute(AssetFile $assetFile, #[SerializeParam] YoutubeDistribution $youtubeDistribution): JsonResponse
+    public function distribute(Request $request, AssetFile $assetFile, #[SerializeParam] YoutubeDistribution $youtubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $assetFile);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $youtubeDistribution->getDistributionService());
+        $distribution = $this->youtubeDistributionFacade->distribute($assetFile, $youtubeDistribution);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
 
-        return $this->okResponse(
-            $this->youtubeDistributionFacade->distribute($assetFile, $youtubeDistribution)
-        );
+        return $this->okResponse($distribution);
     }
 
     /**
@@ -159,11 +160,12 @@ final class YoutubeDistributionController extends AbstractApiController
      */
     #[Route('/{distribution}/redistribute', name: 'redistribute', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('distribution'), OAResponse(YoutubeDistribution::class), OAResponseValidation]
-    public function redistribute(YoutubeDistribution $distribution, #[SerializeParam] YoutubeDistribution $newYoutubeDistribution): JsonResponse
+    public function redistribute(Request $request, YoutubeDistribution $distribution, #[SerializeParam] YoutubeDistribution $newYoutubeDistribution): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $this->assetRepository->find($distribution->getAssetId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_ACCESS, $distribution->getDistributionService());
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $distribution);
 
         return $this->okResponse(
             $this->youtubeDistributionFacade->redistribute($distribution, $newYoutubeDistribution)
