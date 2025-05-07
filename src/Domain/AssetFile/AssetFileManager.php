@@ -62,6 +62,16 @@ class AssetFileManager extends AbstractManager
      *
      * @return T
      */
+    public function canBeRemoved(AssetFile $assetFile): bool
+    {
+        return true;
+    }
+
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
         $this->trackCreation($assetFile);

@@ -8,10 +8,12 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
@@ -42,6 +44,7 @@ class AssetFacade
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
         private readonly AssetRepository $assetRepository,
+        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
     ) {
     }
 
@@ -104,6 +107,11 @@ class AssetFacade
 
     public function toDeleting(Asset $asset): void
     {
+        foreach ($asset->getSlots() as $slot) {
+            if (false === $this->assetFileManagerProvider->getManager($slot->getAssetFile())->canBeRemoved($slot->getAssetFile())) {
+                throw new ForbiddenOperationException(ForbiddenOperationException::FILE_IS_USED);
+            }
+        }
         $this->assetManager->beginTransaction();
 
         try {

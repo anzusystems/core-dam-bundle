@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\ImageFileOptimalResize\OptimalResizeManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
@@ -22,6 +23,7 @@ final class ImageManager extends AssetFileManager
         private readonly RegionOfInterestManager $regionOfInterestManager,
         private readonly OptimalResizeManager $optimalResizeManager,
         private readonly ImagePreviewManager $imagePreviewManager,
+        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
     ) {
     }
 
@@ -48,6 +50,18 @@ final class ImageManager extends AssetFileManager
         $this->flush($flush);
 
         return $image;
+    }
+
+    /**
+     * @param ImageFile $assetFile
+     */
+    public function canBeRemoved(AssetFile $assetFile): bool
+    {
+        //        if (false === $assetFile->getExtSystem()->getFlags()->isCheckImageUsedOnDelete()) {
+        //            return true;
+        //        }
+
+        return false === $this->extSystemCallbackFacade->isImageFileUsed($assetFile);
     }
 
     /**

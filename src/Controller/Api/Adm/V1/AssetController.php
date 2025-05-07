@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\Attributes\ArrayStringParam;
 use AnzuSystems\CommonBundle\Model\OpenApi\Parameter\OAParameterPath;
@@ -194,9 +195,14 @@ final class AssetController extends AbstractApiController
      */
     #[Route(path: '/metadata-bulk-update', name: 'metadata_bulk_update', methods: [Request::METHOD_PATCH])]
     #[OARequest([FormProvidableMetadataBulkUpdateDto::class]), OAResponse([FormProvidableMetadataBulkUpdateDto::class]), OAResponseValidation]
-    public function metadataBulkUpdate(#[SerializeIterableParam(type: FormProvidableMetadataBulkUpdateDto::class)] Collection $list): JsonResponse
+    public function metadataBulkUpdate(Request $request, #[SerializeIterableParam(type: FormProvidableMetadataBulkUpdateDto::class)] Collection $list): JsonResponse
     {
         App::throwOnReadOnlyMode();
+        AuditLogResourceHelper::setResource(
+            request: $request,
+            resourceName: Asset::getResourceName(),
+            resourceId: CollectionHelper::traversableToIds($list, static fn (FormProvidableMetadataBulkUpdateDto $dto): string => $dto->getAsset()->getId()),
+        );
 
         return $this->okResponse(
             $this->assetMetadataBulkFacade->bulkUpdate($list)
