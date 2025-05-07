@@ -56,6 +56,13 @@ abstract class AbstractAssetFileFacade
     protected AssetSlotRepository $assetSlotRepository;
     protected AssetFileRepository $assetFileRepository;
     protected ConfigurationProvider $configurationProvider;
+    protected AssetFileManagerProvider $assetFileManagerProvider;
+
+    #[Required]
+    public function setAssetFileManagerProvider(AssetFileManagerProvider $assetFileManagerProvider): void
+    {
+        $this->assetFileManagerProvider = $assetFileManagerProvider;
+    }
 
     #[Required]
     public function setAssetSlotRepository(AssetSlotRepository $assetSlotRepository): void
@@ -253,8 +260,13 @@ abstract class AbstractAssetFileFacade
      */
     public function delete(AssetFile $assetFile): void
     {
+        if (false === $this->assetFileManagerProvider->getManager($assetFile)->canBeRemoved($assetFile)) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::FILE_IS_USED);
+        }
+
+        $this->getManager()->beginTransaction();
+
         try {
-            $this->getManager()->beginTransaction();
             $deleteId = $assetFile->getId();
             $asset = $assetFile->getAsset();
 
@@ -281,7 +293,9 @@ abstract class AbstractAssetFileFacade
                 $assetFile->getModifiedBy()
             );
         } catch (Throwable $exception) {
-            $this->getManager()->rollback();
+            if ($this->getManager()->isTransactionActive()) {
+                $this->getManager()->rollback();
+            }
 
             throw new RuntimeException('asset_file_delete_failed', 0, $exception);
         }
