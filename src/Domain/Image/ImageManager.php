@@ -57,9 +57,9 @@ final class ImageManager extends AssetFileManager
      */
     public function canBeRemoved(AssetFile $assetFile): bool
     {
-        //        if (false === $assetFile->getExtSystem()->getFlags()->isCheckImageUsedOnDelete()) {
-        //            return true;
-        //        }
+        if (false === $assetFile->getExtSystem()->getFlags()->isCheckImageUsedOnDelete()) {
+            return true;
+        }
 
         return false === $this->extSystemCallbackFacade->isImageFileUsed($assetFile);
     }
