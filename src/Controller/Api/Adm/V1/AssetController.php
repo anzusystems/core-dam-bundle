@@ -201,7 +201,7 @@ final class AssetController extends AbstractApiController
         AuditLogResourceHelper::setResource(
             request: $request,
             resourceName: Asset::getResourceName(),
-            resourceId: CollectionHelper::traversableToIds($list, static fn (FormProvidableMetadataBulkUpdateDto $dto): string => $dto->getAsset()->getId()),
+            resourceId: CollectionHelper::traversableToIds($list, static fn (FormProvidableMetadataBulkUpdateDto $dto): string => (string) $dto->getAsset()->getId()),
         );
 
         return $this->okResponse(
