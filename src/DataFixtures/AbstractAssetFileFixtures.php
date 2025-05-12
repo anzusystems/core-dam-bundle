@@ -16,6 +16,11 @@ abstract class AbstractAssetFileFixtures extends AbstractFixtures
 {
     public const string DATA_PATH = __DIR__ . '/../Resources/fixtures/';
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     protected function getFile(LocalFilesystem $fileSystem, string $fileName): AdapterFile
     {
         $path = static::DATA_PATH . $fileName;

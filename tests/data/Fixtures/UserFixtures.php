@@ -26,6 +26,11 @@ final class UserFixtures extends AbstractFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['test'];
+    }
+
     public static function getIndexKey(): string
     {
         return User::class;

@@ -20,6 +20,7 @@ class ForbiddenOperationException extends DomainException
     public const string LICENCE_MISMATCH = 'licence_mismatch';
     public const string ASSET_DELETE_DURING_REORDER = 'asset_file_delete_during_reorder';
     public const string FILE_UPLOAD_TOO_MANY_FILES = 'file_upload_too_many_files';
+    public const string FILE_IS_USED = 'file_is_used';
 
     public const string IS_BLOCKING_ERROR = 'distribution_is_blocking';
 

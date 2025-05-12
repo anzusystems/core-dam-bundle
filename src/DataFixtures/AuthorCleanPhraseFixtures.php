@@ -36,6 +36,11 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
         ];
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public function load(ProgressBar $progressBar): void
     {
         /** @var AuthorCleanPhrase $author */

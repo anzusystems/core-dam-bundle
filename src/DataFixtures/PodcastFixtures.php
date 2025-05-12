@@ -34,6 +34,11 @@ final class PodcastFixtures extends AbstractFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public static function getDependencies(): array
     {
         return [

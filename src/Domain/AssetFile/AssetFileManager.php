@@ -59,6 +59,14 @@ class AssetFileManager extends AbstractManager
 
     /**
      * @param T $assetFile
+     */
+    public function canBeRemoved(AssetFile $assetFile): bool
+    {
+        return true;
+    }
+
+    /**
+     * @param T $assetFile
      *
      * @return T
      */

@@ -36,6 +36,11 @@ final class AssetFileRouteFixtures extends AbstractAssetFileFixtures
         ];
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public static function getIndexKey(): string
     {
         return AssetFileRoute::class;

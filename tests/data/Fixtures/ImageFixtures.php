@@ -46,6 +46,11 @@ final class ImageFixtures extends AbstractAssetFileFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['test'];
+    }
+
     public static function getIndexKey(): string
     {
         return ImageFile::class;
