@@ -27,6 +27,11 @@ final class VideoShowEpisodeFixtures extends AbstractAssetFileFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public static function getDependencies(): array
     {
         return [

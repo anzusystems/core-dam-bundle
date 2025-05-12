@@ -32,6 +32,11 @@ final class VideoShowFixtures extends AbstractAssetFileFixtures
         ];
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public static function getIndexKey(): string
     {
         return VideoShow::class;

@@ -28,6 +28,11 @@ final class PermissionGroupFixtures extends AbstractFixtures
         return PermissionGroup::class;
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public function load(ProgressBar $progressBar): void
     {
         foreach ($progressBar->iterate($this->getData()) as $permissionGroup) {

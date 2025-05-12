@@ -25,6 +25,11 @@ final class AssetLicenceGroupFixtures extends AbstractFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['test'];
+    }
+
     public static function getIndexKey(): string
     {
         return AssetLicenceGroup::class;

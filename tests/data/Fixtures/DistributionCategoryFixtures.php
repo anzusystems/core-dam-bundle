@@ -37,6 +37,11 @@ final class DistributionCategoryFixtures extends AbstractFixtures
     ) {
     }
 
+    public function getEnvironments(): array
+    {
+        return ['test'];
+    }
+
     public static function getIndexKey(): string
     {
         return DistributionCategory::class;

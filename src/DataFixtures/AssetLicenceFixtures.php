@@ -35,6 +35,11 @@ final class AssetLicenceFixtures extends AbstractFixtures
         return true;
     }
 
+    public function getEnvironments(): array
+    {
+        return ['dev', 'test'];
+    }
+
     public function load(ProgressBar $progressBar): void
     {
         /** @var AssetLicence $assetLicence */
