@@ -26,7 +26,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: AssetLicenceGroupRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_name_ext_system', fields: ['name', 'extSystem'])]
 #[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'name'], errorAtPath: ['name'])]
-#[ORM\Cache(usage: App::CACHE_STRATEGY)]
 #[AppAssert\AssetLicenceGroup]
 class AssetLicenceGroup implements
     IdentifiableInterface,
@@ -53,7 +52,6 @@ class AssetLicenceGroup implements
     #[ORM\ManyToOne(targetEntity: ExtSystem::class)]
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     private ExtSystem $extSystem;
 
     /**

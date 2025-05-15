@@ -20,7 +20,6 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
     #[Serialize]
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\Embedded(class: VideoAttributes::class)]

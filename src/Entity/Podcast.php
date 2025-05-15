@@ -58,7 +58,6 @@ class Podcast implements
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\OneToOne(targetEntity: ImagePreview::class)]
@@ -66,7 +65,6 @@ class Podcast implements
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $altImage;
 
     #[ORM\Embedded(class: PodcastTexts::class)]

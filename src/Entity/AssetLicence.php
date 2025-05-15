@@ -51,7 +51,6 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[ORM\ManyToOne(targetEntity: ExtSystem::class, inversedBy: 'licences')]
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     private ExtSystem $extSystem;
 
     /**

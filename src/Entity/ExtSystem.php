@@ -28,7 +28,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ExtSystemRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_slug', columns: ['slug'])]
 #[UniqueEntity(fields: ['slug'])]
-#[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemInterface
 {
     use IdentityTrait;
