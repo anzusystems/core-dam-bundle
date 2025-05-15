@@ -21,7 +21,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 #[ORM\Entity(repositoryClass: ImagePreviewRepository::class)]
-#[ORM\Cache(usage: App::CACHE_STRATEGY)]
 class ImagePreview implements
     UuidIdentifiableInterface,
     TimeTrackingInterface,

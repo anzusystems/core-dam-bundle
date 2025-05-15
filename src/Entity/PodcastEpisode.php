@@ -56,7 +56,6 @@ class PodcastEpisode implements
     #[Serialize]
     #[Assert\Valid]
     #[AppAssert\EqualLicence]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected ?ImagePreview $imagePreview;
 
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]

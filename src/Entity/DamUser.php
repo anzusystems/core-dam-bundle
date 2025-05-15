@@ -39,7 +39,6 @@ abstract class DamUser extends AnzuUser
     #[ORM\JoinTable(name: 'user_in_licence_groups')]
     #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
-    #[ORM\Cache(usage: App::CACHE_STRATEGY)]
     protected Collection $licenceGroups;
 
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
