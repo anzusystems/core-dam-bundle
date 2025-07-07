@@ -22,6 +22,9 @@ class PodcastEpisodeAttributes
      * Audio track URL provided by external service (obtained from RSS FEED)
      */
     #[ORM\Column(type: Types::STRING, length: 2_048)]
+    #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Serialize]
     private string $rssUrl;
 
     /**
@@ -101,7 +104,6 @@ class PodcastEpisodeAttributes
         return $this;
     }
 
-    #[Serialize]
     public function getRssUrl(): string
     {
         return $this->rssUrl;

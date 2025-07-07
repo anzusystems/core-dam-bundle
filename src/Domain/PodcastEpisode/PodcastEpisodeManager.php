@@ -69,6 +69,7 @@ class PodcastEpisodeManager extends AbstractManager
             ->setWebOrderPosition($newPodcastEpisode->getAttributes()->getWebOrderPosition())
             ->setMobileOrderPosition($newPodcastEpisode->getAttributes()->getMobileOrderPosition())
             ->setExtUrl($newPodcastEpisode->getAttributes()->getExtUrl())
+            ->setRssUrl($newPodcastEpisode->getAttributes()->getRssUrl())
             ->setDuration($newPodcastEpisode->getAttributes()->getDuration())
         ;
         $podcastEpisode->getTexts()
