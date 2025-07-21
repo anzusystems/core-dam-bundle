@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\HttpClient\RssClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
-use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -78,15 +77,7 @@ final class PodcastImportIterator
 
             return;
         }
-        $startFromDate = $this->getImportFrom(
-            $pointer,
-            $minImportFrom ??
-            (
-                $podcastToImport->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)
-                ? $podcastToImport->getDates()->getImportFrom()
-                : null
-            )
-        );
+        $startFromDate = $this->getImportFrom($pointer, $minImportFrom);
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
             yield new PodcastImportIteratorDto(

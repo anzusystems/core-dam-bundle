@@ -88,12 +88,13 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 return;
             }
 
+            $importFrom = $this->minImportFrom ?? $podcast->getDates()->getImportFrom();
             $this->importFull(
                 job: $job,
                 generator: $this->importIterator->iteratePodcast(
                     pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
                     podcastToImport: $podcast,
-                    minImportFrom: $this->minImportFrom
+                    minImportFrom: $importFrom
                 ),
             );
         }
