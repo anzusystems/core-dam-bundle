@@ -97,6 +97,8 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                     minImportFrom: $this->minImportFrom ?? $podcast->getDates()->getImportFrom()
                 ),
             );
+
+            return;
         }
 
         $this->finishFail($job, 'No podcast ID provided or full sync is not enabled');
