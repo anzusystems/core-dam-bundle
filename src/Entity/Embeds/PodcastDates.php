@@ -21,17 +21,11 @@ class PodcastDates
         $this->setImportFrom(null);
     }
 
-    /**
-     * @deprecated
-     */
     public function getImportFrom(): ?DateTimeImmutable
     {
         return $this->importFrom;
     }
 
-    /**
-     * @deprecated
-     */
     public function setImportFrom(?DateTimeImmutable $importFrom): self
     {
         $this->importFrom = $importFrom;

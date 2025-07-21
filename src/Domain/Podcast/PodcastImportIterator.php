@@ -77,7 +77,7 @@ final class PodcastImportIterator
 
             return;
         }
-        $startFromDate = $this->getImportFrom($pointer, $minImportFrom);
+        $startFromDate = $this->getImportFrom($pointer, $podcastToImport->getDates()->getImportFrom() ?? $minImportFrom);
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
             yield new PodcastImportIteratorDto(
@@ -92,7 +92,7 @@ final class PodcastImportIterator
     {
         $minImportFrom = $minImportFrom ?? App::getAppDate()->modify(self::MIN_IMPORT_FROM_MODIFIER);
 
-        if (null === $pointer->getPubDate()) {
+        if (false === ($pointer->getPubDate() instanceof DateTimeImmutable)) {
             return $minImportFrom;
         }
 
