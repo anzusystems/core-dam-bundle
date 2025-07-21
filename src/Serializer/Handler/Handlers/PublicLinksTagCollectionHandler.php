@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\Traits\PublicImageLink
 use AnzuSystems\SerializerBundle\Helper\SerializerHelper;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
 use OpenApi\Annotations\Property;
-use Symfony\Component\PropertyInfo\Type;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 class PublicLinksTagCollectionHandler extends LinksTagCollectionHandler
 {
@@ -28,29 +28,29 @@ class PublicLinksTagCollectionHandler extends LinksTagCollectionHandler
         return [
             ...$description,
             ...[
-                'type' => Type::BUILTIN_TYPE_ARRAY,
+                'type' => TypeIdentifier::ARRAY->value,
                 'items' => [
-                    'type' => Type::BUILTIN_TYPE_OBJECT,
+                    'type' => TypeIdentifier::OBJECT->value,
                     'properties' => [
                         'type' => new Property([
                             'property' => 'type',
-                            'type' => Type::BUILTIN_TYPE_STRING,
+                            'type' => TypeIdentifier::STRING->value,
                         ]),
                         'url' => new Property([
                             'property' => 'url',
-                            'type' => Type::BUILTIN_TYPE_STRING,
+                            'type' => TypeIdentifier::STRING->value,
                         ]),
                         'title' => new Property([
                             'property' => 'title',
-                            'type' => Type::BUILTIN_TYPE_STRING,
+                            'type' => TypeIdentifier::STRING->value,
                         ]),
                         'requestedWidth' => new Property([
                             'property' => 'requestedWidth',
-                            'type' => SerializerHelper::getOaFriendlyType(Type::BUILTIN_TYPE_INT),
+                            'type' => SerializerHelper::getOaFriendlyType(TypeIdentifier::INT->value),
                         ]),
                         'requestedHeight' => new Property([
                             'property' => 'requestedHeight',
-                            'type' => SerializerHelper::getOaFriendlyType(Type::BUILTIN_TYPE_INT),
+                            'type' => SerializerHelper::getOaFriendlyType(TypeIdentifier::INT->value),
                         ]),
                     ],
                 ],

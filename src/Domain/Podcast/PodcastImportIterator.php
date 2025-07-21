@@ -83,7 +83,7 @@ final class PodcastImportIterator
             $podcastToImport->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)
                 ? ($podcastToImport->getDates()->getImportFrom() ?? $minImportFrom)
                 : $minImportFrom
-            )
+        )
         ;
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
