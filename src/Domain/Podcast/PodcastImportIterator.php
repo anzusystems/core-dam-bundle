@@ -80,11 +80,13 @@ final class PodcastImportIterator
         }
         $startFromDate = $this->getImportFrom(
             $pointer,
-            $podcastToImport->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)
-                ? ($podcastToImport->getDates()->getImportFrom() ?? $minImportFrom)
-                : $minImportFrom
-        )
-        ;
+            $minImportFrom ??
+                (
+                    $podcastToImport->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)
+                    ? $podcastToImport->getDates()->getImportFrom()
+                    : null
+                )
+        );
 
         foreach ($this->reader->readItems($startFromDate) as $podcastItem) {
             yield new PodcastImportIteratorDto(

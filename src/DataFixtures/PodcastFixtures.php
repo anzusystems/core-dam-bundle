@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastAttributes;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastDates;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\PodcastTexts;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -74,6 +76,10 @@ final class PodcastFixtures extends AbstractFixtures
 
         $podcast = (new Podcast())
             ->setId(self::PODCAST_1)
+            ->setDates(
+                (new PodcastDates())
+                    ->setImportFrom(App::getAppDate()->modify('-3 month'))
+            )
             ->setTexts(
                 (new PodcastTexts())
                     ->setTitle('Dobré ráno')
@@ -102,6 +108,10 @@ final class PodcastFixtures extends AbstractFixtures
 
         yield (new Podcast())
             ->setId(self::PODCAST_2)
+            ->setDates(
+                (new PodcastDates())
+                    ->setImportFrom(App::getAppDate()->modify('-3 month'))
+            )
             ->setTexts(
                 (new PodcastTexts())
                     ->setTitle('Klik')
@@ -121,6 +131,10 @@ final class PodcastFixtures extends AbstractFixtures
 
         yield (new Podcast())
             ->setId(self::PODCAST_3)
+            ->setDates(
+                (new PodcastDates())
+                    ->setImportFrom(App::getAppDate()->modify('-3 month'))
+            )
             ->setTexts(
                 (new PodcastTexts())
                     ->setTitle('Rozprávky SME')
@@ -135,6 +149,10 @@ final class PodcastFixtures extends AbstractFixtures
 
         yield (new Podcast())
             ->setId(self::PODCAST_4)
+            ->setDates(
+                (new PodcastDates())
+                    ->setImportFrom(App::getAppDate()->modify('-3 month'))
+            )
             ->setTexts(
                 (new PodcastTexts())
                     ->setTitle('Test feed')
