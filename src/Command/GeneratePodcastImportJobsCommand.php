@@ -22,7 +22,6 @@ final class GeneratePodcastImportJobsCommand extends Command
     use LoggerAwareRequest;
 
     private const string OPT_PODCAST_ID = 'podcast-id';
-    private const string OPT_FULL_SYNC = 'full-sync';
 
     public function __construct(
         private readonly RssImportManager $rssImportManager,
@@ -41,23 +40,16 @@ final class GeneratePodcastImportJobsCommand extends Command
                 'Podcast ID to synchronize (if not provided, all podcasts will be processed)',
                 ''
             )
-            ->addOption(
-                self::OPT_FULL_SYNC,
-                null,
-                InputOption::VALUE_NONE,
-                'Perform full synchronization'
-            )
         ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $podcastId = (string) $input->getOption(self::OPT_PODCAST_ID);
-        $fullSync = (bool) $input->getOption(self::OPT_FULL_SYNC);
 
         $this->jobPodcastSynchronizerFactory->createPodcastSynchronizerJob(
             podcastId: $podcastId,
-            fullSync: $fullSync
+            fullSync: empty($podcastId)
         );
 
         return Command::SUCCESS;

@@ -88,16 +88,18 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 return;
             }
 
-            $importFrom = $this->minImportFrom ?? $podcast->getDates()->getImportFrom();
+            // only when single podcast is synced, we can use minImportFrom from podcast because of performance optimization
             $this->importFull(
                 job: $job,
                 generator: $this->importIterator->iteratePodcast(
                     pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
                     podcastToImport: $podcast,
-                    minImportFrom: $importFrom
+                    minImportFrom: $this->minImportFrom ?? $podcast->getDates()->getImportFrom()
                 ),
             );
         }
+
+        $this->finishFail($job, 'No podcast ID provided or full sync is not enabled');
     }
 
     /**
