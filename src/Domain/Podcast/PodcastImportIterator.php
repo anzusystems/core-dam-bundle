@@ -92,7 +92,7 @@ final class PodcastImportIterator
     {
         $minImportFrom = $minImportFrom ?? App::getAppDate()->modify(self::MIN_IMPORT_FROM_MODIFIER);
 
-        if (null === $pointer->getPubDate()) {
+        if (false === ($pointer->getPubDate() instanceof DateTimeImmutable)) {
             return $minImportFrom;
         }
 

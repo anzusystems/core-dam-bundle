@@ -88,15 +88,20 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 return;
             }
 
+            // only when single podcast is synced, we can use minImportFrom from podcast because of performance optimization
             $this->importFull(
                 job: $job,
                 generator: $this->importIterator->iteratePodcast(
                     pointer: PodcastSynchronizerPointer::fromString($job->getLastBatchProcessedRecord()),
                     podcastToImport: $podcast,
-                    minImportFrom: $this->minImportFrom
+                    minImportFrom: $this->minImportFrom ?? $podcast->getDates()->getImportFrom()
                 ),
             );
+
+            return;
         }
+
+        $this->finishFail($job, 'No podcast ID provided or full sync is not enabled');
     }
 
     /**
@@ -139,7 +144,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
     private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job): void
     {
         if (null === $dto || $imported < $this->bulkSize) {
-            $imported = (($this->getManagedJob($job)->getBatchProcessedIterationCount() + 1) * $this->bulkSize) + $imported;
+            $imported = (($this->getManagedJob($job)->getBatchProcessedIterationCount()) * $this->bulkSize) + $imported;
             $this->getManagedJob($job)->setResult(sprintf('Podcast job finished. Imported %d episodes.', $imported));
             $this->finishSuccess($job);
 
