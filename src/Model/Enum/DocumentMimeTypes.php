@@ -33,6 +33,7 @@ enum DocumentMimeTypes: string implements EnumInterface
         self::TEXT_XML,
         self::APPLICATION_XML,
         self::SVG,
+        self::ICC_PROFILE,
     ];
 
     private const string MIME_PDF = 'application/pdf';
@@ -58,6 +59,7 @@ enum DocumentMimeTypes: string implements EnumInterface
     private const string MICROSOFT_OPEN_XML = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     private const string TEXT_XML = 'text/xml';
     private const string APPLICATION_XML = 'application/xml';
+    private const string ICC_PROFILE = 'application/vnd.iccprofile';
 
     case MimePdf = self::MIME_PDF;
     case TextPlain = self::TEXT_PLAIN;
@@ -82,4 +84,5 @@ enum DocumentMimeTypes: string implements EnumInterface
     case MicrosoftOpenXml = self::MICROSOFT_OPEN_XML;
     case TextXml = self::TEXT_XML;
     case ApplicationXml = self::APPLICATION_XML;
+    case IccProfile = self::ICC_PROFILE;
 }
