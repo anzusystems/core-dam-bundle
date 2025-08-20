@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
+use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
@@ -30,6 +34,8 @@ final class AssetMetadataBulkFacade
         private readonly AssetManager $assetManager,
         private readonly AccessDenier $accessDenier,
         private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
+        private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly CurrentAnzuUserProvider $currentUserProvider,
     ) {
     }
 
@@ -45,10 +51,15 @@ final class AssetMetadataBulkFacade
         $this->validateMaxBulkCount($list);
         $this->validator->validate($list);
         $updated = [];
+        $affectedAssets = new ArrayCollection();
 
         foreach ($list as $updateDto) {
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
+
+            if (false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData())) {
+                $affectedAssets->add($asset);
+            }
 
             $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
                 asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, false)
@@ -56,6 +67,13 @@ final class AssetMetadataBulkFacade
         }
 
         $this->assetManager->flush();
+
+        if (false === $affectedAssets->isEmpty()) {
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(
+                $affectedAssets,
+            );
+        }
+
         foreach ($list as $updateDto) {
             $this->indexManager->index($updateDto->getAsset());
         }

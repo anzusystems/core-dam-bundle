@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProv
 use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\AbstractDistributionUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\CustomDistributionAdmUpdateDto;
@@ -21,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use Throwable;
 
 final class DistributionUpdateFacade
@@ -38,6 +40,7 @@ final class DistributionUpdateFacade
         private readonly JwDistributionManager $jwDistributionManager,
         private readonly AssetRepository $assetRepository,
         private readonly AccessDenier $accessDenier,
+        private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
     ) {
     }
 
@@ -49,7 +52,6 @@ final class DistributionUpdateFacade
         $this->assetManager->beginTransaction();
 
         try {
-
             $this->jwDistributionManager->delete($distribution);
             if ($asset instanceof Asset) {
                 $this->assetManager->updateExisting($asset);
@@ -63,6 +65,10 @@ final class DistributionUpdateFacade
             }
 
             throw new RuntimeException('distribution_delete_failed', previous: $exception);
+        }
+
+        if ($asset instanceof Asset) {
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$asset]));
         }
     }
 
@@ -82,7 +88,7 @@ final class DistributionUpdateFacade
         $this->assetManager->beginTransaction();
 
         try {
-            $this->doUpsert($dto);
+            $changedDistributions = $this->doUpsert($dto);
             $this->assetManager->updateExisting($dto->getAsset());
             $this->indexManager->index($dto->getAsset());
             $this->assetManager->commit();
@@ -92,6 +98,10 @@ final class DistributionUpdateFacade
             }
 
             throw new RuntimeException('distribution_upsert_failed', previous: $exception);
+        }
+
+        if ($changedDistributions) {
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$dto->getAsset()]));
         }
 
         return $dto;
