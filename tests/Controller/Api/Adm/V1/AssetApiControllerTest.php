@@ -87,7 +87,8 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
                 ]
             ]
         );
-        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
 
         $response = $client->patch(
             '/api/adm/v1/asset/metadata-bulk-update',
@@ -98,7 +99,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             ]
         );
 
-        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertStatusCode($response, Response::HTTP_OK);
 
         $firstAsset = $this->entityManager->getRepository(ImageFile::class)->find(ImageFixtures::IMAGE_ID_1_1)->getAsset();
         $this->assertSame($firstAsset->getMetadata()->getCustomData(), [

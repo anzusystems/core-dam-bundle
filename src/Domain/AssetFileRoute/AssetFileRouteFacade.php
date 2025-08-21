@@ -84,8 +84,9 @@ final class AssetFileRouteFacade extends AbstractManager
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
+        $this->assetFileRouteManager->beginTransaction();
+
         try {
-            $this->assetFileRouteManager->beginTransaction();
             $path = $mainRoute->getUri()->getPath();
             $event = $this->createEvent($mainRoute);
             $this->assetFileRouteManager->delete($mainRoute);
@@ -99,7 +100,9 @@ final class AssetFileRouteFacade extends AbstractManager
 
             $this->dispatcher->dispatch($event);
         } catch (Throwable $e) {
-            $this->entityManager->rollback();
+            if ($this->entityManager->getConnection()->isTransactionActive()) {
+                $this->entityManager->rollback();
+            }
 
             throw new RuntimeException('asset_route_delete_failed', 0, $e);
         }
@@ -109,9 +112,9 @@ final class AssetFileRouteFacade extends AbstractManager
 
     private function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
     {
-        try {
-            $this->assetFileRouteManager->beginTransaction();
+        $this->assetFileRouteManager->beginTransaction();
 
+        try {
             if ($route->getMode()->is(RouteMode::StorageCopy)) {
                 $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);
             }
@@ -120,7 +123,9 @@ final class AssetFileRouteFacade extends AbstractManager
 
             $this->dispatcher->dispatch($this->createEvent($route));
         } catch (Throwable $e) {
-            $this->entityManager->rollback();
+            if ($this->entityManager->getConnection()->isTransactionActive()) {
+                $this->entityManager->rollback();
+            }
 
             throw new RuntimeException('asset_route_create_failed', 0, $e);
         }

@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Tests\ApiClient;
 use AnzuSystems\CoreDamBundle\Tests\Controller\AbstractController;
 use AnzuSystems\SerializerBundle\Serializer;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\Response;
 
 abstract class AbstractApiController extends AbstractController
 {
@@ -53,6 +54,11 @@ abstract class AbstractApiController extends AbstractController
                 $this->assertContains($error, $responseContent['fields'][$fieldName]);
             }
         }
+    }
+
+    public static function assertStatusCode(Response $response, int $expectedStatus): void
+    {
+        self::assertSame($expectedStatus, $response->getStatusCode(), 'Response status code not same. Response message: ' . (string) $response->getContent());
     }
 
     protected function assertForbiddenOperationError(string $responseContent, string $error): void
