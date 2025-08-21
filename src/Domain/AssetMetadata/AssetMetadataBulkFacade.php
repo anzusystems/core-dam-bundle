@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
@@ -33,7 +33,7 @@ final class AssetMetadataBulkFacade
         private readonly AssetManager $assetManager,
         private readonly AccessDenier $accessDenier,
         private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
-        private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
         private readonly CurrentAnzuUserProvider $currentUserProvider,
     ) {
     }
@@ -69,7 +69,7 @@ final class AssetMetadataBulkFacade
         $this->assetManager->flush();
 
         if (false === empty($affectedAssets)) {
-            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(
                 new ArrayCollection($affectedAssets),
             );
         }

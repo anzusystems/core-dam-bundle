@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Event;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use Doctrine\Common\Collections\Collection;
 
-final readonly class AssetMetadataBulkChangedEvent
+final readonly class AssetChangedEvent
 {
     public function __construct(
         /** @var Collection<int, Asset> */

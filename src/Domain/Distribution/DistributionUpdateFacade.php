@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProv
 use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
-use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\AbstractDistributionUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Domain\Distribution\CustomDistributionAdmUpdateDto;
@@ -40,7 +40,7 @@ final class DistributionUpdateFacade
         private readonly JwDistributionManager $jwDistributionManager,
         private readonly AssetRepository $assetRepository,
         private readonly AccessDenier $accessDenier,
-        private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
     ) {
     }
 
@@ -68,7 +68,7 @@ final class DistributionUpdateFacade
         }
 
         if ($asset instanceof Asset) {
-            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$asset]));
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$asset]));
         }
     }
 
@@ -101,7 +101,7 @@ final class DistributionUpdateFacade
         }
 
         if ($changedDistributions) {
-            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$dto->getAsset()]));
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$dto->getAsset()]));
         }
 
         return $dto;

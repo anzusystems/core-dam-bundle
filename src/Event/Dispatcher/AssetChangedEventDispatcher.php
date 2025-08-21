@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Event\Dispatcher;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Event\AssetMetadataBulkChangedEvent;
+use AnzuSystems\CoreDamBundle\Event\AssetChangedEvent;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-final readonly class AssetMetadataBulkEventDispatcher
+final readonly class AssetChangedEventDispatcher
 {
     public function __construct(
         private EventDispatcherInterface $dispatcher,
@@ -19,7 +19,7 @@ final readonly class AssetMetadataBulkEventDispatcher
     /**
      * @param Collection<int, Asset> $affectedAssets
      */
-    public function dispatchAssetMetadataBulkChanged(Collection $affectedAssets): void
+    public function dispatchAssetChangedEvent(Collection $affectedAssets): void
     {
         $this->dispatcher->dispatch($this->createAssetMetadataBulkChangedEvent($affectedAssets));
     }
@@ -27,9 +27,9 @@ final readonly class AssetMetadataBulkEventDispatcher
     /**
      * @param Collection<int, Asset> $affectedAssets
      */
-    private function createAssetMetadataBulkChangedEvent(Collection $affectedAssets): AssetMetadataBulkChangedEvent
+    private function createAssetMetadataBulkChangedEvent(Collection $affectedAssets): AssetChangedEvent
     {
-        return new AssetMetadataBulkChangedEvent(
+        return new AssetChangedEvent(
             affectedAssets: $affectedAssets,
         );
     }

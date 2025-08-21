@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
@@ -26,7 +26,7 @@ final class VideoFacade extends AbstractAssetFileFacade
         private readonly VideoManager $videoManager,
         private readonly VideoFactory $videoFactory,
         private readonly VideoFileRepository $videoRepository,
-        private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
     ) {
     }
 
@@ -50,7 +50,7 @@ final class VideoFacade extends AbstractAssetFileFacade
         }
 
         if ($changedImagePreview) {
-            $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$video->getAsset()]));
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$video->getAsset()]));
         }
 
         return $video;
