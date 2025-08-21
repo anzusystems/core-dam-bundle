@@ -85,6 +85,7 @@ final class AssetFileRouteFacade extends AbstractManager
         }
 
         $this->assetFileRouteManager->beginTransaction();
+
         try {
             $path = $mainRoute->getUri()->getPath();
             $event = $this->createEvent($mainRoute);
@@ -112,6 +113,7 @@ final class AssetFileRouteFacade extends AbstractManager
     private function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
     {
         $this->assetFileRouteManager->beginTransaction();
+
         try {
             if ($route->getMode()->is(RouteMode::StorageCopy)) {
                 $this->assetFileRouteStorageManager->writeRouteFile($assetFile, $route);

@@ -27,7 +27,6 @@ final class VideoFacade extends AbstractAssetFileFacade
         private readonly VideoFactory $videoFactory,
         private readonly VideoFileRepository $videoRepository,
         private readonly AssetMetadataBulkEventDispatcher $assetMetadataBulkEventDispatcher,
-
     ) {
     }
 

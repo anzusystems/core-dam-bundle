@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetMetadataBulkEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
@@ -51,14 +50,15 @@ final class AssetMetadataBulkFacade
         $this->validateMaxBulkCount($list);
         $this->validator->validate($list);
         $updated = [];
-        $affectedAssets = new ArrayCollection();
+        /** @var Asset[] $affectedAssets */
+        $affectedAssets = [];
 
         foreach ($list as $updateDto) {
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
             if (false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData())) {
-                $affectedAssets->add($asset);
+                $affectedAssets[] = $asset;
             }
 
             $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
@@ -68,9 +68,9 @@ final class AssetMetadataBulkFacade
 
         $this->assetManager->flush();
 
-        if (false === $affectedAssets->isEmpty()) {
+        if (false === empty($affectedAssets)) {
             $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(
-                $affectedAssets,
+                new ArrayCollection($affectedAssets),
             );
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -41,7 +42,7 @@ final class ExtSystemCallbackFacade
             return false;
         }
 
-        // Group assets by external system slug
+        /** @var array<string, Asset[]> $grouped */
         $grouped = [];
         foreach ($assets as $asset) {
             $slug = $asset->getExtSystem()->getSlug();
