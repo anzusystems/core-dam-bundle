@@ -57,7 +57,9 @@ final class AssetMetadataBulkFacade
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
-            if (false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData())) {
+            if (($updateDto->isCustomDataUndefined() && false === empty($asset->getMetadata()->getCustomData())) ||
+                (false === $updateDto->isCustomDataUndefined() && false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData()))
+            ) {
                 $affectedAssets[] = $asset;
             }
 

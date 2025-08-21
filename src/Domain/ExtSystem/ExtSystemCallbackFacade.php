@@ -36,6 +36,9 @@ final class ExtSystemCallbackFacade
         return $this->getCallback($imageFile->getLicence()->getExtSystem()->getSlug())?->isImageFileUsed($imageFile) ?? false;
     }
 
+    /**
+     * @param Collection<array-key, Asset> $assets
+     */
     public function notifyAssetsChanged(Collection $assets): bool
     {
         if ($assets->isEmpty()) {
