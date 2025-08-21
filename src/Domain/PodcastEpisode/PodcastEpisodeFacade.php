@@ -38,10 +38,11 @@ final class PodcastEpisodeFacade
     {
         $this->validator->validate($newPodcastEpisode, $podcastEpisode);
         $changedImagePreview = $podcastEpisode->getImagePreview()?->getImageFile()->getId() !== $newPodcastEpisode->getImagePreview()?->getImageFile()->getId();
+        $changedRssUrl = $podcastEpisode->getAttributes()->getRssUrl() !== $newPodcastEpisode->getAttributes()->getRssUrl();
         $this->podcastManager->update($podcastEpisode, $newPodcastEpisode);
 
         $asset = $podcastEpisode->getAsset();
-        if ($changedImagePreview && $asset) {
+        if (($changedImagePreview || $changedRssUrl) && $asset) {
             $this->assetMetadataBulkEventDispatcher->dispatchAssetMetadataBulkChanged(new ArrayCollection([$asset]));
         }
 
