@@ -26,6 +26,20 @@ use Doctrine\ORM\QueryBuilder;
  */
 final class AssetRepository extends AbstractAnzuRepository
 {
+    /**
+     * @return Collection<array-key, Asset>
+     */
+    public function findByIds(array $ids): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->where('entity.id in (:ids)')
+                ->setParameter('ids', $ids)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     public function findByAuthor(Author $author, string $fromId = '', int $limit = 100): Collection
     {
         return new ArrayCollection(

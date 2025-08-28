@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
+use Doctrine\Common\Collections\ArrayCollection;
 
 final class PodcastEpisodeFacade
 {
@@ -14,6 +16,7 @@ final class PodcastEpisodeFacade
 
     public function __construct(
         private readonly PodcastEpisodeManager $podcastManager,
+        private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
     ) {
     }
 
@@ -34,7 +37,14 @@ final class PodcastEpisodeFacade
     public function update(PodcastEpisode $podcastEpisode, PodcastEpisode $newPodcastEpisode): PodcastEpisode
     {
         $this->validator->validate($newPodcastEpisode, $podcastEpisode);
+        $changedImagePreview = $podcastEpisode->getImagePreview()?->getImageFile()->getId() !== $newPodcastEpisode->getImagePreview()?->getImageFile()->getId();
+        $changedRssUrl = $podcastEpisode->getAttributes()->getRssUrl() !== $newPodcastEpisode->getAttributes()->getRssUrl();
         $this->podcastManager->update($podcastEpisode, $newPodcastEpisode);
+
+        $asset = $podcastEpisode->getAsset();
+        if (($changedImagePreview || $changedRssUrl) && $asset) {
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$asset]));
+        }
 
         return $podcastEpisode;
     }
