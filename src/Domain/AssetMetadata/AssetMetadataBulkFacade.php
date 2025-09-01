@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
@@ -57,9 +58,7 @@ final class AssetMetadataBulkFacade
             $this->checkPermissions($updateDto);
             $asset = $updateDto->getAsset();
 
-            if (($updateDto->isCustomDataUndefined() && false === empty($asset->getMetadata()->getCustomData())) ||
-                (false === $updateDto->isCustomDataUndefined() && false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData()))
-            ) {
+            if ($this->isAssetChanged($asset, $updateDto)) {
                 $affectedAssets[] = $asset;
             }
 
@@ -81,6 +80,14 @@ final class AssetMetadataBulkFacade
         }
 
         return new ArrayCollection($updated);
+    }
+
+    private function isAssetChanged(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): bool
+    {
+        return ($updateDto->isCustomDataUndefined() && false === empty($asset->getMetadata()->getCustomData())) ||
+            (false === $updateDto->isCustomDataUndefined() && false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData())) ||
+            ($updateDto->isAuthorsUndefined() && false === $asset->getAuthors()->isEmpty()) ||
+            (false === $updateDto->isAuthorsUndefined() && false === CollectionHelper::colDiff($asset->getAuthors(), $updateDto->getAuthors())->isEmpty());
     }
 
     /**

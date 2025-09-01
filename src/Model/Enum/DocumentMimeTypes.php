@@ -34,6 +34,7 @@ enum DocumentMimeTypes: string implements EnumInterface
         self::APPLICATION_XML,
         self::SVG,
         self::ICC_PROFILE,
+        self::APPLICATION_ZIP,
     ];
 
     private const string MIME_PDF = 'application/pdf';
@@ -60,6 +61,7 @@ enum DocumentMimeTypes: string implements EnumInterface
     private const string TEXT_XML = 'text/xml';
     private const string APPLICATION_XML = 'application/xml';
     private const string ICC_PROFILE = 'application/vnd.iccprofile';
+    private const string APPLICATION_ZIP = 'application/zip';
 
     case MimePdf = self::MIME_PDF;
     case TextPlain = self::TEXT_PLAIN;
@@ -85,4 +87,5 @@ enum DocumentMimeTypes: string implements EnumInterface
     case TextXml = self::TEXT_XML;
     case ApplicationXml = self::APPLICATION_XML;
     case IccProfile = self::ICC_PROFILE;
+    case ApplicationZip = self::APPLICATION_ZIP;
 }
