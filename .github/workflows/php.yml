@@ -49,6 +49,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Fix git dubious ownership
+        run: git config --global --add safe.directory '*'
+
       - name: Validate composer.json
         run: composer validate
 
