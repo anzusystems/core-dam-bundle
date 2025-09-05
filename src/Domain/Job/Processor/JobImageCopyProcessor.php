@@ -47,7 +47,7 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
     /**
      * @param JobImageCopy $job
      */
-    public function process(JobInterface $job): void
+    public function process(JobInterface $job): bool
     {
         $this->start($job);
 
@@ -63,6 +63,8 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         } catch (Throwable $e) {
             $this->finishFail($job, $e->getMessage());
         }
+
+        return true;
     }
 
     /**

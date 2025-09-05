@@ -20,7 +20,9 @@ final class DistributionConfigurationProvider
 
     public function __construct(
         private readonly ConfigurationProvider $configurationProvider,
-        /** @psalm-var array<string, array> */
+        /**
+         * @psalm-var array<string, array>
+         */
         private readonly array $distributionServices,
     ) {
     }

@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Event;
 final readonly class ManipulatedImageEvent
 {
     public function __construct(
-        protected string $imageId,
-        protected array $roiPositions,
-        protected string $extSystem,
+        private string $imageId,
+        private array $roiPositions,
+        private string $extSystem,
     ) {
     }
 

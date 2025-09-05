@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Event;
 final readonly class ManipulatedAudioEvent
 {
     public function __construct(
-        protected string $audioId,
-        protected string $publicPath,
-        protected string $extSystemSlug,
+        private string $audioId,
+        private string $publicPath,
+        private string $extSystemSlug,
     ) {
     }
 

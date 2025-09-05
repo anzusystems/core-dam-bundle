@@ -11,8 +11,8 @@ final class AssetDeleteEvent
 {
     public function __construct(
         private readonly string $deleteId,
-        protected readonly Asset $asset,
-        protected readonly DamUser $deletedBy,
+        private readonly Asset $asset,
+        private readonly DamUser $deletedBy,
     ) {
     }
 

@@ -14,14 +14,14 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 final readonly class AssetFileDeleteEvent
 {
     public function __construct(
-        protected string $deleteId,
-        protected string $deleteAssetId,
-        protected AssetFile $assetFile,
-        protected AssetType $type,
-        protected DamUser $deletedBy,
-        protected array $roiPositions,
-        protected string $extSystem,
-        protected array $routePaths,
+        private string $deleteId,
+        private string $deleteAssetId,
+        private AssetFile $assetFile,
+        private AssetType $type,
+        private DamUser $deletedBy,
+        private array $roiPositions,
+        private string $extSystem,
+        private array $routePaths,
     ) {
     }
 

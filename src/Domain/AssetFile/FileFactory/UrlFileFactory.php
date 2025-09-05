@@ -24,7 +24,7 @@ final readonly class UrlFileFactory
     public function __construct(
         private FileSystemProvider $fileSystemProvider,
         private HttpClientInterface $client,
-        protected DamLogger $damLogger,
+        private DamLogger $damLogger,
     ) {
     }
 

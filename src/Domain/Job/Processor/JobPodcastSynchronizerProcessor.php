@@ -56,10 +56,12 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
      * @param JobPodcastSynchronizer $job
      * @throws SerializerException
      */
-    public function process(JobInterface $job): void
+    public function process(JobInterface $job): bool
     {
         $this->start($job);
         $this->processPodcasts($job);
+
+        return true;
     }
 
     /**

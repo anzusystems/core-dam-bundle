@@ -7,8 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Event;
 final readonly class AssetFileRouteEvent
 {
     public function __construct(
-        protected string $assetFileId,
-        protected string $fullUrl,
+        private string $assetFileId,
+        private string $fullUrl,
     ) {
     }
 
