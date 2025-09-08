@@ -6,6 +6,7 @@
 * Update PHP base image to `anzusystems/php:4.1.0-php83-cli-vipsffmpeg` with php `8.3.20`
 * Add DOCKER_COMPOSE_SERVICE_NAME configuration support
 * Update `anzusystems/common-bundle` to `^9.2` with mongo `2.*` support
+* Update `petitpress/gps-messenger-bundle` to `^3.2`
 * Fix job processor method signatures to return `bool` instead of `void`
 * Standardize environment variable naming (`DB_CORE_DAM_BUNDLE_*` instead of `DB_COMMONBUNDLE_*`)
 * Improve code quality with property visibility fixes and documentation updates
