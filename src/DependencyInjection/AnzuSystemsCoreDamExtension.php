@@ -508,6 +508,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                 $notificationTopic => [
                                     'dsn' => $notificationTopicDsn,
                                     'options' => [
+                                        'client_config' => [
+                                            'credentials' => '%env(json:base64:GOOGLE_PUBSUB_SA_KEY)%',
+                                        ],
                                         'topic' => [
                                             'name' => $notificationTopic,
                                             'options' => [
