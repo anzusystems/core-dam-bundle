@@ -118,6 +118,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $distributionRemoteProcessedCheckTopic => [
                         'dsn' => $distributionRemoteProcessedCheckTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $distributionRemoteProcessedCheckTopic,
                                 'options' => [
@@ -147,6 +150,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $imageFileChangeStateTopic => [
                         'dsn' => $imageFileChangeStateTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $imageFileChangeStateTopic,
                                 'options' => [
@@ -176,6 +182,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $documentFileChangeStateTopic => [
                         'dsn' => $documentFileChangeStateTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $documentFileChangeStateTopic,
                                 'options' => [
@@ -205,6 +214,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $audioFileChangeStateTopic => [
                         'dsn' => $audioFileChangeStateTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $audioFileChangeStateTopic,
                                 'options' => [
@@ -234,6 +246,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $videoFileChangeStateTopic => [
                         'dsn' => $videoFileChangeStateTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $videoFileChangeStateTopic,
                                 'options' => [
@@ -263,6 +278,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $assetDeleteTopic => [
                         'dsn' => $assetDeleteTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $assetDeleteTopic,
                                 'options' => [
@@ -291,6 +309,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $assetFileMetadataProcessTopic => [
                         'dsn' => $assetFileMetadataProcessTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $assetFileMetadataProcessTopic,
                                 'options' => [
@@ -319,6 +340,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $distributionTopic => [
                         'dsn' => $distributionTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $distributionTopic,
                                 'options' => [
@@ -344,6 +368,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $assetPropertyRefreshTopic => [
                         'dsn' => $assetPropertyRefreshTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $assetPropertyRefreshTopic,
                                 'options' => [
@@ -368,6 +395,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                     $assetCopyTopic => [
                         'dsn' => $assetCopyTopicDsn,
                         'options' => [
+                            'client_config' => [
+                                'credentials' => env('json:base64:GOOGLE_PUBSUB_SA_KEY'),
+                            ],
                             'topic' => [
                                 'name' => $assetCopyTopic,
                                 'options' => [
