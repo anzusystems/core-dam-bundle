@@ -490,6 +490,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                         'settings' => [
                             'notifications' => [
                                 'topic' => $notificationTopic,
+                                'gps_config' => [
+                                    'credentials' => '%env(json:base64:GOOGLE_PUBSUB_SA_KEY)%',
+                                ],
                             ],
                         ],
                     ]);
