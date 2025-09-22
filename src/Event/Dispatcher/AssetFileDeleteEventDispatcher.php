@@ -19,7 +19,9 @@ final class AssetFileDeleteEventDispatcher
     public function __construct(
         private readonly AssetFileRouteGenerator $assetFileRouteGenerator,
         private readonly EventDispatcherInterface $dispatcher,
-        /** @var list<AssetFileDeleteEvent> */
+        /**
+         * @var list<AssetFileDeleteEvent>
+         */
         private $eventStack = [],
     ) {
     }

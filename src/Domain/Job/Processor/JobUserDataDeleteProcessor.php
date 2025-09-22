@@ -54,7 +54,7 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
     /**
      * @param JobUserDataDelete $job
      */
-    public function process(JobInterface $job): void
+    public function process(JobInterface $job): bool
     {
         /** @var DamUser $user */
         $user = $this->entityManager->find($this->userEntityClass, $job->getTargetUserId());
@@ -87,6 +87,8 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
             $this->entityManager->rollback();
             $this->finishFail($job, substr($throwable->getMessage(), 0, 255));
         }
+
+        return true;
     }
 
     private function finishProcessCycle(JobUserDataDelete $job, int $removedCount, ?Asset $lastRemovedAsset): void

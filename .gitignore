@@ -47,4 +47,4 @@ TEST-*.xml
 xdebug.log
 
 # Docker
-docker-compose.override.yml
+docker-compose.override*.yml

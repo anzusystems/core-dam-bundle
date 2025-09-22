@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Event;
 final readonly class ManipulatedDocumentEvent
 {
     public function __construct(
-        protected string $documentId,
-        protected string $publicPath,
-        protected string $extSystemSlug,
+        private string $documentId,
+        private string $publicPath,
+        private string $extSystemSlug,
     ) {
     }
 

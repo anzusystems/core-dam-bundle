@@ -48,7 +48,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     /**
      * @param JobAuthorCurrentOptimize $job
      */
-    public function process(JobInterface $job): void
+    public function process(JobInterface $job): bool
     {
         $this->start($job);
 
@@ -61,6 +61,8 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         } catch (Throwable $e) {
             $this->finishFail($job, $e->getMessage());
         }
+
+        return true;
     }
 
     private function processAll(JobAuthorCurrentOptimize $job): void

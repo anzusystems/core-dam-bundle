@@ -17,7 +17,9 @@ final class ExtSystemConfiguration
     public function __construct(
         private readonly int $id,
         private readonly string $extStorage,
-        /** @var ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration> */
+        /**
+         * @var ArrayCollection<string, ExtSystemAssetExternalProviderConfiguration>
+         */
         private readonly ArrayCollection $assetExternalProviders,
         private readonly ExtSystemAudioTypeConfiguration $audio,
         private readonly ExtSystemAssetTypeConfiguration $video,

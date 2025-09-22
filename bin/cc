@@ -7,8 +7,13 @@ AUTOLOAD=true
 
 # Initialize default variables and functions and export all environment variables from application environment files
 cd "${PROJECT_ROOT}" || exit 1
+# Initialize default variables
 # shellcheck disable=SC1091
 . ./bin/docker-libvariables
+# Initialize functions
+# shellcheck disable=SC1091
+. ./bin/docker-libfunctions
+docker_env_vars
 
 function help() {
     echo -en "$(printf %q "${BASH_SOURCE[0]}") [OPERATION] [OPTIONS]
@@ -44,9 +49,7 @@ done
 if [ -f /.dockerenv ]; then
     for env_file in ${ENV_APPLICATION_FILE_DIST} ${ENV_APPLICATION_FILE}; do
         if [ -f "$env_file" ]; then
-            ENV_DOCKER_VARS=()
-            while read -r line; do [[ ! ${line?} =~ ^($|#) ]] && [[ ${line?} =~ REDIS ]] && ENV_DOCKER_VARS+=("export ${line?}"); done 2>/dev/null <"$env_file"
-            for var in "${ENV_DOCKER_VARS[@]}"; do eval "$var"; done
+            while read -r line; do export "${line?}"; done 2>/dev/null < <(grep -vE '^\s*(#|$)' "$env_file" | grep -E '^REDIS')
         fi
     done
 
@@ -62,4 +65,4 @@ if [ -f /.dockerenv ]; then
     exit
 fi
 
-bin/docker-compose run --rm app bash -c \'bin/cc "${ARGS}"\'
+bin/docker-compose run --rm "${DOCKER_COMPOSE_SERVICE_NAME}" bash -c \'bin/cc "${ARGS}"\'

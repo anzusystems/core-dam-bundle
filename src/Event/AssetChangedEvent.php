@@ -10,7 +10,9 @@ use Doctrine\Common\Collections\Collection;
 final readonly class AssetChangedEvent
 {
     public function __construct(
-        /** @var Collection<int, Asset> */
+        /**
+         * @var Collection<int, Asset>
+         */
         private Collection $affectedAssets,
     ) {
     }
