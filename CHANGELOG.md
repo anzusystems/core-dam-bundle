@@ -2,17 +2,20 @@
 
 ## Unreleased
 
-### Changes
+## [1.40.0](https://github.com/anzusystems/core-dam-bundle/compare/1.39.0...1.40.0) (2025-09-22)
+
+### Features
 * Update PHP base image to `anzusystems/php:4.1.0-php83-cli-vipsffmpeg` with php `8.3.20`
-* Add DOCKER_COMPOSE_SERVICE_NAME configuration support
+* Add `DOCKER_COMPOSE_SERVICE_NAME` configuration support for flexible Docker service naming
 * Update `anzusystems/common-bundle` to `^9.2` with mongo `2.*` support
 * Update `petitpress/gps-messenger-bundle` to `^3.2`
-* Fix job processor method signatures to return `bool` instead of `void`
-* Standardize environment variable naming (`DB_CORE_DAM_BUNDLE_*` instead of `DB_COMMONBUNDLE_*`)
+* Add full support for `GOOGLE_PUBSUB_SA_KEY` environment variable needed by updated `petitpress/gps-messenger-bundle` package
+* Standardize environment variable naming (`DB_CORE_DAM_BUNDLE_*` instead of `DB_COMMONBUNDLE_*`) for better consistency
+* Fix job processor method signatures to return `bool` instead of `void` for better error handling
 * Improve code quality with property visibility fixes and documentation updates
 
 ### Fixes
-* Fix environment variable expansion in `bin/*` scripts
+* Fix environment variable expansion in `bin/*` scripts (bash and build scripts)
 
 ## [1.39.0](https://github.com/anzusystems/core-dam-bundle/compare/1.38.0...1.39.0) (2025-09-01)
 
