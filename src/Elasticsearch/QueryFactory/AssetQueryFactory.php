@@ -20,8 +20,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
 {
     protected const array BOOST_FIELDS = [
         StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => [
-            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => 10,
-            //            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.edgegrams' => 3,
+            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => 5,
+            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.edgegrams' => 1,
             StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.lang' => 1,
         ],
         StringIndexBuilder::CUSTOM_DESCRIPTION_KEY => [
@@ -29,7 +29,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
         ],
     ];
 
-    private const string CUSTOM_SORT_DATE_FIELD = 'modifiedAt';
+    private const string CUSTOM_SORT_DATE_FIELD = 'createdAt';
     private const string CUSTOM_SORT_DATE_DECAY_FUNCTION = 'exp';
     private const string CUSTOM_SORT_DATE_DECAY_ORIGIN = 'now';
     private const string CUSTOM_SORT_DATE_DECAY_SCALE = '60d';
