@@ -220,6 +220,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         return $filter;
     }
 
+    /**
+     * @param array<int, string> $customDataFields
+     */
     private function boostSearchFields(array $customDataFields): array
     {
         if ($this->searcNext) {
@@ -251,7 +254,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
      */
     private function isFulltextSearch(SearchDtoInterface $searchDto): bool
     {
-        return is_string($searchDto->getText()) && false === (App::EMPTY_STRING === $searchDto->getText());
+        return false === (App::EMPTY_STRING === $searchDto->getText());
     }
 
     private function getAssetIdAndMainFileIdFilter(array $ids): array
