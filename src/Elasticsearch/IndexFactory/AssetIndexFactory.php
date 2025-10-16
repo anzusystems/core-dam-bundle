@@ -50,7 +50,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'mainFileId' => $entity->getMainFile()?->getId(),
             'fileIds' => array_values(CollectionHelper::traversableToIds(
                 $entity->getSlots(),
-                fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
+                static fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
             )),
             'keywordIds' => array_values(CollectionHelper::traversableToIds($entity->getKeywords())),
             'authorIds' => array_values(CollectionHelper::traversableToIds($entity->getAuthors())),

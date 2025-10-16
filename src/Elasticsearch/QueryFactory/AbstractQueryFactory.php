@@ -12,6 +12,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractQueryFactory implements QueryFactoryInterface
 {
+    private const string DEFAULT_TIMEOUT = '3s';
     private IndexSettings $indexSettings;
 
     #[Required]
@@ -22,21 +23,39 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
 
     public function buildQuery(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
+        $query = [
+            'query' => [
+                'bool' => [
+                    'must' => $this->getMust($searchDto, $extSystem),
+                    'filter' => $this->getFilter($searchDto, $extSystem),
+                    'must_not' => $this->getMustNot($searchDto),
+                ],
+            ],
+            'from' => $searchDto->getOffset(),
+            'size' => $searchDto->getLimit(),
+            'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
+        ];
+
+        $scriptScoreFunctions = $this->getScriptScoreFunction($searchDto);
+        if (is_array($scriptScoreFunctions)) {
+            $originQuery = $query['query'];
+            $query['query'] = [];
+            $query['query']['function_score'] = [
+                'query' => $originQuery,
+                'functions' => $scriptScoreFunctions,
+            ];
+        }
+
         return [
             'index' => $this->indexSettings->getFullIndexNameBySlug($searchDto->getIndexName(), $extSystem->getSlug()),
-            'body' => [
-                'query' => [
-                    'bool' => [
-                        'must' => $this->getMust($searchDto, $extSystem),
-                        'filter' => $this->getFilter($searchDto, $extSystem),
-                        'must_not' => $this->getMustNot($searchDto),
-                    ],
-                ],
-                'from' => $searchDto->getOffset(),
-                'size' => $searchDto->getLimit(),
-                'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
-            ],
+            'body' => $query,
+            'timeout' => self::DEFAULT_TIMEOUT,
         ];
+    }
+
+    public function getScriptScoreFunction(SearchDtoInterface $searchDto): ?array
+    {
+        return null;
     }
 
     protected function getMust(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
