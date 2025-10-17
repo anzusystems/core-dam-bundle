@@ -37,6 +37,7 @@ return static function (ContainerConfigurator $configurator): void {
                 ],
                 'createdAt' => [
                     'type' => 'date',
+                    'format' => 'epoch_second',
                 ],
             ]
         );

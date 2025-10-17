@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AuthorAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class AuthorQueryFactory extends AbstractQueryFactory
 {
@@ -20,15 +21,24 @@ final class AuthorQueryFactory extends AbstractQueryFactory
     /**
      * @param AuthorAdmSearchDto $searchDto
      */
+    public function isFulltextSearch(SearchDtoInterface $searchDto): bool
+    {
+        return StringHelper::isNotEmpty($searchDto->getText());
+    }
+
+    /**
+     * @param AuthorAdmSearchDto $searchDto
+     */
     protected function getMust(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
-        if ($searchDto->getText()) {
+        if ($this->isFulltextSearch($searchDto)) {
             return [
                 'multi_match' => [
                     'query' => $searchDto->getText(),
                     'type' => 'most_fields',
+                    'tie_breaker' => 0.3,
                     'fields' => [
-                        'name',
+                        'name^3',
                         'name.edgegrams',
                     ],
                 ],

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
@@ -38,7 +37,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
     public function __construct(
         private readonly CustomFormProvider $customFormProvider,
-        private bool $searcNext = false,
+        private bool $searcNext = true,
     ) {
     }
 
@@ -71,6 +70,27 @@ final class AssetQueryFactory extends AbstractQueryFactory
                 ],
             ],
         ];
+    }
+
+    /**
+     * @param AssetAdmSearchDto $searchDto
+     */
+    public function isFulltextSearch(SearchDtoInterface $searchDto): bool
+    {
+        return StringHelper::isNotEmpty($searchDto->getText());
+    }
+
+    protected function expandFulltextOrderFields(string $field, string $direction): array
+    {
+        if (false === $this->searcNext) {
+            return parent::expandFulltextOrderFields($field, $direction);
+        }
+
+        return match ($field) {
+            self::CUSTOM_ORDER_SCORE_DATE,
+            self::CUSTOM_ORDER_SCORE_BEST => [self::SCORE_ORDER => $direction],
+            default => [$field => $direction],
+        };
     }
 
     /**
@@ -247,14 +267,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
         }
 
         return $customDataFields;
-    }
-
-    /**
-     * @param AssetAdmSearchDto $searchDto
-     */
-    private function isFulltextSearch(SearchDtoInterface $searchDto): bool
-    {
-        return false === (App::EMPTY_STRING === $searchDto->getText());
     }
 
     private function getAssetIdAndMainFileIdFilter(array $ids): array

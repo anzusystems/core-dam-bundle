@@ -9,12 +9,14 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class QueryOrderBuilder
 {
-    public const string DEFAULT_ORDER = '_score';
+    public const string SCORE_ORDER = '_score';
+    public const string IDENTIFIER_ORDER = '_score';
     public const string DEFAULT_ORDER_DIRECTION = 'desc';
+
     public const string CUSTOM_ORDER_SCORE_BEST = 'score_best';
     public const string CUSTOM_ORDER_SCORE_DATE = 'score_date';
 
-    public function buildOrder(SearchDtoInterface $searchDto): array
+    public function buildFulltextSearchOrder(SearchDtoInterface $searchDto): array
     {
         $expandedOrder = [];
 
@@ -25,7 +27,7 @@ final class QueryOrderBuilder
             }
         }
 
-        return $expandedOrder ?: [self::DEFAULT_ORDER => self::DEFAULT_ORDER_DIRECTION];
+        return $expandedOrder ?: [self::SCORE_ORDER => self::DEFAULT_ORDER_DIRECTION];
     }
 
     public function isOrderScoreDate(SearchDtoInterface $searchDto): bool
@@ -43,7 +45,7 @@ final class QueryOrderBuilder
 
         return match ($field) {
             self::CUSTOM_ORDER_SCORE_BEST, self::CUSTOM_ORDER_SCORE_DATE => [
-                self::DEFAULT_ORDER => self::DEFAULT_ORDER_DIRECTION,
+                self::SCORE_ORDER => self::DEFAULT_ORDER_DIRECTION,
                 'createdAt' => $direction,
             ],
             default => [$field => $direction],
