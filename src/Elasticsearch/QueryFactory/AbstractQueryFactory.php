@@ -14,6 +14,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
 {
     private const string DEFAULT_TIMEOUT = '3s';
     private IndexSettings $indexSettings;
+    private QueryOrderBuilder $queryOrderBuilder;
 
     #[Required]
     public function setIndexSettings(IndexSettings $indexSettings): void
@@ -21,8 +22,15 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
         $this->indexSettings = $indexSettings;
     }
 
+    #[Required]
+    public function setQueryOrderBuilder(QueryOrderBuilder $queryOrderBuilder): void
+    {
+        $this->queryOrderBuilder = $queryOrderBuilder;
+    }
+
     public function buildQuery(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
+        $isOrderScoreDate = $this->queryOrderBuilder->isOrderScoreDate($searchDto);
         $query = [
             'query' => [
                 'bool' => [
@@ -33,17 +41,19 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
             ],
             'from' => $searchDto->getOffset(),
             'size' => $searchDto->getLimit(),
-            'sort' => $searchDto->getOrder() ?: ['_score' => 'desc'],
+            'sort' => $this->queryOrderBuilder->buildOrder($searchDto),
         ];
 
-        $scriptScoreFunctions = $this->getScriptScoreFunction($searchDto);
-        if (is_array($scriptScoreFunctions)) {
-            $originQuery = $query['query'];
-            $query['query'] = [];
-            $query['query']['function_score'] = [
-                'query' => $originQuery,
-                'functions' => $scriptScoreFunctions,
-            ];
+        if ($isOrderScoreDate) {
+            $scriptScoreFunctions = $this->getScriptScoreFunction($searchDto);
+            if (is_array($scriptScoreFunctions)) {
+                $originQuery = $query['query'];
+                $query['query'] = [];
+                $query['query']['function_score'] = [
+                    'query' => $originQuery,
+                    'functions' => $scriptScoreFunctions,
+                ];
+            }
         }
 
         return [
