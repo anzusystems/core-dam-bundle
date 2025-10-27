@@ -9,7 +9,9 @@ use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastImportIterator;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
@@ -17,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
@@ -28,6 +31,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         private readonly RssImportManager $rssImportManager,
         private readonly PodcastImportIterator $importIterator,
         private readonly PodcastRepository $podcastRepository,
+        private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
         private int $bulkSize = self::BULK_SIZE,
         private ?DateTimeImmutable $minImportFrom = null
     ) {
@@ -116,6 +120,9 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         $lastImportedDto = null;
         $imported = 0;
 
+        /** @var array<int, Asset> $newlyImportedAssets */
+        $newlyImportedAssets = [];
+
         /** @var PodcastImportIteratorDto $importDto */
         foreach ($generator as $importDto) {
             if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
@@ -132,6 +139,10 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
             );
 
             if ($episodeImportDto->isNewlyImported()) {
+                $asset = $episodeImportDto->getEpisode()->getAsset();
+                if ($asset instanceof Asset) {
+                    $newlyImportedAssets[] = $asset;
+                }
                 $imported++;
             }
 
@@ -141,6 +152,10 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         }
 
         $this->finishProcessCycle($lastImportedDto, $imported, $job);
+
+        if (false === empty($newlyImportedAssets)) {
+            $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection($newlyImportedAssets));
+        }
     }
 
     private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job): void

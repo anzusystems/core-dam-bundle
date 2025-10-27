@@ -30,6 +30,7 @@ use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route(path: '/podcast-episode', name: 'adm_podcast_episode_v1_')]
@@ -95,6 +96,7 @@ final class PodcastEpisodeController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      * @throws ValidationException
+     * @throws ExceptionInterface
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(PodcastEpisode::class), OAResponse(PodcastEpisode::class), OAResponseValidation]
