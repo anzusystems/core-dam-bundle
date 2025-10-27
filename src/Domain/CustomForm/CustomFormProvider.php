@@ -28,6 +28,9 @@ final class CustomFormProvider extends AbstractManager
     ) {
     }
 
+    /**
+     * @return Collection<int, CustomFormElement>
+     */
     public function provideAllSearchableElementsForExtSystem(string $slug): Collection
     {
         return $this->customFormElementRepository->findAllAssetSearchableElementsByForms(

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\CustomData;
 
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Doctrine\ORM\NonUniqueResultException;
 
 final class AssetMetadataCustomData
@@ -29,6 +31,10 @@ final class AssetMetadataCustomData
         foreach ($searchableElements as $searchableElement) {
             $data[CustomDataIndexDefinitionFactory::getIndexKeyNameByElement($searchableElement)] =
                 $entity->getMetadata()->getCustomData()[$searchableElement->getProperty()] ?? null;
+        }
+
+        if ($entity->getAttributes()->getAssetType()->is(AssetType::Image)) {
+            $data = StringIndexBuilder::optimizeImageCustomData($data);
         }
 
         return $data;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
@@ -16,8 +17,27 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
+    protected const array BOOST_FIELDS = [
+        StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => [
+            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => 5,
+            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.edgegrams' => 1,
+            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.lang' => 1,
+        ],
+        StringIndexBuilder::CUSTOM_DESCRIPTION_KEY => [
+            StringIndexBuilder::CUSTOM_DESCRIPTION_KEY . '.lang' => 1,
+        ],
+    ];
+
+    private const string CUSTOM_SORT_DATE_FIELD = 'createdAt';
+    private const string CUSTOM_SORT_DATE_DECAY_FUNCTION = 'exp';
+    private const string CUSTOM_SORT_DATE_DECAY_ORIGIN = 'now';
+    private const string CUSTOM_SORT_DATE_DECAY_SCALE = '60d';
+    private const string CUSTOM_SORT_DATE_DECAY_OFFSET = '14d';
+    private const float CUSTOM_SORT_DATE_DECAY_DECAY = 0.5;
+
     public function __construct(
-        private readonly CustomFormProvider $customFormProvider
+        private readonly CustomFormProvider $customFormProvider,
+        private bool $searcNext = true,
     ) {
     }
 
@@ -27,6 +47,59 @@ final class AssetQueryFactory extends AbstractQueryFactory
             AssetAdmSearchDto::class,
             AssetAdmSearchLicenceCollectionDto::class,
         ];
+    }
+
+    /**
+     * @param AssetAdmSearchDto $searchDto
+     */
+    public function getScriptScoreFunction(SearchDtoInterface $searchDto): ?array
+    {
+        if (false === $this->searcNext || false === $this->isFulltextSearch($searchDto)) {
+            return null;
+        }
+
+        return [
+            [
+                self::CUSTOM_SORT_DATE_DECAY_FUNCTION => [
+                    self::CUSTOM_SORT_DATE_FIELD => [
+                        'origin' => self::CUSTOM_SORT_DATE_DECAY_ORIGIN,
+                        'scale' => self::CUSTOM_SORT_DATE_DECAY_SCALE,
+                        'offset' => self::CUSTOM_SORT_DATE_DECAY_OFFSET,
+                        'decay' => self::CUSTOM_SORT_DATE_DECAY_DECAY,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param AssetAdmSearchDto $searchDto
+     */
+    public function isFulltextSearch(SearchDtoInterface $searchDto): bool
+    {
+        return StringHelper::isNotEmpty($searchDto->getText());
+    }
+
+    protected function expandFulltextOrderFields(string $field, string $direction): array
+    {
+        if (false === $this->searcNext) {
+            return parent::expandFulltextOrderFields($field, $direction);
+        }
+
+        return match ($field) {
+            self::CUSTOM_ORDER_SCORE_DATE,
+            self::CUSTOM_ORDER_SCORE_BEST => [self::SCORE_ORDER => $direction],
+            default => [$field => $direction],
+        };
+    }
+
+    protected function expandRegularOrderFields(string $field, string $direction): array
+    {
+        return match ($field) {
+            self::CUSTOM_ORDER_SCORE_BEST,
+            self::CUSTOM_ORDER_SCORE_DATE => [self::CUSTOM_SORT_DATE_FIELD => $direction],
+            default => [$field => $direction],
+        };
     }
 
     /**
@@ -61,16 +134,13 @@ final class AssetQueryFactory extends AbstractQueryFactory
             return parent::getMust($searchDto, $extSystem);
         }
 
-        foreach ($customDataFields as $key => $field) {
-            $customDataFields[$key] = $field . '^' . ($key + 1);
-        }
-
         if ($searchDto->getText()) {
             return [
                 'multi_match' => [
                     'query' => $searchDto->getText(),
-                    'fields' => $customDataFields,
+                    'fields' => $this->boostSearchFields($customDataFields),
                     'type' => 'most_fields',
+                    'tie_breaker' => 0.3,
                 ],
             ];
         }
@@ -177,6 +247,35 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
 
         return $filter;
+    }
+
+    /**
+     * @param array<int, string> $customDataFields
+     */
+    private function boostSearchFields(array $customDataFields): array
+    {
+        if ($this->searcNext) {
+            $searchFields = [];
+            foreach ($customDataFields as $field) {
+                if (isset(self::BOOST_FIELDS[$field])) {
+                    foreach (self::BOOST_FIELDS[$field] as $boostField => $boost) {
+                        $searchFields[] = $boostField . '^' . $boost;
+                    }
+
+                    continue;
+                }
+
+                $searchFields[] = $field;
+            }
+
+            return $searchFields;
+        }
+
+        foreach ($customDataFields as $key => $field) {
+            $customDataFields[$key] = $field . '^' . ($key + 1);
+        }
+
+        return $customDataFields;
     }
 
     private function getAssetIdAndMainFileIdFilter(array $ids): array

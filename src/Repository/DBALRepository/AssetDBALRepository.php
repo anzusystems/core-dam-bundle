@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository\DBALRepository;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\AssetSearchableElementsCache;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
@@ -104,6 +105,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
                 $item['ext_system_id'],
                 $item['attributes_asset_type']
             );
+
             $data[$index]['created_at'] = DateTimeHelper::datetimeOrNull($item['created_at']);
             $data[$index]['modified_at'] = DateTimeHelper::datetimeOrNull($item['modified_at']);
             $data[$index]['keyword_ids'] = $keywordMap[$item['id']]['ids'] ?? [];
@@ -151,6 +153,10 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         foreach ($properties as $property) {
             $searchableCustomData[CustomDataIndexDefinitionFactory::getIndexKeyNameByProperty($property)] =
                 $customData[$property] ?? null;
+        }
+
+        if (AssetType::IMAGE === $assetType) {
+            $searchableCustomData = StringIndexBuilder::optimizeImageCustomData($searchableCustomData);
         }
 
         return $searchableCustomData;

@@ -78,6 +78,11 @@ final class IndexBuilder
         }
     }
 
+    public function getIndexSettings(string $fullIndexName): array
+    {
+        return $this->indexDefinitions[$fullIndexName];
+    }
+
     /**
      * @return array<int, ExtSystem>
      */
@@ -219,11 +224,6 @@ final class IndexBuilder
         $progressBar->maxSecondsBetweenRedraws(3);
         $progressBar->minSecondsBetweenRedraws(1);
         $progressBar->setFormat('debug');
-    }
-
-    private function getIndexSettings(string $fullIndexName): array
-    {
-        return $this->indexDefinitions[$fullIndexName];
     }
 
     private function getAvailableIndexes(): array

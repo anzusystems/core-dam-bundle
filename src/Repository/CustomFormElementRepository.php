@@ -18,6 +18,9 @@ use Doctrine\Common\Collections\Collection;
  */
 final class CustomFormElementRepository extends AbstractAnzuRepository
 {
+    /**
+     * @return Collection<int, CustomFormElement>
+     */
     public function findAllAssetSearchableElementsByForms(array $ids): Collection
     {
         return new ArrayCollection(

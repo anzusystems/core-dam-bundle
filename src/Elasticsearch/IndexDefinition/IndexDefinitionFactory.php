@@ -76,7 +76,7 @@ final class IndexDefinitionFactory
             'edgegrams' => [
                 'type' => 'edge_ngram',
                 'min_gram' => 3,
-                'max_gram' => 6,
+                'max_gram' => 8,
             ],
             'unique_on_pos' => [
                 'type' => 'unique',

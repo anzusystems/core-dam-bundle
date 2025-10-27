@@ -13,18 +13,23 @@ final class StringHelper
 {
     public static function isNotEmpty(string $string): bool
     {
-        return false === (App::EMPTY_STRING === $string);
+        return false === self::isEmpty($string);
     }
 
     public static function parseLength(string $input, int $length): string
     {
-        return mb_substr($input, 0, $length);
+        return mb_substr($input, App::ZERO, $length);
+    }
+
+    public static function isEmpty(string $string): bool
+    {
+        return App::EMPTY_STRING === $string;
     }
 
     public static function getFirstChar(string $string): string
     {
         if (false === empty($string)) {
-            return mb_substr($string, 0, 1);
+            return mb_substr($string, App::ZERO, 1);
         }
 
         return '';

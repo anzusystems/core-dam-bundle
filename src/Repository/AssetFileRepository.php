@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 
 /**
@@ -17,6 +19,20 @@ use Doctrine\ORM\NonUniqueResultException;
  */
 final class AssetFileRepository extends AbstractAssetFileRepository
 {
+    /**
+     * @return Collection<array-key, AssetFile>
+     */
+    public function findByIds(array $ids): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->where('entity.id in (:ids)')
+                ->setParameter('ids', $ids)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     /**
      * @throws NonUniqueResultException
      */

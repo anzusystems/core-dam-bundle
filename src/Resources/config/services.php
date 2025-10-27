@@ -38,6 +38,8 @@ return static function (ContainerConfigurator $configurator): void {
             'author' => param('anzu_systems.dam_bundle.index_author'),
             Distribution::INDEX_NAME => param('anzu_systems.dam_bundle.index_distribution'),
         ])
+        ->set('app_false', false)
+        ->set('elasticsearch_next_enabled', env('ELASTICSEARCH_NEXT_ENABLED')->default('app_false'))
     ;
 
     $services
@@ -45,6 +47,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->autowire(true)
         ->autoconfigure(true)
 
+        ->bind('$searcNext', param('elasticsearch_next_enabled'))
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
         ->bind('$redirectDomain', param('anzu_systems.dam_bundle.settings_redirect_domain'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))

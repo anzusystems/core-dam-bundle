@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class CustomDataIndexDefinitionFactory
 {
-    private const string METADATA_PREFIX = 'custom_data_';
+    public const string METADATA_PREFIX = 'custom_data_';
 
     private readonly iterable $indexBuilders;
 
@@ -32,7 +32,7 @@ final class CustomDataIndexDefinitionFactory
         foreach ($elements as $element) {
             $indexBuilder = $this->getIndexBuilder($element);
 
-            $definitions[$this->getIndexKeyNameByElement($element)] = $indexBuilder->getIndexDefinition($element);
+            $definitions[self::getIndexKeyNameByElement($element)] = $indexBuilder->getIndexDefinition($element);
         }
 
         return $definitions;
