@@ -23,18 +23,11 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
 
     private const string DEFAULT_TIMEOUT = '3s';
     private IndexSettings $indexSettings;
-    private QueryOrderBuilder $queryOrderBuilder;
 
     #[Required]
     public function setIndexSettings(IndexSettings $indexSettings): void
     {
         $this->indexSettings = $indexSettings;
-    }
-
-    #[Required]
-    public function setQueryOrderBuilder(QueryOrderBuilder $queryOrderBuilder): void
-    {
-        $this->queryOrderBuilder = $queryOrderBuilder;
     }
 
     public function buildQuery(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
@@ -51,7 +44,7 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
             'size' => $searchDto->getLimit(),
         ];
 
-        if ($this->isFullTextSearch($searchDto) && $this->queryOrderBuilder->isOrderScoreDate($searchDto)) {
+        if ($this->isFullTextSearch($searchDto) && $this->isOrderScoreDate($searchDto)) {
             $scriptScoreFunctions = $this->getScriptScoreFunction($searchDto);
             if (is_array($scriptScoreFunctions)) {
                 $originQuery = $query['query'];
@@ -85,6 +78,15 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
     protected function getMust(SearchDtoInterface $searchDto, ExtSystem $extSystem): array
     {
         return ['match_all' => new stdClass()];
+    }
+
+    protected function isOrderScoreDate(SearchDtoInterface $searchDto): bool
+    {
+        if (isset($searchDto->getOrder()[self::CUSTOM_ORDER_SCORE_DATE])) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function getMustNot(SearchDtoInterface $searchDto): array
