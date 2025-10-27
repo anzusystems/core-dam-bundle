@@ -93,6 +93,15 @@ final class AssetQueryFactory extends AbstractQueryFactory
         };
     }
 
+    protected function expandRegularOrderFields(string $field, string $direction): array
+    {
+        return match ($field) {
+            self::CUSTOM_ORDER_SCORE_BEST,
+            self::CUSTOM_ORDER_SCORE_DATE => [self::CUSTOM_SORT_DATE_FIELD => $direction],
+            default => [$field => $direction],
+        };
+    }
+
     /**
      * @param AssetAdmSearchDto $searchDto
      */

@@ -31,6 +31,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use stdClass;
 
 final class AssetQueryFactoryTest extends CoreDamKernelTestCase
 {
@@ -52,13 +53,30 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
         $extSystem = $this->extSystemRepository->findOneBy(['slug' => 'cms']);
         $query = $this->assetQueryFactory->buildQuery($searchDto, $extSystem);
 
-        $this->assertSame($expectedQuery, $query['body']['query']);
-        $this->assertSame($expectedSort, $query['body']['sort']);
+        $this->assertEqualsCanonicalizing($expectedQuery, $query['body']['query']);
+        $this->assertEqualsCanonicalizing($expectedSort, $query['body']['sort']);
     }
 
     public function buildQueryDataProvider(): array
     {
         return [
+            'test_score_date_no_fulltext' => [
+                'searchDto' => (new AssetAdmSearchDto())->setOrder(['score_date' => 'desc']),
+                'expectedQuery' =>
+                    [
+                        'bool' => [
+                            'must' => [
+                                'match_all' => new stdClass()
+                            ],
+                            'filter' => [],
+                            'must_not' => []
+                        ]
+                    ]
+                ,
+                'expectedSort' => [
+                    'createdAt' => 'desc',
+                ],
+            ],
             'test_score_date' => [
                 'searchDto' => (new AssetAdmSearchDto())->setText('test')->setOrder(['score_date' => 'asc']),
                 'expectedQuery' =>
