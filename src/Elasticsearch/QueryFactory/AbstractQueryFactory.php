@@ -13,7 +13,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractQueryFactory implements QueryFactoryInterface
 {
-    public const string DEFAULT_ORDER = self::IDENTIFIER_ORDER;
+    public const string DEFAULT_ORDER = self::SCORE_ORDER;
     public const string DEFAULT_ORDER_DIRECTION = 'desc';
 
     public const string SCORE_ORDER = '_score';
@@ -131,6 +131,24 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
         return StringHelper::isEmpty($direction) ? self::DEFAULT_ORDER_DIRECTION : $direction;
     }
 
+    protected function getDefaultOrder(SearchDtoInterface $searchDto): array
+    {
+        return $this->isFullTextSearch($searchDto)
+            ? $this->getFulltextDefaultOrder()
+            : $this->getRegularDefaultOrder()
+        ;
+    }
+
+    protected function getRegularDefaultOrder(): array
+    {
+        return [self::DEFAULT_ORDER => self::DEFAULT_ORDER_DIRECTION];
+    }
+
+    protected function getFulltextDefaultOrder(): array
+    {
+        return [self::DEFAULT_ORDER => self::DEFAULT_ORDER_DIRECTION];
+    }
+
     private function buildOrder(SearchDtoInterface $searchDto): array
     {
         $expandedOrder = [];
@@ -146,6 +164,6 @@ abstract class AbstractQueryFactory implements QueryFactoryInterface
             }
         }
 
-        return $expandedOrder ?: [self::DEFAULT_ORDER => self::DEFAULT_ORDER_DIRECTION];
+        return $expandedOrder ?: $this->getDefaultOrder($searchDto);
     }
 }

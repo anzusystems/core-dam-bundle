@@ -129,6 +129,48 @@ final class KeywordQueryFactoryTest extends CoreDamKernelTestCase
                     'id' => 'desc',
                 ],
             ],
+            'no_order_no_fulltext' => [
+                'searchDto' => (new KeywordAdmSearchDto()),
+                'expectedQuery' =>
+                    [
+                        'bool' => [
+                            'must' => [
+                                'match_all' => new stdClass()
+                            ],
+                            'filter' => [],
+                            'must_not' => []
+                        ]
+                    ]
+                ,
+                'expectedSort' => [
+                    '_score' => 'desc',
+                ],
+            ],
+            'no_order_fulltext' => [
+                'searchDto' => (new KeywordAdmSearchDto())->setText('test'),
+                'expectedQuery' =>
+                    [
+                        'bool' => [
+                            'must' => [
+                                'multi_match' => [
+                                    'query' => 'test',
+                                    'fields' => [
+                                        'name^3',
+                                        'name.edgegrams',
+                                    ],
+                                    'type' => 'most_fields',
+                                    'tie_breaker' => 0.3
+                                ]
+                            ],
+                            'filter' => [],
+                            'must_not' => []
+                        ]
+                    ]
+                ,
+                'expectedSort' => [
+                    '_score' => 'desc',
+                ],
+            ],
         ];
     }
 }

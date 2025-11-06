@@ -174,6 +174,50 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                     'id' => 'desc',
                 ],
             ],
+            'default_order_fulltext' => [
+                'searchDto' => (new AssetAdmSearchDto())->setText('test'),
+                'expectedQuery' =>
+                    [
+                        'bool' => [
+                            'must' => [
+                                'multi_match' => [
+                                    'query' => 'test',
+                                    'fields' => [
+                                        'custom_data_title^5',
+                                        'custom_data_title.edgegrams^1',
+                                        'custom_data_title.lang^1',
+                                        'custom_data_headline'
+                                    ],
+                                    'type' => 'most_fields',
+                                    'tie_breaker' => 0.3
+                                ]
+                            ],
+                            'filter' => [],
+                            'must_not' => []
+                        ]
+                    ]
+                ,
+                'expectedSort' => [
+                    '_score' => 'desc',
+                ],
+            ],
+            'default_order_no_fulltext' => [
+                'searchDto' => (new AssetAdmSearchDto()),
+                'expectedQuery' =>
+                    [
+                        'bool' => [
+                            'must' => [
+                                'match_all' => new stdClass()
+                            ],
+                            'filter' => [],
+                            'must_not' => []
+                        ]
+                    ]
+                ,
+                'expectedSort' => [
+                    '_score' => 'desc',
+                ],
+            ],
         ];
     }
 }
