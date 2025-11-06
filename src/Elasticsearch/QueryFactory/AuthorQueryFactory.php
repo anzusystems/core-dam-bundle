@@ -48,6 +48,22 @@ final class AuthorQueryFactory extends AbstractQueryFactory
         return parent::getMust($searchDto, $extSystem);
     }
 
+    protected function getRegularDefaultOrder(): array
+    {
+        return [
+            'reviewed' => 'desc',
+            'id' => 'desc',
+        ];
+    }
+
+    protected function getFulltextDefaultOrder(): array
+    {
+        return [
+            'reviewed' => 'desc',
+            '_score' => 'desc',
+        ];
+    }
+
     /**
      * @param AuthorAdmSearchDto $searchDto
      * @psalm-suppress PossiblyNullReference
