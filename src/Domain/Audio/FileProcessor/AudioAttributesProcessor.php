@@ -19,8 +19,6 @@ final class AudioAttributesProcessor
     }
 
     /**
-     * @param AudioFile $assetFile
-     *
      * @throws FfmpegException
      */
     public function process(AssetFile $assetFile, AdapterFile $file): AssetFile

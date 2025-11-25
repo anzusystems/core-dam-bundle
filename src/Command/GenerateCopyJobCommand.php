@@ -43,10 +43,7 @@ final class GenerateCopyJobCommand extends Command
     private const int MAX_ASSETS_PER_JOB = 1_000;
 
     public function __construct(
-        private readonly Connection $damMediaApiMigConnection,
-        private readonly Connection $defaultConnection,
         private readonly JobImageCopyFacade $imageCopyFacade,
-        private readonly AssetRepository $assetRepository,
         private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly AssetFileRepository $assetFileRepository,
         private readonly EntityManagerInterface $entityManager,

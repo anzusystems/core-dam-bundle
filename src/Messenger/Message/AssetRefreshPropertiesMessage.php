@@ -11,7 +11,7 @@ final readonly class AssetRefreshPropertiesMessage
     ) {
     }
 
-    public function getAssetId(): ?string
+    public function getAssetId(): string
     {
         return $this->assetId;
     }

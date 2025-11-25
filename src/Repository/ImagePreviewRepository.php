@@ -13,10 +13,8 @@ use Doctrine\Common\Collections\Collection;
  *
  * @method ImagePreview|null find($id, $lockMode = null, $lockVersion = null)
  * @method ImagePreview|null findOneBy($id, $lockMode = null, $lockVersion = null)
- * @method ImagePreview|null findProcessedById(string $id)
- * @method ImagePreview|null findProcessedByIdAndFilename(string $id, string $slug)
  */
-final class ImagePreviewRepository extends AbstractAssetFileRepository
+final class ImagePreviewRepository extends AbstractAnzuRepository
 {
     /**
      * @return Collection<int, ImagePreview>

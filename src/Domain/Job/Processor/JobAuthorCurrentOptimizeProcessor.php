@@ -26,8 +26,6 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     private const int ASSET_BULK_SIZE = 500;
 
     public function __construct(
-        private readonly ImageCopyFacade $imageCopyFacade,
-        private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
         private readonly AssetRepository $assetRepository,
         private readonly AuthorRepository $authorRepository,
         private readonly AuthorProvider $authorProvider,

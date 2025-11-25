@@ -29,7 +29,7 @@ final readonly class OriginStorage implements ValueObjectInterface
         $parts = explode('|', $value, 3);
 
         return new self(
-            $parts[0] ?? '',
+            $parts[0],
             $parts[1] ?? '',
         );
     }

@@ -96,7 +96,6 @@ final class ExtSystemConfiguration
             AssetType::Video => $this->getVideo(),
             AssetType::Image => $this->getImage(),
             AssetType::Document => $this->getDocument(),
-            default => throw new AnzuException(sprintf('Unrecognized asset type "%s".', $type->toString())),
         };
     }
 }

@@ -13,7 +13,7 @@ final class ValidRegex extends Constraint
 {
     public string $message = ValidationException::ERROR_FIELD_REGEX;
 
-    public function getTargets(): string|array
+    public function getTargets(): string
     {
         return self::CLASS_CONSTRAINT;
     }

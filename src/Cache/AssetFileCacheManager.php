@@ -27,7 +27,6 @@ final class AssetFileCacheManager
     public function setCache(Response $response, AssetFile $asset): void
     {
         $cache = $this->allowListConfiguration->getCacheConfiguration();
-        dd($cache);
         if ($cache->isPublic()) {
             $response->setPublic();
         }

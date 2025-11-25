@@ -29,7 +29,6 @@ final class JobImageCopyProcessor extends AbstractJobProcessor
         private readonly ImageCopyFacade $imageCopyFacade,
         private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
         private readonly AssetRepository $assetRepository,
-        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }

@@ -20,15 +20,9 @@ final class CopyAssetFileMessageHandler
 {
     use IndexManagerAwareTrait;
 
-    /**
-     * @param class-string $userEntityClass
-     */
     public function __construct(
         private readonly AssetRepository $assetRepository,
-        private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly ImageCopyFacade $imageCopyFacade,
-        private readonly string $userEntityClass,
-        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 

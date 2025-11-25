@@ -107,7 +107,6 @@ abstract class AbstractAssetFileFactory
 
     public function createForAsset(Asset $asset): AssetFile
     {
-        /** @var T $assetFile */
         $assetFile = match ($asset->getAssetType()) {
             AssetType::Image => $this->createBlankImage($asset->getLicence()),
             AssetType::Video => $this->createBlankVideo($asset->getLicence()),
@@ -139,7 +138,6 @@ abstract class AbstractAssetFileFactory
             $assetFile = $this->createBlankVideo($licence, $id);
         }
 
-        /** @psalm-var T|null $assetFile */
         if (null === $assetFile) {
             throw new DomainException(sprintf('File with mime type (%s) cannot be created', $mimeType));
         }
@@ -301,7 +299,6 @@ abstract class AbstractAssetFileFactory
             AssetType::Audio => $this->createBlankAudio($licence),
             AssetType::Document => $this->createBlankDocument($licence),
             AssetType::Video => $this->createBlankVideo($licence),
-            default => throw new DomainException(sprintf('File with cannot be created for type (%s)', $assetType->toString())),
         };
     }
 

@@ -141,7 +141,8 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
                 'codecName' => $array['video_codec_name'],
                 'bitrate' => $array['video_attributes_bitrate'],
                 'orientation' => ImageOrientation::getOrientation($width, $height)->toString(),
-            ]
+            ],
+            default => [],
         };
     }
 }

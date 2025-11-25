@@ -39,8 +39,6 @@ final class AssetSysFacade
     public function __construct(
         private readonly Validator $validator,
         private readonly AssetSysFactory $assetSysFactory,
-        private readonly AssetFileManagerProvider $assetFileManagerProvider,
-        private readonly AssetFileMessageDispatcher $assetFileMessageDispatcher,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteFacade $assetFileRouteFacade,

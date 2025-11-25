@@ -73,8 +73,8 @@ jobs:
       - name: Run ECS style check
         run: vendor/bin/ecs check -vv
 
-      - name: Run PSALM style check
-        run: vendor/bin/psalm
+      - name: Run PHPStan static analysis
+        run: vendor/bin/phpstan analyse
 
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit

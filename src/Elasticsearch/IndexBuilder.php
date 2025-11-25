@@ -39,12 +39,10 @@ final class IndexBuilder
         private readonly Client $client,
         private readonly IndexSettings $indexSettings,
         private readonly IndexFactoryProvider $indexFactoryProvider,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly array $indexMappings,
         IndexDefinitionFactory $indexDefinitionFactory,
         private readonly DBALRepositoryProvider $repositoryProvider,
         private readonly ExtSystemRepository $extSystemRepository,
-        private readonly CustomFormProvider $customFormProvider,
     ) {
         $this->indexDefinitions = $indexDefinitionFactory->buildIndexDefinitions($indexMappings);
     }

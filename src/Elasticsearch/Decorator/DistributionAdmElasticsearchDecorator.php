@@ -20,7 +20,6 @@ final class DistributionAdmElasticsearchDecorator
 
     public function __construct(
         private readonly ElasticSearch $elasticSearch,
-        private readonly AssetLicenceRepository $licenceRepository,
     ) {
     }
 

@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
+use InvalidArgumentException;
 
 readonly class AssetSlotFactory
 {
@@ -42,6 +43,7 @@ readonly class AssetSlotFactory
             AudioFile::class => $assetSlot->setAudio($assetFile),
             DocumentFile::class => $assetSlot->setDocument($assetFile),
             VideoFile::class => $assetSlot->setVideo($assetFile),
+            default => throw new InvalidArgumentException(sprintf('Unsupported asset file type: %s', $assetFile::class)),
         };
 
         return $this->manager->create($assetSlot, $flush);

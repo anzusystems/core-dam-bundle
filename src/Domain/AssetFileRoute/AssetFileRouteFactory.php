@@ -29,7 +29,6 @@ final class AssetFileRouteFactory extends AbstractManager
     public function __construct(
         private readonly SluggerInterface $slugger,
         private readonly AssetFileRouteManager $routeManager,
-        private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteRepository $assetFileRouteRepository,
     ) {
     }

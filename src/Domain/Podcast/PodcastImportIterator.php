@@ -88,7 +88,7 @@ final class PodcastImportIterator
         }
     }
 
-    private function getImportFrom(PodcastSynchronizerPointer $pointer, ?DateTimeImmutable $minImportFrom): ?DateTimeImmutable
+    private function getImportFrom(PodcastSynchronizerPointer $pointer, ?DateTimeImmutable $minImportFrom): DateTimeImmutable
     {
         $minImportFrom = $minImportFrom ?? App::getAppDate()->modify(self::MIN_IMPORT_FROM_MODIFIER);
 

@@ -673,7 +673,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         return null;
     }
 
-    private function configureLocalSystem(array $storageOptions): ?Definition
+    private function configureLocalSystem(array $storageOptions): Definition
     {
         $adapter = new Definition();
         $adapter->setClass(LocalFileSystemAdapter::class);

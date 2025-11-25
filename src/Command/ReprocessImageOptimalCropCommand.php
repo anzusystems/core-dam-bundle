@@ -28,7 +28,6 @@ final class ReprocessImageOptimalCropCommand extends Command
     private const string IMAGE_FILE_OPT = 'image';
 
     private const string IMAGE_ID_FILE_PATH = 'file';
-    private const int MAX_ASSETS_PER_JOB = 20;
 
     public function __construct(
         private readonly ImageFileRepository $imageFileRepository,

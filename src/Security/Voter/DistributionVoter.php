@@ -25,7 +25,6 @@ final class DistributionVoter extends AbstractVoter
     }
 
     /**
-     * @param Distribution|string $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool

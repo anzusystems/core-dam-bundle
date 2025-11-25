@@ -24,7 +24,6 @@ final class AssetFileNotificationDispatcher extends AbstractNotificationDispatch
     private const string EVENT_ASSET_FILE_DELETED_NAME = 'asset_file_deleted';
 
     public function __construct(
-        private readonly DamLogger $damLogger,
     ) {
     }
 

@@ -32,9 +32,6 @@ final class AssetFileRouteFacade extends AbstractManager
         private readonly AssetFileRouteFactory $routeFactory,
         private readonly AssetFileRouteManager $assetFileRouteManager,
         private readonly AssetFileRouteStorageManager $assetFileRouteStorageManager,
-        private readonly SluggerInterface $slugger,
-        private readonly AssetFileRouteManager $routeManager,
-        private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteGenerator $assetFileRouteGenerator,
     ) {
     }

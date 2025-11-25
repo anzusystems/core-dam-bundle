@@ -12,7 +12,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
 
 /**
- * @extends AbstractAnzuRepository<AssetFile>
+ * @extends AbstractAssetFileRepository<AssetFile>
  *
  * @method AssetFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method AssetFile|null findOneBy(array $criteria, array $orderBy = null)

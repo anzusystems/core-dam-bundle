@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 final class ExtSystemAwareVoter extends AbstractVoter
 {
     /**
-     * @param ExtSystemInterface $subject
      * @param DamUser $user
      */
     protected function permissionVote(string $attribute, mixed $subject, AnzuUser $user): bool

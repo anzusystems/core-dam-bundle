@@ -31,7 +31,7 @@ final readonly class JobImageCopyResult implements ValueObjectInterface
         $parts = explode('|', $string);
 
         return new self(
-            isset($parts[0]) ? (int) $parts[0] : 0,
+            (int) $parts[0],
             isset($parts[1]) ? (int) $parts[1] : 0,
             isset($parts[2]) ? (int) $parts[2] : 0,
         );

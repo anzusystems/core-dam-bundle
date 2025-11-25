@@ -20,7 +20,6 @@ final class AssetExternalProviderApiParamsValueResolver implements ValueResolver
     private const string ATTRIBUTE_NAME = 'providerName';
 
     public function __construct(
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly AssetExternalProviderContainer $providerContainer,
     ) {
     }

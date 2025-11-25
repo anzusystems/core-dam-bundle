@@ -46,7 +46,7 @@ readonly class NameGenerator
 
         return new GeneratedPath(
             dir: $pathParts['dirname'] ?? '',
-            fileName: $pathParts['filename'] ?? '',
+            fileName: $pathParts['filename'],
             extension: $pathParts['extension'] ?? '',
         );
     }

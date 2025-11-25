@@ -33,9 +33,6 @@ final class VideoDistributionFacade
         private readonly ModuleProvider $moduleProvider,
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly VideoManager $videoManager,
-        private readonly ImagePreviewFactory $imagePreviewFactory,
-        private readonly ImagePreviewManager $imagePreviewManager,
-        private readonly AssetManager $assetManager,
         private readonly DistributionRepository $distributionRepository,
     ) {
     }

@@ -11,6 +11,4 @@ parameters:
     doctrine:
         repositoryClass: AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository
     ignoreErrors:
-        # Elasticsearch client has incorrect type hints
-        - '#Parameter \#\d+ \$[a-zA-Z_]+ of method Elastic\\Elasticsearch\\Client::(index|indexBulk|create|delete|bulk)\(\) expects#'
-        - '#Parameter \#\d+ \$[a-zA-Z_]+ of method Elastic\\Elasticsearch\\Endpoints\\Indices::(create|delete)\(\) expects#'
+        - '#Unsafe usage of new static#'

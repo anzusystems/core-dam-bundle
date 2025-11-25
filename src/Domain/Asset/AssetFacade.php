@@ -44,7 +44,6 @@ class AssetFacade
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
         private readonly AssetRepository $assetRepository,
-        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
     ) {
     }
 

@@ -18,9 +18,6 @@ final class AssetValidator extends ConstraintValidator
     ) {
     }
 
-    /**
-     * @param FormProvidableMetadataBulkUpdateDto $value
-     */
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof FormProvidableMetadataBulkUpdateDto)) {

@@ -30,12 +30,10 @@ final class AssetMetadataBulkFacade
 
     public function __construct(
         private readonly ConfigurationProvider $configurationProvider,
-        private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AssetManager $assetManager,
         private readonly AccessDenier $accessDenier,
         private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
         private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
-        private readonly CurrentAnzuUserProvider $currentUserProvider,
     ) {
     }
 

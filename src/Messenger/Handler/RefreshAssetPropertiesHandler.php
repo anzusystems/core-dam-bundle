@@ -22,7 +22,6 @@ final class RefreshAssetPropertiesHandler
 
     public function __construct(
         private readonly AssetRepository $assetRepository,
-        private readonly AssetPropertiesRefresher $refresher,
         private readonly AssetManager $manager,
         private readonly DamLogger $damLogger,
     ) {

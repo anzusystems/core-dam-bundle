@@ -38,7 +38,6 @@ final class JwVideoClient implements LoggerAwareInterface
         private readonly HttpClientInterface $client,
         private readonly HttpClientInterface $jwPlayerApiClient,
         private readonly HttpClientInterface $jwPlayerCdnApiClient,
-        private readonly JwVideoDtoFactory $jwVideoDtoFactory,
         private readonly DamLogger $damLogger,
     ) {
     }

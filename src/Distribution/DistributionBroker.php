@@ -35,8 +35,6 @@ final class DistributionBroker
         private readonly DistributionStatusFacade $distributionStatusFacade,
         private readonly ModuleProvider $moduleProvider,
         private readonly DamLogger $damLogger,
-        private readonly AssetPropertiesRefresher $propertiesRefresher,
-        private readonly AssetRepository $assetRepository,
     ) {
     }
 

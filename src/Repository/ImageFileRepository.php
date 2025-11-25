@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
- * @template-extends AbstractAnzuRepository<ImageFile>
+ * @extends AbstractAssetFileRepository<ImageFile>
  * @method ImageFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method ImageFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method ImageFile|null findProcessedById(string $id)
