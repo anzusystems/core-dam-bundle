@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\ExtSystemUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ExtSystemControllerTest extends AbstractApiController
@@ -60,10 +61,9 @@ final class ExtSystemControllerTest extends AbstractApiController
     }
 
     /**
-     * @dataProvider updateSuccessDataProvider
-     *
      * @throws SerializerException
      */
+    #[DataProvider('updateSuccessDataProvider')]
     public function testUpdateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -82,7 +82,7 @@ final class ExtSystemControllerTest extends AbstractApiController
         $this->assertSame($requestJson['adminUsers'], CollectionHelper::traversableToIds($extSystem->getAdminUsers()));
     }
 
-    public function updateSuccessDataProvider(): array
+    public static function updateSuccessDataProvider(): array
     {
         $existingExtSystem = self::getContainer()
             ->get(ExtSystemRepository::class)
@@ -101,9 +101,7 @@ final class ExtSystemControllerTest extends AbstractApiController
         ];
     }
 
-    /**
-     * @dataProvider updateFailureDataProvider
-     */
+    #[DataProvider('updateFailureDataProvider')]
     public function testUpdateFailure(array $requestJson, array $validationErrors): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -116,7 +114,7 @@ final class ExtSystemControllerTest extends AbstractApiController
         $this->assertValidationErrors($content, $validationErrors);
     }
 
-    public function updateFailureDataProvider(): array
+    public static function updateFailureDataProvider(): array
     {
         $existingExtSystem = self::getContainer()
             ->get(ExtSystemRepository::class)

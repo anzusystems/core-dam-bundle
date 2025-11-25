@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\KeywordUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class KeywordControllerTest extends AbstractApiController
@@ -62,12 +63,11 @@ final class KeywordControllerTest extends AbstractApiController
 
 
     /**
-     * @dataProvider createSuccessDataProvider
-     *
      * @param array{name: string, extSystem: int, extId: string} $requestJson
      *
      * @throws SerializerException
      */
+    #[DataProvider('createSuccessDataProvider')]
     public function testCreateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -87,7 +87,7 @@ final class KeywordControllerTest extends AbstractApiController
     /**
      * @return list<array{requestJson: array{name: string, extSystem: int, extId: string}, expectedResponseStatusCode: int}>
      */
-    public function createSuccessDataProvider(): array
+    public static function createSuccessDataProvider(): array
     {
         return [
             [
@@ -100,9 +100,7 @@ final class KeywordControllerTest extends AbstractApiController
         ];
     }
 
-    /**
-     * @dataProvider createFailureDataProvider
-     */
+    #[DataProvider('createFailureDataProvider')]
     public function testCreateFailure(array $requestJson, array $validationErrors): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -114,7 +112,7 @@ final class KeywordControllerTest extends AbstractApiController
         $this->assertValidationErrors($content, $validationErrors);
     }
 
-    public function createFailureDataProvider(): array
+    public static function createFailureDataProvider(): array
     {
         return [
             [
@@ -134,9 +132,7 @@ final class KeywordControllerTest extends AbstractApiController
         ];
     }
 
-    /**
-     * @dataProvider keywordExistsDataProvider
-     */
+    #[DataProvider('keywordExistsDataProvider')]
     public function testKeywordExists(array $requestJson): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -145,7 +141,7 @@ final class KeywordControllerTest extends AbstractApiController
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
     }
 
-    public function keywordExistsDataProvider(): array
+    public static function keywordExistsDataProvider(): array
     {
         $existingKeyword = self::getContainer()
             ->get(KeywordRepository::class)
@@ -162,10 +158,9 @@ final class KeywordControllerTest extends AbstractApiController
     }
 
     /**
-     * @dataProvider updateSuccessDataProvider
-     *
      * @throws SerializerException
      */
+    #[DataProvider('updateSuccessDataProvider')]
     public function testUpdateSuccess(array $requestJson, int $expectedResponseStatusCode): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -183,7 +178,7 @@ final class KeywordControllerTest extends AbstractApiController
         $this->assertSame($requestJson['name'], $keyword->getName());
     }
 
-    public function updateSuccessDataProvider(): array
+    public static function updateSuccessDataProvider(): array
     {
         $existingKeyword = self::getContainer()
             ->get(KeywordRepository::class)

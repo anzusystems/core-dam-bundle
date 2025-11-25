@@ -16,7 +16,7 @@ docker_env_vars
 
 if [ -f /.dockerenv ]; then
     echo "[INFO] Running PHPUnit tests"
-    vendor/bin/simple-phpunit "${ARGS}"
+    vendor/bin/phpunit "${ARGS}"
     exit
 fi
 

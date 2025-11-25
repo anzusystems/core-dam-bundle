@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetSlotUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class AssetSlotControllerTest extends AbstractApiController
@@ -50,10 +51,9 @@ final class AssetSlotControllerTest extends AbstractApiController
     }
 
     /**
-     * @dataProvider updateSlotDataProvider
-     *
      * @throws SerializerException
      */
+    #[DataProvider('updateSlotDataProvider')]
     public function testUpdateSlot(array $reqJson): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -69,9 +69,7 @@ final class AssetSlotControllerTest extends AbstractApiController
         $this->validateSlots($reqJson, $list);
     }
 
-    /**
-     * @dataProvider updateSlotFailedProvider
-     */
+    #[DataProvider('updateSlotFailedProvider')]
     public function testUpdateSlotFailed(array $reqJson): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -85,7 +83,7 @@ final class AssetSlotControllerTest extends AbstractApiController
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
     }
 
-    private function updateSlotFailedProvider(): array
+    public static function updateSlotFailedProvider(): array
     {
         return [
             [
@@ -106,7 +104,7 @@ final class AssetSlotControllerTest extends AbstractApiController
         ];
     }
 
-    private function updateSlotDataProvider(): array
+    public static function updateSlotDataProvider(): array
     {
         return [
             [

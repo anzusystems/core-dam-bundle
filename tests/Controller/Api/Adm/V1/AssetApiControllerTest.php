@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV4;
@@ -31,9 +32,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
 
     protected ImageUrlFactory $imageUrlFactory;
 
-    /**
-     * @dataProvider updateDataProvider
-     */
+    #[DataProvider('updateDataProvider')]
     public function testUpdate(int $statusCode, ?string $categoryId = null): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -50,7 +49,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $this->assertEquals($statusCode, $response->getStatusCode());
     }
 
-    private function updateDataProvider(): array
+    public static function updateDataProvider(): array
     {
         return [
             [
@@ -266,9 +265,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $this->assertEquals(0, count($cropFilesystem->listContents($originImagePath->getDir())->toArray()));
     }
 
-    /**
-     * @dataProvider getData
-     */
+    #[DataProvider('getData')]
     public function testCreate(string $type): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -277,7 +274,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode(), $response->getContent());
     }
 
-    private function getData(): array
+    public static function getData(): array
     {
         return [
             ['image'],

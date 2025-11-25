@@ -53,7 +53,7 @@
     "phpstan/phpstan": "^2.0",
     "phpstan/phpstan-doctrine": "^2.0",
     "phpstan/phpstan-symfony": "^2.0",
-    "phpunit/phpunit": "^10.0",
+    "phpunit/phpunit": "^12.0",
     "rector/rector": "^2.0",
     "slevomat/coding-standard": "^7.0",
     "symfony/test-pack": "^1.0",

@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\KeywordQueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\KeywordAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
 final class KeywordQueryFactoryTest extends CoreDamKernelTestCase
@@ -22,9 +23,7 @@ final class KeywordQueryFactoryTest extends CoreDamKernelTestCase
         $this->extSystemRepository = $this->getService(ExtSystemRepository::class);
     }
 
-    /**
-     * @dataProvider buildQueryDataProvider
-     */
+    #[DataProvider('buildQueryDataProvider')]
     public function testBuildQuery(KeywordAdmSearchDto $searchDto, array $expectedQuery, array $expectedSort): void
     {
         $extSystem = $this->extSystemRepository->findOneBy(['slug' => 'cms']);
@@ -34,7 +33,7 @@ final class KeywordQueryFactoryTest extends CoreDamKernelTestCase
         $this->assertEqualsCanonicalizing($expectedSort, $query['body']['sort']);
     }
 
-    public function buildQueryDataProvider(): array
+    public static function buildQueryDataProvider(): array
     {
         return [
             'test_score_date_no_fulltext' => [

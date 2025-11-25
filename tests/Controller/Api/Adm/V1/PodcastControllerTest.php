@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\PodcastUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class PodcastControllerTest extends AbstractApiController
@@ -76,9 +77,7 @@ final class PodcastControllerTest extends AbstractApiController
         $this->assertGreaterThan(0, count($showList->getData()));
     }
 
-    /**
-     * @dataProvider podcastPayloadDataProvider
-     */
+    #[DataProvider('podcastPayloadDataProvider')]
     public function testCreateSuccess(array $payload): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -129,9 +128,7 @@ final class PodcastControllerTest extends AbstractApiController
         );
     }
 
-    /**
-     * @dataProvider podcastPayloadDataProvider
-     */
+    #[DataProvider('podcastPayloadDataProvider')]
     public function testUpdateSuccess(array $payload): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -160,7 +157,7 @@ final class PodcastControllerTest extends AbstractApiController
         $this->assertSame(BaseLicenceFixtures::DEFAULT_LICENCE_ID, $newPodcast->getLicence()->getId());
     }
 
-    public function podcastPayloadDataProvider(): array
+    public static function podcastPayloadDataProvider(): array
     {
         return [
             [

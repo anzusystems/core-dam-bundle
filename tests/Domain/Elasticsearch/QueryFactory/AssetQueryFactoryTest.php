@@ -31,6 +31,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
 final class AssetQueryFactoryTest extends CoreDamKernelTestCase
@@ -45,9 +46,7 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
         $this->extSystemRepository = $this->getService(ExtSystemRepository::class);
     }
 
-    /**
-     * @dataProvider buildQueryDataProvider
-     */
+    #[DataProvider('buildQueryDataProvider')]
     public function testBuildQuery(AssetAdmSearchDto $searchDto, array $expectedQuery, array $expectedSort): void
     {
         $extSystem = $this->extSystemRepository->findOneBy(['slug' => 'cms']);
@@ -57,7 +56,7 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
         $this->assertEqualsCanonicalizing($expectedSort, $query['body']['sort']);
     }
 
-    public function buildQueryDataProvider(): array
+    public static function buildQueryDataProvider(): array
     {
         return [
             'test_score_date_no_fulltext' => [
