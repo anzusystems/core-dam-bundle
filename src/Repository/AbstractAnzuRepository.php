@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CommonBundle\Repository\AbstractAnzuRepository as BaseAbstractAnzuRepository;
-use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\RebuildIndexConfig;
 use AnzuSystems\CoreDamBundle\Repository\Interfaces\AnzuRepositoryInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -19,17 +18,16 @@ use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\QueryBuilder;
 
 /**
- * @template T of BaseIdentifiableInterface
+ * @template E of object
  *
- * @method BaseIdentifiableInterface|null find($id, $lockMode = null, $lockVersion = null)
- * @method BaseIdentifiableInterface|null findOneBy(array $criteria, array $orderBy = null)
+ * @template-extends BaseAbstractAnzuRepository<E>
  */
 abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository implements AnzuRepositoryInterface
 {
     protected ?int $extSystemIdReindexCache = null;
 
     /**
-     * @return ArrayCollection<int, T>
+     * @return ArrayCollection<int, E>
      */
     public function getAllForIndexRebuild(RebuildIndexConfig $config): ArrayCollection
     {
@@ -96,7 +94,7 @@ abstract class AbstractAnzuRepository extends BaseAbstractAnzuRepository impleme
     }
 
     /**
-     * @return class-string<T>
+     * @return class-string<E>
      */
     abstract protected function getEntityClass(): string;
 

@@ -10,9 +10,6 @@ use Doctrine\Common\Collections\Collection;
 
 /**
  * @extends AbstractAnzuRepository<ImagePreview>
- *
- * @method ImagePreview|null find($id, $lockMode = null, $lockVersion = null)
- * @method ImagePreview|null findOneBy($id, $lockMode = null, $lockVersion = null)
  */
 final class ImagePreviewRepository extends AbstractAnzuRepository
 {

@@ -18,13 +18,12 @@ use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadLinks;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use JsonException;
-use Psr\Log\LoggerAwareInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
-final class JwVideoClient implements LoggerAwareInterface
+final class JwVideoClient
 {
     use SerializerAwareTrait;
     use LoggerAwareRequest;

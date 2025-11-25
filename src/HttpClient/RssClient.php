@@ -8,10 +8,9 @@ use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
-use Psr\Log\LoggerAwareInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-final class RssClient implements LoggerAwareInterface
+final class RssClient
 {
     use SerializerAwareTrait;
     use LoggerAwareRequest;
