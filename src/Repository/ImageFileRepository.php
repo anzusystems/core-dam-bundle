@@ -24,12 +24,15 @@ final class ImageFileRepository extends AbstractAssetFileRepository
      */
     public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): Collection
     {
-        return new ArrayCollection($this->findBy(
+        /** @var array<ImageFile> $result */
+        $result = $this->findBy(
             [
                 'licence' => $assetLicence,
                 'id' => $ids,
             ]
-        ));
+        );
+
+        return new ArrayCollection($result);
     }
 
     public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
