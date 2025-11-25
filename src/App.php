@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle;
 
+use AnzuSystems\AnzutapBundle\Model\Node\NodeInterface;
 use AnzuSystems\Contracts\AnzuApp;
 use Exception;
 
@@ -20,6 +21,10 @@ final class App extends AnzuApp
     public const string ENTITY_NAMESPACE = __NAMESPACE__ . '\Entity';
 
     private const int RANDOM_BYTES_LEN = 32;
+
+    public const array EMPTY_ANZUTAP_BODY = [
+        'type' => NodeInterface::DOC,
+    ];
 
     /**
      * @throws Exception

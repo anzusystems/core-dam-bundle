@@ -1,0 +1,23 @@
+#!/bin/bash
+# Script used to run PHPStan check in the application container
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
+CHECK_DIR=${1:-src}
+
+# Initialize default variables and functions
+cd "${PROJECT_ROOT}" || exit 1
+# Initialize default variables
+# shellcheck disable=SC1091
+. ./bin/docker-libvariables
+# Initialize functions
+# shellcheck disable=SC1091
+. ./bin/docker-libfunctions
+docker_env_vars
+
+if [ -f /.dockerenv ]; then
+    echo "[INFO] Running PHPStan check"
+    vendor/bin/phpstan analyse --configuration=phpstan.neon.dist "${CHECK_DIR}"
+    exit
+fi
+
+bin/docker-compose run --rm "${DOCKER_COMPOSE_SERVICE_NAME}" bash -c \'bin/phpstan "${CHECK_DIR}"\'

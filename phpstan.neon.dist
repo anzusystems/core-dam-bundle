@@ -1,0 +1,16 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - src/DependencyInjection/Configuration.php
+    doctrine:
+        repositoryClass: AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository
+    ignoreErrors:
+        # Elasticsearch client has incorrect type hints
+        - '#Parameter \#\d+ \$[a-zA-Z_]+ of method Elastic\\Elasticsearch\\Client::(index|indexBulk|create|delete|bulk)\(\) expects#'
+        - '#Parameter \#\d+ \$[a-zA-Z_]+ of method Elastic\\Elasticsearch\\Endpoints\\Indices::(create|delete)\(\) expects#'

@@ -71,7 +71,7 @@ final class CropProcessor
             ])
         );
 
-        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension($this->getCropMimeType($image)));
+        $content = $this->imageManipulator->getContent($this->fileHelper->guessExtension(self::getCropMimeType($image)));
         if ($this->configurationProvider->isCropCacheEnabled()) {
             $this->cropCache->store($image, $imageCrop, $content);
         }

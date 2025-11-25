@@ -59,8 +59,8 @@ final class ImageController extends AbstractImageController
         }
 
         if (
-            false === $image->getFlags()->isPublic() &&
-            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image) &&
+            false === $image->getFlags()->isPublic()
         ) {
             return $this->notFoundImageResponse(new RequestedCropDto());
         }
@@ -107,8 +107,8 @@ final class ImageController extends AbstractImageController
         }
 
         if (
-            false === $image->getFlags()->isPublic() &&
-            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image) &&
+            false === $image->getFlags()->isPublic()
         ) {
             return $this->notFoundImageResponse($cropPayload);
         }

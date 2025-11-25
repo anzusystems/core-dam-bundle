@@ -90,11 +90,15 @@ class Podcast implements
     #[ORM\OneToMany(targetEntity: PodcastEpisode::class, mappedBy: 'podcast')]
     private Collection $episodes;
 
+    #[ORM\OneToMany(targetEntity: PodcastExportData::class, mappedBy: 'podcast')]
+    private Collection $exportData;
+
     public function __construct()
     {
         $this->setTexts(new PodcastTexts());
         $this->setAttributes(new PodcastAttributes());
         $this->setEpisodes(new ArrayCollection());
+        $this->setExportData(new ArrayCollection());
         $this->setImagePreview(null);
         $this->setAltImage(null);
         $this->setDates(new PodcastDates());
@@ -169,6 +173,18 @@ class Podcast implements
     public function setEpisodes(Collection $episodes): self
     {
         $this->episodes = $episodes;
+
+        return $this;
+    }
+
+    public function getExportData(): Collection
+    {
+        return $this->exportData;
+    }
+
+    public function setExportData(Collection $exportData): self
+    {
+        $this->exportData = $exportData;
 
         return $this;
     }
