@@ -84,12 +84,11 @@ final class AssetSysFacade
                 }
             );
 
-            $indexEntities = [
+            $indexEntities = array_values([
                 ...$assetFile->getAsset()->getAuthors(),
                 ...$assetFile->getAsset()->getKeywords(),
-            ];
+            ]);
             if (false === empty($indexEntities)) {
-                /** @psalm-suppress InvalidArgument */
                 $this->indexManager->indexBulk($indexEntities);
             }
 

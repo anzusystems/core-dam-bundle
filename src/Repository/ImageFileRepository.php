@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 /**
  * @extends AbstractAssetFileRepository<ImageFile>
@@ -19,18 +20,16 @@ use Doctrine\Common\Collections\ArrayCollection;
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
     /**
-     * @return ArrayCollection<int, ImageFile>
+     * @return Collection<int, ImageFile>
      */
-    public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): ArrayCollection
+    public function findByLicenceAndIds(AssetLicence $assetLicence, array $ids): Collection
     {
-        return new ArrayCollection(
-            $this->findBy(
-                [
-                    'licence' => $assetLicence,
-                    'id' => $ids,
-                ]
-            )
-        );
+        return new ArrayCollection($this->findBy(
+            [
+                'licence' => $assetLicence,
+                'id' => $ids,
+            ]
+        ));
     }
 
     public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile

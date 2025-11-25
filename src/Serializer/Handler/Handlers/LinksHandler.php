@@ -51,8 +51,6 @@ class LinksHandler extends AbstractHandler
         protected readonly ConfigurationProvider $configurationProvider,
         protected readonly ImageUrlFactory $imageUrlFactory,
         private readonly RequestStack $requestStack,
-        private readonly AssetFileRouteGenerator $audioRouteGenerator,
-        private readonly AssetFileRouteRepository $assetFileRouteRepository,
     ) {
     }
 
@@ -171,24 +169,6 @@ class LinksHandler extends AbstractHandler
             $links,
             $allowList
         );
-    }
-
-    private function getAudioFileLinks(AudioFile $audioFile): array
-    {
-        $route = $this->assetFileRouteRepository->findMainByAssetFile((string) $audioFile->getId());
-
-        return $route
-            ? [self::AUDIO_KEY_AUDIO => $this->serializeAudioPublicLink($route)]
-            : []
-        ;
-    }
-
-    private function serializeAudioPublicLink(AssetFileRoute $assetFileRoute): array
-    {
-        return [
-            'type' => self::AUDIO_LINKS_TYPE,
-            'url' => $this->audioRouteGenerator->getFullUrl($assetFileRoute),
-        ];
     }
 
     private function getImagePreview(AssetFile $assetFile): ?ImageFile

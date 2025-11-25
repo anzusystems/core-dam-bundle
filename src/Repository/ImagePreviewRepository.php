@@ -21,11 +21,9 @@ final class ImagePreviewRepository extends AbstractAnzuRepository
      */
     public function findByImage(string $imageFileId): Collection
     {
-        return new ArrayCollection(
-            $this->findBy([
-                'imageFile' => $imageFileId,
-            ])
-        );
+        return new ArrayCollection($this->findBy([
+            'imageFile' => $imageFileId,
+        ]));
     }
 
     protected function getEntityClass(): string

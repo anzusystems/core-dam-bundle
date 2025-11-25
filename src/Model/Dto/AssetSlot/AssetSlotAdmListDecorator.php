@@ -18,11 +18,11 @@ class AssetSlotAdmListDecorator extends AbstractEntityDto
 
     public static function getInstance(AssetSlot $assetSlot): static
     {
-        /** @psalm-var AssetSlotAdmListDecorator $parent */
         $parent = self::getBaseInstance($assetSlot);
+        $parent->setAssetSlot($assetSlot);
 
-        return $parent
-            ->setAssetSlot($assetSlot);
+        /** @var static */
+        return $parent;
     }
 
     public function getAssetSlot(): AssetSlot

@@ -44,9 +44,6 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         return $youtubeVideo;
     }
 
-    /**
-     * @psalm-suppress RawObjectIteration
-     */
     public function createYoutubeVideoDto(Google_Service_YouTube_Video $video): YoutubeVideoDto
     {
         $youtubeVideoDto = new YoutubeVideoDto();
@@ -54,16 +51,24 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         $youtubeVideoDto->setUploadStatus($video->getStatus()->getUploadStatus());
 
         $maxPixels = 0;
-        foreach ($video->getSnippet()->getThumbnails() as $item) {
-            if (null === $item) {
-                continue;
-            }
+        $thumbnails = $video->getSnippet()->getThumbnails();
+        $thumbnailVariants = [
+            $thumbnails->getDefault(),
+            $thumbnails->getMedium(),
+            $thumbnails->getHigh(),
+            $thumbnails->getStandard(),
+            $thumbnails->getMaxres(),
+        ];
 
-            $pixels = $item->getWidth() * $item->getWidth();
+        foreach ($thumbnailVariants as $item) {
+            $width = (int) $item->getWidth();
+            $height = (int) $item->getHeight();
+            $pixels = $width * $height;
+
             if ($pixels > $maxPixels) {
                 $youtubeVideoDto->setThumbnailUrl($item->getUrl());
-                $youtubeVideoDto->setThumbnailWidth($item->getWidth());
-                $youtubeVideoDto->setThumbnailHeight($item->getHeight());
+                $youtubeVideoDto->setThumbnailWidth($width);
+                $youtubeVideoDto->setThumbnailHeight($height);
 
                 $maxPixels = $pixels;
             }

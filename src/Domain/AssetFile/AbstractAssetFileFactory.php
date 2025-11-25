@@ -228,11 +228,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new ImageFile())
+        $imageFile = new ImageFile();
+        $imageFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $imageFile;
     }
 
     protected function createBlankAudio(AssetLicence $licence, ?string $id = null): AudioFile
@@ -240,11 +243,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new AudioFile())
+        $audioFile = new AudioFile();
+        $audioFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $audioFile;
     }
 
     protected function createBlankVideo(AssetLicence $licence, ?string $id = null): VideoFile
@@ -252,11 +258,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new VideoFile())
+        $videoFile = new VideoFile();
+        $videoFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $videoFile;
     }
 
     protected function createBlankDocument(AssetLicence $licence, ?string $id = null): DocumentFile
@@ -264,11 +273,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new DocumentFile())
+        $documentFile = new DocumentFile();
+        $documentFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $documentFile;
     }
 
     /**

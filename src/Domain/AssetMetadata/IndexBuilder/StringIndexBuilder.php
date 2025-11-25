@@ -25,7 +25,7 @@ final class StringIndexBuilder implements IndexBuilderInterface
     public static function optimizeImageCustomData(array $searchableCustomData): array
     {
         if (isset($searchableCustomData[self::CUSTOM_DATA_TITLE_KEY], $searchableCustomData[self::CUSTOM_DESCRIPTION_KEY]) &&
-            (null === $searchableCustomData[self::CUSTOM_DATA_TITLE_KEY] || App::EMPTY_STRING === $searchableCustomData[self::CUSTOM_DATA_TITLE_KEY])
+            App::EMPTY_STRING === $searchableCustomData[self::CUSTOM_DATA_TITLE_KEY]
         ) {
             $searchableCustomData[self::CUSTOM_DATA_TITLE_KEY] = $searchableCustomData[self::CUSTOM_DESCRIPTION_KEY];
         }

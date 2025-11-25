@@ -144,22 +144,15 @@ final class IndexBuilder
         foreach ($this->iterate($config) as $item) {
             $i++;
 
-            try {
-                $payload['body'][] = [
-                    'index' => [
-                        '_index' => $fullIndexName,
-                        '_id' => $item['id'],
-                    ],
-                ];
-                $payload['body'][] = $item;
-            } catch (InvalidRecordException) {
-                $this->writeln(sprintf(
-                    PHP_EOL . '<error>Skipping invalid record id %s</error>' . PHP_EOL,
-                    (string) $item['id'],
-                ));
-            }
+            $payload['body'][] = [
+                'index' => [
+                    '_index' => $fullIndexName,
+                    '_id' => $item['id'],
+                ],
+            ];
+            $payload['body'][] = $item;
 
-            if (0 === $i % $config->getBatchSize() && false === empty($payload['body'])) {
+            if (0 === $i % $config->getBatchSize()) {
                 $this->client->bulk($payload);
                 $payload = [
                     'body' => [],

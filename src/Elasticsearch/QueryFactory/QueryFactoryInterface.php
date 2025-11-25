@@ -14,9 +14,7 @@ interface QueryFactoryInterface
     public function buildQuery(SearchDtoInterface $searchDto, ExtSystem $extSystem): array;
 
     /**
-     * @template T of SearchDtoInterface
-     *
-     * @return array<class-string<T>>
+     * @return array<class-string<SearchDtoInterface>>
      */
     public function getSupportedSearchDtoClasses(): array;
 }

@@ -45,7 +45,6 @@ final class EntityIterator
         string $class,
         EntityIteratorConfig $config,
     ): Generator {
-        /** @var AnzuRepositoryInterface $repository */
         $repository = $this->entityManager->getRepository($class);
         $onBatchVisitor = $this->getOnBatchVisitor($config);
 

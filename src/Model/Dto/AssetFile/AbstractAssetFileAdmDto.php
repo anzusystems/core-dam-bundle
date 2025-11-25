@@ -31,7 +31,6 @@ abstract class AbstractAssetFileAdmDto extends AbstractEntityDto
 
     public static function getAssetFileBaseInstance(AssetFile $assetFile): static
     {
-        /** @psalm-var AbstractAssetFileAdmDto $parent */
         $parent = parent::getBaseInstance($assetFile);
 
         return $parent

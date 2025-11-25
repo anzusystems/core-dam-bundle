@@ -19,10 +19,7 @@ class DocumentFileAdmListDto extends AbstractAssetFileAdmDto
 
     public static function getInstance(DocumentFile $documentFile): static
     {
-        /** @psalm-var DocumentFileAdmListDto $parent */
-        $parent = parent::getAssetFileBaseInstance($documentFile);
-
-        return $parent
+        return parent::getAssetFileBaseInstance($documentFile)
             ->setDocument($documentFile);
     }
 
@@ -31,7 +28,7 @@ class DocumentFileAdmListDto extends AbstractAssetFileAdmDto
         return $this->document;
     }
 
-    public function setDocument(DocumentFile $document): self
+    public function setDocument(DocumentFile $document): static
     {
         $this->document = $document;
 

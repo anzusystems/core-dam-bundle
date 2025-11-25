@@ -19,10 +19,7 @@ class ImageFileAdmListDto extends AbstractAssetFileAdmDto
 
     public static function getInstance(ImageFile $image): static
     {
-        /** @psalm-var ImageFileAdmListDto $parent */
-        $parent = parent::getAssetFileBaseInstance($image);
-
-        return $parent
+        return parent::getAssetFileBaseInstance($image)
             ->setImage($image);
     }
 
@@ -31,7 +28,7 @@ class ImageFileAdmListDto extends AbstractAssetFileAdmDto
         return $this->image;
     }
 
-    public function setImage(ImageFile $image): self
+    public function setImage(ImageFile $image): static
     {
         $this->image = $image;
 

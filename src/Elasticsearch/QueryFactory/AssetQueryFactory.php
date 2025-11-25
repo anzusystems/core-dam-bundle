@@ -298,9 +298,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         if (1 === $dto->getLicences()->count()) {
             $licence = $dto->getLicences()->first();
-            if (false === $licence instanceof AssetLicence) {
-                return;
-            }
 
             $filter[] = ['terms' => ['licence' => [(int) $licence->getId()]]];
 

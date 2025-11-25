@@ -21,10 +21,7 @@ class VideoFileAdmListDto extends AbstractAssetFileAdmDto
 
     public static function getInstance(VideoFile $videoFile): static
     {
-        /** @psalm-var VideoFileAdmListDto $parent */
-        $parent = parent::getAssetFileBaseInstance($videoFile);
-
-        return $parent
+        return parent::getAssetFileBaseInstance($videoFile)
             ->setVideo($videoFile);
     }
 

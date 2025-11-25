@@ -12,14 +12,14 @@ final class CollectionHelper extends CommonCollectionHelper
 {
     /**
      * @template TKey of array-key
-     * @template T
+     * @template T of object
      *
      * @param Collection<TKey, T> $collection
      * @param Closure(T): bool $compareFn
      *
      * @return T|null
      */
-    public static function findFirst(Collection $collection, Closure $compareFn): ?object
+    public static function findFirst(Collection $collection, Closure $compareFn): mixed
     {
         foreach ($collection as $item) {
             if ($compareFn($item)) {
