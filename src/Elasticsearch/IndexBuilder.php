@@ -6,8 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\AnzuElasticSearchException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\InvalidRecordException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;

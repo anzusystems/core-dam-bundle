@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Event\AssetFileChangeStateEvent;
 use AnzuSystems\CoreDamBundle\Event\AssetFileCopiedEvent;
 use AnzuSystems\CoreDamBundle\Event\AssetFileDeleteEvent;
 use AnzuSystems\CoreDamBundle\Event\MetadataProcessedEvent;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AsseFileAdmNotificationDecorator;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileStatusAdmNotificationDecorator;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;

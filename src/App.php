@@ -20,11 +20,11 @@ final class App extends AnzuApp
 
     public const string ENTITY_NAMESPACE = __NAMESPACE__ . '\Entity';
 
-    private const int RANDOM_BYTES_LEN = 32;
-
     public const array EMPTY_ANZUTAP_BODY = [
         'type' => NodeInterface::DOC,
     ];
+
+    private const int RANDOM_BYTES_LEN = 32;
 
     /**
      * @throws Exception

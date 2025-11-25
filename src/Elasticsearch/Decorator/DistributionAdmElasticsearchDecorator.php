@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\ElasticSearch;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 
 final class DistributionAdmElasticsearchDecorator

@@ -6,8 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Validator\Validator;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileMessageDispatcher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
