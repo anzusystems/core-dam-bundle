@@ -16,11 +16,11 @@ use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomDistributionFilter;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use Doctrine\ORM\Exception\ORMException;
 
-final class DistributionRepositoryDecorator
+final readonly class DistributionRepositoryDecorator
 {
     public function __construct(
-        private readonly DistributionRepository $distributionRepository,
-        private readonly ModuleProvider $moduleProvider,
+        private DistributionRepository $distributionRepository,
+        private ModuleProvider $moduleProvider,
     ) {
     }
 
