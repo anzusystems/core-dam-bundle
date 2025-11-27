@@ -157,6 +157,7 @@ final class AssetFileRouteFacade extends AbstractManager
     {
         return new AssetFileRouteEvent(
             (string) $route->getTargetAssetFile()->getId(),
+            $route->getTargetAssetFile()->getAssetType(),
             $this->assetFileRouteGenerator->getFullUrl($route)
         );
     }

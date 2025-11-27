@@ -50,7 +50,7 @@ final class RefreshAssetPropertiesHandler
                     'Asset (%s) property refresh failed',
                     (string) $asset->getId(),
                 ),
-                $e
+                exception: $e
             );
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);

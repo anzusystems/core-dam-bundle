@@ -56,7 +56,7 @@ final readonly class AssetChangeStateHandler
                     (string) $asset->getId(),
                     $asset->getAttributes()->getStatus()->toString()
                 ),
-                $e
+                exception: $e
             );
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);

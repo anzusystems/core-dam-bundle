@@ -45,7 +45,7 @@ final class JwVideoThumbnail extends AbstractDistributionDtoFactory
                     $videoId,
                     $e->getMessage()
                 ),
-                $e
+                exception: $e
             );
 
             return;

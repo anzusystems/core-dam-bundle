@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Logger;
 
+use AnzuSystems\CommonBundle\Document\LogContext;
 use AnzuSystems\CommonBundle\Log\Factory\LogContextFactory;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use JsonException;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -27,53 +29,74 @@ final class DamLogger
     public const string NAMESPACE_ASSET_FILE_DOWNLOAD = 'AssetFileDownload';
 
     public function __construct(
-        private readonly LoggerInterface $appLogger,
+        private readonly LoggerInterface $journalLogger,
         private readonly LogContextFactory $contextFactory,
     ) {
     }
 
     /**
+     * @throws JsonException
      * @throws SerializerException
      */
-    public function error(string $namespace, string $message, ?Throwable $exception = null): void
+    public function error(string $namespace, string $message, array $content = [], array $params = [], ?Throwable $exception = null): void
+    {
+        $this->journalLogger->error("[{$namespace}] {$message}", $this->createContext($content, $params, $exception));
+    }
+
+    /**
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function warning(string $namespace, string $message = '', array $content = [], array $params = []): void
+    {
+        $this->journalLogger->warning("[{$namespace}] {$message}", $this->createContext($content, $params));
+    }
+
+    /**
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function info(string $namespace, string $message = '', array $content = [], array $params = []): void
+    {
+        $this->journalLogger->info("[{$namespace}] {$message}", $this->createContext($content, $params));
+    }
+
+    /**
+     * @throws SerializerException
+     * @throws JsonException
+     */
+    protected function createContext(array $content = [], array $params = [], ?Throwable $exception = null): array
     {
         $context = $this->contextFactory->buildBaseContext();
+        $context->setContent(json_encode($content, JSON_THROW_ON_ERROR));
+        $context->setParams($params);
 
         if ($exception) {
-            $context->setException($exception::class);
-            $context->setError($exception->getMessage());
+            $this->setExceptionToContext($exception, $context);
         }
 
         /** @var array $arrayContext */
         $arrayContext = $this->serializer->toArray($context);
-        $this->appLogger->error("[{$namespace}] {$message}", $arrayContext);
+
+        return $arrayContext;
     }
 
-    /**
-     * @throws SerializerException
-     */
-    public function info(string $namespace, string $message = '', string $content = '', array $params = []): void
+    protected function setExceptionToContext(Throwable $exception, LogContext $context): void
     {
-        $context = $this->contextFactory->buildBaseContext();
-        $context->setContent($content);
-        $context->setParams($params);
+        $exceptionClass = $exception::class;
+        $error = $exception->getMessage();
 
-        /** @var array $arrayContext */
-        $arrayContext = $this->serializer->toArray($context);
-        $this->appLogger->info("[{$namespace}] {$message}", $arrayContext);
-    }
-
-    /**
-     * @throws SerializerException
-     */
-    public function warning(string $namespace, string $message = '', string $content = '', array $params = []): void
-    {
-        $context = $this->contextFactory->buildBaseContext();
-        $context->setContent($content);
-        $context->setParams($params);
-
-        /** @var array $arrayContext */
-        $arrayContext = $this->serializer->toArray($context);
-        $this->appLogger->warning("[{$namespace}] {$message}", $arrayContext);
+        $contextException = $context->getException();
+        $context->setException(
+            $contextException ? ($contextException . ' <- ' . $exceptionClass) : $exceptionClass
+        );
+        $contextError = $context->getError();
+        $context->setError(
+            $contextError ? ($contextError . ' <- ' . $error) : $error
+        );
+        $prevException = $exception->getPrevious();
+        if ($prevException) {
+            $this->setExceptionToContext($prevException, $context);
+        }
     }
 }

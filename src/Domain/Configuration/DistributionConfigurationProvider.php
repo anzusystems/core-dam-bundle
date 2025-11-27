@@ -60,12 +60,6 @@ final class DistributionConfigurationProvider
     public function getDistributionService(string $serviceName): DistributionServiceConfiguration
     {
         if (false === isset($this->distributionServicesCache[$serviceName])) {
-            // todo validate for edge cases
-//            if (false === isset($this->distributionServices[$serviceName])) {
-//                return
-////                throw new DomainException("Invalid distribution service ({$serviceName})");
-//            }
-
             $this->distributionServicesCache[$serviceName] = $this->createDistributionServiceConfiguration(
                 $serviceName,
                 $this->distributionServices[$serviceName] ?? []

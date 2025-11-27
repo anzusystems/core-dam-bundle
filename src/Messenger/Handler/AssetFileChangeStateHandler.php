@@ -106,7 +106,7 @@ final class AssetFileChangeStateHandler
                     (string) $assetFile->getId(),
                     $assetFile->getAssetAttributes()->getStatus()->toString()
                 ),
-                $e
+                exception: $e
             );
             $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 

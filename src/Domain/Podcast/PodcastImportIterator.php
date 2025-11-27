@@ -72,7 +72,7 @@ final class PodcastImportIterator
                     'Invalid RSS XML from URL (%s)',
                     $podcastToImport->getAttributes()->getRssUrl()
                 ),
-                $exception
+                exception: $exception
             );
 
             return;

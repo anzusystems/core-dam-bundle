@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Distribution;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\DefaultDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\MockDistributionModule;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Traversable;
 
