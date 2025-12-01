@@ -8,8 +8,10 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ImageAttributes;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ImageFileRepository::class)]
@@ -32,6 +34,9 @@ class ImageFile extends AssetFile
     #[ORM\OneToMany(targetEntity: AssetSlot::class, mappedBy: 'image', fetch: App::DOCTRINE_EXTRA_LAZY)]
     private Collection $slots;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: false)]
+    private DateTimeImmutable $manipulatedAt;
+
     public function __construct()
     {
         $this->setImageAttributes(new ImageAttributes());
@@ -39,6 +44,7 @@ class ImageFile extends AssetFile
         $this->setResizes(new ArrayCollection());
         $this->setSlots(new ArrayCollection());
         $this->setLicence(new AssetLicence());
+        $this->setManipulatedAt(App::getAppDate());
         parent::__construct();
     }
 
@@ -51,6 +57,7 @@ class ImageFile extends AssetFile
         $assetFile = (new self())
             ->setImageAttributes(clone $this->getImageAttributes())
             ->setRegionsOfInterest($regionsOfInterest)
+            ->setManipulatedAt($this->getManipulatedAt())
         ;
 
         return parent::copyBase($assetFile);
@@ -137,6 +144,18 @@ class ImageFile extends AssetFile
     {
         $this->slots->add($slot);
         $slot->setAssetFile($this);
+
+        return $this;
+    }
+
+    public function getManipulatedAt(): DateTimeImmutable
+    {
+        return $this->manipulatedAt;
+    }
+
+    public function setManipulatedAt(DateTimeImmutable $manipulatedAt): self
+    {
+        $this->manipulatedAt = $manipulatedAt;
 
         return $this;
     }

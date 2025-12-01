@@ -32,6 +32,10 @@ final class AssetFileCacheManager
         if ($cache->isPublic()) {
             $response->setPublic();
         }
+
+        if ($cache->isMusRevalidate()) {
+            $response->headers->addCacheControlDirective('must-revalidate');
+        }
         $response->setMaxAge($cache->getMaxAge());
         $response->headers->set(self::CACHE_CONTROL_TTL_HEADER, (string) $cache->getCacheTtl());
         $this->setXKeys($response, $asset);

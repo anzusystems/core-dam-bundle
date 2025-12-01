@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\RegionOfInterest;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
@@ -34,6 +35,7 @@ class RegionOfInterestFacade
         $this->validator->validate($createDto);
         $roi = $this->regionOfInterestFactory->createRoi($createDto);
         $this->imageManager->addRegionOfInterest($imageFile, $roi, false);
+        $imageFile->setManipulatedAt(App::getAppDate());
 
         return $this->regionOfInterestManager->create($roi);
     }
@@ -47,6 +49,7 @@ class RegionOfInterestFacade
     ): RegionOfInterest {
         $this->validator->validate($roiDto);
         $event = $this->createEvent($regionOfInterest);
+        $regionOfInterest->getImage()->setManipulatedAt(App::getAppDate());
         $this->regionOfInterestManager->update($regionOfInterest, $roiDto);
         $this->dispatcher->dispatch($event);
 
@@ -56,6 +59,7 @@ class RegionOfInterestFacade
     public function delete(RegionOfInterest $regionOfInterest): bool
     {
         $event = $this->createEvent($regionOfInterest);
+        $regionOfInterest->getImage()->setManipulatedAt(App::getAppDate());
         $regionOfInterest->getImage()->getRegionsOfInterest()->removeElement($regionOfInterest);
 
         if ($this->regionOfInterestManager->delete($regionOfInterest)) {
