@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity;
 
+use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
@@ -20,6 +21,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PodcastExportDataRepository::class)]
+#[ORM\UniqueConstraint(name: 'UNIQ_podcast_export_type_device_type', fields: ['podcast', 'exportType',  'deviceType'])]
+#[BaseAppAssert\UniqueEntity(fields: ['podcast', 'exportType',  'deviceType'], errorAtPath: ['exportType'])]
 class PodcastExportData implements TimeTrackingInterface, UserTrackingInterface, IdentifiableInterface
 {
     use IdentityIntTrait;
@@ -40,7 +43,7 @@ class PodcastExportData implements TimeTrackingInterface, UserTrackingInterface,
     private Podcast $podcast;
 
     #[ORM\Column(type: Types::JSON)]
-    #[Serialize]
+    #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $body;
 
     public function __construct()

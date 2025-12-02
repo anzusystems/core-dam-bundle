@@ -91,6 +91,7 @@ class Podcast implements
     private Collection $episodes;
 
     #[ORM\OneToMany(targetEntity: PodcastExportData::class, mappedBy: 'podcast')]
+    #[Serialize(type: PodcastExportData::class)]
     private Collection $exportData;
 
     public function __construct()
