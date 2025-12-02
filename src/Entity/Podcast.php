@@ -92,6 +92,7 @@ class Podcast implements
 
     #[ORM\OneToMany(targetEntity: PodcastExportData::class, mappedBy: 'podcast')]
     #[Serialize(type: PodcastExportData::class)]
+    #[Assert\Valid]
     private Collection $exportData;
 
     public function __construct()
