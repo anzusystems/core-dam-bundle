@@ -60,6 +60,11 @@ final class ElasticManagerCommand extends Command
                 InputOption::VALUE_OPTIONAL,
                 'Batch size for processing.',
                 500
+            )->addOption(
+                RebuildIndexConfig::OPT_SINCE,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Process entities modified since specified time period (e.g., "2 years", "1 month").'
             )
         ;
     }
