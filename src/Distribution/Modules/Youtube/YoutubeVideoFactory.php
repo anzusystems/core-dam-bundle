@@ -61,7 +61,8 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         ];
 
         foreach ($thumbnailVariants as $item) {
-            if (null === $item->getWidth() || null === $item->getHeight()) {
+            // @phpstan-ignore-next-line Google API can return null thumbnails despite PHPDoc
+            if (null === $item) {
                 continue;
             }
 
