@@ -27,6 +27,12 @@ anzu_systems_common:
         app:
             ignored_exceptions:
                 - Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+            mongo:
+                uri: '%env(ANZU_MONGODB_AUDIT_LOG_URI)%'
+                username: '%env(ANZU_MONGODB_AUDIT_LOG_USERNAME)%'
+                password: '%env(ANZU_MONGODB_AUDIT_LOG_PASSWORD)%'
+                ssl: '%env(bool:ANZU_MONGODB_AUDIT_LOG_SSL)%'
+                database: '%env(ANZU_MONGODB_AUDIT_LOG_DB)%'
         audit:
             mongo:
                 uri: '%env(ANZU_MONGODB_AUDIT_LOG_URI)%'
@@ -34,10 +40,3 @@ anzu_systems_common:
                 password: '%env(ANZU_MONGODB_AUDIT_LOG_PASSWORD)%'
                 ssl: '%env(bool:ANZU_MONGODB_AUDIT_LOG_SSL)%'
                 database: '%env(ANZU_MONGODB_AUDIT_LOG_DB)%'
-        journal:
-          mongo:
-            uri: '%env(ANZU_MONGODB_AUDIT_LOG_URI)%'
-            username: '%env(ANZU_MONGODB_AUDIT_LOG_USERNAME)%'
-            password: '%env(ANZU_MONGODB_AUDIT_LOG_PASSWORD)%'
-            ssl: '%env(bool:ANZU_MONGODB_AUDIT_LOG_SSL)%'
-            database: '%env(ANZU_MONGODB_AUDIT_LOG_DB)%'
