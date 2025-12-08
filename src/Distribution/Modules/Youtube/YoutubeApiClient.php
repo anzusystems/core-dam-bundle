@@ -30,6 +30,7 @@ use Google_Service_YouTube_ResourceId;
 use Google_Service_YouTube_Video;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\File;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 final class YoutubeApiClient
@@ -46,6 +47,7 @@ final class YoutubeApiClient
         private readonly GoogleClientProvider $clientProvider,
         private readonly YoutubeAuthenticator $authenticator,
         private readonly DamLogger $damLogger,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -233,6 +235,7 @@ final class YoutubeApiClient
                 sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage()),
                 exception: $exception
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
 
         return null;
