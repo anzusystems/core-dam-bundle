@@ -15,8 +15,8 @@ final class Color extends Constraint
 
     public function __construct(
         public bool $multiple = false,
-        array $options = null,
-        array $groups = null,
+        ?array $options = null,
+        ?array $groups = null,
         mixed $payload = null
     ) {
         parent::__construct($options, $groups, $payload);

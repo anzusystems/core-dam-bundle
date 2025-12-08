@@ -57,7 +57,7 @@ final class DistributionCategorySelectController extends AbstractApiController
     #[Route('/ext-system/{extSystem}', name: 'get_list', methods: [Request::METHOD_GET])]
     #[Route('/ext-system/{extSystem}/asset-type/{assetType}', name: 'get_list_with_asset_type', methods: [Request::METHOD_GET])]
     #[OAParameterPath('extSystem'), OAParameterPath('assetType'),  OAResponse([DistributionCategorySelect::class])]
-    public function getList(ApiParams $apiParams, ExtSystem $extSystem, AssetType $assetType = null): JsonResponse
+    public function getList(ApiParams $apiParams, ExtSystem $extSystem, ?AssetType $assetType = null): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_DISTRIBUTION_CATEGORY_SELECT_READ, $extSystem);
 

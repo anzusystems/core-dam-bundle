@@ -17,7 +17,7 @@ final class Slugger implements SluggerInterface
         $this->slugger = new AsciiSlugger();
     }
 
-    public function slug(string $string, string $separator = '-', string $locale = null): AbstractUnicodeString
+    public function slug(string $string, string $separator = '-', ?string $locale = null): AbstractUnicodeString
     {
         return $this->slugger->slug(
             $string,

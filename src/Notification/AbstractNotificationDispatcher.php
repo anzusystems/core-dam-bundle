@@ -44,7 +44,7 @@ abstract class AbstractNotificationDispatcher
      *
      * @throws SerializerException
      */
-    protected function notify(array $userIds, string $eventName, object $data = null): void
+    protected function notify(array $userIds, string $eventName, ?object $data = null): void
     {
         $notificationsConfig = $this->configurationProvider->getSettings()->getNotificationsConfig();
         if ($notificationsConfig->isDisabled()) {
