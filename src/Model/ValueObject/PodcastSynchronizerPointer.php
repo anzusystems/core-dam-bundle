@@ -31,7 +31,7 @@ final readonly class PodcastSynchronizerPointer implements ValueObjectInterface
     {
         $parts = explode('|', $string);
 
-        if (isset($parts[0], $parts[1])) {
+        if (isset($parts[1])) {
             $dateTimeString = DateTimeImmutable::createFromFormat(DateTimeInterface::ATOM, $parts[1]);
             if (false === $dateTimeString instanceof DateTimeImmutable) {
                 throw new InvalidArgumentException(sprintf('Broken pointer %s', $string));

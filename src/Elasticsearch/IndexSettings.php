@@ -50,7 +50,7 @@ final readonly class IndexSettings
     public function hasElasticLanguageDictionary(Language $language): bool
     {
         return in_array(
-            $language->toString(),
+            $language,
             $this->configurationProvider->getSettings()->getElasticLanguageDictionaries(),
             true
         );

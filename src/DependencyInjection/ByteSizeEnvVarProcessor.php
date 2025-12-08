@@ -44,8 +44,7 @@ final class ByteSizeEnvVarProcessor implements EnvVarProcessorInterface
             return (int) $byteValue;
         }
 
-        /** @var int $value */
-        $value = substr($byteValue, 0, -2);
+        $value = (int) substr($byteValue, 0, -2);
         $unit = strtoupper(substr($byteValue, -2));
 
         if (isset(self::MULTIPLE_MAP[$unit])) {

@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefin
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchLicenceCollectionDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
@@ -298,9 +297,6 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
         if (1 === $dto->getLicences()->count()) {
             $licence = $dto->getLicences()->first();
-            if (false === $licence instanceof AssetLicence) {
-                return;
-            }
 
             $filter[] = ['terms' => ['licence' => [(int) $licence->getId()]]];
 

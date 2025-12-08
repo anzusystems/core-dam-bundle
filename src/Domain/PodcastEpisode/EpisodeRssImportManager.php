@@ -33,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
@@ -55,6 +56,7 @@ final readonly class EpisodeRssImportManager
         private AssetSlotFactory $assetSlotFactory,
         private DamLogger $damLogger,
         private ImageFileRepository $imageFileRepository,
+        private LoggerInterface $appLogger,
     ) {
     }
 
@@ -109,6 +111,7 @@ final readonly class EpisodeRssImportManager
                     $exception->getMessage()
                 )
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
 
             if ($episode) {
                 $this->podcastEpisodeStatusManager->toImportFailed($episode);

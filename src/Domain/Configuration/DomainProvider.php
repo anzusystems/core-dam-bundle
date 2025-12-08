@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRouteConfigurableInterface;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 readonly class DomainProvider
@@ -30,6 +31,17 @@ readonly class DomainProvider
     public function isCurrentSchemeAndHostRedirectDomain(): bool
     {
         return $this->domainAndHostEquals($this->redirectDomain);
+    }
+
+    public function isCurrentSchemeAndHostAdminDomain(AssetFile $assetFile): bool
+    {
+        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetFile($assetFile);
+
+        if (false === ($config instanceof ExtSystemImageTypeConfiguration)) {
+            return false;
+        }
+
+        return $this->domainAndHostEquals($config->getAdminDomain());
     }
 
     public function isCurrentSchemeAndHostPublicDomain(AssetFile $assetFile): bool

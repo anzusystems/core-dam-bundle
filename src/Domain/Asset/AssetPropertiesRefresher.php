@@ -159,14 +159,8 @@ class AssetPropertiesRefresher extends AbstractManager
         }
 
         $newMainFileSlot = $this->getDefaultSlot($asset) ?? $asset->getSlots()->first();
-        if ($newMainFileSlot instanceof AssetSlot) {
-            $newMainFileSlot->getFlags()->setMain(true);
-            $asset->setMainFile($newMainFileSlot->getAssetFile());
-
-            return;
-        }
-
-        $asset->setMainFile(null);
+        $newMainFileSlot->getFlags()->setMain(true);
+        $asset->setMainFile($newMainFileSlot->getAssetFile());
     }
 
     private function getDefaultSlot(Asset $asset): ?AssetSlot

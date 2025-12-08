@@ -13,7 +13,7 @@ class AssetExternalProviderTextsDto
 
     public static function getInstance(string $displayTitle, string $description): static
     {
-        return (new self())
+        return (new static())
             ->setDisplayTitle($displayTitle)
             ->setDescription($description)
         ;
@@ -25,7 +25,7 @@ class AssetExternalProviderTextsDto
         return $this->displayTitle;
     }
 
-    public function setDisplayTitle(string $displayTitle): self
+    public function setDisplayTitle(string $displayTitle): static
     {
         $this->displayTitle = $displayTitle;
 
@@ -38,7 +38,7 @@ class AssetExternalProviderTextsDto
         return $this->description;
     }
 
-    public function setDescription(string $description): self
+    public function setDescription(string $description): static
     {
         $this->description = $description;
 

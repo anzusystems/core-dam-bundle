@@ -12,9 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use League\Flysystem\FilesystemException;
@@ -43,10 +41,7 @@ final class GenerateCopyJobCommand extends Command
     private const int MAX_ASSETS_PER_JOB = 1_000;
 
     public function __construct(
-        private readonly Connection $damMediaApiMigConnection,
-        private readonly Connection $defaultConnection,
         private readonly JobImageCopyFacade $imageCopyFacade,
-        private readonly AssetRepository $assetRepository,
         private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly AssetFileRepository $assetFileRepository,
         private readonly EntityManagerInterface $entityManager,

@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 
-use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\CropAllowItem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\Traits\AdminImageLinksTrait;
 use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -51,8 +48,6 @@ class LinksHandler extends AbstractHandler
         protected readonly ConfigurationProvider $configurationProvider,
         protected readonly ImageUrlFactory $imageUrlFactory,
         private readonly RequestStack $requestStack,
-        private readonly AssetFileRouteGenerator $audioRouteGenerator,
-        private readonly AssetFileRouteRepository $assetFileRouteRepository,
     ) {
     }
 
@@ -171,24 +166,6 @@ class LinksHandler extends AbstractHandler
             $links,
             $allowList
         );
-    }
-
-    private function getAudioFileLinks(AudioFile $audioFile): array
-    {
-        $route = $this->assetFileRouteRepository->findMainByAssetFile((string) $audioFile->getId());
-
-        return $route
-            ? [self::AUDIO_KEY_AUDIO => $this->serializeAudioPublicLink($route)]
-            : []
-        ;
-    }
-
-    private function serializeAudioPublicLink(AssetFileRoute $assetFileRoute): array
-    {
-        return [
-            'type' => self::AUDIO_LINKS_TYPE,
-            'url' => $this->audioRouteGenerator->getFullUrl($assetFileRoute),
-        ];
     }
 
     private function getImagePreview(AssetFile $assetFile): ?ImageFile

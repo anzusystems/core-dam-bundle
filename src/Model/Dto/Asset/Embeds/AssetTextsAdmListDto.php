@@ -23,7 +23,7 @@ class AssetTextsAdmListDto
         return $this->displayTitle;
     }
 
-    public function setDisplayTitle(string $displayTitle): self
+    public function setDisplayTitle(string $displayTitle): static
     {
         $this->displayTitle = $displayTitle;
 

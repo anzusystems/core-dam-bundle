@@ -7,10 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
-use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
-use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -33,9 +30,6 @@ final class VideoDistributionFacade
         private readonly ModuleProvider $moduleProvider,
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly VideoManager $videoManager,
-        private readonly ImagePreviewFactory $imagePreviewFactory,
-        private readonly ImagePreviewManager $imagePreviewManager,
-        private readonly AssetManager $assetManager,
         private readonly DistributionRepository $distributionRepository,
     ) {
     }

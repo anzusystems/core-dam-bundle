@@ -50,7 +50,7 @@ final class PodcastRssReader
             );
         }
 
-        if (false === $this->body->channel->item) {
+        if (false === isset($this->body->channel->item)) {
             throw new InvalidArgumentException(
                 message: 'Invalid XML content, channel item missing'
             );

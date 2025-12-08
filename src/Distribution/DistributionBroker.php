@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Distribution;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusFacade;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Exception\DistributionFailedException;
@@ -16,11 +15,11 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributeMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\DistributionRemoteProcessingCheckMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionFailReason;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 final class DistributionBroker
@@ -35,8 +34,7 @@ final class DistributionBroker
         private readonly DistributionStatusFacade $distributionStatusFacade,
         private readonly ModuleProvider $moduleProvider,
         private readonly DamLogger $damLogger,
-        private readonly AssetPropertiesRefresher $propertiesRefresher,
-        private readonly AssetRepository $assetRepository,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -91,6 +89,7 @@ final class DistributionBroker
                     $e->getMessage()
                 )
             );
+            $this->appLogger->error($e->getMessage(), ['exception' => $e]);
 
             $distribution->setFailReason(DistributionFailReason::Unknown);
             $this->distributionStatusFacade->toFailed($distribution);
@@ -125,6 +124,7 @@ final class DistributionBroker
                     $distribution->getId(),
                     $exception->getMessage(),
                 ));
+                $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
                 $distribution->setFailReason(DistributionFailReason::RemoteProcessFailed);
                 $this->distributionStatusFacade->toFailed($distribution);
             }

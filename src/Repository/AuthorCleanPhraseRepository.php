@@ -24,7 +24,7 @@ final class AuthorCleanPhraseRepository extends AbstractAnzuRepository
         AuthorCleanPhraseType $type,
         AuthorCleanPhraseMode $mode,
         ExtSystem $extSystem,
-        bool $wordBoundary = null
+        ?bool $wordBoundary = null
     ): Collection {
         $qb = $this->createQueryBuilder('entity')
             ->where('entity.type = :type')

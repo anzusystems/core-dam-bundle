@@ -6,8 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
 use AnzuSystems\Contracts\Entity\Interfaces\BaseIdentifiableInterface;
 use AnzuSystems\CoreDamBundle\Command\Traits\OutputUtilTrait;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\AnzuElasticSearchException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\Exception\InvalidRecordException;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\IndexDefinitionFactory;
@@ -39,12 +37,10 @@ final class IndexBuilder
         private readonly Client $client,
         private readonly IndexSettings $indexSettings,
         private readonly IndexFactoryProvider $indexFactoryProvider,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly array $indexMappings,
         IndexDefinitionFactory $indexDefinitionFactory,
         private readonly DBALRepositoryProvider $repositoryProvider,
         private readonly ExtSystemRepository $extSystemRepository,
-        private readonly CustomFormProvider $customFormProvider,
     ) {
         $this->indexDefinitions = $indexDefinitionFactory->buildIndexDefinitions($indexMappings);
     }
@@ -146,22 +142,15 @@ final class IndexBuilder
         foreach ($this->iterate($config) as $item) {
             $i++;
 
-            try {
-                $payload['body'][] = [
-                    'index' => [
-                        '_index' => $fullIndexName,
-                        '_id' => $item['id'],
-                    ],
-                ];
-                $payload['body'][] = $item;
-            } catch (InvalidRecordException) {
-                $this->writeln(sprintf(
-                    PHP_EOL . '<error>Skipping invalid record id %s</error>' . PHP_EOL,
-                    (string) $item['id'],
-                ));
-            }
+            $payload['body'][] = [
+                'index' => [
+                    '_index' => $fullIndexName,
+                    '_id' => $item['id'],
+                ],
+            ];
+            $payload['body'][] = $item;
 
-            if (0 === $i % $config->getBatchSize() && false === empty($payload['body'])) {
+            if (0 === $i % $config->getBatchSize()) {
                 $this->client->bulk($payload);
                 $payload = [
                     'body' => [],

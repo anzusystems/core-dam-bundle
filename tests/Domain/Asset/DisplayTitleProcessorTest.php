@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\NonUniqueResultException;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
 {
@@ -34,9 +35,7 @@ final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
         $this->assetTextsWriter = $this->getService(AssetTextsWriter::class);
     }
 
-    /**
-     * @dataProvider displayTitleFullDataProvider
-     */
+    #[DataProvider('displayTitleFullDataProvider')]
     public function testDisplayTitleFull(array $config, string $expectedTitle): void
     {
         $asset = (new Asset())
@@ -74,7 +73,7 @@ final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
         );
     }
 
-    public function displayTitleFullDataProvider(): array
+    public static function displayTitleFullDataProvider(): array
     {
         return [
             [
@@ -103,9 +102,7 @@ final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
         ];
     }
 
-    /**
-     * @dataProvider displayTitleEmptyDataProvider
-     */
+    #[DataProvider('displayTitleEmptyDataProvider')]
     public function testDisplayTitleEmpty(array $config): void
     {
         $asset = (new Asset())
@@ -121,7 +118,7 @@ final class DisplayTitleProcessorTest extends CoreDamKernelTestCase
         );
     }
 
-    public function displayTitleEmptyDataProvider(): array
+    public static function displayTitleEmptyDataProvider(): array
     {
         return [
             [

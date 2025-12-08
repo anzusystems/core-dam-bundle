@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AbstractAssetFileFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
@@ -49,6 +50,7 @@ final class ImageFacade extends AbstractAssetFileFacade
 
             $event = $this->createEvent($image);
             $this->imageRotator->rotateImage($image, $angle);
+            $image->setManipulatedAt(App::getAppDate());
             $this->imageManager->updateExisting($image);
             $this->indexManager->index($image->getAsset());
             $this->fileStash->emptyAll();

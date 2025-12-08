@@ -207,9 +207,12 @@ abstract class AssetFile implements
         $this->setRoutes(new ArrayCollection());
         $this->setMainRoute(null);
 
-        return $assetFile
+        $assetFile
             ->setAssetAttributes(clone $this->getAssetAttributes())
             ->setFlags(clone $this->getFlags())
         ;
+
+        /** @var static */
+        return $assetFile;
     }
 }

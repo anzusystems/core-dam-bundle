@@ -29,7 +29,7 @@ final readonly class JobAuthorCurrentOptimizeResult implements ValueObjectInterf
         $parts = explode('|', $string);
 
         return new self(
-            isset($parts[0]) ? (int) $parts[0] : 0,
+            (int) $parts[0],
             isset($parts[1]) ? (int) $parts[1] : 0,
         );
     }

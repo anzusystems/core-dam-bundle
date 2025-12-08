@@ -8,13 +8,12 @@ use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as TestImageFixtures;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ImageControllerTest extends AbstractApiController
 {
-    /**
-     * @dataProvider getDataProvider
-     */
+    #[DataProvider('getDataProvider')]
     public function testGet(string $url, int $statusCode): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -23,7 +22,7 @@ final class ImageControllerTest extends AbstractApiController
         $this->assertSame($response->getStatusCode(), $statusCode);
     }
 
-    private function getDataProvider(): array
+    public static function getDataProvider(): array
     {
         return [
             [

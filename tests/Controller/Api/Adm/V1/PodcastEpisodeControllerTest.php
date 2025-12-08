@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\PodcastEpisodeUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class PodcastEpisodeControllerTest extends AbstractApiController
@@ -79,9 +80,9 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
     }
 
     /**
-     * @dataProvider podcastEpisodePayloadDataProvider
      * @throws SerializerException
      */
+    #[DataProvider('podcastEpisodePayloadDataProvider')]
     public function testCreateSuccess(array $payload): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -95,9 +96,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         );
     }
 
-    /**
-     * @dataProvider createFailedDataProvider
-     */
+    #[DataProvider('createFailedDataProvider')]
     public function testCreateFailed(array $payload, array $validationErrors, ?string $assetFileId = null): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -116,7 +115,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         );
     }
 
-    private function createFailedDataProvider(): array
+    public static function createFailedDataProvider(): array
     {
         return [
             [
@@ -150,9 +149,9 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
     }
 
     /**
-     * @dataProvider podcastEpisodePayloadDataProvider
      * @throws SerializerException
      */
+    #[DataProvider('podcastEpisodePayloadDataProvider')]
     public function testUpdateSuccess(array $payload): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -178,7 +177,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         $this->assertSame($expectedPayload['imagePreview']['imageFile'], (string) $newPodcast->getImagePreview()->getImageFile()->getId());
     }
 
-    public function podcastEpisodePayloadDataProvider(): array
+    public static function podcastEpisodePayloadDataProvider(): array
     {
         return [
             [

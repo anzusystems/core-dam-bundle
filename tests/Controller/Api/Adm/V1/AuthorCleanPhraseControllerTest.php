@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AuthorCleanPhraseUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class AuthorCleanPhraseControllerTest extends AbstractApiController
@@ -40,9 +41,7 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
         $cache->cleanCache();
     }
 
-    /**
-     * @dataProvider createFailedDataProvider
-     */
+    #[DataProvider('createFailedDataProvider')]
     public function testCreateFailed(
         array $phrasePayload,
         array $validationErrors,
@@ -55,7 +54,7 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
         $this->assertValidationErrors($content, $validationErrors);
     }
 
-    private function createFailedDataProvider(): array
+    public static function createFailedDataProvider(): array
     {
         return [
             [
@@ -135,9 +134,7 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
         ];
     }
 
-    /**
-     * @dataProvider createDataProvider
-     */
+    #[DataProvider('createDataProvider')]
     public function testCreate(
         array $phrasePayload,
         string $testAuthorString,
@@ -169,7 +166,7 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
         $this->assertSame($expectedProcessResultAfter['authors'], CollectionHelper::traversableToIds($result->getAuthors()));
     }
 
-    private function createDataProvider(): array
+    public static function createDataProvider(): array
     {
         return [
             [

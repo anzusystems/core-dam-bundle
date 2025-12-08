@@ -13,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,7 +29,6 @@ final class FixtureImageProvider
 
     public function __construct(
         private readonly FileSystemProvider $fileSystemProvider,
-        private readonly NameGenerator $nameGenerator,
         private readonly ImageFactory $imageFactory,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly EntityManagerInterface $entityManager,

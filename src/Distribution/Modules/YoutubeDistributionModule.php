@@ -65,7 +65,6 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
      */
     public function distribute(Distribution $distribution): void
     {
-        /** @var VideoFile $assetFile */
         $assetFile = $this->assetFileRepository->find($distribution->getAssetFileId());
         if (false === ($assetFile instanceof VideoFile)) {
             return;
@@ -163,7 +162,6 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
 
     private function setThumbnail(YoutubeDistribution $distribution): void
     {
-        /** @var VideoFile $video */
         $video = $this->assetFileRepository->find($distribution->getAssetFileId());
         if (false === ($video instanceof VideoFile)) {
             return;

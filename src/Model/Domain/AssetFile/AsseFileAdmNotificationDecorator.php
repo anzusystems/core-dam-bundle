@@ -26,7 +26,7 @@ class AsseFileAdmNotificationDecorator
         return $this->assetId;
     }
 
-    public function setAssetId(string $assetId): self
+    public function setAssetId(string $assetId): static
     {
         $this->assetId = $assetId;
 
@@ -38,7 +38,7 @@ class AsseFileAdmNotificationDecorator
         return $this->assetFileId;
     }
 
-    public function setAssetFileId(string $assetFileId): self
+    public function setAssetFileId(string $assetFileId): static
     {
         $this->assetFileId = $assetFileId;
 

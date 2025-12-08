@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobPodcastSynchronizerFactory;
-use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -19,12 +17,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class GeneratePodcastImportJobsCommand extends Command
 {
-    use LoggerAwareRequest;
-
     private const string OPT_PODCAST_ID = 'podcast-id';
 
     public function __construct(
-        private readonly RssImportManager $rssImportManager,
         private readonly JobPodcastSynchronizerFactory $jobPodcastSynchronizerFactory,
     ) {
         parent::__construct();

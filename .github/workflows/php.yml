@@ -10,8 +10,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - php-version: 8.3
-            docker-image: anzusystems/php:4.1.0-php83-cli-vipsffmpeg
+          - php-version: 8.4
+            docker-image: anzusystems/php:4.1.0-php84-cli-vipsffmpeg
 
     services:
       elasticsearch:
@@ -60,7 +60,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: vendor
-          key: ${{ runner.os }}-composer-${{ hashFiles('composer.json', '*/composer.json') }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
 
@@ -73,8 +73,8 @@ jobs:
       - name: Run ECS style check
         run: vendor/bin/ecs check -vv
 
-      - name: Run PSALM style check
-        run: vendor/bin/psalm
+      - name: Run PHPStan static analysis
+        run: vendor/bin/phpstan analyse
 
       - name: Run PHPUnit tests
         run: vendor/bin/phpunit

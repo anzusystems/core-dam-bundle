@@ -30,7 +30,6 @@ class RegionOfInterestAdmListDto extends AbstractEntityDto
 
     public static function getInstance(RegionOfInterest $regionOfInterest): static
     {
-        /** @psalm-var RegionOfInterestAdmListDto $parent */
         $parent = parent::getBaseInstance($regionOfInterest);
 
         return $parent
@@ -44,7 +43,7 @@ class RegionOfInterestAdmListDto extends AbstractEntityDto
         return $this->title;
     }
 
-    public function setTitle(string $title): self
+    public function setTitle(string $title): static
     {
         $this->title = $title;
 
@@ -57,7 +56,7 @@ class RegionOfInterestAdmListDto extends AbstractEntityDto
         return $this->position;
     }
 
-    public function setPosition(int $position): self
+    public function setPosition(int $position): static
     {
         $this->position = $position;
 
@@ -69,7 +68,7 @@ class RegionOfInterestAdmListDto extends AbstractEntityDto
         return $this->image;
     }
 
-    public function setImage(ImageFile $image): self
+    public function setImage(ImageFile $image): static
     {
         $this->image = $image;
 

@@ -8,7 +8,9 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Entity\PodcastExportData;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use Doctrine\Common\Collections\Collection;
 
 class PodcastManager extends AbstractManager
 {
@@ -71,6 +73,36 @@ class PodcastManager extends AbstractManager
         $podcast->getDates()
             ->setImportFrom($newPodcast->getDates()->getImportFrom())
         ;
+        $this->colUpdate(
+            oldCollection: $podcast->getExportData(),
+            newCollection: $newPodcast->getExportData(),
+            updateElementFn: function (PodcastExportData $oldExportData, PodcastExportData $newExportData): bool {
+                $this->trackModification($oldExportData);
+                $oldExportData
+                    ->setBody($newExportData->getBody())
+                    ->setDeviceType($newExportData->getDeviceType())
+                    ->setExportType($newExportData->getExportType())
+                ;
+
+                return true;
+            },
+            addElementFn: function (Collection $oldCollection, PodcastExportData $exportData) use ($podcast): bool {
+                $exportData->setPodcast($podcast);
+                $oldCollection->add($exportData);
+                if (empty($exportData->getId())) {
+                    $this->entityManager->persist($exportData);
+                    $this->trackCreation($exportData);
+                }
+
+                return true;
+            },
+            removeElementFn: function (Collection $oldCollection, PodcastExportData $exportData): bool {
+                $oldCollection->removeElement($exportData);
+                $this->entityManager->remove($exportData);
+
+                return true;
+            }
+        );
         $this->flush($flush);
 
         return $podcast;

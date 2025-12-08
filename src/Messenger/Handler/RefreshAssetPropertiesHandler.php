@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
@@ -22,7 +21,6 @@ final class RefreshAssetPropertiesHandler
 
     public function __construct(
         private readonly AssetRepository $assetRepository,
-        private readonly AssetPropertiesRefresher $refresher,
         private readonly AssetManager $manager,
         private readonly DamLogger $damLogger,
     ) {
@@ -52,7 +50,7 @@ final class RefreshAssetPropertiesHandler
                     'Asset (%s) property refresh failed',
                     (string) $asset->getId(),
                 ),
-                $e
+                exception: $e
             );
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);

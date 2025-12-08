@@ -28,7 +28,7 @@ final class DistributionCategorySelectAdmRepositoryDecorator
     public function findByApiParams(
         ApiParams $apiParams,
         ExtSystem $extSystem,
-        AssetType $type = null,
+        ?AssetType $type = null,
     ): ApiResponseList {
         $customFilters = [new CustomExtSystemFilter()];
         $apiParams = ExySystemApiParams::applyCustomFilter($apiParams, $extSystem);

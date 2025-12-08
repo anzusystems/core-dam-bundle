@@ -15,7 +15,7 @@ final class ImageManipulatorException extends Exception
     public const string ERROR_FILE_READ_FAILED = 'image_manipulator_file_read_failed';
     public const string ERROR_PROCESSOR_NOT_FOUND = 'image_manipulator_processor_not_found';
 
-    public function __construct(string $errorMessage = self::ERROR_MESSAGE, Throwable $previous = null)
+    public function __construct(string $errorMessage = self::ERROR_MESSAGE, ?Throwable $previous = null)
     {
         parent::__construct($errorMessage, 0, $previous);
     }

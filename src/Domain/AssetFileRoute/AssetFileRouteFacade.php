@@ -12,14 +12,12 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Event\AssetFileRouteEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
-use Symfony\Component\String\Slugger\SluggerInterface;
 use Throwable;
 
 final class AssetFileRouteFacade extends AbstractManager
@@ -32,14 +30,11 @@ final class AssetFileRouteFacade extends AbstractManager
         private readonly AssetFileRouteFactory $routeFactory,
         private readonly AssetFileRouteManager $assetFileRouteManager,
         private readonly AssetFileRouteStorageManager $assetFileRouteStorageManager,
-        private readonly SluggerInterface $slugger,
-        private readonly AssetFileRouteManager $routeManager,
-        private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteGenerator $assetFileRouteGenerator,
     ) {
     }
 
-    public function makePublicAssetFile(AssetFile $assetFile, AssetFileRouteAdmCreateDto $dto = null): AssetFileRoute
+    public function makePublicAssetFile(AssetFile $assetFile, ?AssetFileRouteAdmCreateDto $dto = null): AssetFileRoute
     {
         return $assetFile instanceof ImageFile
             ? $this->makeImagePublic($assetFile)
@@ -162,6 +157,7 @@ final class AssetFileRouteFacade extends AbstractManager
     {
         return new AssetFileRouteEvent(
             (string) $route->getTargetAssetFile()->getId(),
+            $route->getTargetAssetFile()->getAssetType(),
             $this->assetFileRouteGenerator->getFullUrl($route)
         );
     }

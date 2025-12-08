@@ -28,7 +28,7 @@ final class Exiftool
         try {
             return $this->parseOutput($this->execute($filePath));
         } catch (RuntimeException $exception) {
-            $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), $exception);
+            $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), exception: $exception);
 
             return [];
         }
@@ -39,7 +39,7 @@ final class Exiftool
         try {
             $this->execute($filePath, self::PNG_CLEAR);
         } catch (RuntimeException $exception) {
-            $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), $exception);
+            $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), exception: $exception);
         }
     }
 
@@ -89,7 +89,7 @@ final class Exiftool
 
         foreach ($tags as $tag) {
             $tagPair = explode(':', $tag, 2);
-            if (false === isset($tagPair[0]) || false === isset($tagPair[1])) {
+            if (false === isset($tagPair[1])) {
                 continue;
             }
 

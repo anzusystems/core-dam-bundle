@@ -107,7 +107,6 @@ abstract class AbstractAssetFileFactory
 
     public function createForAsset(Asset $asset): AssetFile
     {
-        /** @var T $assetFile */
         $assetFile = match ($asset->getAssetType()) {
             AssetType::Image => $this->createBlankImage($asset->getLicence()),
             AssetType::Video => $this->createBlankVideo($asset->getLicence()),
@@ -139,7 +138,6 @@ abstract class AbstractAssetFileFactory
             $assetFile = $this->createBlankVideo($licence, $id);
         }
 
-        /** @psalm-var T|null $assetFile */
         if (null === $assetFile) {
             throw new DomainException(sprintf('File with mime type (%s) cannot be created', $mimeType));
         }
@@ -230,11 +228,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new ImageFile())
+        $imageFile = new ImageFile();
+        $imageFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $imageFile;
     }
 
     protected function createBlankAudio(AssetLicence $licence, ?string $id = null): AudioFile
@@ -242,11 +243,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new AudioFile())
+        $audioFile = new AudioFile();
+        $audioFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $audioFile;
     }
 
     protected function createBlankVideo(AssetLicence $licence, ?string $id = null): VideoFile
@@ -254,11 +258,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new VideoFile())
+        $videoFile = new VideoFile();
+        $videoFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $videoFile;
     }
 
     protected function createBlankDocument(AssetLicence $licence, ?string $id = null): DocumentFile
@@ -266,11 +273,14 @@ abstract class AbstractAssetFileFactory
         $metadata = new AssetFileMetadata();
         $this->assetFileMetadataManager->create($metadata, false);
 
-        return (new DocumentFile())
+        $documentFile = new DocumentFile();
+        $documentFile
             ->setId($id)
             ->setMetadata($metadata)
             ->setLicence($licence)
         ;
+
+        return $documentFile;
     }
 
     /**
@@ -301,7 +311,6 @@ abstract class AbstractAssetFileFactory
             AssetType::Audio => $this->createBlankAudio($licence),
             AssetType::Document => $this->createBlankDocument($licence),
             AssetType::Video => $this->createBlankVideo($licence),
-            default => throw new DomainException(sprintf('File with cannot be created for type (%s)', $assetType->toString())),
         };
     }
 

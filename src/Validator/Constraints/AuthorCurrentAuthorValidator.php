@@ -16,9 +16,6 @@ final class AuthorCurrentAuthorValidator extends ConstraintValidator
     ) {
     }
 
-    /**
-     * @param AuthorCurrentAuthor $value
-     */
     public function validate(mixed $value, Constraint $constraint): void
     {
         if (false === ($value instanceof Author)) {

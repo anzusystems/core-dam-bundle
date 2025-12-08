@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\String\UnicodeString;
@@ -72,14 +73,25 @@ abstract class AbstractImageController extends AbstractPublicController
      * @throws InvalidCropException
      */
     protected function okImageResponse(
+        Request $request,
         ImageFile $image,
         RegionOfInterest $roi,
-        RequestedCropDto $cropPayload
+        RequestedCropDto $cropPayload,
+        bool $isAdminDomain = false,
     ): Response {
+        $response = new Response();
+        $response->setLastModified($image->getManipulatedAt());
+        if ($response->isNotModified($request)) {
+            return $response;
+        }
+
         $response = $this->getImageResponse(
             content: $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
             assetFile: $image,
         )->setStatusCode(Response::HTTP_OK);
+        if ($isAdminDomain) {
+            $response->setLastModified($image->getManipulatedAt());
+        }
         $this->assetFileCacheManager->setCache($response, $image);
 
         return $response;

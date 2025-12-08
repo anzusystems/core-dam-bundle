@@ -22,7 +22,7 @@ final class FileSystemProvider
     public const string TMP_STORAGE_SETTINGS = 'tmp_dir_path';
     public const string FIXTURES_STORAGE_SETTINGS = 'fixtures_dir_path';
 
-    private ?LocalFilesystem $tmpFilesystem = null;
+    private ?TmpLocalFilesystem $tmpFilesystem = null;
     private ?LocalFilesystem $fixturesFileSystem = null;
 
     public function __construct(
@@ -45,10 +45,12 @@ final class FileSystemProvider
     {
         if (null === $this->tmpFilesystem) {
             $path = $this->fileOperations[self::TMP_STORAGE_SETTINGS];
-            $this->tmpFilesystem = (new TmpLocalFilesystem(
+            $tmpFs = new TmpLocalFilesystem(
                 adapter: new LocalFileSystemAdapter($path),
                 directory: $path,
-            ))->setNameGenerator($this->nameGenerator);
+            );
+            $tmpFs->setNameGenerator($this->nameGenerator);
+            $this->tmpFilesystem = $tmpFs;
         }
 
         return $this->tmpFilesystem;

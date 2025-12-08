@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\HttpClient;
 
 use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
-use AnzuSystems\CoreDamBundle\Distribution\Modules\JwVideo\JwVideoDtoFactory;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -19,13 +18,13 @@ use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadLinks;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use JsonException;
-use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
-final class JwVideoClient implements LoggerAwareInterface
+final class JwVideoClient
 {
     use SerializerAwareTrait;
     use LoggerAwareRequest;
@@ -38,8 +37,8 @@ final class JwVideoClient implements LoggerAwareInterface
         private readonly HttpClientInterface $client,
         private readonly HttpClientInterface $jwPlayerApiClient,
         private readonly HttpClientInterface $jwPlayerCdnApiClient,
-        private readonly JwVideoDtoFactory $jwVideoDtoFactory,
         private readonly DamLogger $damLogger,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -235,6 +234,7 @@ final class JwVideoClient implements LoggerAwareInterface
                 DamLogger::NAMESPACE_DISTRIBUTION,
                 sprintf('JwVideo failed upload video (%s)', $exception->getMessage())
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
         }

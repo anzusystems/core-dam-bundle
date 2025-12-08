@@ -22,10 +22,7 @@ class AudioFileAdmListDto extends AbstractAssetFileAdmDto
 
     public static function getInstance(AudioFile $audioFile): static
     {
-        /** @psalm-var AudioFileAdmListDto $parent */
-        $parent = parent::getAssetFileBaseInstance($audioFile);
-
-        return $parent
+        return parent::getAssetFileBaseInstance($audioFile)
             ->setAudio($audioFile);
     }
 
@@ -34,7 +31,7 @@ class AudioFileAdmListDto extends AbstractAssetFileAdmDto
         return $this->audio;
     }
 
-    public function setAudio(AudioFile $audio): self
+    public function setAudio(AudioFile $audio): static
     {
         $this->audio = $audio;
 

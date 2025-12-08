@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Request\ValueResolver;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\ApiFilter\AssetExternalProviderApiParams;
 use AnzuSystems\CoreDamBundle\AssetExternalProvider\AssetExternalProviderContainer;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ValueResolverInterface;
 use Symfony\Component\HttpKernel\ControllerMetadata\ArgumentMetadata;
@@ -20,7 +19,6 @@ final class AssetExternalProviderApiParamsValueResolver implements ValueResolver
     private const string ATTRIBUTE_NAME = 'providerName';
 
     public function __construct(
-        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly AssetExternalProviderContainer $providerContainer,
     ) {
     }

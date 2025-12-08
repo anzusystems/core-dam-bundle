@@ -28,7 +28,6 @@ class AssetAdmListDto extends AbstractEntityDto
 
     public static function getInstance(Asset $asset): static
     {
-        /** @psalm-var AssetAdmListDto $parent */
         $parent = parent::getBaseInstance($asset);
 
         return $parent

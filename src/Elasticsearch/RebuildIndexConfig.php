@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
+use DateTimeImmutable;
 use Symfony\Component\Console\Input\InputInterface;
 
 final class RebuildIndexConfig
@@ -15,6 +17,7 @@ final class RebuildIndexConfig
     public const string OPT_ID_UNTIL = 'id-until';
     public const string OPT_NO_DROP = 'no-drop';
     public const string OPT_BATCH = 'batch';
+    public const string OPT_SINCE = 'since';
 
     private ?string $lastProcessedId = null;
     private ?string $maxId = null;
@@ -33,11 +36,19 @@ final class RebuildIndexConfig
         private readonly string $idUntil,
         private readonly bool $noDrop,
         private readonly int $batchSize,
+        private readonly string $since = '',
+        private readonly ?DateTimeImmutable $sinceDate = null,
     ) {
     }
 
     public static function createFromInput(InputInterface $input): self
     {
+        $since = (string) $input->getOption(self::OPT_SINCE);
+        $sinceDate = null;
+        if (false === empty($since)) {
+            $sinceDate = App::getAppDate()->modify('- ' . $since);
+        }
+
         return new self(
             indexName: (string) $input->getArgument(self::ARG_INDEX_NAME),
             extSystemSlug: (string) $input->getOption(self::OPT_EXT_SYSTEM),
@@ -45,6 +56,8 @@ final class RebuildIndexConfig
             idUntil: (string) $input->getOption(self::OPT_ID_UNTIL),
             noDrop: (bool) $input->getOption(self::OPT_NO_DROP),
             batchSize: (int) $input->getOption(self::OPT_BATCH),
+            since: $since,
+            sinceDate: $sinceDate,
         );
     }
 
@@ -182,5 +195,15 @@ final class RebuildIndexConfig
     public function getResolvedMaxId(): string
     {
         return (string) ($this->hasMaxId() ? $this->getMaxId() : $this->getIdUntil());
+    }
+
+    public function getSince(): string
+    {
+        return $this->since;
+    }
+
+    public function getSinceDate(): ?DateTimeImmutable
+    {
+        return $this->sinceDate;
     }
 }

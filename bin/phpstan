@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script used to run PSALM check in the application container
+# Script used to run PHPStan check in the application container
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 CHECK_DIR=${1:-src}
@@ -15,9 +15,9 @@ cd "${PROJECT_ROOT}" || exit 1
 docker_env_vars
 
 if [ -f /.dockerenv ]; then
-    echo "[INFO] Running PSALM check"
-    vendor/bin/psalm --config=psalm.xml "${CHECK_DIR}"
+    echo "[INFO] Running PHPStan check"
+    vendor/bin/phpstan analyse --configuration=phpstan.neon.dist "${CHECK_DIR}"
     exit
 fi
 
-bin/docker-compose run --rm "${DOCKER_COMPOSE_SERVICE_NAME}" bash -c \'bin/psalm "${CHECK_DIR}"\'
+bin/docker-compose run --rm "${DOCKER_COMPOSE_SERVICE_NAME}" bash -c \'bin/phpstan "${CHECK_DIR}"\'

@@ -10,7 +10,7 @@ final class FileNameHelper
     {
         $pathParts = pathinfo($fileName);
 
-        return $pathParts['filename'] ?? $fileName;
+        return $pathParts['filename'];
     }
 
     public static function addExtensionToFilename(string $fileName, string $newExt): string

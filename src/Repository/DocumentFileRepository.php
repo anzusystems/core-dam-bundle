@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 
 /**
- * @template-extends AbstractAnzuRepository<DocumentFile>
+ * @extends AbstractAssetFileRepository<DocumentFile>
  * @method DocumentFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method DocumentFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method DocumentFile|null findProcessedById(string $id)

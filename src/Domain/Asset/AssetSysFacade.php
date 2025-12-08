@@ -6,8 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Validator\Validator;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileMessageDispatcher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
@@ -39,8 +37,6 @@ final class AssetSysFacade
     public function __construct(
         private readonly Validator $validator,
         private readonly AssetSysFactory $assetSysFactory,
-        private readonly AssetFileManagerProvider $assetFileManagerProvider,
-        private readonly AssetFileMessageDispatcher $assetFileMessageDispatcher,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly AssetFileRouteFacade $assetFileRouteFacade,
@@ -86,12 +82,11 @@ final class AssetSysFacade
                 }
             );
 
-            $indexEntities = [
+            $indexEntities = array_values([
                 ...$assetFile->getAsset()->getAuthors(),
                 ...$assetFile->getAsset()->getKeywords(),
-            ];
+            ]);
             if (false === empty($indexEntities)) {
-                /** @psalm-suppress InvalidArgument */
                 $this->indexManager->indexBulk($indexEntities);
             }
 

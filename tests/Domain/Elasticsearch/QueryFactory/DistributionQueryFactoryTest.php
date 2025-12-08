@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\KeywordQueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\DistributionAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
 final class DistributionQueryFactoryTest extends CoreDamKernelTestCase
@@ -23,9 +24,7 @@ final class DistributionQueryFactoryTest extends CoreDamKernelTestCase
         $this->extSystemRepository = $this->getService(ExtSystemRepository::class);
     }
 
-    /**
-     * @dataProvider buildQueryDataProvider
-     */
+    #[DataProvider('buildQueryDataProvider')]
     public function testBuildQuery(DistributionAdmSearchDto $searchDto, array $expectedQuery, array $expectedSort): void
     {
         $extSystem = $this->extSystemRepository->findOneBy(['slug' => 'cms']);
@@ -35,7 +34,7 @@ final class DistributionQueryFactoryTest extends CoreDamKernelTestCase
         $this->assertEqualsCanonicalizing($expectedSort, $query['body']['sort']);
     }
 
-    public function buildQueryDataProvider(): array
+    public static function buildQueryDataProvider(): array
     {
         return [
             'test_score_date_no_fulltext' => [

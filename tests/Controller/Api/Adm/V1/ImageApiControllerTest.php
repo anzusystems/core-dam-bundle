@@ -25,6 +25,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ImageApiControllerTest extends AbstractAssetFileApiController
@@ -132,9 +133,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         );
     }
 
-    /**
-     * @dataProvider createToAssetFailedDataProvider
-     */
+    #[DataProvider('createToAssetFailedDataProvider')]
     public function testCreateToAssetFailed(string $imageId, string $slot, string $error): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -151,7 +150,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $this->assertForbiddenOperationError($response->getContent(), $error);
     }
 
-    public function createToAssetFailedDataProvider(): array
+    public static function createToAssetFailedDataProvider(): array
     {
         return [
             [
@@ -190,9 +189,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         );
     }
 
-    /**
-     * @dataProvider addChunkFailedDataProvider
-     */
+    #[DataProvider('addChunkFailedDataProvider')]
     public function testAddChunkFailed(array $reqBody, array $validationFieldsBody): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
@@ -212,7 +209,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         );
     }
 
-    public function addChunkFailedDataProvider(): array
+    public static function addChunkFailedDataProvider(): array
     {
         return [
             [

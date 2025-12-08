@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use InvalidArgumentException;
 
 final readonly class AssetFactory
 {
@@ -43,6 +44,7 @@ final readonly class AssetFactory
             AudioFile::class => $this->assetManager->create($this->createForAudioFile($assetFile, $assetLicence, $slotName, $id), false),
             VideoFile::class => $this->assetManager->create($this->createForVideoFile($assetFile, $assetLicence, $slotName, $id), false),
             DocumentFile::class => $this->assetManager->create($this->createForDocumentFile($assetFile, $assetLicence, $slotName, $id), false),
+            default => throw new InvalidArgumentException(sprintf('Unsupported asset file type: %s', $assetFile::class)),
         };
         $asset
             ->setLicence($assetLicence)

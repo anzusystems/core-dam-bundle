@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution;
 
+use AnzuSystems\CoreDamBundle\Distribution\Modules\DefaultDistributionModule;
 use AnzuSystems\CoreDamBundle\Distribution\Modules\MockDistributionModule;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Traversable;
 
@@ -69,15 +69,6 @@ final class ModuleProvider
             return $modules[MockDistributionModule::class];
         }
 
-        if (isset($modules[$serviceConfig->getModule()])) {
-            return $modules[$serviceConfig->getModule()];
-        }
-
-        throw new RuntimeException(
-            sprintf(
-                'Module not found for distribution (%s)',
-                $serviceConfig->getModule(),
-            ),
-        );
+        return $modules[$serviceConfig->getModule()] ?? new DefaultDistributionModule();
     }
 }

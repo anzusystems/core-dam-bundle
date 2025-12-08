@@ -13,7 +13,7 @@ final class AnzuElasticSearchException extends Exception
         string $message,
         private readonly string $detail = '',
         private readonly array $body = [],
-        Throwable $previous = null,
+        ?Throwable $previous = null,
     ) {
         parent::__construct(message: $message, previous: $previous);
     }

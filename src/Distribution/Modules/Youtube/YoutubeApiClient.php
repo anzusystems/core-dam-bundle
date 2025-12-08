@@ -29,6 +29,7 @@ use Google_Service_YouTube_PlaylistItemSnippet;
 use Google_Service_YouTube_ResourceId;
 use Google_Service_YouTube_Video;
 use Psr\Cache\InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Throwable;
 
@@ -46,6 +47,7 @@ final class YoutubeApiClient
         private readonly GoogleClientProvider $clientProvider,
         private readonly YoutubeAuthenticator $authenticator,
         private readonly DamLogger $damLogger,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -130,6 +132,7 @@ final class YoutubeApiClient
                 DamLogger::NAMESPACE_DISTRIBUTION,
                 sprintf('Youtube playlist update failed failed (%s) for ytId (%s)', $exception->getMessage(), $videoId)
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
     }
 
@@ -158,6 +161,7 @@ final class YoutubeApiClient
                 DamLogger::NAMESPACE_DISTRIBUTION,
                 sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $distributionId)
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
     }
 
@@ -187,12 +191,11 @@ final class YoutubeApiClient
                     'notifySubscribers' => $distribution->getFlags()->isNotifySubscribers(),
                 ]
             );
-            /** @psalm-suppress NullArgument */
             $media = new Google_Http_MediaFileUpload(
                 client: $client,
                 request: $insertRequest,
                 mimeType: $assetFile->getAssetAttributes()->getMimeType(),
-                data: null,
+                data: '',
                 resumable: true,
                 chunkSize: self::CHUNK_SIZE
             );
@@ -219,6 +222,7 @@ final class YoutubeApiClient
                 DamLogger::NAMESPACE_DISTRIBUTION,
                 sprintf('Youtube distribute failed (%s)', $exception->getMessage())
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
 
             if (self::QUOTA_EXCEEDED_REASON === $this->getExceptionReason($exception)) {
                 throw new DistributionFailedException(DistributionFailReason::QuotaReached);
@@ -228,8 +232,10 @@ final class YoutubeApiClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage())
+                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage()),
+                exception: $exception
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
 
         return null;

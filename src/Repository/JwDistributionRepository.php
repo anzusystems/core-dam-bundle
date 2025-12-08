@@ -7,8 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 
 /**
- * @extends AbstractAnzuRepository<JwDistribution>
- *
  * @method JwDistribution|null find($id, $lockMode = null, $lockVersion = null)
  * @method JwDistribution|null findOneBy(array $criteria, array $orderBy = null)
  */

@@ -15,7 +15,7 @@ final class AssetChangeStateMessage
         $this->assetId = (string) $asset->getId();
     }
 
-    public function getAssetId(): ?string
+    public function getAssetId(): string
     {
         return $this->assetId;
     }

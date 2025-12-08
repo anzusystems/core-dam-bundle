@@ -10,24 +10,17 @@ use Doctrine\Common\Collections\Collection;
 
 /**
  * @extends AbstractAnzuRepository<ImagePreview>
- *
- * @method ImagePreview|null find($id, $lockMode = null, $lockVersion = null)
- * @method ImagePreview|null findOneBy($id, $lockMode = null, $lockVersion = null)
- * @method ImagePreview|null findProcessedById(string $id)
- * @method ImagePreview|null findProcessedByIdAndFilename(string $id, string $slug)
  */
-final class ImagePreviewRepository extends AbstractAssetFileRepository
+final class ImagePreviewRepository extends AbstractAnzuRepository
 {
     /**
      * @return Collection<int, ImagePreview>
      */
     public function findByImage(string $imageFileId): Collection
     {
-        return new ArrayCollection(
-            $this->findBy([
-                'imageFile' => $imageFileId,
-            ])
-        );
+        return new ArrayCollection($this->findBy([
+            'imageFile' => $imageFileId,
+        ]));
     }
 
     protected function getEntityClass(): string

@@ -5,7 +5,6 @@
          backupGlobals="false"
          colors="true"
          bootstrap="tests/bootstrap.php"
-         convertDeprecationsToExceptions="false"
 >
     <testsuites>
         <testsuite name="Google Pub/Sub transport implementation for Symfony Messenger Test Suite">
@@ -26,7 +25,7 @@
         <env name="APP_READ_ONLY_MODE" value="false" force="true" />
         <env name="APP_DEBUG" value="false" force="true" />
     </php>
-    <coverage processUncoveredFiles="true">
+    <source>
         <include>
             <directory suffix=".php">.</directory>
         </include>
@@ -37,8 +36,5 @@
             <directory>src/Resources</directory>
             <directory>src/DependencyInjection</directory>
         </exclude>
-    </coverage>
-    <listeners>
-        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener"/>
-    </listeners>
+    </source>
 </phpunit>

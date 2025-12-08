@@ -14,6 +14,8 @@ use AnzuSystems\CoreDamBundle\Helper\DateTimeHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Color;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuDBALRepository;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\Order;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\QueryBuilder as ORMQueryBuilder;
@@ -137,6 +139,10 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
         if ($config->hasIdUntil()) {
             $qb->andWhere('entity.id <= :idUntil')
                 ->setParameter('idUntil', $config->getIdUntil());
+        }
+        if ($config->getSinceDate() instanceof DateTimeImmutable) {
+            $qb->andWhere('entity.modified_at >= :sinceDate')
+                ->setParameter('sinceDate', $config->getSinceDate()->format(DateTimeInterface::ATOM));
         }
 
         return $qb;

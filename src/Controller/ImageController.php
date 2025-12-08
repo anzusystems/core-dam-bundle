@@ -59,8 +59,8 @@ final class ImageController extends AbstractImageController
         }
 
         if (
-            false === $image->getFlags()->isPublic() &&
-            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image) &&
+            false === $image->getFlags()->isPublic()
         ) {
             return $this->notFoundImageResponse(new RequestedCropDto());
         }
@@ -87,6 +87,7 @@ final class ImageController extends AbstractImageController
         methods: [Request::METHOD_GET]
     )]
     public function getOne(
+        Request $request,
         RequestedCropDto $cropPayload,
         string $imageId,
     ): Response {
@@ -107,16 +108,18 @@ final class ImageController extends AbstractImageController
         }
 
         if (
-            false === $image->getFlags()->isPublic() &&
-            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image)
+            $this->domainProvider->isCurrentSchemeAndHostPublicDomain($image) &&
+            false === $image->getFlags()->isPublic()
         ) {
             return $this->notFoundImageResponse($cropPayload);
         }
 
         return $this->okImageResponse(
+            request: $request,
             image: $image,
             roi: $roi,
-            cropPayload: $cropPayload
+            cropPayload: $cropPayload,
+            isAdminDomain: $this->domainProvider->isCurrentSchemeAndHostAdminDomain($image),
         );
     }
 

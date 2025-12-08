@@ -85,6 +85,7 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
                     $exception->getMessage()
                 )
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
 
         return $assetFile;

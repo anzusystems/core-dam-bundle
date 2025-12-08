@@ -36,6 +36,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -61,6 +62,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected UrlFileFactory $urlFileFactory;
     protected AssetManager $assetManager;
     protected DamLogger $damLogger;
+    protected LoggerInterface $appLogger;
     protected AssetFileCounter $assetFileCounter;
     protected ChunkFileManager $chunkFileManager;
     protected ResourceLocker $resourceLocker;
@@ -159,6 +161,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     public function setDamLogger(DamLogger $damLogger): void
     {
         $this->damLogger = $damLogger;
+    }
+
+    #[Required]
+    public function setAppLogger(LoggerInterface $appLogger): void
+    {
+        $this->appLogger = $appLogger;
     }
 
     #[Required]

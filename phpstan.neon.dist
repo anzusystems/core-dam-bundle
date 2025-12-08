@@ -1,0 +1,14 @@
+includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - src/DependencyInjection/Configuration.php
+    doctrine:
+        repositoryClass: AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository
+    ignoreErrors:
+        - '#Unsafe usage of new static#'

@@ -74,14 +74,14 @@ final class ImagePreviewManager extends AbstractManager
             return $oldImagePreview;
         }
 
-        if ($oldImagePreview && null === $newImagePreview) {
+        if ($oldImagePreview) {
             $imagePreview = $oldImagePreview;
             $this->delete($imagePreview);
 
             return null;
         }
 
-        if (null === $oldImagePreview && $newImagePreview) {
+        if ($newImagePreview) {
             $this->create(
                 imagePreview: $newImagePreview,
                 flush: false

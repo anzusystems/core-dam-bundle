@@ -8,14 +8,12 @@ use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
-use AnzuSystems\CoreDamBundle\Repository\JobImageCopyItemRepository;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
 
@@ -26,8 +24,6 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     private const int ASSET_BULK_SIZE = 500;
 
     public function __construct(
-        private readonly ImageCopyFacade $imageCopyFacade,
-        private readonly JobImageCopyItemRepository $jobImageCopyItemRepository,
         private readonly AssetRepository $assetRepository,
         private readonly AuthorRepository $authorRepository,
         private readonly AuthorProvider $authorProvider,

@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 
 /**
- * @template-extends AbstractAnzuRepository<VideoFile>
+ * @extends AbstractAssetFileRepository<VideoFile>
  * @method VideoFile|null find($id, $lockMode = null, $lockVersion = null)
  * @method VideoFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method VideoFile|null findProcessedById(string $id)

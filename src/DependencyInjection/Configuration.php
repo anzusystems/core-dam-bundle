@@ -549,6 +549,9 @@ class Configuration implements ConfigurationInterface
                     ->booleanNode(CacheConfiguration::PUBLIC)
                         ->defaultFalse()
                     ->end()
+                    ->booleanNode(CacheConfiguration::MUST_REVALIDATE)
+                        ->defaultFalse()
+                    ->end()
                 ->end()
             ->end();
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
-use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
@@ -30,12 +29,10 @@ final class AssetMetadataBulkFacade
 
     public function __construct(
         private readonly ConfigurationProvider $configurationProvider,
-        private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AssetManager $assetManager,
         private readonly AccessDenier $accessDenier,
         private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
         private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
-        private readonly CurrentAnzuUserProvider $currentUserProvider,
     ) {
     }
 
