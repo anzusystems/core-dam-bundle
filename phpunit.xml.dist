@@ -38,7 +38,7 @@
             <directory>src/DependencyInjection</directory>
         </exclude>
     </coverage>
-    <listeners>
-        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener"/>
-    </listeners>
+    <extensions>
+        <bootstrap class="Symfony\Bridge\PhpUnit\SymfonyTestsListenerForV10"/>
+    </extensions>
 </phpunit>

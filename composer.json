@@ -39,6 +39,7 @@
     "symfony/lock": "^7.3",
     "symfony/messenger": "^7.3",
     "symfony/mime": "^7.3",
+    "symfony/monolog-bundle": "^3.11",
     "symfony/options-resolver": "^7.3",
     "symfony/polyfill-uuid": "^1.24",
     "symfony/process": "^7.3",
