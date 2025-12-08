@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,6 +26,7 @@ final readonly class UrlFileFactory
         private FileSystemProvider $fileSystemProvider,
         private HttpClientInterface $client,
         private DamLogger $damLogger,
+        private LoggerInterface $appLogger,
     ) {
     }
 
@@ -59,9 +61,9 @@ final readonly class UrlFileFactory
                     'Failed To download file from url (%s). Failed message (%s)',
                     $url,
                     $e->getMessage()
-                ),
-                exception: $e
+                )
             );
+            $this->appLogger->error($e->getMessage(), ['exception' => $e]);
 
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }

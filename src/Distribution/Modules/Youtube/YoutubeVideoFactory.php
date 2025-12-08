@@ -61,6 +61,10 @@ final class YoutubeVideoFactory extends AbstractDistributionDtoFactory
         ];
 
         foreach ($thumbnailVariants as $item) {
+            if (null === $item) {
+                continue;
+            }
+
             $width = (int) $item->getWidth();
             $height = (int) $item->getHeight();
             $pixels = $width * $height;

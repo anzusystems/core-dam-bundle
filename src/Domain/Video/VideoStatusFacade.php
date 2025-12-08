@@ -83,9 +83,9 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
                     'Failed create preview image for video id (%s) with message (%s)',
                     $assetFile->getId(),
                     $exception->getMessage()
-                ),
-                exception: $exception
+                )
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
         }
 
         return $assetFile;

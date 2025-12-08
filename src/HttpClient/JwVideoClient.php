@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadLinks;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use JsonException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -37,6 +38,7 @@ final class JwVideoClient
         private readonly HttpClientInterface $jwPlayerApiClient,
         private readonly HttpClientInterface $jwPlayerCdnApiClient,
         private readonly DamLogger $damLogger,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -230,9 +232,9 @@ final class JwVideoClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('JwVideo failed upload video (%s)', $exception->getMessage()),
-                exception: $exception
+                sprintf('JwVideo failed upload video (%s)', $exception->getMessage())
             );
+            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
         }

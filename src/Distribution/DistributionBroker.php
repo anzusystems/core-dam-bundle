@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 final class DistributionBroker
@@ -33,6 +34,7 @@ final class DistributionBroker
         private readonly DistributionStatusFacade $distributionStatusFacade,
         private readonly ModuleProvider $moduleProvider,
         private readonly DamLogger $damLogger,
+        private readonly LoggerInterface $appLogger,
     ) {
     }
 
@@ -85,9 +87,9 @@ final class DistributionBroker
                 sprintf(
                     'Unexpected distribution error (%s)',
                     $e->getMessage()
-                ),
-                exception: $e
+                )
             );
+            $this->appLogger->error($e->getMessage(), ['exception' => $e]);
 
             $distribution->setFailReason(DistributionFailReason::Unknown);
             $this->distributionStatusFacade->toFailed($distribution);
@@ -121,7 +123,8 @@ final class DistributionBroker
                     'Remote processing failed id: (%s) message: (%s)',
                     $distribution->getId(),
                     $exception->getMessage(),
-                ), exception: $exception);
+                ));
+                $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
                 $distribution->setFailReason(DistributionFailReason::RemoteProcessFailed);
                 $this->distributionStatusFacade->toFailed($distribution);
             }
