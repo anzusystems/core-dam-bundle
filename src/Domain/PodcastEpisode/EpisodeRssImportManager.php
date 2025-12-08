@@ -107,7 +107,8 @@ final readonly class EpisodeRssImportManager
                     'Podcast episode (%s) import failed (%s)',
                     $podcastItem->getTitle(),
                     $exception->getMessage()
-                )
+                ),
+                exception: $exception
             );
 
             if ($episode) {

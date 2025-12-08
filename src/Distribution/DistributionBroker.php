@@ -85,7 +85,8 @@ final class DistributionBroker
                 sprintf(
                     'Unexpected distribution error (%s)',
                     $e->getMessage()
-                )
+                ),
+                exception: $e
             );
 
             $distribution->setFailReason(DistributionFailReason::Unknown);
@@ -120,7 +121,7 @@ final class DistributionBroker
                     'Remote processing failed id: (%s) message: (%s)',
                     $distribution->getId(),
                     $exception->getMessage(),
-                ));
+                ), exception: $exception);
                 $distribution->setFailReason(DistributionFailReason::RemoteProcessFailed);
                 $this->distributionStatusFacade->toFailed($distribution);
             }

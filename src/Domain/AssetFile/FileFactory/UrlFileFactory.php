@@ -59,7 +59,8 @@ final readonly class UrlFileFactory
                     'Failed To download file from url (%s). Failed message (%s)',
                     $url,
                     $e->getMessage()
-                )
+                ),
+                exception: $e
             );
 
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);

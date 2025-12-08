@@ -128,7 +128,8 @@ final class YoutubeApiClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube playlist update failed failed (%s) for ytId (%s)', $exception->getMessage(), $videoId)
+                sprintf('Youtube playlist update failed failed (%s) for ytId (%s)', $exception->getMessage(), $videoId),
+                exception: $exception
             );
         }
     }
@@ -156,7 +157,8 @@ final class YoutubeApiClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $distributionId)
+                sprintf('Youtube thumbnail update failed (%s) for ytId (%s)', $exception->getMessage(), $distributionId),
+                exception: $exception
             );
         }
     }
@@ -216,7 +218,8 @@ final class YoutubeApiClient
         } catch (Google_Service_Exception $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube distribute failed (%s)', $exception->getMessage())
+                sprintf('Youtube distribute failed (%s)', $exception->getMessage()),
+                exception: $exception
             );
 
             if (self::QUOTA_EXCEEDED_REASON === $this->getExceptionReason($exception)) {
@@ -227,7 +230,8 @@ final class YoutubeApiClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage())
+                sprintf('Youtube distribute failed (%s), unhandled exception', $exception->getMessage()),
+                exception: $exception
             );
         }
 

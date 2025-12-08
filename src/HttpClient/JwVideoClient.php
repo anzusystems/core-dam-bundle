@@ -230,7 +230,8 @@ final class JwVideoClient
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 DamLogger::NAMESPACE_DISTRIBUTION,
-                sprintf('JwVideo failed upload video (%s)', $exception->getMessage())
+                sprintf('JwVideo failed upload video (%s)', $exception->getMessage()),
+                exception: $exception
             );
 
             throw new RuntimeException(message: $exception->getMessage(), previous: $exception);
