@@ -79,10 +79,12 @@ abstract class AbstractImageController extends AbstractPublicController
         RequestedCropDto $cropPayload,
         bool $isAdminDomain = false,
     ): Response {
-        $response = new Response();
-        $response->setLastModified($image->getManipulatedAt());
-        if ($response->isNotModified($request)) {
-            return $response;
+        if ($isAdminDomain) {
+            $response = new Response();
+            $response->setLastModified($image->getManipulatedAt());
+            if ($response->isNotModified($request)) {
+                return $response;
+            }
         }
 
         $response = $this->getImageResponse(
