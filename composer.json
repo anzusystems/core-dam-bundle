@@ -17,7 +17,7 @@
     "ext-xmlreader": "*",
     "ext-zend-opcache": "*",
     "anzusystems/anzutap-bundle": "^0.10",
-    "anzusystems/common-bundle": "^10.3",
+    "anzusystems/common-bundle": "dev-feature/anzu_user_resolved_class_support",
     "doctrine/doctrine-bundle": "^2.12",
     "doctrine/orm": "^3.1",
     "elasticsearch/elasticsearch": "^8.6",
