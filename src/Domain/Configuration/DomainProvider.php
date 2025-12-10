@@ -25,7 +25,7 @@ readonly class DomainProvider
 
     public function domainAndHostEquals(string $schemeAndHost): bool
     {
-        return $schemeAndHost === $this->getSchemeAndHost($schemeAndHost);
+        return $schemeAndHost === $this->getSchemeAndHost();
     }
 
     public function isCurrentSchemeAndHostRedirectDomain(): bool
