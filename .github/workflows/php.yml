@@ -11,7 +11,7 @@ jobs:
       matrix:
         include:
           - php-version: 8.4
-            docker-image: anzusystems/php:4.1.0-php84-cli-vipsffmpeg
+            docker-image: anzusystems/php:5.0.1-php84-cli-vipsffmpeg
 
     services:
       elasticsearch:
