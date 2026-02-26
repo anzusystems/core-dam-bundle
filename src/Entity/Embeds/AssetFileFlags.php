@@ -19,11 +19,19 @@ class AssetFileFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $singleUse;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    private bool $internal;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $overrideInternal;
+
     public function __construct()
     {
         $this->setProcessedMetadata(false);
         $this->setPublic(true);
         $this->setSingleUse(false);
+        $this->setInternal(true);
+        $this->setOverrideInternal(false);
     }
 
     public function isProcessedMetadata(): bool
@@ -58,6 +66,30 @@ class AssetFileFlags
     public function setSingleUse(bool $singleUse): self
     {
         $this->singleUse = $singleUse;
+
+        return $this;
+    }
+
+    public function isInternal(): bool
+    {
+        return $this->internal;
+    }
+
+    public function setInternal(bool $internal): self
+    {
+        $this->internal = $internal;
+
+        return $this;
+    }
+
+    public function isOverrideInternal(): bool
+    {
+        return $this->overrideInternal;
+    }
+
+    public function setOverrideInternal(bool $overrideInternal): self
+    {
+        $this->overrideInternal = $overrideInternal;
 
         return $this;
     }

@@ -13,6 +13,7 @@ use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceInternalRule;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -79,6 +80,20 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[ORM\ManyToMany(targetEntity: DamUser::class, mappedBy: 'assetLicences', fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $users;
 
+    #[ORM\Embedded(class: AssetLicenceInternalRule::class)]
+    #[Serialize]
+    private AssetLicenceInternalRule $internalRule;
+
+    #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinTable(name: 'asset_licence_internal_rule_author')]
+    #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
+    private Collection $internalRuleAuthors;
+
+    #[ORM\ManyToMany(targetEntity: DamUser::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinTable(name: 'asset_licence_internal_rule_user')]
+    #[Serialize(handler: EntityIdHandler::class, type: DamUser::class)]
+    private Collection $internalRuleUsers;
+
     public function __construct()
     {
         $this->setName('');
@@ -87,6 +102,9 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setUsers(new ArrayCollection());
         $this->setLimitedFiles(false);
         $this->setGroups(new ArrayCollection());
+        $this->setInternalRule(new AssetLicenceInternalRule());
+        $this->internalRuleAuthors = new ArrayCollection();
+        $this->internalRuleUsers = new ArrayCollection();
     }
 
     public function getName(): string
@@ -181,6 +199,72 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setGroups(Collection $groups): self
     {
         $this->groups = $groups;
+
+        return $this;
+    }
+
+    public function getInternalRule(): AssetLicenceInternalRule
+    {
+        return $this->internalRule;
+    }
+
+    public function setInternalRule(AssetLicenceInternalRule $internalRule): self
+    {
+        $this->internalRule = $internalRule;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Author>
+     */
+    public function getInternalRuleAuthors(): Collection
+    {
+        return $this->internalRuleAuthors;
+    }
+
+    /**
+     * @param Collection<int, Author> $internalRuleAuthors
+     */
+    public function setInternalRuleAuthors(Collection $internalRuleAuthors): self
+    {
+        $this->internalRuleAuthors = $internalRuleAuthors;
+
+        return $this;
+    }
+
+    public function addInternalRuleAuthor(Author $author): self
+    {
+        if (false === $this->internalRuleAuthors->contains($author)) {
+            $this->internalRuleAuthors->add($author);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, DamUser>
+     */
+    public function getInternalRuleUsers(): Collection
+    {
+        return $this->internalRuleUsers;
+    }
+
+    /**
+     * @param Collection<int, DamUser> $internalRuleUsers
+     */
+    public function setInternalRuleUsers(Collection $internalRuleUsers): self
+    {
+        $this->internalRuleUsers = $internalRuleUsers;
+
+        return $this;
+    }
+
+    public function addInternalRuleUser(DamUser $user): self
+    {
+        if (false === $this->internalRuleUsers->contains($user)) {
+            $this->internalRuleUsers->add($user);
+        }
 
         return $this;
     }
