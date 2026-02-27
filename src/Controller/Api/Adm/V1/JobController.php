@@ -12,9 +12,11 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\Entity\JobAssetFileReprocessInternalFlag;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -26,6 +28,22 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route(path: '/job', name: 'adm_job_v1_')]
 final class JobController extends AbstractJobController
 {
+    public static function getSubscribedServices(): array
+    {
+        return array_merge(parent::getSubscribedServices(), [
+            AccessDenier::class => AccessDenier::class,
+        ]);
+    }
+
+    protected function denyAccessUnlessGranted(
+        mixed $attribute,
+        mixed $subject = null,
+        string $message = 'Access Denied.',
+    ): void {
+        /** @var AccessDenier $accessDenier */
+        $accessDenier = $this->container->get(AccessDenier::class);
+        $accessDenier->denyUnlessGranted($attribute, $subject, $message);
+    }
     /**
      * @throws ValidationException
      * @throws AppReadOnlyModeException
@@ -66,6 +84,25 @@ final class JobController extends AbstractJobController
     #[OARequest(JobAuthorCurrentOptimize::class), OAResponseCreated(JobAuthorCurrentOptimize::class), OAResponseValidation]
     public function createAuthorCurrentJob(Request $request, #[SerializeParam] JobAuthorCurrentOptimize $job): JsonResponse
     {
+        AnzuApp::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted($this->getCreateAcl());
+        $job = $this->jobFacade->create($job);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
+
+        return $this->createdResponse($job);
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/asset-file-reprocess-internal-flag', 'create_job_asset_file_reprocess_internal_flag', methods: [Request::METHOD_POST])]
+    #[OARequest(JobAssetFileReprocessInternalFlag::class), OAResponseCreated(JobAssetFileReprocessInternalFlag::class), OAResponseValidation]
+    public function createAssetFileReprocessInternalFlagJob(
+        Request $request,
+        #[SerializeParam]
+        JobAssetFileReprocessInternalFlag $job,
+    ): JsonResponse {
         AnzuApp::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted($this->getCreateAcl());
         $job = $this->jobFacade->create($job);

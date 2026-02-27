@@ -6,8 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -190,5 +192,161 @@ final class AssetLicenceControllerTest extends AbstractApiController
                 'expectedResponseStatusCode' => Response::HTTP_OK,
             ],
         ];
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testCreateWithInternalRuleAndAuthors(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-with-internal-rule',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'internalRule' => [
+                'active' => true,
+                'markAsInternalSince' => '2025-01-01T00:00:00.000000Z',
+            ],
+            'internalRuleAuthors' => [AuthorFixtures::AUTHOR_1, AuthorFixtures::AUTHOR_2],
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_CREATED);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+
+        $this->assertTrue($licence->getInternalRule()->isActive());
+        $this->assertNotNull($licence->getInternalRule()->getMarkAsInternalSince());
+        $this->assertSame('2025-01-01', $licence->getInternalRule()->getMarkAsInternalSince()->format('Y-m-d'));
+        $this->assertCount(2, $licence->getInternalRuleAuthors());
+        $this->assertContains(AuthorFixtures::AUTHOR_1, CollectionHelper::traversableToIds($licence->getInternalRuleAuthors()));
+        $this->assertContains(AuthorFixtures::AUTHOR_2, CollectionHelper::traversableToIds($licence->getInternalRuleAuthors()));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testGetOneReturnsInternalRuleFields(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        // First create a licence with internal rule data.
+        $createResponse = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-get-one-internal',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'internalRule' => [
+                'active' => true,
+                'markAsInternalSince' => '2025-06-15T12:00:00.000000Z',
+            ],
+            'internalRuleAuthors' => [AuthorFixtures::AUTHOR_1],
+        ]);
+        $this->assertStatusCode($createResponse, Response::HTTP_CREATED);
+
+        $created = $this->serializer->deserialize($createResponse->getContent(), AssetLicence::class);
+
+        // Now fetch it via GET.
+        $response = $client->get(AssetLicenceUrl::getOne($created->getId()));
+        $this->assertStatusCode($response, Response::HTTP_OK);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+
+        $this->assertTrue($licence->getInternalRule()->isActive());
+        $this->assertNotNull($licence->getInternalRule()->getMarkAsInternalSince());
+        $this->assertCount(1, $licence->getInternalRuleAuthors());
+        $this->assertContains(AuthorFixtures::AUTHOR_1, CollectionHelper::traversableToIds($licence->getInternalRuleAuthors()));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateInternalRuleAndAuthors(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $existingLicence = self::getContainer()
+            ->get(AssetLicenceRepository::class)
+            ->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
+        // Update the licence with internal rule data.
+        $response = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'internalRule' => [
+                'active' => true,
+                'markAsInternalSince' => '2025-03-01T00:00:00.000000Z',
+            ],
+            'internalRuleAuthors' => [AuthorFixtures::AUTHOR_1, AuthorFixtures::AUTHOR_2],
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_OK);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+
+        $this->assertTrue($licence->getInternalRule()->isActive());
+        $this->assertNotNull($licence->getInternalRule()->getMarkAsInternalSince());
+        $this->assertSame('2025-03-01', $licence->getInternalRule()->getMarkAsInternalSince()->format('Y-m-d'));
+        $this->assertCount(2, $licence->getInternalRuleAuthors());
+        $this->assertContains(AuthorFixtures::AUTHOR_1, CollectionHelper::traversableToIds($licence->getInternalRuleAuthors()));
+        $this->assertContains(AuthorFixtures::AUTHOR_2, CollectionHelper::traversableToIds($licence->getInternalRuleAuthors()));
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateClearsInternalRuleAuthors(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        // Create a licence with internal rule authors.
+        $createResponse = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-clear-authors',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'internalRule' => ['active' => true],
+            'internalRuleAuthors' => [AuthorFixtures::AUTHOR_1],
+        ]);
+        $this->assertStatusCode($createResponse, Response::HTTP_CREATED);
+
+        $created = $this->serializer->deserialize($createResponse->getContent(), AssetLicence::class);
+        $this->assertCount(1, $created->getInternalRuleAuthors());
+
+        // Update with empty authors to clear them.
+        $response = $client->put(AssetLicenceUrl::update($created->getId()), [
+            'id' => $created->getId(),
+            'name' => $created->getName(),
+            'extSystem' => $created->getExtSystem()->getId(),
+            'extId' => $created->getExtId(),
+            'internalRule' => ['active' => false],
+            'internalRuleAuthors' => [],
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_OK);
+
+        $updated = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+
+        $this->assertFalse($updated->getInternalRule()->isActive());
+        $this->assertCount(0, $updated->getInternalRuleAuthors());
+    }
+
+    /**
+     * Tests internalRuleUsers CRUD at the domain level since DamUser is a
+     * MappedSuperclass and cannot be deserialized via the API EntityIdHandler.
+     */
+    public function testUpdateInternalRuleUsersViaDomain(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        $user = $this->entityManager->find(User::class, User::ID_ADMIN);
+
+        $this->assertCount(0, $licence->getInternalRuleUsers());
+
+        $licence->addInternalRuleUser($user);
+        $this->entityManager->flush();
+
+        $this->entityManager->refresh($licence);
+
+        $this->assertCount(1, $licence->getInternalRuleUsers());
+        $this->assertSame(User::ID_ADMIN, $licence->getInternalRuleUsers()->first()->getId());
     }
 }

@@ -121,6 +121,28 @@ final class AssetRepository extends AbstractAnzuRepository
         );
     }
 
+    /**
+     * @return Collection<int, Asset>
+     */
+    public function findAllByLicence(AssetLicence $licence, int $limit, string $idFrom = ''): Collection
+    {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->where('IDENTITY(entity.licence) = :licenceId')
+            ->setParameter('licenceId', $licence->getId())
+            ->orderBy('entity.id', Criteria::ASC)
+            ->setMaxResults($limit);
+
+        if (false === ('' === $idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder->getQuery()->getResult()
+        );
+    }
+
     protected function appendRebuildIndexQueryForExtSystem(QueryBuilder $queryBuilder, int $extSystemId): QueryBuilder
     {
         return $queryBuilder
