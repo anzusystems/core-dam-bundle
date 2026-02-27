@@ -124,8 +124,12 @@ final class AssetRepository extends AbstractAnzuRepository
     /**
      * @return Collection<int, Asset>
      */
-    public function findAllByLicence(AssetLicence $licence, int $limit, string $idFrom = ''): Collection
-    {
+    public function findAllByLicence(
+        AssetLicence $licence,
+        int $limit,
+        string $idFrom = '',
+        ?\DateTimeImmutable $createdFrom = null,
+    ): Collection {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->where('IDENTITY(entity.licence) = :licenceId')
             ->setParameter('licenceId', $licence->getId())
@@ -136,6 +140,12 @@ final class AssetRepository extends AbstractAnzuRepository
             $queryBuilder
                 ->andWhere('entity.id > :idFrom')
                 ->setParameter('idFrom', $idFrom);
+        }
+
+        if ($createdFrom instanceof \DateTimeImmutable) {
+            $queryBuilder
+                ->andWhere('entity.createdAt >= :createdFrom')
+                ->setParameter('createdFrom', $createdFrom);
         }
 
         return new ArrayCollection(

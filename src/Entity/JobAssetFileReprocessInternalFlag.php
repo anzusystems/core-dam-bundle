@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CoreDamBundle\Repository\JobAssetFileReprocessInternalFlagRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -20,6 +21,10 @@ class JobAssetFileReprocessInternalFlag extends Job
     #[Assert\Positive]
     private int $targetLicenceId = 0;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    #[Serialize]
+    private ?DateTimeImmutable $processFrom = null;
+
     public function getTargetLicenceId(): int
     {
         return $this->targetLicenceId;
@@ -28,6 +33,18 @@ class JobAssetFileReprocessInternalFlag extends Job
     public function setTargetLicenceId(int $targetLicenceId): self
     {
         $this->targetLicenceId = $targetLicenceId;
+
+        return $this;
+    }
+
+    public function getProcessFrom(): ?DateTimeImmutable
+    {
+        return $this->processFrom;
+    }
+
+    public function setProcessFrom(?DateTimeImmutable $processFrom): self
+    {
+        $this->processFrom = $processFrom;
 
         return $this;
     }

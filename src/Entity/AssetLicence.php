@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -91,7 +92,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     #[ORM\ManyToMany(targetEntity: DamUser::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinTable(name: 'asset_licence_internal_rule_user')]
-    #[Serialize(handler: EntityIdHandler::class, type: DamUser::class)]
+    #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $internalRuleUsers;
 
     public function __construct()
