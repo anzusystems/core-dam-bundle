@@ -69,6 +69,39 @@ final class ExtSystemCallbackFacade
         return $processed;
     }
 
+    /**
+     * @param Collection<array-key, ImageFile> $images
+     */
+    public function notifyImagesChanged(Collection $images): bool
+    {
+        if ($images->isEmpty()) {
+            return false;
+        }
+
+        /** @var array<string, ImageFile[]> $grouped */
+        $grouped = [];
+        foreach ($images as $imageFile) {
+            $slug = $imageFile->getLicence()->getExtSystem()->getSlug();
+            if (false === isset($grouped[$slug])) {
+                $grouped[$slug] = [];
+            }
+            $grouped[$slug][] = $imageFile;
+        }
+
+        $processed = false;
+        foreach ($grouped as $slug => $imagesForSlug) {
+            $callback = $this->getCallback($slug);
+            if (null === $callback) {
+                continue;
+            }
+
+            $callback->notifyImagesChanged(new ArrayCollection($imagesForSlug));
+            $processed = true;
+        }
+
+        return $processed;
+    }
+
     private function getCallback(string $slug): ?ExtSystemCallbackInterface
     {
         try {

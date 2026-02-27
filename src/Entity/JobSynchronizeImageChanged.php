@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Entity\Job;
-use AnzuSystems\CoreDamBundle\Repository\JobAssetFileReprocessInternalFlagRepository;
+use AnzuSystems\CoreDamBundle\Repository\JobSynchronizeImageChangedRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: JobAssetFileReprocessInternalFlagRepository::class)]
-class JobAssetFileReprocessInternalFlag extends Job
+#[ORM\Entity(repositoryClass: JobSynchronizeImageChangedRepository::class)]
+class JobSynchronizeImageChanged extends Job
 {
     #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]

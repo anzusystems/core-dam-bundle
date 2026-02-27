@@ -7,8 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
 
 /**
  * @extends AbstractAssetFileRepository<ImageFile>
@@ -42,6 +44,38 @@ final class ImageFileRepository extends AbstractAssetFileRepository
             'licence' => $licence,
             'assetAttributes.status' => AssetFileProcessStatus::Processed,
         ]);
+    }
+
+    /**
+     * @return Collection<int, ImageFile>
+     */
+    public function findAllByLicence(
+        AssetLicence $licence,
+        int $limit,
+        string $idFrom = '',
+        ?DateTimeImmutable $createdFrom = null,
+    ): Collection {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->where('IDENTITY(entity.licence) = :licenceId')
+            ->setParameter('licenceId', $licence->getId())
+            ->orderBy('entity.id', Criteria::ASC)
+            ->setMaxResults($limit);
+
+        if (false === ('' === $idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        if ($createdFrom instanceof DateTimeImmutable) {
+            $queryBuilder
+                ->andWhere('entity.createdAt >= :createdFrom')
+                ->setParameter('createdFrom', $createdFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder->getQuery()->getResult()
+        );
     }
 
     protected function getEntityClass(): string

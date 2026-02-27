@@ -101,10 +101,9 @@ final class JobAssetFileReprocessInternalFlagProcessorTest extends CoreDamKernel
         $licence->getInternalRule()->setActive(true);
         $this->entityManager->flush();
 
-        $this->processor->setBulkSize(1);
-
         $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
         $this->assertInstanceOf(JobAssetFileReprocessInternalFlag::class, $job);
+        $job->setBulkSize(1);
         $jobId = $job->getId();
 
         // First batch: processes Asset1 (1 slot). bulkSize=1 matches → AwaitingBatchProcess.
