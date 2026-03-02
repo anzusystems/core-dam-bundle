@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -128,7 +129,7 @@ final class AssetRepository extends AbstractAnzuRepository
         AssetLicence $licence,
         int $limit,
         string $idFrom = '',
-        ?\DateTimeImmutable $createdFrom = null,
+        ?DateTimeImmutable $createdFrom = null,
     ): Collection {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->where('IDENTITY(entity.licence) = :licenceId')
@@ -142,7 +143,7 @@ final class AssetRepository extends AbstractAnzuRepository
                 ->setParameter('idFrom', $idFrom);
         }
 
-        if ($createdFrom instanceof \DateTimeImmutable) {
+        if ($createdFrom instanceof DateTimeImmutable) {
             $queryBuilder
                 ->andWhere('entity.createdAt >= :createdFrom')
                 ->setParameter('createdFrom', $createdFrom);

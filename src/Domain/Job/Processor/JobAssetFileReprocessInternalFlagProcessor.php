@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobAssetFileReprocessInternalFlag;
@@ -69,13 +70,13 @@ final class JobAssetFileReprocessInternalFlagProcessor extends AbstractJobProces
         $lastId = $job->getLastBatchProcessedRecord();
         $assets = $this->assetRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom());
 
-        $changedCount = 0;
-        $totalFileCount = 0;
+        $changedCount = App::ZERO;
+        $totalFileCount = App::ZERO;
         foreach ($assets as $asset) {
             foreach ($asset->getSlots() as $slot) {
                 $assetFile = $slot->getAssetFile();
                 $oldInternal = $assetFile->getFlags()->isInternal();
-                $this->evaluator->evaluateAndApply($asset, $assetFile);
+                $this->evaluator->evaluateAndApply($assetFile);
                 if ($oldInternal !== $assetFile->getFlags()->isInternal()) {
                     $changedCount++;
                 }

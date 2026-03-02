@@ -35,16 +35,6 @@ final class JobController extends AbstractJobController
             AccessDenier::class => AccessDenier::class,
         ]);
     }
-
-    protected function denyAccessUnlessGranted(
-        mixed $attribute,
-        mixed $subject = null,
-        string $message = 'Access Denied.',
-    ): void {
-        /** @var AccessDenier $accessDenier */
-        $accessDenier = $this->container->get(AccessDenier::class);
-        $accessDenier->denyUnlessGranted($attribute, $subject, $message);
-    }
     /**
      * @throws ValidationException
      * @throws AppReadOnlyModeException
@@ -129,6 +119,16 @@ final class JobController extends AbstractJobController
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
 
         return $this->createdResponse($job);
+    }
+
+    protected function denyAccessUnlessGranted(
+        mixed $attribute,
+        mixed $subject = null,
+        string $message = 'Access Denied.',
+    ): void {
+        /** @var AccessDenier $accessDenier */
+        $accessDenier = $this->container->get(AccessDenier::class);
+        $accessDenier->denyUnlessGranted($attribute, $subject, $message);
     }
 
     protected function getCreateAcl(): string

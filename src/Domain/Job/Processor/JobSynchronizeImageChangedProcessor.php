@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Entity\JobSynchronizeImageChanged;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobSynchronizeImageChangedResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
-use Doctrine\Common\Collections\ArrayCollection;
 use RuntimeException;
 use Throwable;
 

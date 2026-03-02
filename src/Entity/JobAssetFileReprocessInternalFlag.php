@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Entity\Job;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Repository\JobAssetFileReprocessInternalFlagRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
@@ -19,7 +20,7 @@ class JobAssetFileReprocessInternalFlag extends Job
     #[Serialize]
     #[Assert\NotNull]
     #[Assert\Positive]
-    private int $targetLicenceId = 0;
+    private int $targetLicenceId = App::ZERO;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     #[Serialize]
@@ -27,7 +28,7 @@ class JobAssetFileReprocessInternalFlag extends Job
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]
-    #[Assert\Range(min: 10, max: 1000)]
+    #[Assert\Range(min: 10, max: 1_000)]
     private int $bulkSize = 500;
 
     public function getTargetLicenceId(): int

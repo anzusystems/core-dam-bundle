@@ -31,6 +31,12 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     #[Serialize]
     private bool $mainFileSingleUse;
 
+    #[Serialize]
+    private bool $mainFileOverrideInternal;
+
+    #[Serialize]
+    private bool $mainFileInternal;
+
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $customData;
 
@@ -52,6 +58,8 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
             ->setDescribed($asset->getAssetFlags()->isDescribed())
             ->setCustomData($asset->getMetadata()->getCustomData())
             ->setMainFileSingleUse((bool) $asset->getMainFile()?->getFlags()->isSingleUse())
+            ->setMainFileOverrideInternal((bool) $asset->getMainFile()?->getFlags()->isOverrideInternal())
+            ->setMainFileInternal((bool) $asset->getMainFile()?->getFlags()->isInternal())
             ->setAuthors($asset->getAuthors())
             ->setKeywords($asset->getKeywords())
         ;
@@ -164,6 +172,40 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     public function isMainFileSingleUndefined(): bool
     {
         return false === isset($this->mainFileSingleUse);
+    }
+
+    public function isMainFileOverrideInternal(): bool
+    {
+        return $this->mainFileOverrideInternal;
+    }
+
+    public function setMainFileOverrideInternal(bool $mainFileOverrideInternal): self
+    {
+        $this->mainFileOverrideInternal = $mainFileOverrideInternal;
+
+        return $this;
+    }
+
+    public function isMainFileOverrideInternalUndefined(): bool
+    {
+        return false === isset($this->mainFileOverrideInternal);
+    }
+
+    public function isMainFileInternal(): bool
+    {
+        return $this->mainFileInternal;
+    }
+
+    public function setMainFileInternal(bool $mainFileInternal): self
+    {
+        $this->mainFileInternal = $mainFileInternal;
+
+        return $this;
+    }
+
+    public function isMainFileInternalUndefined(): bool
+    {
+        return false === isset($this->mainFileInternal);
     }
 
     public function getAssetType(): AssetType
