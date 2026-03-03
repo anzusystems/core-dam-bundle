@@ -23,7 +23,7 @@ use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[AsController]
 #[Route(path: '/job', name: 'adm_job_v1_')]

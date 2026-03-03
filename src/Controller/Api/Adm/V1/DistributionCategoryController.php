@@ -25,7 +25,7 @@ use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/distribution/category', name: 'adm_distribution_category_v1_')]
 #[OA\Tag('DistributionCategory')]

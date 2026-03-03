@@ -25,7 +25,7 @@ use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/asset-licence-group', name: 'adm_asset_licence_group_v1_')]
 #[OA\Tag('AssetLicenceGroup')]
