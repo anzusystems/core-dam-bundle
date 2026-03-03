@@ -25,6 +25,7 @@ final class ExtSystemAdmGetDecorator
                 ExtSystemImageTypeAdmGetDecorator::getInstance($configuration->getImage())
                     ->setRoiWidth($configuration->getImage()->getRoiWidth())
                     ->setRoiHeight($configuration->getImage()->getRoiHeight())
+                    ->setEnabledTdmReservation($configuration->getImage()->isEnabledTdmReservation())
             )
             ->setDocument(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getDocument()))
             ->setAssetExternalProviders(

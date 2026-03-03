@@ -464,6 +464,9 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode(ExtSystemImageTypeConfiguration::CROP_STORAGE_NAME)
                     ->isRequired()
+                ->end()
+                ->booleanNode(ExtSystemImageTypeConfiguration::ENABLED_TDM_RESERVATION)
+                    ->defaultTrue()
                 ->end();
         }
 

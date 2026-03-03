@@ -14,6 +14,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public const string ROI_HEIGHT_KEY = 'roi_height';
     public const string CROP_STORAGE_NAME = 'crop_storage_name';
     public const string NOT_FOUND_IMAGE_ID = 'not_found_image_id';
+    public const string ENABLED_TDM_RESERVATION = 'enabled_tdm_reservation';
 
     private int $roiWidth;
     private int $roiHeight;
@@ -23,6 +24,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     private string $adminDomain;
     private string $adminDomainName;
     private string $notFoundImageId;
+    private bool $enabledTdmReservation;
 
     public static function getFromArrayConfiguration(array $config): static
     {
@@ -34,6 +36,7 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
             ->setCropStorageName($config[self::CROP_STORAGE_NAME] ?? '')
             ->setPublicDomainName($config[self::PUBLIC_DOMAIN_NAME_KEY] ?? '')
             ->setAdminDomainName($config[self::ADMIN_DOMAIN_NAME_KEY] ?? '')
+            ->setEnabledTdmReservation($config[self::ENABLED_TDM_RESERVATION] ?? true)
         ;
     }
 
@@ -129,6 +132,18 @@ final class ExtSystemImageTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setNotFoundImageId(string $notFoundImageId): self
     {
         $this->notFoundImageId = $notFoundImageId;
+
+        return $this;
+    }
+
+    public function isEnabledTdmReservation(): bool
+    {
+        return $this->enabledTdmReservation;
+    }
+
+    public function setEnabledTdmReservation(bool $enabledTdmReservation): self
+    {
+        $this->enabledTdmReservation = $enabledTdmReservation;
 
         return $this;
     }
