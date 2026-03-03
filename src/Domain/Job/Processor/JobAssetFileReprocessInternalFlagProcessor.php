@@ -68,7 +68,7 @@ final class JobAssetFileReprocessInternalFlagProcessor extends AbstractJobProces
 
         $bulkSize = $job->getBulkSize();
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom());
+        $assets = $this->assetRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom(), $job->getProcessUntil());
 
         $changedCount = App::ZERO;
         $totalFileCount = App::ZERO;

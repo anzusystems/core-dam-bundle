@@ -59,7 +59,7 @@ final class JobSynchronizeImageChangedProcessor extends AbstractJobProcessor
 
         $bulkSize = $job->getBulkSize();
         $lastId = $job->getLastBatchProcessedRecord();
-        $imageFiles = $this->imageFileRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom());
+        $imageFiles = $this->imageFileRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom(), $job->getProcessUntil());
 
         $notifiedCount = 0;
         $totalCount = $imageFiles->count();

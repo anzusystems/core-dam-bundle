@@ -121,12 +121,12 @@ class AssetAdmListDto extends AbstractEntityDto
     #[Serialize]
     public function isMainFileInternal(): ?bool
     {
-        return $this->asset->getMainFile()?->getFlags()->isOverrideInternal();
+        return $this->asset->getMainFile()?->getFlags()->isInternal();
     }
 
     #[Serialize]
     public function isMainFileOverrideInternal(): ?bool
     {
-        return $this->asset->getMainFile()?->getFlags()->isInternal();
+        return $this->asset->getMainFile()?->getFlags()->isOverrideInternal();
     }
 }

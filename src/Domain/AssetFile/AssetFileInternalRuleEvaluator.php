@@ -51,7 +51,7 @@ final readonly class AssetFileInternalRuleEvaluator
     private function validateAuthors(AssetFile $assetFile): bool
     {
         $ruleAuthors = $assetFile->getLicence()->getInternalRuleAuthors();
-        if ($ruleAuthors->count() === App::ZERO) {
+        if (App::ZERO === $ruleAuthors->count()) {
             return true;
         }
 
@@ -72,7 +72,7 @@ final readonly class AssetFileInternalRuleEvaluator
     private function validateUsers(AssetFile $assetFile): bool
     {
         $ruleUsers = $assetFile->getLicence()->getInternalRuleUsers();
-        if ($ruleUsers->count() === App::ZERO) {
+        if (App::ZERO === $ruleUsers->count()) {
             return true;
         }
 

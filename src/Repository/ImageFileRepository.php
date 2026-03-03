@@ -54,6 +54,7 @@ final class ImageFileRepository extends AbstractAssetFileRepository
         int $limit,
         string $idFrom = '',
         ?DateTimeImmutable $createdFrom = null,
+        ?DateTimeImmutable $createdUntil = null,
     ): Collection {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->where('IDENTITY(entity.licence) = :licenceId')
@@ -71,6 +72,12 @@ final class ImageFileRepository extends AbstractAssetFileRepository
             $queryBuilder
                 ->andWhere('entity.createdAt >= :createdFrom')
                 ->setParameter('createdFrom', $createdFrom);
+        }
+
+        if ($createdUntil instanceof DateTimeImmutable) {
+            $queryBuilder
+                ->andWhere('entity.createdAt <= :createdUntil')
+                ->setParameter('createdUntil', $createdUntil);
         }
 
         return new ArrayCollection(
