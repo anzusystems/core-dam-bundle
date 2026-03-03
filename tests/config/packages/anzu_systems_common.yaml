@@ -8,7 +8,7 @@ anzu_systems_common:
         unlocked_commands:
             - Doctrine\Bundle\DoctrineBundle\Command\DropDatabaseDoctrineCommand
             - Doctrine\Bundle\DoctrineBundle\Command\CreateDatabaseDoctrineCommand
-            - Doctrine\Bundle\DoctrineBundle\Command\Proxy\UpdateSchemaDoctrineCommand
+            - Doctrine\ORM\Tools\Console\Command\SchemaTool\UpdateCommand
             - AnzuSystems\CommonBundle\Command\GenerateFixturesCommand
     health_check:
         enabled: true
