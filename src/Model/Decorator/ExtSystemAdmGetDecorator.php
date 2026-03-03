@@ -10,6 +10,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class ExtSystemAdmGetDecorator
 {
+    private bool $notificationsEnabled;
     private array $assetExternalProviders;
     private ExtSystemAssetTypeAdmGetDecorator $audio;
     private ExtSystemAssetTypeAdmGetDecorator $video;
@@ -19,6 +20,7 @@ final class ExtSystemAdmGetDecorator
     public static function getInstance(ExtSystemConfiguration $configuration): self
     {
         return (new self())
+            ->setNotificationsEnabled($configuration->isNotificationsEnabled())
             ->setAudio(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getAudio()))
             ->setVideo(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getVideo()))
             ->setImage(
@@ -34,6 +36,19 @@ final class ExtSystemAdmGetDecorator
                     $configuration->getAssetExternalProviders()->toArray()
                 )
             );
+    }
+
+    #[Serialize]
+    public function isNotificationsEnabled(): bool
+    {
+        return $this->notificationsEnabled;
+    }
+
+    public function setNotificationsEnabled(bool $notificationsEnabled): self
+    {
+        $this->notificationsEnabled = $notificationsEnabled;
+
+        return $this;
     }
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]

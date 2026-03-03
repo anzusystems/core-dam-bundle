@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Notification;
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Google\Cloud\PubSub\Message;
 use Google\Cloud\PubSub\PubSubClient;
@@ -19,6 +20,7 @@ abstract class AbstractNotificationDispatcher
 
     protected CurrentAnzuUserProvider $currentUserProvider;
     protected ConfigurationProvider $configurationProvider;
+    protected ExtSystemConfigurationProvider $extSystemConfigurationProvider;
     private CacheItemPoolInterface $coreDamBundlePubSubTokenCache;
 
     #[Required]
@@ -34,6 +36,12 @@ abstract class AbstractNotificationDispatcher
     }
 
     #[Required]
+    public function setExtSystemConfigurationProvider(ExtSystemConfigurationProvider $extSystemConfigurationProvider): void
+    {
+        $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
+    }
+
+    #[Required]
     public function setCoreDamBundlePubSubTokenCache(CacheItemPoolInterface $coreDamBundlePubSubTokenCache): void
     {
         $this->coreDamBundlePubSubTokenCache = $coreDamBundlePubSubTokenCache;
@@ -44,11 +52,18 @@ abstract class AbstractNotificationDispatcher
      *
      * @throws SerializerException
      */
-    protected function notify(array $userIds, string $eventName, ?object $data = null): void
+    protected function notify(array $userIds, string $eventName, ?object $data = null, ?string $extSystemSlug = null): void
     {
         $notificationsConfig = $this->configurationProvider->getSettings()->getNotificationsConfig();
         if ($notificationsConfig->isDisabled()) {
             return;
+        }
+
+        if (null !== $extSystemSlug) {
+            $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfiguration($extSystemSlug);
+            if (false === $extSystemConfig->isNotificationsEnabled()) {
+                return;
+            }
         }
 
         $pubSubClient = new PubSubClient([
