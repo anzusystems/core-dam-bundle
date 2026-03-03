@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\OpenApi\Request;
 
 use Attribute;
-use Nelmio\ApiDocBundle\Annotation\Model;
+use Nelmio\ApiDocBundle\Attribute\Model;
 use OpenApi\Attributes\Items;
 use OpenApi\Attributes\JsonContent;
 use OpenApi\Attributes\RequestBody;

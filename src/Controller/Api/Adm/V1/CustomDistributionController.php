@@ -26,7 +26,7 @@ use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/custom-distribution', name: 'adm_custom_distribution_v1_')]
 #[OA\Tag('CustomDistribution')]
