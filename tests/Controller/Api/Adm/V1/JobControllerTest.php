@@ -42,7 +42,7 @@ final class JobControllerTest extends AbstractApiController
 
         $response = $client->post('/api/adm/v1/job/asset-file-reprocess-internal-flag', [
             'targetLicenceId' => AssetLicenceFixtures::LICENCE_ID,
-            'processFrom' => '2025-01-15T10:00:00+00:00',
+            'processFrom' => '2025-01-15T10:00:00.000000Z',
             'bulkSize' => 100,
         ]);
         $this->assertStatusCode($response, Response::HTTP_CREATED);
@@ -125,7 +125,7 @@ final class JobControllerTest extends AbstractApiController
 
         $response = $client->post('/api/adm/v1/job/synchronize-image-changed', [
             'targetLicenceId' => AssetLicenceFixtures::LICENCE_ID,
-            'processFrom' => '2025-01-15T10:00:00+00:00',
+            'processFrom' => '2025-01-15T10:00:00.000000Z',
             'bulkSize' => 100,
         ]);
         $this->assertStatusCode($response, Response::HTTP_CREATED);
