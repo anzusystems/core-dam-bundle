@@ -323,11 +323,11 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (null !== $until) {
             $range['lte'] = $until;
         }
-        if (null !== $format) {
-            $range['format'] = $format;
-        }
 
         if (false === empty($range)) {
+            if (null !== $format) {
+                $range['format'] = $format;
+            }
             $filter[]['range'] = [$key => $range];
         }
     }
