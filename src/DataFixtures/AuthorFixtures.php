@@ -26,6 +26,9 @@ final class AuthorFixtures extends AbstractFixtures
     public const string AUTHOR_5 = '7470b436-6e03-4437-9b92-50af90aa09bf';
     public const string AUTHOR_6 = '7470b436-6e03-4447-9b92-50af90aa09bf';
 
+    public const string AUTHOR_BLOG_1 = '690fd785-84b1-4d3b-abdf-b986ed53c400';
+    public const string AUTHOR_BLOG_2 = '19a0dba5-459b-422e-ac8e-a3c1cbd20d40';
+
     public function __construct(
         private readonly AuthorManager $manager,
     ) {
@@ -110,5 +113,29 @@ final class AuthorFixtures extends AbstractFixtures
         $childAuthor->getFlags()->setReviewed(false);
 
         yield $childAuthor;
+
+        /** @var ExtSystem $blogExtSystem */
+        $blogExtSystem = $this->entityManager->find(
+            ExtSystem::class,
+            4
+        );
+
+        if (null !== $blogExtSystem) {
+            $blogAuthor1 = (new Author())
+                ->setId(self::AUTHOR_BLOG_1)
+                ->setName('Blog Author One')
+                ->setExtSystem($blogExtSystem);
+            $blogAuthor1->getFlags()->setReviewed(true);
+
+            yield $blogAuthor1;
+
+            $blogAuthor2 = (new Author())
+                ->setId(self::AUTHOR_BLOG_2)
+                ->setName('Blog Author Two')
+                ->setExtSystem($blogExtSystem);
+            $blogAuthor2->getFlags()->setReviewed(true);
+
+            yield $blogAuthor2;
+        }
     }
 }
