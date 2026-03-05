@@ -66,6 +66,11 @@ final class JobAssetFileReprocessInternalFlagProcessorTest extends CoreDamKernel
         $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
         $image2->getFlags()->setInternal(false);
 
+        // IMAGE_ID_2_1 is already internal (true) — should not count as changed.
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(true);
+
         $this->entityManager->flush();
 
         $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
@@ -148,6 +153,11 @@ final class JobAssetFileReprocessInternalFlagProcessorTest extends CoreDamKernel
         $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
         $image2->getFlags()->setInternal(false);
 
+        // IMAGE_ID_2_1 is already internal (true) — should not count as changed.
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(true);
+
         $this->entityManager->flush();
 
         $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
@@ -229,6 +239,11 @@ final class JobAssetFileReprocessInternalFlagProcessorTest extends CoreDamKernel
         /** @var ImageFile $image2 */
         $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
         $image2->getFlags()->setInternal(false);
+
+        // IMAGE_ID_2_1 is already internal (true) — should not count as changed.
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(true);
 
         $this->entityManager->flush();
 
