@@ -262,4 +262,166 @@ final class JobAssetFileReprocessInternalFlagProcessorTest extends CoreDamKernel
         // All 3 files under LICENCE_ID were processed (IMAGE_ID_1, IMAGE_ID_2, IMAGE_ID_2_1).
         $this->assertSame(3, $result->getTotalCount());
     }
+
+    public function testProcessUntilFiltersAssetsByCreatedAt(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+        $licence->getInternalRule()->setActive(true);
+
+        /** @var ImageFile $image1 */
+        $image1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $image1->getFlags()->setInternal(false);
+
+        $this->entityManager->flush();
+
+        // Set processUntil far in the past — no assets should match.
+        $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
+        $this->assertInstanceOf(JobAssetFileReprocessInternalFlag::class, $job);
+        $job->setProcessUntil(new DateTimeImmutable('2000-01-01'));
+
+        $this->processor->process($job);
+
+        $this->assertSame(JobStatus::Done, $job->getStatus());
+
+        $result = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        $this->assertSame(0, $result->getChangedCount());
+        $this->assertSame(0, $result->getTotalCount());
+
+        // Re-fetch and assert image is still false (not processed).
+        $this->entityManager->clear();
+
+        /** @var ImageFile $image1Refetched */
+        $image1Refetched = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $this->assertFalse($image1Refetched->getFlags()->isInternal());
+    }
+
+    public function testProcessResultAccumulatesAcrossBatches(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+        $licence->getInternalRule()->setActive(true);
+
+        /** @var ImageFile $image1 */
+        $image1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $image1->getFlags()->setInternal(false);
+
+        /** @var ImageFile $image2 */
+        $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
+        $image2->getFlags()->setInternal(false);
+
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(false);
+
+        $this->entityManager->flush();
+
+        $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
+        $this->assertInstanceOf(JobAssetFileReprocessInternalFlag::class, $job);
+        $job->setBulkSize(1);
+        $jobId = $job->getId();
+
+        // First batch: Asset1 (1 file: IMAGE_ID_1).
+        $this->processor->process($job);
+        $job = $this->entityManager->find(JobAssetFileReprocessInternalFlag::class, $jobId);
+        $result1 = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        $this->assertSame(1, $result1->getChangedCount());
+        $this->assertSame(1, $result1->getTotalCount());
+
+        // Second batch: Asset2 (2 files: IMAGE_ID_2, IMAGE_ID_2_1).
+        $this->processor->process($job);
+        $job = $this->entityManager->find(JobAssetFileReprocessInternalFlag::class, $jobId);
+        $result2 = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        $this->assertSame(3, $result2->getChangedCount());
+        $this->assertSame(3, $result2->getTotalCount());
+
+        // Third batch: no more assets → Done.
+        $this->processor->process($job);
+        $job = $this->entityManager->find(JobAssetFileReprocessInternalFlag::class, $jobId);
+        $this->assertSame(JobStatus::Done, $job->getStatus());
+
+        $resultFinal = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        $this->assertSame(3, $resultFinal->getChangedCount());
+        $this->assertSame(3, $resultFinal->getTotalCount());
+    }
+
+    public function testProcessSetsInternalFlagToFalseWhenEvaluatorReturnsFalse(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+        $licence->getInternalRule()->setActive(true);
+        // Set markAsInternalSince to far future so evaluator returns false for all files.
+        $licence->getInternalRule()->setMarkAsInternalSince(new DateTimeImmutable('+10 years'));
+
+        // Set images to internal=true — they should be flipped to false.
+        /** @var ImageFile $image1 */
+        $image1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $image1->getFlags()->setInternal(true);
+
+        /** @var ImageFile $image2 */
+        $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
+        $image2->getFlags()->setInternal(true);
+
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(true);
+
+        $this->entityManager->flush();
+
+        $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
+        $this->assertInstanceOf(JobAssetFileReprocessInternalFlag::class, $job);
+
+        $this->processor->process($job);
+
+        $this->assertSame(JobStatus::Done, $job->getStatus());
+
+        $result = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        // All 3 files flipped from true to false.
+        $this->assertSame(3, $result->getChangedCount());
+        $this->assertSame(3, $result->getTotalCount());
+
+        // Re-fetch and assert all images are now false.
+        $this->entityManager->clear();
+
+        /** @var ImageFile $image1Refetched */
+        $image1Refetched = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $this->assertFalse($image1Refetched->getFlags()->isInternal());
+
+        /** @var ImageFile $image2Refetched */
+        $image2Refetched = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
+        $this->assertFalse($image2Refetched->getFlags()->isInternal());
+    }
+
+    public function testProcessNoChangesWhenAllFilesAlreadyMatchEvaluation(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+        $licence->getInternalRule()->setActive(true);
+
+        // Set all files to internal=true — evaluator will also return true, so no changes.
+        /** @var ImageFile $image1 */
+        $image1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $image1->getFlags()->setInternal(true);
+
+        /** @var ImageFile $image2 */
+        $image2 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
+        $image2->getFlags()->setInternal(true);
+
+        /** @var ImageFile $image2_1 */
+        $image2_1 = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2_1);
+        $image2_1->getFlags()->setInternal(true);
+
+        $this->entityManager->flush();
+
+        $job = $this->entityManager->getRepository(JobAssetFileReprocessInternalFlag::class)->findAll()[0];
+        $this->assertInstanceOf(JobAssetFileReprocessInternalFlag::class, $job);
+
+        $this->processor->process($job);
+
+        $this->assertSame(JobStatus::Done, $job->getStatus());
+
+        $result = JobAssetFileReprocessInternalFlagResult::fromString($job->getResult());
+        $this->assertSame(0, $result->getChangedCount());
+        $this->assertSame(3, $result->getTotalCount());
+    }
 }

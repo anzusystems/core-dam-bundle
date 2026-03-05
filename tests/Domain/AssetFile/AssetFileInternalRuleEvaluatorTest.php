@@ -246,4 +246,51 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->assertFalse($image->getFlags()->isInternal());
     }
+
+    public function testReturnsFalseWhenRuleHasAuthorsButAssetHasNone(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $licence = $image->getLicence();
+
+        $licence->getInternalRule()->setActive(true);
+
+        // Add an author to the rule but NOT to the asset.
+        /** @var Author $author1 */
+        $author1 = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1);
+        $licence->addInternalRuleAuthor($author1);
+
+        $this->entityManager->flush();
+
+        $this->assertFalse($this->evaluator->evaluate($image));
+    }
+
+    public function testEvaluateAndApplySetsInternalToFalse(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+
+        $image->getLicence()->getInternalRule()->setActive(true);
+        // Set markAsInternalSince to future so evaluator returns false.
+        $image->getLicence()->getInternalRule()->setMarkAsInternalSince(
+            new DateTimeImmutable('+1 year')
+        );
+        $image->getFlags()->setInternal(true);
+
+        $this->evaluator->evaluateAndApply($image);
+
+        $this->assertFalse($image->getFlags()->isInternal());
+    }
+
+    public function testReturnsTrueWhenMarkAsInternalSinceIsNull(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+
+        $image->getLicence()->getInternalRule()->setActive(true);
+        // Explicitly ensure markAsInternalSince is null.
+        $image->getLicence()->getInternalRule()->setMarkAsInternalSince(null);
+
+        $this->assertTrue($this->evaluator->evaluate($image));
+    }
 }
