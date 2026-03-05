@@ -11,7 +11,7 @@ use League\Flysystem\FilesystemException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/image', name: 'adm_image_')]
 #[OA\Tag('Image')]

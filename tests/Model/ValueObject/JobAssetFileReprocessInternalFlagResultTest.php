@@ -66,4 +66,18 @@ final class JobAssetFileReprocessInternalFlagResultTest extends TestCase
         $result = new JobAssetFileReprocessInternalFlagResult(1, 2);
         $result->in([]);
     }
+
+    public function testFromStringWithExtraParts(): void
+    {
+        $result = JobAssetFileReprocessInternalFlagResult::fromString('5|100|extra');
+        $this->assertSame(5, $result->getChangedCount());
+        $this->assertSame(100, $result->getTotalCount());
+        $this->assertSame('5|100', $result->toString());
+    }
+
+    public function testToStringUsedByMagicToString(): void
+    {
+        $result = new JobAssetFileReprocessInternalFlagResult(3, 7);
+        $this->assertSame($result->toString(), (string) $result);
+    }
 }

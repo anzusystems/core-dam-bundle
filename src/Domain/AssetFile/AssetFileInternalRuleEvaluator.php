@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
-use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
+use DateTimeImmutable;
 
 final readonly class AssetFileInternalRuleEvaluator
 {
-    public function evaluate(Asset $asset, AssetFile $assetFile): ?bool
+    public function evaluate(AssetFile $assetFile): ?bool
     {
         if ($assetFile->getFlags()->isOverrideInternal()) {
             return null;
@@ -23,25 +24,44 @@ final readonly class AssetFileInternalRuleEvaluator
             return null;
         }
 
-        $markAsInternalSince = $internalRule->getMarkAsInternalSince();
-        if (null !== $markAsInternalSince && $assetFile->getCreatedAt() < $markAsInternalSince) {
+        return $this->validateMarkAsInternalSince($assetFile)
+            && $this->validateAuthors($assetFile)
+            && $this->validateUsers($assetFile);
+    }
+
+    public function evaluateAndApply(AssetFile $assetFile): void
+    {
+        $result = $this->evaluate($assetFile);
+        if (null !== $result) {
+            $assetFile->getFlags()->setInternal($result);
+        }
+    }
+
+    private function validateMarkAsInternalSince(AssetFile $assetFile): bool
+    {
+        $markAsInternalSince = $assetFile->getLicence()->getInternalRule()->getMarkAsInternalSince();
+
+        if ($markAsInternalSince instanceof DateTimeImmutable && $assetFile->getCreatedAt() < $markAsInternalSince) {
             return false;
         }
 
+        return true;
+    }
+
+    private function validateAuthors(AssetFile $assetFile): bool
+    {
         $ruleAuthors = $assetFile->getLicence()->getInternalRuleAuthors();
-        if ($ruleAuthors->count() > 0) {
-            foreach ($asset->getAuthors() as $author) {
-                if (false === $ruleAuthors->exists(fn (int $key, Author $ruleAuthor): bool => $ruleAuthor->getId() === $author->getId())) {
-                    return false;
-                }
-            }
+        if (App::ZERO === $ruleAuthors->count()) {
+            return true;
         }
 
-        $ruleUsers = $assetFile->getLicence()->getInternalRuleUsers();
-        if ($ruleUsers->count() > 0) {
-            /** @var DamUser $createdBy */
-            $createdBy = $assetFile->getCreatedBy();
-            if (false === $ruleUsers->exists(fn (int $key, DamUser $ruleUser): bool => $ruleUser->getId() === $createdBy->getId())) {
+        $assetAuthors = $assetFile->getAsset()->getAuthors();
+        if ($assetAuthors->isEmpty()) {
+            return false;
+        }
+
+        foreach ($assetAuthors as $author) {
+            if (false === $ruleAuthors->exists(fn (int $key, Author $ruleAuthor): bool => $ruleAuthor->getId() === $author->getId())) {
                 return false;
             }
         }
@@ -49,11 +69,16 @@ final readonly class AssetFileInternalRuleEvaluator
         return true;
     }
 
-    public function evaluateAndApply(Asset $asset, AssetFile $assetFile): void
+    private function validateUsers(AssetFile $assetFile): bool
     {
-        $result = $this->evaluate($asset, $assetFile);
-        if (null !== $result) {
-            $assetFile->getFlags()->setInternal($result);
+        $ruleUsers = $assetFile->getLicence()->getInternalRuleUsers();
+        if (App::ZERO === $ruleUsers->count()) {
+            return true;
         }
+
+        /** @var DamUser $createdBy */
+        $createdBy = $assetFile->getCreatedBy();
+
+        return $ruleUsers->exists(fn (int $key, DamUser $ruleUser): bool => $ruleUser->getId() === $createdBy->getId());
     }
 }

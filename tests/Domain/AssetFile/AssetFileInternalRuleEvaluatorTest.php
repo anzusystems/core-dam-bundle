@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -30,40 +29,36 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         $image->getFlags()->setOverrideInternal(true);
 
-        $this->assertNull($this->evaluator->evaluate($asset, $image));
+        $this->assertNull($this->evaluator->evaluate($image));
     }
 
     public function testReturnsNullWhenRuleIsInactive(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         // Default fixture has active=false.
         $this->assertFalse($image->getLicence()->getInternalRule()->isActive());
-        $this->assertNull($this->evaluator->evaluate($asset, $image));
+        $this->assertNull($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenRuleActiveAndNoConstraints(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         $image->getLicence()->getInternalRule()->setActive(true);
 
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsFalseWhenCreatedBeforeMarkAsInternalSince(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         $image->getLicence()->getInternalRule()->setActive(true);
         // Set the cutoff date to the future so the file's createdAt is before it.
@@ -71,14 +66,13 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
             new DateTimeImmutable('+1 year')
         );
 
-        $this->assertFalse($this->evaluator->evaluate($asset, $image));
+        $this->assertFalse($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenCreatedAfterMarkAsInternalSince(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         $image->getLicence()->getInternalRule()->setActive(true);
         // Set the cutoff date to the past so the file's createdAt is after it.
@@ -86,7 +80,7 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
             new DateTimeImmutable('2000-01-01')
         );
 
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenAllAssetAuthorsMatchRuleAuthors(): void
@@ -105,7 +99,7 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsFalseWhenAssetAuthorNotInRuleAuthors(): void
@@ -128,7 +122,7 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertFalse($this->evaluator->evaluate($asset, $image));
+        $this->assertFalse($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenRuleAuthorsEmptyAndAssetHasAuthors(): void
@@ -146,14 +140,13 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
         $this->entityManager->flush();
 
         // No rule authors means the author check is skipped entirely.
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenCreatedByUserMatchesRuleUsers(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
         $licence = $image->getLicence();
 
         $licence->getInternalRule()->setActive(true);
@@ -163,14 +156,13 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsFalseWhenCreatedByUserNotInRuleUsers(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
         $licence = $image->getLicence();
 
         $licence->getInternalRule()->setActive(true);
@@ -181,7 +173,7 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertFalse($this->evaluator->evaluate($asset, $image));
+        $this->assertFalse($this->evaluator->evaluate($image));
     }
 
     public function testReturnsTrueWhenBothAuthorAndUserMatch(): void
@@ -203,7 +195,7 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertTrue($this->evaluator->evaluate($asset, $image));
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 
     public function testReturnsFalseWhenAuthorMatchesButUserDoesNot(): void
@@ -226,19 +218,18 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 
         $this->entityManager->flush();
 
-        $this->assertFalse($this->evaluator->evaluate($asset, $image));
+        $this->assertFalse($this->evaluator->evaluate($image));
     }
 
     public function testEvaluateAndApplySetsInternalFlag(): void
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         $image->getLicence()->getInternalRule()->setActive(true);
         $image->getFlags()->setInternal(false);
 
-        $this->evaluator->evaluateAndApply($asset, $image);
+        $this->evaluator->evaluateAndApply($image);
 
         $this->assertTrue($image->getFlags()->isInternal());
     }
@@ -247,13 +238,59 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
     {
         /** @var ImageFile $image */
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
-        $asset = $image->getAsset();
 
         // Rule inactive → evaluate returns null → flag should not change.
         $image->getFlags()->setInternal(false);
 
-        $this->evaluator->evaluateAndApply($asset, $image);
+        $this->evaluator->evaluateAndApply($image);
 
         $this->assertFalse($image->getFlags()->isInternal());
+    }
+
+    public function testReturnsFalseWhenRuleHasAuthorsButAssetHasNone(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        $licence = $image->getLicence();
+
+        $licence->getInternalRule()->setActive(true);
+
+        // Add an author to the rule but NOT to the asset.
+        /** @var Author $author1 */
+        $author1 = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1);
+        $licence->addInternalRuleAuthor($author1);
+
+        $this->entityManager->flush();
+
+        $this->assertFalse($this->evaluator->evaluate($image));
+    }
+
+    public function testEvaluateAndApplySetsInternalToFalse(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+
+        $image->getLicence()->getInternalRule()->setActive(true);
+        // Set markAsInternalSince to future so evaluator returns false.
+        $image->getLicence()->getInternalRule()->setMarkAsInternalSince(
+            new DateTimeImmutable('+1 year')
+        );
+        $image->getFlags()->setInternal(true);
+
+        $this->evaluator->evaluateAndApply($image);
+
+        $this->assertFalse($image->getFlags()->isInternal());
+    }
+
+    public function testReturnsTrueWhenMarkAsInternalSinceIsNull(): void
+    {
+        /** @var ImageFile $image */
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+
+        $image->getLicence()->getInternalRule()->setActive(true);
+        // Explicitly ensure markAsInternalSince is null.
+        $image->getLicence()->getInternalRule()->setMarkAsInternalSince(null);
+
+        $this->assertTrue($this->evaluator->evaluate($image));
     }
 }

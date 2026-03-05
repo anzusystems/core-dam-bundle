@@ -147,14 +147,14 @@ final class UnsplashClient
      * @throws SerializerException
      * @throws InvalidArgumentException
      */
-    public function getPhotoById(UnsplashAssetExternalProviderConfiguration $configuration, string $id): ?UnsplashImageDto
+    public function getPhotoById(UnsplashAssetExternalProviderConfiguration $configuration, string $id): UnsplashImageDto
     {
-        $photo = $this->getPhotosByIds($configuration, [$id])[0] ?? null;
-        if (null === $photo) {
+        $photos = $this->getPhotosByIds($configuration, [$id]);
+        if (0 === count($photos)) {
             throw new NotFoundHttpException(sprintf('Photo by id (%s) not found.', $id));
         }
 
-        return $this->getPhotosByIds($configuration, [$id])[0] ?? null;
+        return $photos[0];
     }
 
     /**
@@ -167,9 +167,6 @@ final class UnsplashClient
     public function download(UnsplashAssetExternalProviderConfiguration $configuration, string $id)
     {
         $image = $this->getPhotoById($configuration, $id);
-        if (null === $image) {
-            throw new NotFoundHttpException(sprintf('Image by id (%s) not found.', $id));
-        }
 
         try {
             $response = $this->unsplashApiClient->request(Request::METHOD_GET, $image->getUrls()->getFull());

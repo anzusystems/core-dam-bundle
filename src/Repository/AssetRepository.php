@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -124,8 +125,13 @@ final class AssetRepository extends AbstractAnzuRepository
     /**
      * @return Collection<int, Asset>
      */
-    public function findAllByLicence(AssetLicence $licence, int $limit, string $idFrom = ''): Collection
-    {
+    public function findAllByLicence(
+        AssetLicence $licence,
+        int $limit,
+        string $idFrom = '',
+        ?DateTimeImmutable $createdFrom = null,
+        ?DateTimeImmutable $createdUntil = null,
+    ): Collection {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->where('IDENTITY(entity.licence) = :licenceId')
             ->setParameter('licenceId', $licence->getId())
@@ -136,6 +142,18 @@ final class AssetRepository extends AbstractAnzuRepository
             $queryBuilder
                 ->andWhere('entity.id > :idFrom')
                 ->setParameter('idFrom', $idFrom);
+        }
+
+        if ($createdFrom instanceof DateTimeImmutable) {
+            $queryBuilder
+                ->andWhere('entity.createdAt >= :createdFrom')
+                ->setParameter('createdFrom', $createdFrom);
+        }
+
+        if ($createdUntil instanceof DateTimeImmutable) {
+            $queryBuilder
+                ->andWhere('entity.createdAt <= :createdUntil')
+                ->setParameter('createdUntil', $createdUntil);
         }
 
         return new ArrayCollection(

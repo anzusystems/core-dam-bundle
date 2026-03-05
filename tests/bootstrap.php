@@ -63,7 +63,7 @@ $app->run($input, $output);
 
 # Console user
 $input = new ArrayInput([
-    'command' => 'doctrine:query:sql',
+    'command' => 'dbal:run-sql',
     'sql' => "INSERT INTO user (id, created_by_id, modified_by_id, email, roles, permissions, person_first_name, person_last_name,
                               person_full_name, avatar_color, avatar_text, created_at, modified_at, enabled,
                               allowed_asset_external_providers, allowed_distribution_services)

@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DomainProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -15,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\FileNameHelper;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
@@ -36,6 +38,7 @@ abstract class AbstractImageController extends AbstractPublicController
     private FileSystemProvider $fileSystemProvider;
     private CropFacade $cropFacade;
     private ConfigurationProvider $configurationProvider;
+    private ExtSystemConfigurationProvider $extSystemConfigurationProvider;
 
     #[Required]
     public function setFileSystemProvider(FileSystemProvider $fileSystemProvider): void
@@ -59,6 +62,12 @@ abstract class AbstractImageController extends AbstractPublicController
     public function setConfigurationProvider(ConfigurationProvider $configurationProvider): void
     {
         $this->configurationProvider = $configurationProvider;
+    }
+
+    #[Required]
+    public function setExtSystemConfigurationProvider(ExtSystemConfigurationProvider $extSystemConfigurationProvider): void
+    {
+        $this->extSystemConfigurationProvider = $extSystemConfigurationProvider;
     }
 
     #[Required]
@@ -95,6 +104,10 @@ abstract class AbstractImageController extends AbstractPublicController
             $response->setLastModified($image->getManipulatedAt());
         }
         $this->assetFileCacheManager->setCache($response, $image);
+        $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetFile($image);
+        if ($extSystemConfig instanceof ExtSystemImageTypeConfiguration) {
+            $this->assetFileCacheManager->setTdmReservation($response, $extSystemConfig);
+        }
 
         return $response;
     }
@@ -163,6 +176,10 @@ abstract class AbstractImageController extends AbstractPublicController
             $response,
             $assetFile
         );
+        $extSystemConfig = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetFile($assetFile);
+        if ($extSystemConfig instanceof ExtSystemImageTypeConfiguration) {
+            $this->assetFileCacheManager->setTdmReservation($response, $extSystemConfig);
+        }
 
         return $response;
     }

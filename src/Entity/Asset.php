@@ -40,6 +40,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AssetRepository::class)]
 #[ORM\Index(name: 'IDX_status_created_auto_delete', fields: ['attributes.status', 'createdAt', 'assetFlags.autoDeleteUnprocessed'])]
 #[ORM\Index(name: 'IDX_modified_at', fields: ['modifiedAt'])]
+#[ORM\Index(name: 'IDX_licence_created_at', columns: ['licence_id', 'created_at'])]
 class Asset implements
     TimeTrackingInterface,
     UuidIdentifiableInterface,

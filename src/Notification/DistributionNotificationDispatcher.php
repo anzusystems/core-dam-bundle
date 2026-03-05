@@ -29,7 +29,8 @@ final class DistributionNotificationDispatcher extends AbstractNotificationDispa
         $this->notify(
             [(int) $event->getDistribution()->getNotifyTo()->getId()],
             self::EVENT_NAME_PREFIX . $event->getDistribution()->getStatus()->toString(),
-            DistributionAdmNotificationDecorator::getInstance($event->getDistribution())
+            DistributionAdmNotificationDecorator::getInstance($event->getDistribution()),
+            $event->getDistribution()->getExtSystem()->getSlug()
         );
     }
 

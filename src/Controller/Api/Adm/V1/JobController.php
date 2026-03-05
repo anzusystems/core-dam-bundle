@@ -16,13 +16,14 @@ use AnzuSystems\CoreDamBundle\Entity\JobAssetFileReprocessInternalFlag;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Entity\JobSynchronizeImageChanged;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[AsController]
 #[Route(path: '/job', name: 'adm_job_v1_')]
@@ -33,16 +34,6 @@ final class JobController extends AbstractJobController
         return array_merge(parent::getSubscribedServices(), [
             AccessDenier::class => AccessDenier::class,
         ]);
-    }
-
-    protected function denyAccessUnlessGranted(
-        mixed $attribute,
-        mixed $subject = null,
-        string $message = 'Access Denied.',
-    ): void {
-        /** @var AccessDenier $accessDenier */
-        $accessDenier = $this->container->get(AccessDenier::class);
-        $accessDenier->denyUnlessGranted($attribute, $subject, $message);
     }
     /**
      * @throws ValidationException
@@ -109,6 +100,35 @@ final class JobController extends AbstractJobController
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
 
         return $this->createdResponse($job);
+    }
+
+    /**
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/synchronize-image-changed', 'create_job_synchronize_image_changed', methods: [Request::METHOD_POST])]
+    #[OARequest(JobSynchronizeImageChanged::class), OAResponseCreated(JobSynchronizeImageChanged::class), OAResponseValidation]
+    public function createSynchronizeImageChangedJob(
+        Request $request,
+        #[SerializeParam]
+        JobSynchronizeImageChanged $job,
+    ): JsonResponse {
+        AnzuApp::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted($this->getCreateAcl());
+        $job = $this->jobFacade->create($job);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $job);
+
+        return $this->createdResponse($job);
+    }
+
+    protected function denyAccessUnlessGranted(
+        mixed $attribute,
+        mixed $subject = null,
+        string $message = 'Access Denied.',
+    ): void {
+        /** @var AccessDenier $accessDenier */
+        $accessDenier = $this->container->get(AccessDenier::class);
+        $accessDenier->denyUnlessGranted($attribute, $subject, $message);
     }
 
     protected function getCreateAcl(): string

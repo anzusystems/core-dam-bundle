@@ -32,7 +32,7 @@ use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/youtube-distribution', name: 'adm_youtube_distribution_v1_')]
 #[OA\Tag('YoutubeDistribution')]

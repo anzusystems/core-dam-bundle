@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\JobAssetFileReprocessInternalFlag;
@@ -17,19 +18,11 @@ use Throwable;
 
 final class JobAssetFileReprocessInternalFlagProcessor extends AbstractJobProcessor
 {
-    private const int ASSET_BULK_SIZE = 100;
-
     public function __construct(
         private readonly AssetRepository $assetRepository,
         private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly AssetFileInternalRuleEvaluator $evaluator,
-        private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
-    }
-
-    public function setBulkSize(int $bulkSize): void
-    {
-        $this->bulkSize = $bulkSize;
     }
 
     public static function getSupportedJob(): string
@@ -73,16 +66,17 @@ final class JobAssetFileReprocessInternalFlagProcessor extends AbstractJobProces
             return;
         }
 
+        $bulkSize = $job->getBulkSize();
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findAllByLicence($licence, $this->bulkSize, $lastId);
+        $assets = $this->assetRepository->findAllByLicence($licence, $bulkSize, $lastId, $job->getProcessFrom(), $job->getProcessUntil());
 
-        $changedCount = 0;
-        $totalFileCount = 0;
+        $changedCount = App::ZERO;
+        $totalFileCount = App::ZERO;
         foreach ($assets as $asset) {
             foreach ($asset->getSlots() as $slot) {
                 $assetFile = $slot->getAssetFile();
                 $oldInternal = $assetFile->getFlags()->isInternal();
-                $this->evaluator->evaluateAndApply($asset, $assetFile);
+                $this->evaluator->evaluateAndApply($assetFile);
                 if ($oldInternal !== $assetFile->getFlags()->isInternal()) {
                     $changedCount++;
                 }
@@ -98,7 +92,7 @@ final class JobAssetFileReprocessInternalFlagProcessor extends AbstractJobProces
         );
         $this->getManagedJob($job)->setResult($resultNew->toString());
 
-        $this->bulkSize === $assets->count()
+        $bulkSize === $assets->count()
             ? $this->toAwaitingBatchProcess($job, $lastId)
             : $this->finishSuccess($job);
     }

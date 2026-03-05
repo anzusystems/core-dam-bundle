@@ -11,6 +11,7 @@ use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
 use AnzuSystems\CoreDamBundle\Entity\JobAssetFileReprocessInternalFlag;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Entity\JobSynchronizeImageChanged;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -68,6 +69,10 @@ final class JobFixtures extends AbstractFixtures
         ;
 
         yield (new JobAssetFileReprocessInternalFlag())
+            ->setTargetLicenceId(AssetLicenceFixtures::LICENCE_ID)
+        ;
+
+        yield (new JobSynchronizeImageChanged())
             ->setTargetLicenceId(AssetLicenceFixtures::LICENCE_ID)
         ;
     }

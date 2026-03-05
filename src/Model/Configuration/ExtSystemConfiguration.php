@@ -13,6 +13,7 @@ final class ExtSystemConfiguration
     public const string ID_KEY = 'id';
     public const string ASSET_EXTERNAL_PROVIDERS_KEY = 'asset_external_providers';
     public const string EXT_STORAGE_KEY = 'ext_storage';
+    public const string NOTIFICATIONS_ENABLED_KEY = 'notifications_enabled';
 
     public function __construct(
         private readonly int $id,
@@ -25,6 +26,7 @@ final class ExtSystemConfiguration
         private readonly ExtSystemAssetTypeConfiguration $video,
         private readonly ExtSystemImageTypeConfiguration $image,
         private readonly ExtSystemDocumentTypeConfiguration $document,
+        private readonly bool $notificationsEnabled,
     ) {
     }
 
@@ -45,6 +47,7 @@ final class ExtSystemConfiguration
             ExtSystemVideoTypeConfiguration::getFromArrayConfiguration($config[AssetType::Video->toString()] ?? []),
             ExtSystemImageTypeConfiguration::getFromArrayConfiguration($config[AssetType::Image->toString()] ?? []),
             ExtSystemDocumentTypeConfiguration::getFromArrayConfiguration($config[AssetType::Document->toString()] ?? []),
+            $config[self::NOTIFICATIONS_ENABLED_KEY] ?? true,
         );
     }
 
@@ -84,6 +87,11 @@ final class ExtSystemConfiguration
     public function getExtStorage(): string
     {
         return $this->extStorage;
+    }
+
+    public function isNotificationsEnabled(): bool
+    {
+        return $this->notificationsEnabled;
     }
 
     /**

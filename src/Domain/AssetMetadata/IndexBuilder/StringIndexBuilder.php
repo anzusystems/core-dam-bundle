@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Entity\CustomFormElement;
 use AnzuSystems\CoreDamBundle\Model\Enum\CustomFormElementType;

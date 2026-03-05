@@ -315,6 +315,9 @@ class Configuration implements ConfigurationInterface
                 ->children()
                     ->scalarNode('id')->end()
                     ->scalarNode(ExtSystemConfiguration::EXT_STORAGE_KEY)->end()
+                    ->booleanNode(ExtSystemConfiguration::NOTIFICATIONS_ENABLED_KEY)
+                        ->defaultTrue()
+                    ->end()
                     ->append($this->addExtSystemAssetExternalProvidersSection())
                     ->append($this->addFileExtSystemSection(AssetType::Image))
                     ->append($this->addFileExtSystemSection(AssetType::Audio))
@@ -464,6 +467,9 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode(ExtSystemImageTypeConfiguration::CROP_STORAGE_NAME)
                     ->isRequired()
+                ->end()
+                ->booleanNode(ExtSystemImageTypeConfiguration::ENABLED_TDM_RESERVATION)
+                    ->defaultTrue()
                 ->end();
         }
 

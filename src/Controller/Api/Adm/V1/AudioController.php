@@ -40,7 +40,7 @@ use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/audio', name: 'adm_audio_v1_')]
 #[OA\Tag('Audio')]

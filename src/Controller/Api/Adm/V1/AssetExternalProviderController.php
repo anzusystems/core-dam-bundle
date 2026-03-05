@@ -15,7 +15,7 @@ use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/asset-external-provider', name: 'adm_asset_external_provider_v1_')]
 #[OA\Tag('AssetExternalProvider')]

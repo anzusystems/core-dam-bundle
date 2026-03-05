@@ -24,7 +24,7 @@ use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/jw-distribution', name: 'adm_jw_distribution_v1_')]
 #[OA\Tag('JwDistribution')]

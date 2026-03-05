@@ -23,4 +23,9 @@ interface ExtSystemCallbackInterface
      * @param Collection<array-key, Asset> $collection
      */
     public function notifyAssetsChanged(Collection $collection): void;
+
+    /**
+     * @param Collection<array-key, ImageFile> $collection
+     */
+    public function notifyImagesChanged(Collection $collection): void;
 }

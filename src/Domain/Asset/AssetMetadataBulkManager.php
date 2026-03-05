@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -17,6 +18,7 @@ class AssetMetadataBulkManager extends AbstractManager
         private readonly AssetManager $assetManager,
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AuthorProvider $authorProvider,
+        private readonly AssetFileInternalRuleEvaluator $evaluator,
     ) {
     }
 
@@ -28,8 +30,11 @@ class AssetMetadataBulkManager extends AbstractManager
         $this->updateMetadata($asset, $dto);
         $this->updateDescribed($asset, $dto);
         $this->updateMainFileSingleUse($asset, $dto);
+        $this->updateMainFileOverrideInternal($asset, $dto);
+        $this->updateMainFileInternal($asset, $dto);
         $this->updateAuthors($asset, $dto);
         $this->updateKeywords($asset, $dto);
+        $this->evaluateInternalRules($asset);
 
         return $this->assetManager->updateExisting($asset, $flush);
     }
@@ -68,6 +73,37 @@ class AssetMetadataBulkManager extends AbstractManager
         $mainFile = $asset->getMainFile();
         if ($mainFile instanceof AssetFile) {
             $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
+        }
+    }
+
+    private function updateMainFileOverrideInternal(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
+    {
+        if ($updateDto->isMainFileOverrideInternalUndefined()) {
+            return;
+        }
+
+        $mainFile = $asset->getMainFile();
+        if ($mainFile instanceof AssetFile) {
+            $mainFile->getFlags()->setOverrideInternal($updateDto->isMainFileOverrideInternal());
+        }
+    }
+
+    private function updateMainFileInternal(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
+    {
+        if ($updateDto->isMainFileInternalUndefined()) {
+            return;
+        }
+
+        $mainFile = $asset->getMainFile();
+        if ($mainFile instanceof AssetFile) {
+            $mainFile->getFlags()->setInternal($updateDto->isMainFileInternal());
+        }
+    }
+
+    private function evaluateInternalRules(Asset $asset): void
+    {
+        foreach ($asset->getSlots() as $slot) {
+            $this->evaluator->evaluateAndApply($slot->getAssetFile());
         }
     }
 

@@ -22,7 +22,8 @@ final class AssetNotificationDispatcher extends AbstractNotificationDispatcher
         $this->notify(
             [(int) $event->getDeletedBy()->getId()],
             self::EVENT_ASSET_DELETED_NAME,
-            AssetAdmNotificationDecorator::getInstance($event->getDeleteId())
+            AssetAdmNotificationDecorator::getInstance($event->getDeleteId()),
+            $event->getAsset()->getExtSystem()->getSlug()
         );
     }
 }

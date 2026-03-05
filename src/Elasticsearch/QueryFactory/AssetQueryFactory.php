@@ -243,7 +243,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'duration', $searchDto->getDurationFrom(), $searchDto->getDurationUntil());
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
-        $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp());
+        $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp(), 'epoch_second');
 
         return $filter;
     }
@@ -314,17 +314,20 @@ final class AssetQueryFactory extends AbstractQueryFactory
         ];
     }
 
-    private function applyRangeFilter(array &$filter, string $key, ?int $from, ?int $until): void
+    private function applyRangeFilter(array &$filter, string $key, ?int $from, ?int $until, ?string $format = null): void
     {
         $range = [];
-        if ($from) {
+        if (null !== $from) {
             $range['gte'] = $from;
         }
-        if ($until) {
+        if (null !== $until) {
             $range['lte'] = $until;
         }
 
         if (false === empty($range)) {
+            if (null !== $format) {
+                $range['format'] = $format;
+            }
             $filter[]['range'] = [$key => $range];
         }
     }

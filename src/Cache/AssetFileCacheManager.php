@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Cache;
 use AnzuSystems\Contracts\AnzuApp;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -16,6 +17,7 @@ final class AssetFileCacheManager
     public const string CACHE_CONTROL_TTL_HEADER = 'X-Cache-Control-TTL';
     public const string X_KEY_HEADER = 'xkey';
     public const string CACHE_TAG_HEADER = 'Cache-tag';
+    public const string TDM_RESERVATION_HEADER = 'tdm-reservation';
     private const int NOT_FOUND_TTL = 360;
 
     private AllowListConfiguration $allowListConfiguration;
@@ -40,6 +42,13 @@ final class AssetFileCacheManager
         $response->headers->set(self::CACHE_CONTROL_TTL_HEADER, (string) $cache->getCacheTtl());
         $this->setXKeys($response, $asset);
         $this->setCachedTag($response, $asset);
+    }
+
+    public function setTdmReservation(Response $response, ExtSystemImageTypeConfiguration $configuration): void
+    {
+        if ($configuration->isEnabledTdmReservation()) {
+            $response->headers->set(self::TDM_RESERVATION_HEADER, '1');
+        }
     }
 
     public function setNotFoundCache(Response $response): void

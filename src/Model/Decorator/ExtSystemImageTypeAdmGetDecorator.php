@@ -10,6 +10,7 @@ final class ExtSystemImageTypeAdmGetDecorator extends ExtSystemAssetTypeAdmGetDe
 {
     private int $roiWidth;
     private int $roiHeight;
+    private bool $enabledTdmReservation;
 
     #[Serialize]
     public function getRoiWidth(): int
@@ -33,6 +34,19 @@ final class ExtSystemImageTypeAdmGetDecorator extends ExtSystemAssetTypeAdmGetDe
     public function setRoiHeight(int $roiHeight): self
     {
         $this->roiHeight = $roiHeight;
+
+        return $this;
+    }
+
+    #[Serialize]
+    public function isEnabledTdmReservation(): bool
+    {
+        return $this->enabledTdmReservation;
+    }
+
+    public function setEnabledTdmReservation(bool $enabledTdmReservation): self
+    {
+        $this->enabledTdmReservation = $enabledTdmReservation;
 
         return $this;
     }

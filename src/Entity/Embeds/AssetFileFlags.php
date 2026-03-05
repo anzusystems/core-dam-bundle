@@ -19,7 +19,7 @@ class AssetFileFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $singleUse;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $internal;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
@@ -30,7 +30,7 @@ class AssetFileFlags
         $this->setProcessedMetadata(false);
         $this->setPublic(true);
         $this->setSingleUse(false);
-        $this->setInternal(true);
+        $this->setInternal(false);
         $this->setOverrideInternal(false);
     }
 

@@ -10,6 +10,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class ExtSystemAdmGetDecorator
 {
+    private bool $notificationsEnabled;
     private array $assetExternalProviders;
     private ExtSystemAssetTypeAdmGetDecorator $audio;
     private ExtSystemAssetTypeAdmGetDecorator $video;
@@ -19,12 +20,14 @@ final class ExtSystemAdmGetDecorator
     public static function getInstance(ExtSystemConfiguration $configuration): self
     {
         return (new self())
+            ->setNotificationsEnabled($configuration->isNotificationsEnabled())
             ->setAudio(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getAudio()))
             ->setVideo(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getVideo()))
             ->setImage(
                 ExtSystemImageTypeAdmGetDecorator::getInstance($configuration->getImage())
                     ->setRoiWidth($configuration->getImage()->getRoiWidth())
                     ->setRoiHeight($configuration->getImage()->getRoiHeight())
+                    ->setEnabledTdmReservation($configuration->getImage()->isEnabledTdmReservation())
             )
             ->setDocument(ExtSystemAssetTypeAdmGetDecorator::getInstance($configuration->getDocument()))
             ->setAssetExternalProviders(
@@ -33,6 +36,19 @@ final class ExtSystemAdmGetDecorator
                     $configuration->getAssetExternalProviders()->toArray()
                 )
             );
+    }
+
+    #[Serialize]
+    public function isNotificationsEnabled(): bool
+    {
+        return $this->notificationsEnabled;
+    }
+
+    public function setNotificationsEnabled(bool $notificationsEnabled): self
+    {
+        $this->notificationsEnabled = $notificationsEnabled;
+
+        return $this;
     }
 
     #[Serialize(strategy: Serialize::KEYS_VALUES)]

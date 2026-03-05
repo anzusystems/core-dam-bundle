@@ -6,11 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\CommonBundle\Entity\Job;
 use AnzuSystems\CoreDamBundle\Entity\Traits\LicenceBulkJobTrait;
-use AnzuSystems\CoreDamBundle\Repository\JobAssetFileReprocessInternalFlagRepository;
+use AnzuSystems\CoreDamBundle\Repository\JobSynchronizeImageChangedRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: JobAssetFileReprocessInternalFlagRepository::class)]
-class JobAssetFileReprocessInternalFlag extends Job
+#[ORM\Entity(repositoryClass: JobSynchronizeImageChangedRepository::class)]
+class JobSynchronizeImageChanged extends Job
 {
     use LicenceBulkJobTrait;
 }

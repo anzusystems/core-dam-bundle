@@ -31,7 +31,7 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/podcast-episode', name: 'adm_podcast_episode_v1_')]
 #[OA\Tag('PodcastEpisode')]
