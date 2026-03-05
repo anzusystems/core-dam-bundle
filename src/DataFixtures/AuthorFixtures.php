@@ -120,22 +120,20 @@ final class AuthorFixtures extends AbstractFixtures
             4
         );
 
-        if (null !== $blogExtSystem) {
-            $blogAuthor1 = (new Author())
-                ->setId(self::AUTHOR_BLOG_1)
-                ->setName('Blog Author One')
-                ->setExtSystem($blogExtSystem);
-            $blogAuthor1->getFlags()->setReviewed(true);
+        $blogAuthor1 = (new Author())
+            ->setId(self::AUTHOR_BLOG_1)
+            ->setName('Blog Author One')
+            ->setExtSystem($blogExtSystem);
+        $blogAuthor1->getFlags()->setReviewed(true);
 
-            yield $blogAuthor1;
+        yield $blogAuthor1;
 
-            $blogAuthor2 = (new Author())
-                ->setId(self::AUTHOR_BLOG_2)
-                ->setName('Blog Author Two')
-                ->setExtSystem($blogExtSystem);
-            $blogAuthor2->getFlags()->setReviewed(true);
+        $blogAuthor2 = (new Author())
+            ->setId(self::AUTHOR_BLOG_2)
+            ->setName('Blog Author Two')
+            ->setExtSystem($blogExtSystem);
+        $blogAuthor2->getFlags()->setReviewed(true);
 
-            yield $blogAuthor2;
-        }
+        yield $blogAuthor2;
     }
 }
