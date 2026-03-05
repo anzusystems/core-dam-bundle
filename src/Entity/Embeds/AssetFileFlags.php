@@ -19,7 +19,7 @@ class AssetFileFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $singleUse;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $internal;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
