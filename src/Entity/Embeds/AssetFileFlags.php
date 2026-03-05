@@ -30,7 +30,7 @@ class AssetFileFlags
         $this->setProcessedMetadata(false);
         $this->setPublic(true);
         $this->setSingleUse(false);
-        $this->setInternal(true);
+        $this->setInternal(false);
         $this->setOverrideInternal(false);
     }
 
