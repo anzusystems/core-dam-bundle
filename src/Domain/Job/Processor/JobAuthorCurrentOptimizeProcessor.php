@@ -79,8 +79,13 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             return;
         }
 
+        $authorIds = [(string) $author->getId()];
+        foreach ($author->getChildAuthors() as $childAuthor) {
+            $authorIds[] = (string) $childAuthor->getId();
+        }
+
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthor($author, $lastId, $this->bulkSize);
+        $assets = $this->assetRepository->findByAuthorIds($authorIds, $lastId, $this->bulkSize);
 
         $this->processAssetsCollection($job, $assets, $lastId);
     }
