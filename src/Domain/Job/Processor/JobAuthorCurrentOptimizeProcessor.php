@@ -14,12 +14,14 @@ use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
 
 final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
 {
     use EntityManagerAwareTrait;
+    use IndexManagerAwareTrait;
 
     private const int ASSET_BULK_SIZE = 500;
 
@@ -79,8 +81,13 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             return;
         }
 
+        $authorIds = [(string) $author->getId()];
+        foreach ($author->getChildAuthors() as $childAuthor) {
+            $authorIds[] = (string) $childAuthor->getId();
+        }
+
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthor($author, $lastId, $this->bulkSize);
+        $assets = $this->assetRepository->findByAuthorIds($authorIds, $lastId, $this->bulkSize);
 
         $this->processAssetsCollection($job, $assets, $lastId);
     }
@@ -91,12 +98,17 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     private function processAssetsCollection(JobAuthorCurrentOptimize $job, Collection $assets, string $lastId = ''): void
     {
         $changedAuthorsCount = 0;
+        $changedAssets = [];
         foreach ($assets as $asset) {
             if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
                 $changedAuthorsCount++;
+                $changedAssets[] = $asset;
             }
             $lastId = (string) $asset->getId();
         }
+
+        $this->entityManager->flush();
+        $this->indexManager->indexBulk($changedAssets);
 
         $count = $assets->count();
         $resultBefore = JobAuthorCurrentOptimizeResult::fromString($job->getResult());

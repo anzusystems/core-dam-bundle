@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use DateTimeImmutable;
@@ -41,14 +40,17 @@ final class AssetRepository extends AbstractAnzuRepository
         );
     }
 
-    public function findByAuthor(Author $author, string $fromId = '', int $limit = 100): Collection
+    /**
+     * @param list<string> $authorIds
+     */
+    public function findByAuthorIds(array $authorIds, string $fromId = '', int $limit = 100): Collection
     {
         return new ArrayCollection(
             $this->createQueryBuilder('entity')
                 ->innerJoin('entity.authors', 'author')
-                ->where('author.id = :id')
+                ->where('author.id IN (:ids)')
                 ->andWhere('entity.id > :fromId')
-                ->setParameter('id', $author->getId())
+                ->setParameter('ids', $authorIds)
                 ->setParameter('fromId', $fromId)
                 ->addOrderBy('entity.id', Order::Ascending->value)
                 ->setMaxResults($limit)
