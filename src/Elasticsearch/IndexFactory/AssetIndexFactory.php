@@ -71,6 +71,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'width' => $entity->getAssetFileProperties()->getWidth(),
             'height' => $entity->getAssetFileProperties()->getHeight(),
             'mainFileSingleUse' => $entity->getMainFile()?->getFlags()->isSingleUse(),
+            'mainFileInternal' => $entity->getMainFile()?->getFlags()->isInternal(),
             'ratioWidth' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getWidth() / $gcd) : App::ZERO,
             'ratioHeight' => App::ZERO < $gcd ? (int) ($entity->getAssetFileProperties()->getHeight() / $gcd) : App::ZERO,
             ...$this->assetMetadataCustomData->buildFromEntity($entity),
