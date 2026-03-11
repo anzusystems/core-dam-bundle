@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -127,7 +128,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         );
         $this->getManagedJob($job)->setResult($resultNew->toString());
 
-        $count === $this->bulkSize
+        $count > App::ZERO
             ? $this->toAwaitingBatchProcess($job, $lastId)
             : $this->finishSuccess($job);
     }

@@ -47,6 +47,7 @@ final class AssetRepository extends AbstractAnzuRepository
     {
         return new ArrayCollection(
             $this->createQueryBuilder('entity')
+                ->distinct()
                 ->innerJoin('entity.authors', 'author')
                 ->where('author.id IN (:ids)')
                 ->andWhere('entity.id > :fromId')
