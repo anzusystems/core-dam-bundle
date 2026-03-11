@@ -75,7 +75,8 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
                 audio.attributes_duration audio_attributes_duration, audio.attributes_codec_name audio_attributes_codec_name,
                 audio.attributes_bitrate audio_attributes_bitrate,
                 metadata.custom_data,
-                asf.flags_single_use
+                asf.flags_single_use,
+                asf.flags_internal
             ')
             ->from(self::TABLE_NAME, 'entity')
             ->leftJoin('entity', 'asset_file', 'asf', 'asf.id = entity.main_file_id')
