@@ -190,6 +190,9 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize]
     protected ?bool $mainFileSingleUse = null;
+
+    #[Serialize]
+    protected ?bool $mainFileInternal = null;
     private ?string $idInText = null;
     private bool $resolvedIdInText = false;
 
@@ -754,6 +757,18 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setMainFileSingleUse(?bool $mainFileSingleUse): self
     {
         $this->mainFileSingleUse = $mainFileSingleUse;
+
+        return $this;
+    }
+
+    public function isMainFileInternal(): ?bool
+    {
+        return $this->mainFileInternal;
+    }
+
+    public function setMainFileInternal(?bool $mainFileInternal): self
+    {
+        $this->mainFileInternal = $mainFileInternal;
 
         return $this;
     }

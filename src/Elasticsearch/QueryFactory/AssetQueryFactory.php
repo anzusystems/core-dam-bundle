@@ -233,6 +233,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (is_bool($searchDto->isMainFileSingleUse())) {
             $filter[] = ['term' => ['mainFileSingleUse' => $searchDto->isMainFileSingleUse()]];
         }
+        if (is_bool($searchDto->isMainFileInternal())) {
+            $filter[] = ['term' => ['mainFileInternal' => $searchDto->isMainFileInternal()]];
+        }
 
         $this->applyRangeFilter($filter, 'pixelSize', $searchDto->getPixelSizeFrom(), $searchDto->getPixelSizeUntil());
         $this->applyRangeFilter($filter, 'ratioWidth', $searchDto->getRatioWidthFrom(), $searchDto->getRatioWidthUntil());

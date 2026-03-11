@@ -56,6 +56,7 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
      *     audio_attributes_codec_name: string,
      *     audio_attributes_bitrate: int,
      *     flags_single_use: int,
+     *     flags_internal: int,
      *     custom_data: array<string, ?string>,
      *     keyword_ids: string[],
      *     author_ids: string[],
@@ -100,6 +101,7 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             'width' => $width,
             'height' => $height,
             'mainFileSingleUse' => (bool) $array['flags_single_use'],
+            'mainFileInternal' => (bool) $array['flags_internal'],
             'ratioWidth' => App::ZERO < $gcd ? (int) ($width / $gcd) : App::ZERO,
             'ratioHeight' => App::ZERO < $gcd ? (int) ($height / $gcd) : App::ZERO,
             // AssetFile

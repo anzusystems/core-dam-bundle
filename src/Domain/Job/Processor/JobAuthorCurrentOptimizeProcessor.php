@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
@@ -29,6 +30,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         private readonly AssetRepository $assetRepository,
         private readonly AuthorRepository $authorRepository,
         private readonly AuthorProvider $authorProvider,
+        private readonly DamLogger $damLogger,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -57,7 +59,12 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             ;
             $this->entityManager->clear();
         } catch (Throwable $e) {
-            $this->finishFail($job, $e->getMessage());
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_JOB,
+                sprintf('JobAuthorCurrentOptimize (%s) failed', (string) $job->getId()),
+                exception: $e,
+            );
+            $this->finishFail($job, $e);
         }
 
         return true;
@@ -108,7 +115,9 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         }
 
         $this->entityManager->flush();
-        $this->indexManager->indexBulk($changedAssets);
+        if (false === empty($changedAssets)) {
+            $this->indexManager->indexBulk($changedAssets);
+        }
 
         $count = $assets->count();
         $resultBefore = JobAuthorCurrentOptimizeResult::fromString($job->getResult());
