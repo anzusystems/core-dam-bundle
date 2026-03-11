@@ -44,7 +44,7 @@ final readonly class AuthorProvider
     public function provideCurrentAuthorToColl(Asset $asset): bool
     {
         $changedCurrentAuthors = false;
-        foreach ($asset->getAuthors() as $assetAuthor) {
+        foreach ($asset->getAuthors()->toArray() as $assetAuthor) {
             if ($assetAuthor->getCurrentAuthors()->isEmpty()) {
                 continue;
             }
