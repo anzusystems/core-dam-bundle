@@ -82,7 +82,7 @@ final class VoiceFamilyController extends AbstractApiController
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
-    #[Route('/{voiceFamily}', name: 'update', methods: [Request::METHOD_PATCH])]
+    #[Route('/{voiceFamily}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('voiceFamily'), OARequest(VoiceFamily::class), OAResponse(VoiceFamily::class), OAResponseValidation]
     public function update(Request $request, VoiceFamily $voiceFamily, #[SerializeParam] VoiceFamily $newVoiceFamily): JsonResponse
     {

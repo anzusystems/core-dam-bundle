@@ -735,7 +735,9 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
-                if (AssetType::Image->toString() === $assetType) {
+                // ext-systems may omit `image:` entirely (e.g. TTS-only systems produce audio only);
+                // Symfony then auto-defaults an empty image block without required domain keys.
+                if (AssetType::Image->toString() === $assetType && isset($assetExtSystemConfig[ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY])) {
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY]);

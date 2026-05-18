@@ -49,8 +49,14 @@ final class Voice implements UuidIdentifiableInterface, TimeTrackingInterface, U
     #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $externalVoiceId;
 
+    /**
+     * Free-form provider-specific metadata (e.g. `['gender' => 'female', 'modelId' => 'eleven_multilingual_v2']`).
+     * Must use KEYS_VALUES so the keys survive JSON round-trip (default strategy collapses to a sequential list).
+     *
+     * @var array<string, mixed>
+     */
     #[ORM\Column(type: Types::JSON)]
-    #[Serialize]
+    #[Serialize(strategy: Serialize::KEYS_VALUES)]
     private array $metadata;
 
     #[ORM\Column(type: Types::BOOLEAN)]

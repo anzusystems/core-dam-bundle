@@ -82,7 +82,7 @@ final class VoiceController extends AbstractApiController
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
-    #[Route('/{voice}', name: 'update', methods: [Request::METHOD_PATCH])]
+    #[Route('/{voice}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('voice'), OARequest(Voice::class), OAResponse(Voice::class), OAResponseValidation]
     public function update(Request $request, Voice $voice, #[SerializeParam] Voice $newVoice): JsonResponse
     {
