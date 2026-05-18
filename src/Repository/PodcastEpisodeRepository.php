@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 
@@ -33,6 +34,22 @@ class PodcastEpisodeRepository extends AbstractAnzuRepository
             ->andWhere('entity.texts.title = :title')
             ->andWhere('IDENTITY(entity.podcast) = :podcastId')
             ->setParameter('title', $title)
+            ->setParameter('podcastId', $podcast->getId())
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Find an existing PodcastEpisode linking the given Asset and Podcast.
+     * Used for idempotency checks in PodcastMembership.
+     */
+    public function findOneByAssetAndPodcast(Asset $asset, Podcast $podcast): ?PodcastEpisode
+    {
+        return $this->createQueryBuilder('entity')
+            ->andWhere('IDENTITY(entity.asset) = :assetId')
+            ->andWhere('IDENTITY(entity.podcast) = :podcastId')
+            ->setParameter('assetId', $asset->getId())
             ->setParameter('podcastId', $podcast->getId())
             ->setMaxResults(1)
             ->getQuery()

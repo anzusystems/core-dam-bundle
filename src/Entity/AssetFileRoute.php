@@ -23,6 +23,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: AssetFileRouteRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_uri_path', fields: ['uri.path'])]
 #[ORM\Index(fields: ['uri.main', 'targetAssetFile'], name: 'IDX_main_asset_file_id')]
+#[ORM\Index(fields: ['targetAssetFile'], name: 'IDX_target_asset_file')]
 class AssetFileRoute implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, FileSystemStorableInterface
 {
     use UuidIdentityTrait;

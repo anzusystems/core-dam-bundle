@@ -40,4 +40,9 @@ final class AudioFactory extends AbstractAssetFileFactory
 
         return $audioFile;
     }
+
+    public function createBlankAudio(AssetLicence $licence, ?string $id = null): AudioFile
+    {
+        return parent::createBlankAudio($licence, $id);
+    }
 }

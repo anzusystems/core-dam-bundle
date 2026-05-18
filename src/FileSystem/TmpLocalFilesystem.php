@@ -31,6 +31,19 @@ final class TmpLocalFilesystem extends LocalFilesystem
         $this->paths = [];
     }
 
+    /**
+     * Best-effort variant — swallow filesystem errors. Orphaned tmp files are acceptable for the
+     * next gc sweep, so callers in `finally` blocks should not propagate cleanup failures.
+     */
+    public function tryClearPaths(): void
+    {
+        try {
+            $this->clearPaths();
+        } catch (FilesystemException) {
+            // intentional swallow — see method docblock
+        }
+    }
+
     public function getTmpFileName(?string $extension = null): string
     {
         $path = $this->nameGenerator->generatePath($extension)->getFileName();
@@ -72,6 +85,18 @@ final class TmpLocalFilesystem extends LocalFilesystem
         $path = $this->getTmpFileName();
 
         $this->writeStream($path, $stream);
+
+        return $path;
+    }
+
+    /**
+     * @throws UnableToWriteFile
+     * @throws FilesystemException
+     */
+    public function writeTmpFileFromBytes(string $bytes, ?string $extension = null): string
+    {
+        $path = $this->getTmpFileName($extension);
+        $this->write($path, $bytes);
 
         return $path;
     }

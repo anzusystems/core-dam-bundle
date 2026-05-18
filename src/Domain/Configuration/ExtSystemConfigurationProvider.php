@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistribution
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
@@ -69,6 +70,14 @@ final class ExtSystemConfigurationProvider
         }
 
         throw new InvalidExtSystemConfigurationException(InvalidExtSystemConfigurationException::ERROR_MESSAGE);
+    }
+
+    /**
+     * @throws InvalidExtSystemConfigurationException
+     */
+    public function getTtsExtSystemConfiguration(string $extSystemSlug): ExtSystemTtsConfiguration
+    {
+        return $this->getExtSystemConfiguration($extSystemSlug)->getTts();
     }
 
     public function getExtSystemConfigurationByAssetType(AssetType $assetType, string $extSystemSlug): ExtSystemAssetTypeConfiguration|ExtSystemImageTypeConfiguration|ExtSystemAudioTypeConfiguration|ExtSystemVideoTypeConfiguration

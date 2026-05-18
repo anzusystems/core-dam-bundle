@@ -27,6 +27,7 @@ final class ExtSystemConfiguration
         private readonly ExtSystemImageTypeConfiguration $image,
         private readonly ExtSystemDocumentTypeConfiguration $document,
         private readonly bool $notificationsEnabled,
+        private readonly ExtSystemTtsConfiguration $tts,
     ) {
     }
 
@@ -48,6 +49,7 @@ final class ExtSystemConfiguration
             ExtSystemImageTypeConfiguration::getFromArrayConfiguration($config[AssetType::Image->toString()] ?? []),
             ExtSystemDocumentTypeConfiguration::getFromArrayConfiguration($config[AssetType::Document->toString()] ?? []),
             $config[self::NOTIFICATIONS_ENABLED_KEY] ?? true,
+            ExtSystemTtsConfiguration::getFromArrayConfiguration($config[ExtSystemTtsConfiguration::KEY] ?? []),
         );
     }
 
@@ -92,6 +94,11 @@ final class ExtSystemConfiguration
     public function isNotificationsEnabled(): bool
     {
         return $this->notificationsEnabled;
+    }
+
+    public function getTts(): ExtSystemTtsConfiguration
+    {
+        return $this->tts;
     }
 
     /**

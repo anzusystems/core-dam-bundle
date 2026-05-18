@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -101,6 +102,32 @@ class AssetFileManager extends AbstractManager
         $this->flush($flush);
 
         return true;
+    }
+
+    /**
+     * Atomically swap the storage payload (file path, mime/size/checksum and audio
+     * attributes) between two AudioFile rows without touching their Asset references
+     * or routes. After the swap, $a holds what $b held and vice versa.
+     *
+     * Used by AssetSwap to flip a stable Asset's audio to the freshly-
+     * synthesised content while the staging Asset receives the previous content
+     * (so it can be safely deleted as garbage). Asset and slot bindings stay
+     * intact, so all routes / URLs remain stable.
+     *
+     * Does NOT flush — caller is responsible (must run inside its own transaction).
+     */
+    public function swapContent(AudioFile $a, AudioFile $b, bool $flush = false): void
+    {
+        $aAssetAttrs = clone $a->getAssetAttributes();
+        $aAudioAttrs = clone $a->getAttributes();
+
+        $a->setAssetAttributes(clone $b->getAssetAttributes());
+        $a->setAttributes(clone $b->getAttributes());
+
+        $b->setAssetAttributes($aAssetAttrs);
+        $b->setAttributes($aAudioAttrs);
+
+        $this->flush($flush);
     }
 
     /**

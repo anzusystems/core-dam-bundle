@@ -1,0 +1,156 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
+
+use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\ElevenlabsClient;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
+use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
+use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use Generator;
+use League\Flysystem\FilesystemException;
+
+/**
+ * ElevenLabs TTS. Chains `previous_request_ids` across chunks for cross-splice prosody. Multi-chunk
+ * MP3 is muxed via ffmpeg — raw-byte concat would leave the Xing/LAME VBR header pointing at the
+ * first chunk only, breaking duration/seek for many players.
+ */
+final class ElevenlabsTtsProvider extends AbstractTtsProvider
+{
+    private const string MODEL_ID = 'eleven_multilingual_v2';
+    private const int MAX_CHARS = 5_000;
+    private const int REQUEST_ID_CHAIN_LIMIT = 3;
+    private const float STABILITY = 0.5;
+    private const float SIMILARITY_BOOST = 0.75;
+
+    public function __construct(
+        private readonly ElevenlabsClient $client,
+        private readonly TextChunker $chunker,
+        private readonly ExtSystemConfigurationProvider $extSystemConfigProvider,
+        FileSystemProvider $fileSystemProvider,
+        FfmpegService $ffmpegService,
+    ) {
+        parent::__construct($fileSystemProvider, $ffmpegService);
+    }
+
+    public static function getDefaultKeyName(): string
+    {
+        return TtsProvider::Elevenlabs->value;
+    }
+
+    public function getName(): TtsProvider
+    {
+        return TtsProvider::Elevenlabs;
+    }
+
+    public function getMaxCharsPerRequest(): int
+    {
+        return self::MAX_CHARS;
+    }
+
+    /**
+     * @throws TtsProviderException
+     * @throws FilesystemException
+     */
+    public function synthesize(string $text, string $externalVoiceId, ExtSystem $extSystem): AdapterFile
+    {
+        $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
+        if ([] === $chunks) {
+            throw new TtsProviderException('Cannot synthesize empty text.');
+        }
+
+        $apiKey = $this->resolveApiKey($extSystem);
+
+        if (1 === count($chunks)) {
+            $result = $this->client->synthesize($externalVoiceId, $apiKey, $this->buildBody($chunks[0], []));
+            $this->assertSuccess($result->http);
+
+            return $this->writeSingleChunk($result->http->getContent());
+        }
+
+        return $this->concatChunks($this->synthesizeChunks($chunks, $externalVoiceId, $apiKey));
+    }
+
+    /**
+     * Yields raw MP3 bytes per chunk, threading `previous_request_ids` across calls.
+     *
+     * @param list<string> $chunks
+     *
+     * @return Generator<string>
+     *
+     * @throws TtsProviderException
+     */
+    private function synthesizeChunks(array $chunks, string $externalVoiceId, string $apiKey): Generator
+    {
+        $previousRequestIds = [];
+
+        foreach ($chunks as $chunk) {
+            $result = $this->client->synthesize(
+                $externalVoiceId,
+                $apiKey,
+                $this->buildBody($chunk, $previousRequestIds),
+            );
+            $this->assertSuccess($result->http);
+
+            yield $result->http->getContent();
+
+            if (null !== $result->requestId) {
+                $previousRequestIds[] = $result->requestId;
+                if (count($previousRequestIds) > self::REQUEST_ID_CHAIN_LIMIT) {
+                    $previousRequestIds = array_slice($previousRequestIds, -self::REQUEST_ID_CHAIN_LIMIT);
+                }
+            }
+        }
+    }
+
+    /**
+     * @throws TtsProviderException
+     */
+    private function resolveApiKey(ExtSystem $extSystem): string
+    {
+        $apiKey = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug())->elevenlabsApiKey;
+        if ('' === $apiKey) {
+            throw new TtsProviderException(sprintf(
+                'No ElevenLabs API key configured for ExtSystem "%s".',
+                $extSystem->getSlug(),
+            ));
+        }
+
+        return $apiKey;
+    }
+
+    private function assertSuccess(HttpClientResponse $response): void
+    {
+        if ($response->hasError()) {
+            throw new TtsProviderException(sprintf('ElevenLabs API returned HTTP %d.', $response->getStatusCode()));
+        }
+    }
+
+    /**
+     * @param list<string> $previousRequestIds
+     *
+     * @return array<string, mixed>
+     */
+    private function buildBody(string $text, array $previousRequestIds): array
+    {
+        $body = [
+            'text' => $text,
+            'model_id' => self::MODEL_ID,
+            'voice_settings' => [
+                'stability' => self::STABILITY,
+                'similarity_boost' => self::SIMILARITY_BOOST,
+            ],
+        ];
+        if ([] !== $previousRequestIds) {
+            $body['previous_request_ids'] = $previousRequestIds;
+        }
+
+        return $body;
+    }
+}

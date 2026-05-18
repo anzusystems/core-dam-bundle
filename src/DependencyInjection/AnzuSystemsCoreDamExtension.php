@@ -479,6 +479,21 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                     'Accept-Version' => 'v1',
                                 ],
                             ],
+                            'tts.elevenlabs.api.client' => [
+                                // prepend-phase partial config slices skip defaults; literal fallback prevents Undefined-key warning.
+                                'base_uri' => $configSettings[SettingsConfiguration::TTS_ELEVENLABS_API_HOST] ?? SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT,
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'Accept' => 'audio/mpeg',
+                                ],
+                            ],
+                            'tts.google.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::TTS_GOOGLE_API_HOST] ?? SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT,
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'Accept' => 'application/json',
+                                ],
+                            ],
                         ],
                     ],
                 ]);

@@ -33,6 +33,10 @@ final class SettingsConfiguration
     public const string UNSPLASH_API_CLIENT = 'unsplash_api_client_host';
     public const string JW_PLAYER_API_CLIENT = 'jw_player_api_client_host';
     public const string JW_PLAYER_CDN_API_CLIENT = 'jw_player_cdn_api_client_host';
+    public const string TTS_ELEVENLABS_API_HOST = 'tts_elevenlabs_api_host';
+    public const string TTS_ELEVENLABS_API_HOST_DEFAULT = 'https://api.elevenlabs.io';
+    public const string TTS_GOOGLE_API_HOST = 'tts_google_api_host';
+    public const string TTS_GOOGLE_API_HOST_DEFAULT = 'https://texttospeech.googleapis.com';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,

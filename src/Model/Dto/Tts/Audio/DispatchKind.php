@@ -1,0 +1,21 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
+
+use AnzuSystems\Contracts\Model\Enum\BaseEnumTrait;
+use AnzuSystems\Contracts\Model\Enum\EnumInterface;
+
+/**
+ * Outcome kind for {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Command\DispatchNewAudioNarration}.
+ * Surfaces in {@see DispatchResult} and in the API response payload — never persisted.
+ */
+enum DispatchKind: string implements EnumInterface
+{
+    use BaseEnumTrait;
+
+    case Pending = 'pending';
+    case AlreadyExists = 'already_exists';
+    case AlreadyPending = 'already_pending';
+}

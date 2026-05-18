@@ -24,6 +24,7 @@ use Throwable;
 final class FfmpegService
 {
     public const string FRAME_EXTENSION = 'jpeg';
+    public const string AUDIO_EXTENSION_MP3 = 'mp3';
 
     public function __construct(
         private readonly Exiftool $exiftool,
@@ -116,6 +117,80 @@ final class FfmpegService
         } catch (Throwable $exception) {
             throw new FfmpegException(previous: $exception);
         }
+    }
+
+    /**
+     * Clip with stream-copy (`-c copy`) — fast, lossless. Output lands in TmpLocalFilesystem.
+     *
+     * @throws FfmpegException
+     */
+    public function clipAudio(File $source, int $startSeconds, int $durationSeconds): AdapterFile
+    {
+        $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
+        $relativePath = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
+        $outAbsPath = $tmpFs->extendPath($relativePath);
+
+        try {
+            FFMpeg::create()->getFFMpegDriver()->command([
+                '-y',
+                '-ss', (string) $startSeconds,
+                '-i', $source->getRealPath(),
+                '-t', (string) $durationSeconds,
+                '-c', 'copy',
+                $outAbsPath,
+            ]);
+        } catch (Throwable $exception) {
+            throw new FfmpegException($exception->getMessage(), $exception);
+        }
+
+        return AdapterFile::createFromBaseFile(
+            file: new File($outAbsPath),
+            filesystem: $tmpFs,
+        );
+    }
+
+    /**
+     * Concat same-codec audio parts with stream-copy via the ffmpeg concat demuxer. Inputs must share
+     * codec, sample rate and channel layout — re-encoding is not done.
+     *
+     * @param list<File> $parts ordered list of MP3 chunks
+     *
+     * @throws FfmpegException
+     */
+    public function concatAudio(array $parts): AdapterFile
+    {
+        if ([] === $parts) {
+            throw new FfmpegException('Cannot concat empty parts list.');
+        }
+
+        $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
+        $outRel = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
+        $outAbsPath = $tmpFs->extendPath($outRel);
+
+        $listLines = array_map(
+            static fn (File $part): string => "file '" . addcslashes($part->getRealPath(), '\'"\\\0 ') . "'",
+            $parts,
+        );
+        $listRel = $tmpFs->writeTmpFileFromBytes(implode("\n", $listLines), 'txt');
+        $listAbsPath = $tmpFs->extendPath($listRel);
+
+        try {
+            FFMpeg::create()->getFFMpegDriver()->command([
+                '-y',
+                '-f', 'concat',
+                '-safe', '0',
+                '-i', $listAbsPath,
+                '-c', 'copy',
+                $outAbsPath,
+            ]);
+        } catch (Throwable $exception) {
+            throw new FfmpegException($exception->getMessage(), $exception);
+        }
+
+        return AdapterFile::createFromBaseFile(
+            file: new File($outAbsPath),
+            filesystem: $tmpFs,
+        );
     }
 
     public function getFistVideoTrack(string $filePath): ?Stream

@@ -153,6 +153,23 @@ final class AssetFileRouteFacade extends AbstractManager
         throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
     }
 
+    /**
+     * Dispatch an AssetFileRouteEvent for every active route of every given AssetFile.
+     * App-level listeners consume these events to enqueue CDN/cache invalidations
+     * (the bundle stays transport-agnostic — it knows nothing about purgers).
+     *
+     * Use case: content of an AssetFile changed in place (same routes/URLs, new bytes)
+     * — e.g. TTS regenerate / replace-upload after AssetSwap.
+     *
+     * @param iterable<AssetFile> $assetFiles
+     */
+    public function dispatchRoutePurgeForAssetFiles(iterable $assetFiles): void
+    {
+        foreach ($this->assetFileRouteRepository->findByTargets($assetFiles) as $route) {
+            $this->dispatcher->dispatch($this->createEvent($route));
+        }
+    }
+
     private function createEvent(AssetFileRoute $route): AssetFileRouteEvent
     {
         return new AssetFileRouteEvent(

@@ -164,6 +164,26 @@ class DamPermissions
     public const string DAM_PUBLIC_EXPORT_DELETE = 'dam_publicExport_delete';
     public const string DAM_PUBLIC_EXPORT_UI = 'dam_publicExport_ui';
 
+    // TTS — VoiceFamily
+    public const string DAM_TTS_VOICE_FAMILY_READ = 'dam_ttsVoiceFamily_read';
+    public const string DAM_TTS_VOICE_FAMILY_CREATE = 'dam_ttsVoiceFamily_create';
+    public const string DAM_TTS_VOICE_FAMILY_UPDATE = 'dam_ttsVoiceFamily_update';
+    public const string DAM_TTS_VOICE_FAMILY_DELETE = 'dam_ttsVoiceFamily_delete';
+
+    // TTS — Voice
+    public const string DAM_TTS_VOICE_READ = 'dam_ttsVoice_read';
+    public const string DAM_TTS_VOICE_CREATE = 'dam_ttsVoice_create';
+    public const string DAM_TTS_VOICE_UPDATE = 'dam_ttsVoice_update';
+    public const string DAM_TTS_VOICE_DELETE = 'dam_ttsVoice_delete';
+
+    // TTS — Audio (regenerate / replace / podcast toggle / synthesize / sys variants)
+    public const string DAM_TTS_AUDIO_READ = 'dam_ttsAudio_read';
+    public const string DAM_TTS_AUDIO_UNPUBLISH = 'dam_ttsAudio_unpublish';
+    public const string DAM_TTS_AUDIO_REGENERATE = 'dam_ttsAudio_regenerate';
+    public const string DAM_TTS_AUDIO_CANCEL_JOB = 'dam_ttsAudio_cancelJob';
+    public const string DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST = 'dam_ttsAudio_toggleRecommendedPodcast';
+    public const string DAM_TTS_AUDIO_SYNTHESIZE = 'dam_ttsAudio_synthesize';
+
     public const array ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
@@ -270,6 +290,20 @@ class DamPermissions
         self::DAM_PUBLIC_EXPORT_READ,
         self::DAM_PUBLIC_EXPORT_DELETE,
         self::DAM_PUBLIC_EXPORT_UI,
+        self::DAM_TTS_VOICE_FAMILY_READ,
+        self::DAM_TTS_VOICE_FAMILY_CREATE,
+        self::DAM_TTS_VOICE_FAMILY_UPDATE,
+        self::DAM_TTS_VOICE_FAMILY_DELETE,
+        self::DAM_TTS_VOICE_READ,
+        self::DAM_TTS_VOICE_CREATE,
+        self::DAM_TTS_VOICE_UPDATE,
+        self::DAM_TTS_VOICE_DELETE,
+        self::DAM_TTS_AUDIO_READ,
+        self::DAM_TTS_AUDIO_UNPUBLISH,
+        self::DAM_TTS_AUDIO_REGENERATE,
+        self::DAM_TTS_AUDIO_CANCEL_JOB,
+        self::DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST,
+        self::DAM_TTS_AUDIO_SYNTHESIZE,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

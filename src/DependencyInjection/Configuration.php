@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
@@ -202,6 +203,14 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('https://cdn.jwplayer.com')
                     ->isRequired()
                 ->end()
+                ->scalarNode(SettingsConfiguration::TTS_ELEVENLABS_API_HOST)
+                    ->defaultValue(SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT)
+                    ->isRequired()
+                ->end()
+                ->scalarNode(SettingsConfiguration::TTS_GOOGLE_API_HOST)
+                    ->defaultValue(SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT)
+                    ->isRequired()
+                ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()
                 ->end()
@@ -319,6 +328,7 @@ class Configuration implements ConfigurationInterface
                         ->defaultTrue()
                     ->end()
                     ->append($this->addExtSystemAssetExternalProvidersSection())
+                    ->append($this->addExtSystemTtsSection())
                     ->append($this->addFileExtSystemSection(AssetType::Image))
                     ->append($this->addFileExtSystemSection(AssetType::Audio))
                     ->append($this->addFileExtSystemSection(AssetType::Document))
@@ -335,6 +345,19 @@ class Configuration implements ConfigurationInterface
                 ->children()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::TITLE_KEY)->end()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::IMPORT_AUTHOR_ID)->end()
+                ->end()
+            ->end();
+    }
+
+    private function addExtSystemTtsSection(): NodeDefinition
+    {
+        return (new TreeBuilder(ExtSystemTtsConfiguration::KEY))->getRootNode()
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode(ExtSystemTtsConfiguration::ELEVENLABS_API_KEY)->defaultValue('')->end()
+                ->scalarNode(ExtSystemTtsConfiguration::GOOGLE_CREDENTIALS_PATH)->defaultValue('')->end()
+                ->scalarNode(ExtSystemTtsConfiguration::LANGUAGE_CODE)
+                    ->defaultValue(ExtSystemTtsConfiguration::LANGUAGE_CODE_DEFAULT)
                 ->end()
             ->end();
     }
