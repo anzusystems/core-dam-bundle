@@ -8,9 +8,9 @@ use AnzuSystems\Contracts\Model\Enum\BaseEnumTrait;
 use AnzuSystems\Contracts\Model\Enum\EnumInterface;
 
 /**
- * Resolution kind for cancel-job — surfaces only in {@see CancelJobResponseDto}, never persisted.
+ * Resolution kind for cancel-request — surfaces only in {@see CancelRequestResponseDto}, never persisted.
  */
-enum CancelJobStatus: string implements EnumInterface
+enum CancelRequestStatus: string implements EnumInterface
 {
     use BaseEnumTrait;
 

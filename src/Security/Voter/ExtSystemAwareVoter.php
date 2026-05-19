@@ -94,7 +94,7 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_TTS_AUDIO_READ,
             DamPermissions::DAM_TTS_AUDIO_UNPUBLISH,
             DamPermissions::DAM_TTS_AUDIO_REGENERATE,
-            DamPermissions::DAM_TTS_AUDIO_CANCEL_JOB,
+            DamPermissions::DAM_TTS_AUDIO_CANCEL_REQUEST,
             DamPermissions::DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST,
             DamPermissions::DAM_TTS_AUDIO_SYNTHESIZE,
         ];

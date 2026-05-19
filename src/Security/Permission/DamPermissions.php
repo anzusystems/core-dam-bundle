@@ -54,6 +54,7 @@ class DamPermissions
 
     // ExtSystem
     public const string DAM_EXT_SYSTEM_UPDATE = 'dam_extSystem_update';
+    public const string DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS = 'dam_extSystem_updateTtsSettings';
     public const string DAM_EXT_SYSTEM_READ = 'dam_extSystem_read';
     public const string DAM_EXT_SYSTEM_LIST = 'dam_extSystem_list';
     public const string DAM_EXT_SYSTEM_UI = 'dam_extSystem_ui';
@@ -180,9 +181,10 @@ class DamPermissions
     public const string DAM_TTS_AUDIO_READ = 'dam_ttsAudio_read';
     public const string DAM_TTS_AUDIO_UNPUBLISH = 'dam_ttsAudio_unpublish';
     public const string DAM_TTS_AUDIO_REGENERATE = 'dam_ttsAudio_regenerate';
-    public const string DAM_TTS_AUDIO_CANCEL_JOB = 'dam_ttsAudio_cancelJob';
+    public const string DAM_TTS_AUDIO_CANCEL_REQUEST = 'dam_ttsAudio_cancelRequest';
     public const string DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST = 'dam_ttsAudio_toggleRecommendedPodcast';
     public const string DAM_TTS_AUDIO_SYNTHESIZE = 'dam_ttsAudio_synthesize';
+    public const string DAM_TTS_AUDIO_LIST_REQUESTS = 'dam_ttsAudio_listRequests';
 
     public const array ALL = [
         self::DAM_ASSET_CREATE,
@@ -214,6 +216,7 @@ class DamPermissions
         self::DAM_REGION_OF_INTEREST_READ,
         self::DAM_REGION_OF_INTEREST_DELETE,
         self::DAM_EXT_SYSTEM_UPDATE,
+        self::DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS,
         self::DAM_EXT_SYSTEM_READ,
         self::DAM_EXT_SYSTEM_LIST,
         self::DAM_EXT_SYSTEM_UI,
@@ -301,9 +304,10 @@ class DamPermissions
         self::DAM_TTS_AUDIO_READ,
         self::DAM_TTS_AUDIO_UNPUBLISH,
         self::DAM_TTS_AUDIO_REGENERATE,
-        self::DAM_TTS_AUDIO_CANCEL_JOB,
+        self::DAM_TTS_AUDIO_CANCEL_REQUEST,
         self::DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST,
         self::DAM_TTS_AUDIO_SYNTHESIZE,
+        self::DAM_TTS_AUDIO_LIST_REQUESTS,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

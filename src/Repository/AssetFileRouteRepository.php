@@ -31,14 +31,6 @@ final class AssetFileRouteRepository extends AbstractAnzuRepository
     }
 
     /**
-     * @return list<AssetFileRoute>
-     */
-    public function findByTarget(AssetFile $target): array
-    {
-        return $this->findBy(['targetAssetFile' => $target]);
-    }
-
-    /**
      * @param iterable<AssetFile> $targets
      *
      * @return list<AssetFileRoute>

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
-use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 
 /**
  * @extends AbstractAnzuRepository<Voice>

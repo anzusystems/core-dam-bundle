@@ -22,6 +22,7 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_ASSET_LICENCE_LIST,
             DamPermissions::DAM_EXT_SYSTEM_LIST,
             DamPermissions::DAM_EXT_SYSTEM_UPDATE,
+            DamPermissions::DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS,
             DamPermissions::DAM_CUSTOM_FORM_ELEMENT_VIEW,
             DamPermissions::DAM_JOB_VIEW,
             DamPermissions::DAM_JOB_CREATE,
@@ -32,6 +33,7 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_ASSET_LICENCE_GROUP_READ,
             DamPermissions::DAM_TTS_VOICE_FAMILY_READ,
             DamPermissions::DAM_TTS_VOICE_READ,
+            DamPermissions::DAM_TTS_AUDIO_LIST_REQUESTS,
         ];
     }
 }

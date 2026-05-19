@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Catalog;
 
-use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 
 /**
@@ -12,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
  */
 final class VoiceFacade
 {
+    /** @use TtsCrudFacadeTrait<Voice> */
     use TtsCrudFacadeTrait;
 
     public function __construct(
@@ -19,7 +19,10 @@ final class VoiceFacade
     ) {
     }
 
-    protected function manager(): AbstractManager
+    /**
+     * @return TtsCrudManagerInterface<Voice>
+     */
+    protected function manager(): TtsCrudManagerInterface
     {
         return $this->voiceManager;
     }

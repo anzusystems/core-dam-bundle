@@ -36,7 +36,9 @@ final readonly class GoogleTtsClient
                 Request::METHOD_POST,
                 self::PATH_SYNTHESIZE,
                 [
-                    'headers' => [self::HEADER_AUTHORIZATION => 'Bearer ' . $accessToken],
+                    'headers' => [
+                        self::HEADER_AUTHORIZATION => 'Bearer ' . $accessToken,
+                    ],
                     'json' => $body,
                 ],
             );

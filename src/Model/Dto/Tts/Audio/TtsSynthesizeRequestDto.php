@@ -12,6 +12,10 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[Assert\Expression(
+    '(this.getExtResourceName() === null) === (this.getExtId() === null)',
+    message: 'fields.tts.extRef.must_be_both_null_or_both_present',
+)]
 final class TtsSynthesizeRequestDto
 {
     #[Serialize]

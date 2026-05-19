@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
-use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
+use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 
 /**
  * @extends AbstractAnzuRepository<VoiceFamily>

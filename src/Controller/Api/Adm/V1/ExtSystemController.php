@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemFacade;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem\ExtSystemTtsSettingsUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -80,6 +81,24 @@ final class ExtSystemController extends AbstractApiController
 
         return $this->okResponse(
             $this->extSystemFacade->update($extSystem, $newExtSystem)
+        );
+    }
+
+    /**
+     * Update TTS settings.
+     *
+     * @throws ValidationException
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/{extSystem}/tts-settings', name: 'update_tts_settings', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('extSystem'), OARequest(ExtSystemTtsSettingsUpdateDto::class), OAResponse(ExtSystem::class), OAResponseValidation]
+    public function updateTtsSettings(ExtSystem $extSystem, #[SerializeParam] ExtSystemTtsSettingsUpdateDto $dto): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS, $extSystem);
+        App::throwOnReadOnlyMode();
+
+        return $this->okResponse(
+            $this->extSystemFacade->updateTtsSettings($extSystem, $dto)
         );
     }
 }

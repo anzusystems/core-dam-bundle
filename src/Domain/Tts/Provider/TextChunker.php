@@ -23,20 +23,15 @@ final readonly class TextChunker
         }
 
         $sentences = preg_split('/(?<=[.!?])\s+/', $text, flags: PREG_SPLIT_NO_EMPTY);
-        if (false === $sentences || 0 === count($sentences)) {
+        if (false === $sentences) {
             return [$text];
         }
 
+        // PREG_SPLIT_NO_EMPTY + non-empty input guarantees at least one sentence — seed with it.
         $chunks = [];
-        $currentChunk = null;
+        $currentChunk = array_shift($sentences);
 
         foreach ($sentences as $sentence) {
-            if (null === $currentChunk) {
-                $currentChunk = $sentence;
-
-                continue;
-            }
-
             $candidate = $currentChunk . ' ' . $sentence;
             if (mb_strlen($candidate) > $maxCharsPerChunk) {
                 $chunks[] = $currentChunk;
@@ -46,9 +41,7 @@ final readonly class TextChunker
             }
         }
 
-        if (null !== $currentChunk) {
-            $chunks[] = $currentChunk;
-        }
+        $chunks[] = $currentChunk;
 
         return $chunks;
     }

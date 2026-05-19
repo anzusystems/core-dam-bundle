@@ -35,6 +35,7 @@ final readonly class TtsAssetLocker
         $current = $ttsAsset->getStatus();
         if (false === $current->in($allowedStatuses)) {
             $allowed = implode('|', array_map(static fn (TtsAudioStatus $s): string => $s->value, $allowedStatuses));
+
             throw new ImmutableAudioNarrationException(sprintf(
                 'Asset "%s" is in status "%s"; expected one of [%s].',
                 $assetId,

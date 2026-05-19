@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
-
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\JobAudioNarrationManager;
-
-use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
-
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
+use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\JobAudioNarration;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
@@ -32,14 +30,10 @@ use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Owns the two TTS job pipelines (initial synth + regenerate). The Messenger handler hands a job
- * over here and stays thin (dispatch + failure logging only).
- */
-final readonly class TtsJobOrchestrator
+final readonly class TtsRequestOrchestrator
 {
     public function __construct(
-        private JobAudioNarrationManager $jobManager,
+        private TtsNarrationRequestManager $requestManager,
         private AssetRepository $assetRepo,
         private TtsAssetLocker $ttsAssetLocker,
         private AssetLicenceRepository $licenceRepo,
@@ -52,52 +46,54 @@ final readonly class TtsJobOrchestrator
         private PodcastMembership $podcastMembership,
         private AssetFileRouteFacade $routeFacade,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private IndexManager $indexManager,
         private EntityManagerInterface $entityManager,
     ) {
     }
 
-    public function processInitial(JobAudioNarration $job): void
+    public function processInitial(TtsNarrationRequest $request): void
     {
-        $licence = $this->resolveAssetLicence($job);
+        $licence = $this->resolveAssetLicence($request);
         $extSystem = $licence->getExtSystem();
 
-        $resolvedVoice = $this->voiceResolver->resolve($job->getVoiceFamilySlug(), $extSystem);
+        $resolvedVoice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $family = $this->resolveVoiceFamily($resolvedVoice->voiceFamilyId);
         $provider = $this->providerContainer->forProvider($resolvedVoice->provider);
 
-        $sourceText = (string) $job->getSource()->getText();
+        $sourceText = (string) $request->getSource()->getText();
         $audioFile = $provider->synthesize($sourceText, $resolvedVoice->externalVoiceId, $extSystem);
 
-        $input = TtsAudioCreationInput::forInitialJob($job, $audioFile, $family, $resolvedVoice, $licence, $sourceText);
+        $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $resolvedVoice, $licence, $sourceText);
 
-        $result = $this->persistInTransaction($input, function () use ($job): void {
-            $this->jobManager->markCompleted($job, false);
+        $result = $this->persistInTransaction($input, function (TtsAudioCreationResult $created) use ($request): void {
+            $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
         });
 
+        $this->indexManager->index($result->asset);
         $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
         $this->syncPodcastMembershipIfEligible($result->ttsAsset, $result->asset);
 
-        if (null !== $job->getExtRef()->getExtResourceName() && null !== $job->getExtRef()->getExtId()) {
+        if (null !== $request->getExtRef()->getExtResourceName() && null !== $request->getExtRef()->getExtId()) {
             $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
         }
     }
 
-    public function processRegenerate(JobAudioNarration $job): void
+    public function processRegenerate(TtsNarrationRequest $request): void
     {
-        $stableAsset = $this->resolveStableAsset($job);
+        $stableAsset = $this->resolveStableAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
-        $licence = $this->resolveAssetLicence($job);
-        $resolvedVoice = $this->voiceResolver->resolve($job->getVoiceFamilySlug(), $stableAsset->getExtSystem());
+        $licence = $this->resolveAssetLicence($request);
+        $resolvedVoice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
         $family = $this->resolveVoiceFamily($resolvedVoice->voiceFamilyId);
 
         $audioFile = $this->providerContainer->forProvider($resolvedVoice->provider)
             ->synthesize($stableTts->getSourceTextSnapshot(), $resolvedVoice->externalVoiceId, $stableAsset->getExtSystem());
 
-        $this->stageAndSwap($job, $stableAsset, $stableTts, $audioFile, $resolvedVoice, $family, $licence);
+        $this->stageAndSwap($request, $stableAsset, $stableTts, $audioFile, $resolvedVoice, $family, $licence);
     }
 
     private function stageAndSwap(
-        JobAudioNarration $job,
+        TtsNarrationRequest $request,
         Asset $stableAsset,
         TtsAsset $stableTts,
         AdapterFile $audioFile,
@@ -105,7 +101,7 @@ final readonly class TtsJobOrchestrator
         VoiceFamily $family,
         AssetLicence $licence,
     ): void {
-        $input = TtsAudioCreationInput::forStagingSwap($job, $stableTts, $audioFile, $family, $resolvedVoice, $licence);
+        $input = TtsAudioCreationInput::forStagingSwap($request, $stableTts, $audioFile, $family, $resolvedVoice, $licence);
 
         $stagingResult = $this->persistInTransaction($input);
 
@@ -114,10 +110,11 @@ final readonly class TtsJobOrchestrator
         $swapResult = $this->assetSwap->swap(
             (string) $stagingResult->asset->getId(),
             (string) $stableAsset->getId(),
-            (string) $job->getId(),
+            (string) $request->getId(),
         );
 
-        $this->jobManager->markCompleted($job);
+        $this->indexManager->index($stableAsset);
+        $this->requestManager->markDone($request, (string) $stableAsset->getId());
 
         $this->routeFacade->dispatchRoutePurgeForAssetFiles($swapResult->audioFilesToPurge);
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
@@ -136,12 +133,15 @@ final readonly class TtsJobOrchestrator
         }
     }
 
+    /**
+     * @param null|Closure(TtsAudioCreationResult): void $afterCreate
+     */
     private function persistInTransaction(TtsAudioCreationInput $input, ?Closure $afterCreate = null): TtsAudioCreationResult
     {
         return $this->entityManager->wrapInTransaction(
             function () use ($input, $afterCreate): TtsAudioCreationResult {
                 $created = $this->ttsAudioFactory->create($input);
-                $afterCreate?->__invoke();
+                $afterCreate?->__invoke($created);
                 $this->entityManager->flush();
 
                 return $created;
@@ -149,13 +149,13 @@ final readonly class TtsJobOrchestrator
         );
     }
 
-    private function resolveStableAsset(JobAudioNarration $job): Asset
+    private function resolveStableAsset(TtsNarrationRequest $request): Asset
     {
-        $stableAssetId = (string) $job->getStableAssetId();
+        $stableAssetId = (string) $request->getStableAssetId();
         $stableAsset = $this->assetRepo->find($stableAssetId);
         if (null === $stableAsset) {
             throw new RegenCancelledException(
-                sprintf('Stable asset "%s" not found for job "%s".', $stableAssetId, (string) $job->getId())
+                sprintf('Stable asset "%s" not found for request "%s".', $stableAssetId, (string) $request->getId())
             );
         }
 
@@ -165,16 +165,16 @@ final readonly class TtsJobOrchestrator
     /**
      * @throws TtsProviderException if licence is not found
      */
-    private function resolveAssetLicence(JobAudioNarration $job): AssetLicence
+    private function resolveAssetLicence(TtsNarrationRequest $request): AssetLicence
     {
-        $licenceId = $job->getAssetLicenceId();
+        $licenceId = $request->getAssetLicenceId();
         if (null === $licenceId) {
-            throw new TtsProviderException(sprintf('Job "%s" has no assetLicenceId.', (string) $job->getId()));
+            throw new TtsProviderException(sprintf('Request "%s" has no assetLicenceId.', (string) $request->getId()));
         }
 
         $licence = $this->licenceRepo->find($licenceId);
         if (null === $licence) {
-            throw new TtsProviderException(sprintf('AssetLicence "%s" not found for job "%s".', $licenceId, (string) $job->getId()));
+            throw new TtsProviderException(sprintf('AssetLicence "%s" not found for request "%s".', $licenceId, (string) $request->getId()));
         }
 
         return $licence;

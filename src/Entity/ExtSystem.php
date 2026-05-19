@@ -14,6 +14,7 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemFlags;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemTtsSettings;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -68,11 +69,16 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     #[Serialize]
     private ExtSystemFlags $flags;
 
+    #[ORM\Embedded]
+    #[Serialize]
+    private ExtSystemTtsSettings $ttsSettings;
+
     public function __construct()
     {
         $this->setName('');
         $this->setSlug('');
         $this->setFlags(new ExtSystemFlags());
+        $this->setTtsSettings(new ExtSystemTtsSettings());
         $this->setLicences(new ArrayCollection());
         $this->setAdminUsers(new ArrayCollection());
     }
@@ -151,8 +157,22 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->flags;
     }
 
-    public function setFlags(ExtSystemFlags $flags): void
+    public function setFlags(ExtSystemFlags $flags): self
     {
         $this->flags = $flags;
+
+        return $this;
+    }
+
+    public function getTtsSettings(): ExtSystemTtsSettings
+    {
+        return $this->ttsSettings;
+    }
+
+    public function setTtsSettings(ExtSystemTtsSettings $ttsSettings): self
+    {
+        $this->ttsSettings = $ttsSettings;
+
+        return $this;
     }
 }

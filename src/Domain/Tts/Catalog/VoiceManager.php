@@ -7,28 +7,40 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Catalog;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 
-final class VoiceManager extends AbstractManager
+/**
+ * @implements TtsCrudManagerInterface<Voice>
+ */
+final class VoiceManager extends AbstractManager implements TtsCrudManagerInterface
 {
-    public function create(Voice $voice, bool $flush = true): Voice
+    /**
+     * @param Voice $entity
+     */
+    public function create(object $entity, bool $flush = true): Voice
     {
-        $this->trackCreation($voice);
-        $this->entityManager->persist($voice);
+        $this->trackCreation($entity);
+        $this->entityManager->persist($entity);
         $this->flush($flush);
 
-        return $voice;
+        return $entity;
     }
 
-    public function update(Voice $voice, bool $flush = true): Voice
+    /**
+     * @param Voice $entity
+     */
+    public function update(object $entity, bool $flush = true): Voice
     {
-        $this->trackModification($voice);
+        $this->trackModification($entity);
         $this->flush($flush);
 
-        return $voice;
+        return $entity;
     }
 
-    public function delete(Voice $voice, bool $flush = true): bool
+    /**
+     * @param Voice $entity
+     */
+    public function delete(object $entity, bool $flush = true): bool
     {
-        $this->entityManager->remove($voice);
+        $this->entityManager->remove($entity);
         $this->flush($flush);
 
         return true;

@@ -48,7 +48,9 @@ final class StringHelper
         return $input;
     }
 
-    /** RFC 7515 §2 base64url — `+/` mapped to `-_`, padding stripped. Required for JWT segments. */
+    /**
+     * RFC 7515 §2 base64url — `+/` mapped to `-_`, padding stripped. Required for JWT segments.
+     */
     public static function base64UrlEncode(string $bytes): string
     {
         return strtr(rtrim(base64_encode($bytes), '='), '+/', '-_');

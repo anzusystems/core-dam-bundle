@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
-
-use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
-
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
@@ -17,8 +15,8 @@ use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SwapResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
-use AnzuSystems\CoreDamBundle\Repository\JobAudioNarrationRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -33,7 +31,7 @@ final readonly class AssetSwap
 {
     public function __construct(
         private TtsAssetRepository $ttsAssetRepo,
-        private JobAudioNarrationRepository $jobRepo,
+        private TtsNarrationRequestRepository $requestRepo,
         private AssetFileManager $audioFileManager,
         private TtsAssetManager $ttsAssetManager,
         private TtsAuditLogger $auditLogger,
@@ -46,13 +44,13 @@ final readonly class AssetSwap
     /**
      * @throws RegenCancelledException if the swap is aborted due to cancel request or wrong status
      */
-    public function swap(string $stagingAssetId, string $stableAssetId, string $jobId): SwapResultDto
+    public function swap(string $stagingAssetId, string $stableAssetId, string $requestId): SwapResultDto
     {
         return $this->entityManager->wrapInTransaction(
-            function () use ($stagingAssetId, $stableAssetId, $jobId): SwapResultDto {
-                [$stableTts, $stagingTts] = $this->lockAndValidate($stagingAssetId, $stableAssetId, $jobId);
+            function () use ($stagingAssetId, $stableAssetId, $requestId): SwapResultDto {
+                [$stableTts, $stagingTts] = $this->lockAndValidate($stagingAssetId, $stableAssetId, $requestId);
 
-                return $this->applySwap($stableTts, $stagingTts, $jobId);
+                return $this->applySwap($stableTts, $stagingTts, $requestId);
             }
         );
     }
@@ -62,23 +60,23 @@ final readonly class AssetSwap
      *
      * @throws RegenCancelledException
      */
-    private function lockAndValidate(string $stagingAssetId, string $stableAssetId, string $jobId): array
+    private function lockAndValidate(string $stagingAssetId, string $stableAssetId, string $requestId): array
     {
         $stableTts = $this->ttsAssetRepo->findByAssetIdJoined($stableAssetId, LockMode::PESSIMISTIC_WRITE);
         if (null === $stableTts) {
             throw new RegenCancelledException(sprintf('Stable asset "%s" is not a TTS asset (or does not exist).', $stableAssetId));
         }
 
-        $job = $this->jobRepo->find($jobId);
+        $request = $this->requestRepo->find($requestId);
         $currentStatus = $stableTts->getStatus();
 
-        if ($currentStatus->isNot(TtsAudioStatus::Superseding) || $job?->isCancelRequested()) {
+        if ($currentStatus->isNot(TtsAudioStatus::Superseding) || $request?->isCancelRequested()) {
             throw new RegenCancelledException(
                 sprintf(
                     'Swap aborted for asset "%s": status="%s", cancelRequested=%s.',
                     $stableAssetId,
                     $currentStatus->value,
-                    $job?->isCancelRequested() ? 'true' : 'false',
+                    $request?->isCancelRequested() ? 'true' : 'false',
                 )
             );
         }
@@ -91,7 +89,7 @@ final readonly class AssetSwap
         return [$stableTts, $stagingTts];
     }
 
-    private function applySwap(TtsAsset $stableTts, TtsAsset $stagingTts, string $jobId): SwapResultDto
+    private function applySwap(TtsAsset $stableTts, TtsAsset $stagingTts, string $requestId): SwapResultDto
     {
         $stableAsset = $stableTts->getAsset();
         $stagingAsset = $stagingTts->getAsset();
@@ -126,7 +124,7 @@ final readonly class AssetSwap
 
         $this->auditLogger->logSwapped(
             assetId: (string) $stableAsset->getId(),
-            jobId: $jobId,
+            requestId: $requestId,
             oldAudioFileIds: $oldAudioFileIds,
             newAudioFileIds: $newAudioFileIds,
             voiceFamilySlug: $stagingTts->getVoiceFamilySlug(),

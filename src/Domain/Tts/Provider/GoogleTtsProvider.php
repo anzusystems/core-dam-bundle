@@ -25,6 +25,8 @@ use League\Flysystem\FilesystemException;
  */
 final class GoogleTtsProvider extends AbstractTtsProvider
 {
+    // Google's documented per-request limit. Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS
+    // — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
     private const string AUDIO_ENCODING_MP3 = 'MP3';
     private const string RESPONSE_KEY_AUDIO_CONTENT = 'audioContent';

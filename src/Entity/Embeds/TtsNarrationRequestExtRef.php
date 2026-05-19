@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
  * The (resourceName, id) pair is the idempotency tuple per {@see ExtSystem}.
  */
 #[ORM\Embeddable]
-class JobAudioNarrationExtRef
+class TtsNarrationRequestExtRef
 {
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
     #[Serialize]

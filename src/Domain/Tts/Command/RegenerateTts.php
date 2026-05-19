@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
 
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Entity\JobAudioNarration;
-use AnzuSystems\CoreDamBundle\Messenger\Message\JobAudioNarrationMessage;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\JobAudioNarrationManager;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsJobMode;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -19,7 +19,7 @@ final readonly class RegenerateTts
 {
     public function __construct(
         private TtsAssetLocker $assetLocker,
-        private JobAudioNarrationManager $jobManager,
+        private TtsNarrationRequestManager $requestManager,
         private TtsAssetManager $ttsAssetManager,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
@@ -29,29 +29,30 @@ final readonly class RegenerateTts
     public function execute(
         string $stableAssetId,
         ?string $voiceFamilySlug,
-    ): JobAudioNarration {
+    ): TtsNarrationRequest {
         App::throwOnReadOnlyMode();
 
-        $job = $this->entityManager->wrapInTransaction(
-            function () use ($stableAssetId, $voiceFamilySlug): JobAudioNarration {
+        $request = $this->entityManager->wrapInTransaction(
+            function () use ($stableAssetId, $voiceFamilySlug): TtsNarrationRequest {
                 $ttsAsset = $this->assetLocker->lockExpecting($stableAssetId, TtsLifecycle::ACTIVE_ONLY);
 
-                $job = (new JobAudioNarration())
-                    ->setMode(TtsJobMode::Regenerate)
+                $request = (new TtsNarrationRequest())
+                    ->setMode(TtsRequestMode::Regenerate)
                     ->setStableAssetId($stableAssetId)
+                    ->setAssetLicenceId($ttsAsset->getAssetLicenceId())
                     ->setVoiceFamilySlug($voiceFamilySlug);
-                $this->jobManager->create($job, false);
+                $this->requestManager->create($request, false);
 
-                $this->ttsAssetManager->markSuperseding($ttsAsset, (string) $job->getId());
+                $this->ttsAssetManager->markSuperseding($ttsAsset);
 
                 $this->entityManager->flush();
 
-                return $job;
+                return $request;
             }
         );
 
-        $this->messageBus->dispatch(new JobAudioNarrationMessage((string) $job->getId(), TtsJobMode::Regenerate->value));
+        $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $request->getId()));
 
-        return $job;
+        return $request;
     }
 }

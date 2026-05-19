@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
  * The narrated text payload + its SHA-256 hash (the latter is the regen-dedupe key on TtsAsset).
  */
 #[ORM\Embeddable]
-class JobAudioNarrationSource
+class TtsNarrationRequestSource
 {
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]

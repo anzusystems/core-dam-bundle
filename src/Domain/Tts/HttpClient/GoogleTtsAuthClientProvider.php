@@ -21,7 +21,9 @@ final class GoogleTtsAuthClientProvider
 {
     public const string SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
 
-    /** @var array<string, GoogleClient> keyed by ExtSystem slug */
+    /**
+     * @var array<string, GoogleClient> keyed by ExtSystem slug
+     */
     private array $cache = [];
 
     public function __construct(

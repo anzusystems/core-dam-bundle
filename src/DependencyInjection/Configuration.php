@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\CacheConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\CropAllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\DistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetExternalProviderConfiguration;
-use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
@@ -21,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguratio
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemDocumentTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
@@ -206,10 +206,12 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(SettingsConfiguration::TTS_ELEVENLABS_API_HOST)
                     ->defaultValue(SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT)
                     ->isRequired()
+                    ->info('Base URL of the ElevenLabs TTS API. Override only for testing against a mock.')
                 ->end()
                 ->scalarNode(SettingsConfiguration::TTS_GOOGLE_API_HOST)
                     ->defaultValue(SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT)
                     ->isRequired()
+                    ->info('Base URL of the Google Cloud Text-to-Speech API. Override only for testing against a mock.')
                 ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()
@@ -354,10 +356,17 @@ class Configuration implements ConfigurationInterface
         return (new TreeBuilder(ExtSystemTtsConfiguration::KEY))->getRootNode()
             ->addDefaultsIfNotSet()
             ->children()
-                ->scalarNode(ExtSystemTtsConfiguration::ELEVENLABS_API_KEY)->defaultValue('')->end()
-                ->scalarNode(ExtSystemTtsConfiguration::GOOGLE_CREDENTIALS_PATH)->defaultValue('')->end()
+                ->scalarNode(ExtSystemTtsConfiguration::ELEVENLABS_API_KEY)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem ElevenLabs API key; empty disables the ElevenLabs provider for this ExtSystem.')
+                ->end()
+                ->scalarNode(ExtSystemTtsConfiguration::GOOGLE_CREDENTIALS_PATH)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem path to the Google service-account JSON key; empty disables the Google provider.')
+                ->end()
                 ->scalarNode(ExtSystemTtsConfiguration::LANGUAGE_CODE)
-                    ->defaultValue(ExtSystemTtsConfiguration::LANGUAGE_CODE_DEFAULT)
+                    ->defaultValue('')
+                    ->info('BCP-47 language tag (e.g. "sk-SK", "en-US") passed to TTS providers. Must be set explicitly by the consuming app — bundle ships no locale-opinionated default.')
                 ->end()
             ->end();
     }

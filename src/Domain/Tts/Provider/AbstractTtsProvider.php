@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\FileSystem\TmpLocalFilesystem;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;

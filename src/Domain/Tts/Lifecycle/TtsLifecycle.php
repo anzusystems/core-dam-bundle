@@ -12,9 +12,13 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
  */
 final class TtsLifecycle
 {
-    /** Operations that require the asset to be live (regen, replace-upload). */
+    /**
+     * Operations that require the asset to be live (regen, replace-upload).
+     */
     public const array ACTIVE_ONLY = [TtsAudioStatus::Active];
 
-    /** Cancel-regen phase 1 — only assets currently in the staging window. */
+    /**
+     * Cancel-regen phase 1 — only assets currently in the staging window.
+     */
     public const array SUPERSEDING_ONLY = [TtsAudioStatus::Superseding];
 }

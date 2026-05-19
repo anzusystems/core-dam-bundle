@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
-
-use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
-
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
@@ -15,6 +11,8 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\FileProcessor\AudioAttributesProcessor;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;

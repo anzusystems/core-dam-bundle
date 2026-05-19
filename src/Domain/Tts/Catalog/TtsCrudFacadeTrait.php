@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Catalog;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 
 /**
  * Shared CRUD facade skeleton for TTS aggregates (Voice, VoiceFamily). Each user supplies the
@@ -18,17 +17,6 @@ use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 trait TtsCrudFacadeTrait
 {
     use ValidatorAwareTrait;
-
-    /**
-     * @phpstan-return AbstractManager
-     */
-    abstract protected function manager(): AbstractManager;
-
-    /**
-     * @param TEntity $existing
-     * @param TEntity $incoming
-     */
-    abstract protected function applyUpdate(object $existing, object $incoming): void;
 
     /**
      * @param TEntity $entity
@@ -73,4 +61,15 @@ trait TtsCrudFacadeTrait
 
         return $this->manager()->delete($entity);
     }
+
+    /**
+     * @return TtsCrudManagerInterface<TEntity>
+     */
+    abstract protected function manager(): TtsCrudManagerInterface;
+
+    /**
+     * @param TEntity $existing
+     * @param TEntity $incoming
+     */
+    abstract protected function applyUpdate(object $existing, object $incoming): void;
 }

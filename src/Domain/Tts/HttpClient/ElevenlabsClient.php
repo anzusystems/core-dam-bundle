@@ -19,6 +19,7 @@ final readonly class ElevenlabsClient
     public const string HEADER_X_API_KEY = 'xi-api-key';
     public const string HEADER_REQUEST_ID = 'request-id';
     private const string PATH_TEXT_TO_SPEECH = '/v1/text-to-speech/';
+    private const string PATH_VOICES = '/v1/voices';
 
     public function __construct(
         private HttpClientInterface $ttsElevenlabsApiClient,
@@ -37,7 +38,9 @@ final readonly class ElevenlabsClient
                 Request::METHOD_POST,
                 self::PATH_TEXT_TO_SPEECH . $externalVoiceId,
                 [
-                    'headers' => [self::HEADER_X_API_KEY => $apiKey],
+                    'headers' => [
+                        self::HEADER_X_API_KEY => $apiKey,
+                    ],
                     'json' => $body,
                 ],
             );
@@ -48,6 +51,30 @@ final readonly class ElevenlabsClient
             );
         } catch (ExceptionInterface $e) {
             throw new TtsProviderException(sprintf('ElevenLabs request failed: %s', $e->getMessage()), 0, $e);
+        }
+    }
+
+    /**
+     * Free-tier keys see only a subset — exactly the voices that won't return 402.
+     *
+     * @throws TtsProviderException
+     */
+    public function listVoices(string $apiKey): HttpClientResponse
+    {
+        try {
+            $response = $this->ttsElevenlabsApiClient->request(
+                Request::METHOD_GET,
+                self::PATH_VOICES,
+                [
+                    'headers' => [
+                        self::HEADER_X_API_KEY => $apiKey,
+                    ],
+                ],
+            );
+
+            return new HttpClientResponse(content: $response->getContent(false), statusCode: $response->getStatusCode());
+        } catch (ExceptionInterface $e) {
+            throw new TtsProviderException(sprintf('ElevenLabs /v1/voices request failed: %s', $e->getMessage()), 0, $e);
         }
     }
 }

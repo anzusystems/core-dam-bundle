@@ -6,15 +6,15 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-final class CancelJobResponseDto
+final class CancelRequestResponseDto
 {
     #[Serialize]
-    private CancelJobStatus $status = CancelJobStatus::Cancelled;
+    private CancelRequestStatus $status = CancelRequestStatus::Cancelled;
 
     #[Serialize]
     private bool $tooLate = false;
 
-    public static function getInstance(CancelJobStatus $status, bool $tooLate): self
+    public static function getInstance(CancelRequestStatus $status, bool $tooLate): self
     {
         return (new self())
             ->setStatus($status)
@@ -22,12 +22,12 @@ final class CancelJobResponseDto
         ;
     }
 
-    public function getStatus(): CancelJobStatus
+    public function getStatus(): CancelRequestStatus
     {
         return $this->status;
     }
 
-    public function setStatus(CancelJobStatus $status): self
+    public function setStatus(CancelRequestStatus $status): self
     {
         $this->status = $status;
 

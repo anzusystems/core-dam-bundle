@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
  * Post-creation podcast attachment hints for the resulting TTS asset.
  */
 #[ORM\Embeddable]
-class JobAudioNarrationPodcastOptions
+class TtsNarrationRequestPodcastOptions
 {
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]

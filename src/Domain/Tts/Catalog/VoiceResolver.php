@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Catalog;
 
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
-
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Voice\ResolvedVoice;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsActiveProviderMode;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use AnzuSystems\CoreDamBundle\Repository\VoiceRepository;
 
@@ -28,17 +27,17 @@ final readonly class VoiceResolver
 
     /**
      * Cascade: requested family → system default → preferred provider → primary voice in family.
-     * Throws only if every fallback is empty.
+     * When ExtSystem has a forced provider mode (Elevenlabs/GoogleTts), only that provider is tried;
+     * no fallback cascade — throws immediately if no matching voice exists.
      *
      * @throws TtsProviderException
      */
     public function resolve(?string $familySlug, ExtSystem $extSystem): ResolvedVoice
     {
-        $activeProvider = $this->config->getActiveProvider();
         $targetSlug = $familySlug ?? $this->config->getSystemDefaultFamilySlug();
-
         $family = $this->resolveFamily($targetSlug, $extSystem);
-        $voice = $this->resolveVoice($family, $activeProvider, $extSystem);
+        $mode = $extSystem->getTtsSettings()->getActiveProviderMode();
+        $voice = $this->resolveVoice($family, $mode, $extSystem);
 
         return new ResolvedVoice(
             voiceFamilyId: (string) $family->getId(),
@@ -67,6 +66,7 @@ final readonly class VoiceResolver
                 'defaultSlug' => $defaultSlug,
                 'extSystem' => $extSystem->getSlug(),
             ]);
+
             throw new TtsProviderException(sprintf(
                 'No active VoiceFamily resolved for ext system "%s" (requested slug "%s", default "%s").',
                 $extSystem->getSlug(),
@@ -81,15 +81,26 @@ final readonly class VoiceResolver
     /**
      * @throws TtsProviderException
      */
-    private function resolveVoice(VoiceFamily $family, TtsProvider $activeProvider, ExtSystem $extSystem): Voice
+    private function resolveVoice(VoiceFamily $family, TtsActiveProviderMode $mode, ExtSystem $extSystem): Voice
     {
-        $voice = $this->voiceRepo->findOneActiveByFamilyAndProvider($family, $activeProvider);
-        if (null !== $voice) {
-            return $voice;
+        $forcedProvider = $mode->toProvider();
+
+        if (null !== $forcedProvider) {
+            $voice = $this->voiceRepo->findOneActiveByFamilyAndProvider($family, $forcedProvider);
+            if (null !== $voice) {
+                return $voice;
+            }
+
+            throw new TtsProviderException(sprintf(
+                'VoiceFamily "%s" has no active voice for forced provider "%s" on ExtSystem "%s" (mode=forced).',
+                $family->getSlug(),
+                $forcedProvider->value,
+                $extSystem->getSlug(),
+            ));
         }
 
         $preferredProvider = $family->getPreferredProvider();
-        if (null !== $preferredProvider && $preferredProvider->isNot($activeProvider)) {
+        if (null !== $preferredProvider) {
             $voice = $this->voiceRepo->findOneActiveByFamilyAndProvider($family, $preferredProvider);
             if (null !== $voice) {
                 return $voice;

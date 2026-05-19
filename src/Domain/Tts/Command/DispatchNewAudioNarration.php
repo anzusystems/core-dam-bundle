@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\JobAudioNarration;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
-use AnzuSystems\CoreDamBundle\Messenger\Message\JobAudioNarrationMessage;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\JobAudioNarrationManager;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
-use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsJobMode;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -24,14 +24,14 @@ use Symfony\Component\Messenger\MessageBusInterface;
 /**
  * Idempotent on (extResourceName, extId, extSystem):
  *  - if an active TTS asset already exists for the tuple → {@see DispatchResult::alreadyExists()}
- *  - if another initial job is in flight (openInitialKey UNIQUE collision) → {@see DispatchResult::alreadyPending()}
- *  - otherwise → persist new job, dispatch to Messenger, return {@see DispatchResult::pending()}
+ *  - if another Initial request is in flight (openInitialKey UNIQUE collision) → {@see DispatchResult::alreadyPending()}
+ *  - otherwise → persist new request, dispatch to Messenger, return {@see DispatchResult::pending()}
  */
 final readonly class DispatchNewAudioNarration
 {
     public function __construct(
         private TtsAssetRepository $ttsAssetRepo,
-        private JobAudioNarrationManager $jobManager,
+        private TtsNarrationRequestManager $requestManager,
         private VoiceResolver $voiceResolver,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
@@ -39,9 +39,13 @@ final readonly class DispatchNewAudioNarration
     }
 
     /**
+     * @param bool $dispatch When false, the request is persisted but the Messenger message is not
+     *                       dispatched — caller becomes responsible for running the orchestrator
+     *                       (used by the sync test command).
+     *
      * @throws ImmutableAudioNarrationException if the both-null / both-non-null invariant is violated
      */
-    public function execute(TtsSynthesizeRequestDto $dto, AssetLicence $licence): DispatchResult
+    public function execute(TtsSynthesizeRequestDto $dto, AssetLicence $licence, bool $dispatch = true): DispatchResult
     {
         App::throwOnReadOnlyMode();
 
@@ -62,16 +66,19 @@ final readonly class DispatchNewAudioNarration
             return $existing;
         }
 
+        // Fail-fast validation: ensures the slug + ExtSystem combination yields a usable voice
+        // before we persist a request. Result is discarded — handler re-resolves at processing time
+        // to pick the freshest voice (active flag may have flipped since dispatch).
         $this->voiceResolver->resolve($dto->getVoiceFamilySlug(), $extSystem);
 
         $openInitialKey = TtsIdempotencyKey::forInitial($extResourceName, $extId, $extSystem);
 
         $result = $this->entityManager->wrapInTransaction(
-            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialJob($dto, $licence, $openInitialKey)),
+            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $extSystem, $openInitialKey)),
         );
 
-        if (null !== $result->jobId) {
-            $this->messageBus->dispatch(new JobAudioNarrationMessage($result->jobId, TtsJobMode::Initial->value));
+        if ($dispatch && null !== $result->requestId) {
+            $this->messageBus->dispatch(new TtsNarrationRequestMessage($result->requestId));
         }
 
         return $result;
@@ -91,38 +98,42 @@ final readonly class DispatchNewAudioNarration
         return DispatchResult::alreadyExists((string) $existing->getAsset()->getId());
     }
 
-    private function persistOrAlreadyPending(JobAudioNarration $job): DispatchResult
+    private function persistOrAlreadyPending(TtsNarrationRequest $request): DispatchResult
     {
         try {
-            $this->jobManager->create($job, false);
+            $this->requestManager->create($request, false);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException) {
             return DispatchResult::alreadyPending();
         }
 
-        return DispatchResult::pending((string) $job->getId());
+        return DispatchResult::pending((string) $request->getId());
     }
 
-    private function buildInitialJob(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): JobAudioNarration
+    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ExtSystem $extSystem, ?string $openInitialKey): TtsNarrationRequest
     {
-        $job = (new JobAudioNarration())
-            ->setMode(TtsJobMode::Initial)
+        $ttsSettings = $extSystem->getTtsSettings();
+
+        $request = (new TtsNarrationRequest())
+            ->setMode(TtsRequestMode::Initial)
             ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
             ->setTitle($dto->getTitle())
             ->setAssetLicenceId((string) $licence->getId())
             ->setOpenInitialKey($openInitialKey);
 
-        $job->getExtRef()
+        $request->getExtRef()
             ->setExtResourceName($dto->getExtResourceName())
             ->setExtId($dto->getExtId());
 
-        $job->getSource()
+        $request->getSource()
             ->setText($dto->getText())
             ->setHash(hash('sha256', $dto->getText()));
 
-        $job->getPodcastOptions()
+        $request->getPodcastOptions()
+            ->setAutoPodcastId($ttsSettings->getAutoPodcastId())
+            ->setRecommendedPodcastId($ttsSettings->getRecommendedPodcastId())
             ->setIncludeInRecommended($dto->isIncludeInRecommendedPodcast());
 
-        return $job;
+        return $request;
     }
 }

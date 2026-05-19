@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceManager;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceManager;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -61,28 +61,28 @@ final class VoiceFixtures extends AbstractFixtures
 
     private function getData(): Generator
     {
-        /** @var VoiceFamily $skDefault */
-        $skDefault = $this->entityManager->find(
-            VoiceFamily::class,
+        $families = $this->entityManager->getRepository(VoiceFamily::class)->findBy(['id' => [
             VoiceFamilyFixtures::VOICE_FAMILY_SK_DEFAULT,
-        );
-        /** @var VoiceFamily $skSecondary */
-        $skSecondary = $this->entityManager->find(
-            VoiceFamily::class,
             VoiceFamilyFixtures::VOICE_FAMILY_SK_SECONDARY,
-        );
-        /** @var VoiceFamily $enDefault */
-        $enDefault = $this->entityManager->find(
-            VoiceFamily::class,
             VoiceFamilyFixtures::VOICE_FAMILY_EN_DEFAULT,
-        );
+        ]]);
+        $familiesById = [];
+        foreach ($families as $family) {
+            $familiesById[(string) $family->getId()] = $family;
+        }
+        /** @var VoiceFamily $skDefault */
+        $skDefault = $familiesById[VoiceFamilyFixtures::VOICE_FAMILY_SK_DEFAULT];
+        /** @var VoiceFamily $skSecondary */
+        $skSecondary = $familiesById[VoiceFamilyFixtures::VOICE_FAMILY_SK_SECONDARY];
+        /** @var VoiceFamily $enDefault */
+        $enDefault = $familiesById[VoiceFamilyFixtures::VOICE_FAMILY_EN_DEFAULT];
 
         yield (new Voice())
             ->setId(self::VOICE_SK_DEFAULT_GOOGLE)
             ->setVoiceFamily($skDefault)
             ->setProvider(TtsProvider::GoogleTts)
             ->setExternalVoiceId('sk-SK-Standard-A')
-            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24000])
+            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24_000])
             ->setMain(true)
             ->setActive(true)
         ;
@@ -122,7 +122,7 @@ final class VoiceFixtures extends AbstractFixtures
             ->setVoiceFamily($enDefault)
             ->setProvider(TtsProvider::GoogleTts)
             ->setExternalVoiceId('en-US-Standard-C')
-            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24000])
+            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24_000])
             ->setMain(false)
             ->setActive(false)
         ;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\JobAudioNarration;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Voice\ResolvedVoice;
@@ -45,23 +45,23 @@ final readonly class TtsAudioCreationInput
         return $this->staging;
     }
 
-    public static function forInitialJob(
-        JobAudioNarration $job,
+    public static function forInitialRequest(
+        TtsNarrationRequest $request,
         AdapterFile $audioFile,
         VoiceFamily $family,
         ResolvedVoice $voice,
         AssetLicence $licence,
         string $sourceText,
     ): self {
-        $extRef = $job->getExtRef();
-        $podcast = $job->getPodcastOptions();
+        $extRef = $request->getExtRef();
+        $podcast = $request->getPodcastOptions();
 
         return new self(
             audioFile: $audioFile,
             family: $family,
             voice: $voice,
             licence: $licence,
-            sourceTextHash: (string) $job->getSource()->getHash(),
+            sourceTextHash: (string) $request->getSource()->getHash(),
             sourceTextSnapshot: $sourceText,
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
@@ -69,19 +69,19 @@ final readonly class TtsAudioCreationInput
             autoPodcastId: $podcast->getAutoPodcastId(),
             recommendedPodcastId: $podcast->getRecommendedPodcastId(),
             includeInRecommendedPodcast: $podcast->isIncludeInRecommended(),
-            title: $job->getTitle(),
+            title: $request->getTitle(),
         );
     }
 
     public static function forStagingSwap(
-        JobAudioNarration $job,
+        TtsNarrationRequest $request,
         TtsAsset $stableTts,
         AdapterFile $audioFile,
         VoiceFamily $family,
         ResolvedVoice $voice,
         AssetLicence $licence,
     ): self {
-        $extRef = $job->getExtRef();
+        $extRef = $request->getExtRef();
 
         return new self(
             audioFile: $audioFile,
@@ -93,7 +93,7 @@ final readonly class TtsAudioCreationInput
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
             extVersion: $extRef->getExtVersion(),
-            title: $job->getTitle(),
+            title: $request->getTitle(),
             staging: true,
         );
     }

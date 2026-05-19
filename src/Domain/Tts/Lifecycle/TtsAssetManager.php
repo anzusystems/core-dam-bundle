@@ -11,6 +11,11 @@ use DateTimeImmutable;
 
 /**
  * Owns TtsAsset state transitions via named mark* methods — keeps allowed transitions in code.
+ * Cross-link to the in-flight {@see TtsNarrationRequest} is via the request's `stableAssetId` FK
+ * pointing here (no back-pointer on TtsAsset).
+ *
+ * Flush convention: all methods default to `flush = false`. TtsAsset mutations always happen inside
+ * a caller-owned transaction (Facade / Pipeline). The caller is responsible for the flush.
  */
 final class TtsAssetManager extends AbstractManager
 {
@@ -29,10 +34,9 @@ final class TtsAssetManager extends AbstractManager
         $this->flush($flush);
     }
 
-    public function markSuperseding(TtsAsset $ttsAsset, string $regenJobId, bool $flush = false): TtsAsset
+    public function markSuperseding(TtsAsset $ttsAsset, bool $flush = false): TtsAsset
     {
         $ttsAsset->setStatus(TtsAudioStatus::Superseding);
-        $ttsAsset->setRegenJobId($regenJobId);
         $this->trackModification($ttsAsset);
         $this->flush($flush);
 
@@ -52,7 +56,6 @@ final class TtsAssetManager extends AbstractManager
     {
         $ttsAsset->setStatus(TtsAudioStatus::Failed);
         $ttsAsset->setFailureReason($reason);
-        $ttsAsset->setRegenJobId(null);
         $this->trackModification($ttsAsset);
         $this->flush($flush);
 
@@ -70,14 +73,13 @@ final class TtsAssetManager extends AbstractManager
     }
 
     /**
-     * Finalize a successful swap: bring the asset back to Active, clear the regen lock, stamp the
-     * last-regenerated timestamp, and detach the staging flag.
+     * Finalize a successful swap: bring the asset back to Active, stamp the last-regenerated
+     * timestamp, and detach the staging flag.
      */
     public function markActive(TtsAsset $ttsAsset, bool $flush = false): TtsAsset
     {
         $ttsAsset->setStatus(TtsAudioStatus::Active);
         $ttsAsset->setIsStaging(false);
-        $ttsAsset->setRegenJobId(null);
         $ttsAsset->setLastRegeneratedAt(new DateTimeImmutable());
         $this->trackModification($ttsAsset);
         $this->flush($flush);

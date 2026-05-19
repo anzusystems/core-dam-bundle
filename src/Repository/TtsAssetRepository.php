@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
-use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
-use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuRepository;
 use DateTimeImmutable;
 use Doctrine\DBAL\LockMode;
 
@@ -78,9 +77,8 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     public function findStuckSuperseding(DateTimeImmutable $threshold): array
     {
         return $this->createQueryBuilder('ta')
-            ->innerJoin('ta.asset', 'a')
             ->where('ta.status = :status')
-            ->andWhere('a.modifiedAt < :threshold')
+            ->andWhere('ta.modifiedAt < :threshold')
             ->setParameter('status', TtsAudioStatus::Superseding)
             ->setParameter('threshold', $threshold)
             ->getQuery()

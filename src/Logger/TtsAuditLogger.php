@@ -20,7 +20,7 @@ final readonly class TtsAuditLogger
      */
     public function logSwapped(
         string $assetId,
-        string $jobId,
+        string $requestId,
         array $oldAudioFileIds,
         array $newAudioFileIds,
         ?string $voiceFamilySlug = null,
@@ -28,7 +28,7 @@ final readonly class TtsAuditLogger
     ): void {
         $this->logger->info(DamLogger::NAMESPACE_TTS, 'audit.swapped', [
             'assetId' => $assetId,
-            'jobId' => $jobId,
+            'requestId' => $requestId,
             'oldAudioFileIds' => $oldAudioFileIds,
             'newAudioFileIds' => $newAudioFileIds,
             'voiceFamilySlug' => $voiceFamilySlug,
@@ -36,11 +36,11 @@ final readonly class TtsAuditLogger
         ]);
     }
 
-    public function logCancelled(string $assetId, ?string $jobId, ?string $userId, ?string $reason): void
+    public function logCancelled(string $assetId, ?string $requestId, ?string $userId, ?string $reason): void
     {
         $this->logger->info(DamLogger::NAMESPACE_TTS, 'audit.cancelled', [
             'assetId' => $assetId,
-            'jobId' => $jobId,
+            'requestId' => $requestId,
             'userId' => $userId,
             'reason' => $reason,
         ]);
@@ -55,10 +55,10 @@ final readonly class TtsAuditLogger
         ]);
     }
 
-    public function logInitialCancelled(string $jobId, ?string $userId, ?string $reason): void
+    public function logInitialCancelled(string $requestId, ?string $userId, ?string $reason): void
     {
         $this->logger->info(DamLogger::NAMESPACE_TTS, 'audit.initialCancelled', [
-            'jobId' => $jobId,
+            'requestId' => $requestId,
             'userId' => $userId,
             'reason' => $reason,
         ]);

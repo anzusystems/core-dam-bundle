@@ -6,9 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Entity;
 
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
-use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
@@ -20,8 +21,8 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: TtsAssetRepository::class)]
 #[ORM\Table(name: 'tts_asset')]
-#[ORM\Index(name: 'IDX_tts_asset_ext', fields: ['extResourceName', 'extId'])]
 #[ORM\Index(name: 'IDX_tts_asset_status', fields: ['status'])]
+#[ORM\Index(name: 'IDX_tts_asset_ext_status', fields: ['extResourceName', 'extId', 'status'])]
 final class TtsAsset implements TimeTrackingInterface
 {
     use TimeTrackingTrait;
@@ -95,10 +96,6 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private TtsAudioStatus $status;
 
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
-    #[Serialize]
-    private ?string $regenJobId = null;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]
     private ?string $failureReason = null;
@@ -107,10 +104,14 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private bool $isStaging = false;
 
+    /**
+     * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory} —
+     * many non-nullable properties are populated by the factory after construction.
+     */
     public function __construct(Asset $asset)
     {
         $this->asset = $asset;
-        $now = new DateTimeImmutable();
+        $now = App::getAppDate();
         $this->setCreatedAt($now);
         $this->setModifiedAt($now);
     }
@@ -308,18 +309,6 @@ final class TtsAsset implements TimeTrackingInterface
     public function setStatus(TtsAudioStatus $status): self
     {
         $this->status = $status;
-
-        return $this;
-    }
-
-    public function getRegenJobId(): ?string
-    {
-        return $this->regenJobId;
-    }
-
-    public function setRegenJobId(?string $regenJobId): self
-    {
-        $this->regenJobId = $regenJobId;
 
         return $this;
     }

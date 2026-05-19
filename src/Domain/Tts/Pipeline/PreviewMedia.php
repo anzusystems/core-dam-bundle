@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
-
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;

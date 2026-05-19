@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
 use Generator;
@@ -24,10 +25,14 @@ use League\Flysystem\FilesystemException;
 final class ElevenlabsTtsProvider extends AbstractTtsProvider
 {
     private const string MODEL_ID = 'eleven_multilingual_v2';
+    // ElevenLabs per-request limit. Intentionally independent of GoogleTtsProvider::MAX_CHARS
+    // — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
     private const int REQUEST_ID_CHAIN_LIMIT = 3;
     private const float STABILITY = 0.5;
     private const float SIMILARITY_BOOST = 0.75;
+
+    private const int ERROR_BODY_EXCERPT_LIMIT = 500;
 
     public function __construct(
         private readonly ElevenlabsClient $client,
@@ -127,9 +132,18 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
 
     private function assertSuccess(HttpClientResponse $response): void
     {
-        if ($response->hasError()) {
-            throw new TtsProviderException(sprintf('ElevenLabs API returned HTTP %d.', $response->getStatusCode()));
+        if (false === $response->hasError()) {
+            return;
         }
+
+        $body = (string) $response->getContent();
+        $bodyExcerpt = '' === $body ? '<empty>' : StringHelper::parseLength($body, self::ERROR_BODY_EXCERPT_LIMIT);
+
+        throw new TtsProviderException(sprintf(
+            'ElevenLabs API returned HTTP %d. Body: %s',
+            $response->getStatusCode(),
+            $bodyExcerpt,
+        ));
     }
 
     /**
