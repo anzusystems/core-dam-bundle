@@ -117,6 +117,7 @@ final class VoiceController extends AbstractApiController
     private function deserializeVoice(Request $request): Voice
     {
         $content = (string) $request->getContent();
+
         try {
             $data = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
         } catch (JsonException) {
