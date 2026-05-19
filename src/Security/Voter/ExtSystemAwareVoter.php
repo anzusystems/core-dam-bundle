@@ -91,12 +91,12 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_TTS_VOICE_CREATE,
             DamPermissions::DAM_TTS_VOICE_UPDATE,
             DamPermissions::DAM_TTS_VOICE_DELETE,
-            DamPermissions::DAM_TTS_AUDIO_READ,
-            DamPermissions::DAM_TTS_AUDIO_UNPUBLISH,
-            DamPermissions::DAM_TTS_AUDIO_REGENERATE,
-            DamPermissions::DAM_TTS_AUDIO_CANCEL_REQUEST,
-            DamPermissions::DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST,
-            DamPermissions::DAM_TTS_AUDIO_SYNTHESIZE,
+            DamPermissions::DAM_TTS_ASSET_READ,
+            DamPermissions::DAM_TTS_ASSET_UNPUBLISH,
+            DamPermissions::DAM_TTS_ASSET_REGENERATE,
+            DamPermissions::DAM_TTS_ASSET_TOGGLE_RECOMMENDED_PODCAST,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,
         ];
     }
 }

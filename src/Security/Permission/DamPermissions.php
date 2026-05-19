@@ -177,14 +177,16 @@ class DamPermissions
     public const string DAM_TTS_VOICE_UPDATE = 'dam_ttsVoice_update';
     public const string DAM_TTS_VOICE_DELETE = 'dam_ttsVoice_delete';
 
-    // TTS — Audio (regenerate / replace / podcast toggle / synthesize / sys variants)
-    public const string DAM_TTS_AUDIO_READ = 'dam_ttsAudio_read';
-    public const string DAM_TTS_AUDIO_UNPUBLISH = 'dam_ttsAudio_unpublish';
-    public const string DAM_TTS_AUDIO_REGENERATE = 'dam_ttsAudio_regenerate';
-    public const string DAM_TTS_AUDIO_CANCEL_REQUEST = 'dam_ttsAudio_cancelRequest';
-    public const string DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST = 'dam_ttsAudio_toggleRecommendedPodcast';
-    public const string DAM_TTS_AUDIO_SYNTHESIZE = 'dam_ttsAudio_synthesize';
-    public const string DAM_TTS_AUDIO_LIST_REQUESTS = 'dam_ttsAudio_listRequests';
+    // TTS — TtsAsset
+    public const string DAM_TTS_ASSET_READ = 'dam_ttsAsset_read';
+    public const string DAM_TTS_ASSET_UNPUBLISH = 'dam_ttsAsset_unpublish';
+    public const string DAM_TTS_ASSET_REGENERATE = 'dam_ttsAsset_regenerate';
+    public const string DAM_TTS_ASSET_TOGGLE_RECOMMENDED_PODCAST = 'dam_ttsAsset_toggleRecommendedPodcast';
+
+    // TTS — TtsNarrationRequest
+    public const string DAM_TTS_NARRATION_REQUEST_LIST = 'dam_ttsNarrationRequest_list';
+    public const string DAM_TTS_NARRATION_REQUEST_SYNTHESIZE = 'dam_ttsNarrationRequest_synthesize';
+    public const string DAM_TTS_NARRATION_REQUEST_CANCEL = 'dam_ttsNarrationRequest_cancel';
 
     public const array ALL = [
         self::DAM_ASSET_CREATE,
@@ -301,13 +303,13 @@ class DamPermissions
         self::DAM_TTS_VOICE_CREATE,
         self::DAM_TTS_VOICE_UPDATE,
         self::DAM_TTS_VOICE_DELETE,
-        self::DAM_TTS_AUDIO_READ,
-        self::DAM_TTS_AUDIO_UNPUBLISH,
-        self::DAM_TTS_AUDIO_REGENERATE,
-        self::DAM_TTS_AUDIO_CANCEL_REQUEST,
-        self::DAM_TTS_AUDIO_TOGGLE_RECOMMENDED_PODCAST,
-        self::DAM_TTS_AUDIO_SYNTHESIZE,
-        self::DAM_TTS_AUDIO_LIST_REQUESTS,
+        self::DAM_TTS_ASSET_READ,
+        self::DAM_TTS_ASSET_UNPUBLISH,
+        self::DAM_TTS_ASSET_REGENERATE,
+        self::DAM_TTS_ASSET_TOGGLE_RECOMMENDED_PODCAST,
+        self::DAM_TTS_NARRATION_REQUEST_LIST,
+        self::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,
+        self::DAM_TTS_NARRATION_REQUEST_CANCEL,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

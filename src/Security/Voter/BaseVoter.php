@@ -33,7 +33,7 @@ final class BaseVoter extends AbstractVoter
             DamPermissions::DAM_ASSET_LICENCE_GROUP_READ,
             DamPermissions::DAM_TTS_VOICE_FAMILY_READ,
             DamPermissions::DAM_TTS_VOICE_READ,
-            DamPermissions::DAM_TTS_AUDIO_LIST_REQUESTS,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_LIST,
         ];
     }
 }
