@@ -8,7 +8,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
@@ -68,9 +68,9 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private string $voiceFamilyId;
 
-    #[ORM\Column(enumType: TtsProvider::class)]
+    #[ORM\Column(enumType: VoiceDiscriminator::class)]
     #[Serialize]
-    private TtsProvider $provider;
+    private VoiceDiscriminator $discriminator;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
@@ -233,14 +233,14 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getProvider(): TtsProvider
+    public function getDiscriminator(): VoiceDiscriminator
     {
-        return $this->provider;
+        return $this->discriminator;
     }
 
-    public function setProvider(TtsProvider $provider): self
+    public function setDiscriminator(VoiceDiscriminator $discriminator): self
     {
-        $this->provider = $provider;
+        $this->discriminator = $discriminator;
 
         return $this;
     }

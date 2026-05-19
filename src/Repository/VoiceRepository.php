@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 
 /**
  * @extends AbstractAnzuRepository<Voice>
@@ -16,13 +16,18 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
  */
 final class VoiceRepository extends AbstractAnzuRepository
 {
-    public function findOneActiveByFamilyAndProvider(VoiceFamily $family, TtsProvider $provider): ?Voice
+    public function findOneActiveByFamilyAndDiscriminator(VoiceFamily $family, VoiceDiscriminator $discriminator): ?Voice
     {
-        return $this->findOneBy([
-            'voiceFamily' => $family,
-            'provider' => $provider,
-            'active' => true,
-        ]);
+        $subclass = VoiceDiscriminator::MAP[$discriminator->value];
+
+        return $this->createQueryBuilder('v')
+            ->where('v.voiceFamily = :family')
+            ->andWhere('v.active = true')
+            ->andWhere(sprintf('v INSTANCE OF %s', $subclass))
+            ->setParameter('family', $family)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function findOnePrimaryActiveByFamily(VoiceFamily $family): ?Voice

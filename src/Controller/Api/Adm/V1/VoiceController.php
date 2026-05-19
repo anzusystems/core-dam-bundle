@@ -18,10 +18,11 @@ use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFacade;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\VoiceRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use JsonException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -65,9 +66,10 @@ final class VoiceController extends AbstractApiController
      */
     #[Route('', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(Voice::class), OAResponse(Voice::class), OAResponseValidation]
-    public function create(Request $request, #[SerializeParam] Voice $voice): JsonResponse
+    public function create(Request $request): JsonResponse
     {
         App::throwOnReadOnlyMode();
+        $voice = $this->deserializeVoice($request);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_CREATE, $voice);
 
         $this->voiceFacade->create($voice);
@@ -77,18 +79,20 @@ final class VoiceController extends AbstractApiController
     }
 
     /**
-     * VoiceFamily binding + provider are immutable post-create.
+     * VoiceFamily binding + discriminator are immutable post-create.
      *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */
     #[Route('/{voice}', name: 'update', methods: [Request::METHOD_PUT])]
     #[OAParameterPath('voice'), OARequest(Voice::class), OAResponse(Voice::class), OAResponseValidation]
-    public function update(Request $request, Voice $voice, #[SerializeParam] Voice $newVoice): JsonResponse
+    public function update(Request $request, Voice $voice): JsonResponse
     {
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_UPDATE, $voice);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $voice);
+
+        $newVoice = $this->deserializeVoice($request);
 
         return $this->okResponse(
             $this->voiceFacade->update($voice, $newVoice),
@@ -108,5 +112,20 @@ final class VoiceController extends AbstractApiController
         $this->voiceFacade->delete($voice);
 
         return $this->noContentResponse();
+    }
+
+    private function deserializeVoice(Request $request): Voice
+    {
+        $content = (string) $request->getContent();
+        try {
+            $data = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            $data = [];
+        }
+
+        $discriminatorValue = is_array($data) ? ($data['discriminator'] ?? VoiceDiscriminator::Default->value) : VoiceDiscriminator::Default->value;
+        $class = VoiceDiscriminator::MAP[$discriminatorValue] ?? VoiceDiscriminator::MAP[VoiceDiscriminator::Default->value];
+
+        return $this->serializer->deserialize($content, $class);
     }
 }

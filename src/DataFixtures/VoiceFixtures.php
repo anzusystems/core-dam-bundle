@@ -6,9 +6,11 @@ namespace AnzuSystems\CoreDamBundle\DataFixtures;
 
 use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceManager;
+use AnzuSystems\CoreDamBundle\Entity\ElevenlabsVoice;
+use AnzuSystems\CoreDamBundle\Entity\GoogleTtsVoice;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\GoogleSsmlGender;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -77,52 +79,44 @@ final class VoiceFixtures extends AbstractFixtures
         /** @var VoiceFamily $enDefault */
         $enDefault = $familiesById[VoiceFamilyFixtures::VOICE_FAMILY_EN_DEFAULT];
 
-        yield (new Voice())
+        yield (new GoogleTtsVoice())
             ->setId(self::VOICE_SK_DEFAULT_GOOGLE)
             ->setVoiceFamily($skDefault)
-            ->setProvider(TtsProvider::GoogleTts)
             ->setExternalVoiceId('sk-SK-Standard-A')
-            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24_000])
+            ->setSsmlGender(GoogleSsmlGender::Female)
             ->setMain(true)
             ->setActive(true)
         ;
 
-        yield (new Voice())
+        yield (new ElevenlabsVoice())
             ->setId(self::VOICE_SK_DEFAULT_ELEVENLABS)
             ->setVoiceFamily($skDefault)
-            ->setProvider(TtsProvider::Elevenlabs)
             ->setExternalVoiceId('21m00Tcm4TlvDq8ikWAM')
-            ->setMetadata(['gender' => 'female', 'modelId' => 'eleven_multilingual_v2'])
             ->setMain(false)
             ->setActive(true)
         ;
 
-        yield (new Voice())
+        yield (new ElevenlabsVoice())
             ->setId(self::VOICE_SK_SECONDARY_ELEVENLABS)
             ->setVoiceFamily($skSecondary)
-            ->setProvider(TtsProvider::Elevenlabs)
             ->setExternalVoiceId('AZnzlk1XvdvUeBnXmlld')
-            ->setMetadata(['gender' => 'male', 'modelId' => 'eleven_multilingual_v2'])
             ->setMain(true)
             ->setActive(true)
         ;
 
-        yield (new Voice())
+        yield (new ElevenlabsVoice())
             ->setId(self::VOICE_EN_DEFAULT_ELEVENLABS)
             ->setVoiceFamily($enDefault)
-            ->setProvider(TtsProvider::Elevenlabs)
             ->setExternalVoiceId('EXAVITQu4vr4xnSDxMaL')
-            ->setMetadata(['gender' => 'female', 'modelId' => 'eleven_multilingual_v2'])
             ->setMain(true)
             ->setActive(true)
         ;
 
-        yield (new Voice())
+        yield (new GoogleTtsVoice())
             ->setId(self::VOICE_EN_DEFAULT_GOOGLE)
             ->setVoiceFamily($enDefault)
-            ->setProvider(TtsProvider::GoogleTts)
             ->setExternalVoiceId('en-US-Standard-C')
-            ->setMetadata(['gender' => 'female', 'naturalSampleRateHertz' => 24_000])
+            ->setSsmlGender(GoogleSsmlGender::Female)
             ->setMain(false)
             ->setActive(false)
         ;

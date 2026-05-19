@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Voice\ResolvedVoice;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsActiveProviderMode;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use AnzuSystems\CoreDamBundle\Repository\VoiceRepository;
@@ -32,20 +31,13 @@ final readonly class VoiceResolver
      *
      * @throws TtsProviderException
      */
-    public function resolve(?string $familySlug, ExtSystem $extSystem): ResolvedVoice
+    public function resolve(?string $familySlug, ExtSystem $extSystem): Voice
     {
         $targetSlug = $familySlug ?? $this->config->getSystemDefaultFamilySlug();
         $family = $this->resolveFamily($targetSlug, $extSystem);
         $mode = $extSystem->getTtsSettings()->getActiveProviderMode();
-        $voice = $this->resolveVoice($family, $mode, $extSystem);
 
-        return new ResolvedVoice(
-            voiceFamilyId: (string) $family->getId(),
-            voiceFamilySlug: $family->getSlug(),
-            provider: $voice->getProvider(),
-            externalVoiceId: $voice->getExternalVoiceId(),
-            metadata: $voice->getMetadata(),
-        );
+        return $this->resolveVoice($family, $mode, $extSystem);
     }
 
     /**
@@ -98,10 +90,10 @@ final readonly class VoiceResolver
      */
     private function resolveVoice(VoiceFamily $family, TtsActiveProviderMode $mode, ExtSystem $extSystem): Voice
     {
-        $forcedProvider = $mode->toProvider();
+        $forcedDiscriminator = $mode->toProvider();
 
-        if (null !== $forcedProvider) {
-            $voice = $this->voiceRepo->findOneActiveByFamilyAndProvider($family, $forcedProvider);
+        if (null !== $forcedDiscriminator) {
+            $voice = $this->voiceRepo->findOneActiveByFamilyAndDiscriminator($family, $forcedDiscriminator);
             if (null !== $voice) {
                 return $voice;
             }
@@ -109,14 +101,14 @@ final readonly class VoiceResolver
             throw new TtsProviderException(sprintf(
                 'VoiceFamily "%s" has no active voice for forced provider "%s" on ExtSystem "%s" (mode=forced).',
                 $family->getSlug(),
-                $forcedProvider->value,
+                $forcedDiscriminator->value,
                 $extSystem->getSlug(),
             ));
         }
 
-        $preferredProvider = $family->getPreferredProvider();
-        if (null !== $preferredProvider) {
-            $voice = $this->voiceRepo->findOneActiveByFamilyAndProvider($family, $preferredProvider);
+        $preferredDiscriminator = $family->getPreferredProvider();
+        if (null !== $preferredDiscriminator) {
+            $voice = $this->voiceRepo->findOneActiveByFamilyAndDiscriminator($family, $preferredDiscriminator);
             if (null !== $voice) {
                 return $voice;
             }
@@ -134,5 +126,4 @@ final readonly class VoiceResolver
             $extSystem->getSlug(),
         ));
     }
-
 }

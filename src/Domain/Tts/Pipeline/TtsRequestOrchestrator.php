@@ -15,17 +15,16 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Voice\ResolvedVoice;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,7 +36,6 @@ final readonly class TtsRequestOrchestrator
         private AssetRepository $assetRepo,
         private TtsAssetLocker $ttsAssetLocker,
         private AssetLicenceRepository $licenceRepo,
-        private VoiceFamilyRepository $voiceFamilyRepo,
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
         private TtsAudioFactory $ttsAudioFactory,
@@ -56,14 +54,14 @@ final readonly class TtsRequestOrchestrator
         $licence = $this->resolveAssetLicence($request);
         $extSystem = $licence->getExtSystem();
 
-        $resolvedVoice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
-        $family = $this->resolveVoiceFamily($resolvedVoice->voiceFamilyId);
-        $provider = $this->providerContainer->forProvider($resolvedVoice->provider);
+        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
+        $family = $voice->getVoiceFamily();
+        $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
 
         $sourceText = (string) $request->getSource()->getText();
-        $audioFile = $provider->synthesize($sourceText, $resolvedVoice->externalVoiceId, $extSystem);
+        $audioFile = $provider->synthesize($sourceText, $voice, $extSystem);
 
-        $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $resolvedVoice, $licence, $sourceText);
+        $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, function (TtsAudioCreationResult $created) use ($request): void {
             $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
@@ -84,13 +82,13 @@ final readonly class TtsRequestOrchestrator
         $stableAsset = $this->resolveStableAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
         $licence = $this->resolveAssetLicence($request);
-        $resolvedVoice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
-        $family = $this->resolveVoiceFamily($resolvedVoice->voiceFamilyId);
+        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
+        $family = $voice->getVoiceFamily();
 
-        $audioFile = $this->providerContainer->forProvider($resolvedVoice->provider)
-            ->synthesize($stableTts->getSourceTextSnapshot(), $resolvedVoice->externalVoiceId, $stableAsset->getExtSystem());
+        $audioFile = $this->providerContainer->forDiscriminator($voice->getDiscriminator())
+            ->synthesize($stableTts->getSourceTextSnapshot(), $voice, $stableAsset->getExtSystem());
 
-        $this->stageAndSwap($request, $stableAsset, $stableTts, $audioFile, $resolvedVoice, $family, $licence);
+        $this->stageAndSwap($request, $stableAsset, $stableTts, $audioFile, $voice, $family, $licence);
     }
 
     private function stageAndSwap(
@@ -98,11 +96,11 @@ final readonly class TtsRequestOrchestrator
         Asset $stableAsset,
         TtsAsset $stableTts,
         AdapterFile $audioFile,
-        ResolvedVoice $resolvedVoice,
+        Voice $voice,
         VoiceFamily $family,
         AssetLicence $licence,
     ): void {
-        $input = TtsAudioCreationInput::forStagingSwap($request, $stableTts, $audioFile, $family, $resolvedVoice, $licence);
+        $input = TtsAudioCreationInput::forStagingSwap($request, $stableTts, $audioFile, $family, $voice, $licence);
 
         $stagingResult = $this->persistInTransaction($input);
 
@@ -204,16 +202,4 @@ final readonly class TtsRequestOrchestrator
         return $licence;
     }
 
-    /**
-     * @throws TtsProviderException if the resolver returned a stale ID
-     */
-    private function resolveVoiceFamily(string $voiceFamilyId): VoiceFamily
-    {
-        $family = $this->voiceFamilyRepo->find($voiceFamilyId);
-        if (null === $family) {
-            throw new TtsProviderException(sprintf('VoiceFamily "%s" not found.', $voiceFamilyId));
-        }
-
-        return $family;
-    }
 }

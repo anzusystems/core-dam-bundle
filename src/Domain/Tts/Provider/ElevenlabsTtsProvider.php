@@ -7,13 +7,15 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\ElevenlabsClient;
+use AnzuSystems\CoreDamBundle\Entity\ElevenlabsVoice;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Generator;
 use League\Flysystem\FilesystemException;
 
@@ -24,14 +26,10 @@ use League\Flysystem\FilesystemException;
  */
 final class ElevenlabsTtsProvider extends AbstractTtsProvider
 {
-    private const string MODEL_ID = 'eleven_multilingual_v2';
     // ElevenLabs per-request limit. Intentionally independent of GoogleTtsProvider::MAX_CHARS
     // — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
     private const int REQUEST_ID_CHAIN_LIMIT = 3;
-    private const float STABILITY = 0.5;
-    private const float SIMILARITY_BOOST = 0.75;
-
     private const int ERROR_BODY_EXCERPT_LIMIT = 500;
 
     public function __construct(
@@ -46,12 +44,12 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
 
     public static function getDefaultKeyName(): string
     {
-        return TtsProvider::Elevenlabs->value;
+        return VoiceDiscriminator::Elevenlabs->value;
     }
 
-    public function getName(): TtsProvider
+    public function getName(): VoiceDiscriminator
     {
-        return TtsProvider::Elevenlabs;
+        return VoiceDiscriminator::Elevenlabs;
     }
 
     public function getMaxCharsPerRequest(): int
@@ -63,8 +61,10 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
      * @throws TtsProviderException
      * @throws FilesystemException
      */
-    public function synthesize(string $text, string $externalVoiceId, ExtSystem $extSystem): AdapterFile
+    public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile
     {
+        $voice instanceof ElevenlabsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', ElevenlabsVoice::class, $voice::class));
+
         $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
         if ([] === $chunks) {
             throw new TtsProviderException('Cannot synthesize empty text.');
@@ -73,13 +73,13 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
         $apiKey = $this->resolveApiKey($extSystem);
 
         if (1 === count($chunks)) {
-            $result = $this->client->synthesize($externalVoiceId, $apiKey, $this->buildBody($chunks[0], []));
+            $result = $this->client->synthesize($voice->getExternalVoiceId(), $apiKey, $this->buildBody($chunks[0], [], $voice));
             $this->assertSuccess($result->http);
 
             return $this->writeSingleChunk($result->http->getContent());
         }
 
-        return $this->concatChunks($this->synthesizeChunks($chunks, $externalVoiceId, $apiKey));
+        return $this->concatChunks($this->synthesizeChunks($chunks, $voice, $apiKey));
     }
 
     /**
@@ -91,15 +91,15 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
      *
      * @throws TtsProviderException
      */
-    private function synthesizeChunks(array $chunks, string $externalVoiceId, string $apiKey): Generator
+    private function synthesizeChunks(array $chunks, ElevenlabsVoice $voice, string $apiKey): Generator
     {
         $previousRequestIds = [];
 
         foreach ($chunks as $chunk) {
             $result = $this->client->synthesize(
-                $externalVoiceId,
+                $voice->getExternalVoiceId(),
                 $apiKey,
-                $this->buildBody($chunk, $previousRequestIds),
+                $this->buildBody($chunk, $previousRequestIds, $voice),
             );
             $this->assertSuccess($result->http);
 
@@ -151,14 +151,14 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
      *
      * @return array<string, mixed>
      */
-    private function buildBody(string $text, array $previousRequestIds): array
+    private function buildBody(string $text, array $previousRequestIds, ElevenlabsVoice $voice): array
     {
         $body = [
             'text' => $text,
-            'model_id' => self::MODEL_ID,
+            'model_id' => $voice->getModelId(),
             'voice_settings' => [
-                'stability' => self::STABILITY,
-                'similarity_boost' => self::SIMILARITY_BOOST,
+                'stability' => $voice->getStability(),
+                'similarity_boost' => $voice->getSimilarityBoost(),
             ],
         ];
         if ([] !== $previousRequestIds) {

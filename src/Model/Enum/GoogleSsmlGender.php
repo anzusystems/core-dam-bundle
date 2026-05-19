@@ -7,12 +7,13 @@ namespace AnzuSystems\CoreDamBundle\Model\Enum;
 use AnzuSystems\Contracts\Model\Enum\BaseEnumTrait;
 use AnzuSystems\Contracts\Model\Enum\EnumInterface;
 
-enum TtsProvider: string implements EnumInterface
+enum GoogleSsmlGender: string implements EnumInterface
 {
     use BaseEnumTrait;
 
-    case Elevenlabs = 'elevenlabs';
-    case GoogleTts = 'google_tts';
+    case Male = 'MALE';
+    case Female = 'FEMALE';
+    case Neutral = 'NEUTRAL';
 
-    public const TtsProvider Default = self::Elevenlabs;
+    public const GoogleSsmlGender Default = self::Neutral;
 }

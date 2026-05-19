@@ -7,9 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Voice\ResolvedVoice;
 use InvalidArgumentException;
 
 final readonly class TtsAudioCreationInput
@@ -20,7 +20,7 @@ final readonly class TtsAudioCreationInput
     public function __construct(
         public AdapterFile $audioFile,
         public VoiceFamily $family,
-        public ResolvedVoice $voice,
+        public Voice $voice,
         public AssetLicence $licence,
         public string $sourceTextHash,
         public string $sourceTextSnapshot,
@@ -49,7 +49,7 @@ final readonly class TtsAudioCreationInput
         TtsNarrationRequest $request,
         AdapterFile $audioFile,
         VoiceFamily $family,
-        ResolvedVoice $voice,
+        Voice $voice,
         AssetLicence $licence,
         string $sourceText,
     ): self {
@@ -78,7 +78,7 @@ final readonly class TtsAudioCreationInput
         TtsAsset $stableTts,
         AdapterFile $audioFile,
         VoiceFamily $family,
-        ResolvedVoice $voice,
+        Voice $voice,
         AssetLicence $licence,
     ): self {
         $extRef = $request->getExtRef();

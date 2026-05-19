@@ -14,7 +14,7 @@ use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -59,9 +59,9 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[Assert\Length(max: 16, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $language;
 
-    #[ORM\Column(enumType: TtsProvider::class, nullable: true)]
+    #[ORM\Column(enumType: VoiceDiscriminator::class, nullable: true)]
     #[Serialize]
-    private ?TtsProvider $preferredProvider;
+    private ?VoiceDiscriminator $preferredProvider;
 
     #[ORM\Column(type: Types::BOOLEAN)]
     #[Serialize]
@@ -138,12 +138,12 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         return $this;
     }
 
-    public function getPreferredProvider(): ?TtsProvider
+    public function getPreferredProvider(): ?VoiceDiscriminator
     {
         return $this->preferredProvider;
     }
 
-    public function setPreferredProvider(?TtsProvider $preferredProvider): self
+    public function setPreferredProvider(?VoiceDiscriminator $preferredProvider): self
     {
         $this->preferredProvider = $preferredProvider;
 

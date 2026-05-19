@@ -26,11 +26,11 @@ enum TtsActiveProviderMode: string implements EnumInterface
 
     public const TtsActiveProviderMode Default = self::Auto;
 
-    public function toProvider(): ?TtsProvider
+    public function toProvider(): ?VoiceDiscriminator
     {
         return match ($this) {
-            self::Elevenlabs => TtsProvider::Elevenlabs,
-            self::GoogleTts => TtsProvider::GoogleTts,
+            self::Elevenlabs => VoiceDiscriminator::Elevenlabs,
+            self::GoogleTts => VoiceDiscriminator::GoogleTts,
             self::Auto => null,
         };
     }

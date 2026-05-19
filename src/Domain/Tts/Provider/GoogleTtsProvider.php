@@ -9,11 +9,13 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsAuthClientProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsClient;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\GoogleTtsVoice;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Generator;
 use Google\Exception as GoogleException;
 use JsonException;
@@ -45,12 +47,12 @@ final class GoogleTtsProvider extends AbstractTtsProvider
 
     public static function getDefaultKeyName(): string
     {
-        return TtsProvider::GoogleTts->value;
+        return VoiceDiscriminator::GoogleTts->value;
     }
 
-    public function getName(): TtsProvider
+    public function getName(): VoiceDiscriminator
     {
-        return TtsProvider::GoogleTts;
+        return VoiceDiscriminator::GoogleTts;
     }
 
     public function getMaxCharsPerRequest(): int
@@ -62,8 +64,10 @@ final class GoogleTtsProvider extends AbstractTtsProvider
      * @throws TtsProviderException
      * @throws FilesystemException
      */
-    public function synthesize(string $text, string $externalVoiceId, ExtSystem $extSystem): AdapterFile
+    public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile
     {
+        $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
+
         $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
         if ([] === $chunks) {
             throw new TtsProviderException('Cannot synthesize empty text.');
@@ -74,11 +78,11 @@ final class GoogleTtsProvider extends AbstractTtsProvider
 
         if (1 === count($chunks)) {
             return $this->writeSingleChunk(
-                $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunks[0], $externalVoiceId, $languageCode))),
+                $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunks[0], $voice, $languageCode))),
             );
         }
 
-        return $this->concatChunks($this->synthesizeChunks($chunks, $externalVoiceId, $accessToken, $languageCode));
+        return $this->concatChunks($this->synthesizeChunks($chunks, $voice, $accessToken, $languageCode));
     }
 
     /**
@@ -88,10 +92,10 @@ final class GoogleTtsProvider extends AbstractTtsProvider
      *
      * @throws TtsProviderException
      */
-    private function synthesizeChunks(array $chunks, string $externalVoiceId, string $accessToken, string $languageCode): Generator
+    private function synthesizeChunks(array $chunks, GoogleTtsVoice $voice, string $accessToken, string $languageCode): Generator
     {
         foreach ($chunks as $chunk) {
-            yield $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunk, $externalVoiceId, $languageCode)));
+            yield $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunk, $voice, $languageCode)));
         }
     }
 
@@ -125,12 +129,20 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     /**
      * @return array<string, mixed>
      */
-    private function buildBody(string $text, string $externalVoiceId, string $languageCode): array
+    private function buildBody(string $text, GoogleTtsVoice $voice, string $languageCode): array
     {
         return [
             'input' => ['text' => $text],
-            'voice' => ['languageCode' => $languageCode, 'name' => $externalVoiceId],
-            'audioConfig' => ['audioEncoding' => self::AUDIO_ENCODING_MP3],
+            'voice' => [
+                'languageCode' => $languageCode,
+                'name' => $voice->getExternalVoiceId(),
+                'ssmlGender' => $voice->getSsmlGender()->value,
+            ],
+            'audioConfig' => [
+                'audioEncoding' => self::AUDIO_ENCODING_MP3,
+                'speakingRate' => $voice->getSpeakingRate(),
+                'pitch' => $voice->getPitch(),
+            ],
         ];
     }
 

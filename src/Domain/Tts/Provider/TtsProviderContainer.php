@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
 
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
+use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final readonly class TtsProviderContainer
 {
-    public const string TAG = 'app.tts.provider';
-
     public function __construct(
         #[AutowireLocator(TtsProviderInterface::class, indexAttribute: 'key')]
         private ServiceLocator $locator,
@@ -22,14 +20,14 @@ final readonly class TtsProviderContainer
     /**
      * @throws TtsProviderException
      */
-    public function forProvider(TtsProvider $provider): TtsProviderInterface
+    public function forDiscriminator(VoiceDiscriminator $discriminator): TtsProviderInterface
     {
-        if (false === $this->locator->has($provider->value)) {
+        if (false === $this->locator->has($discriminator->value)) {
             throw new TtsProviderException(
-                sprintf('TTS provider "%s" is not registered in the container.', $provider->value)
+                sprintf('TTS provider "%s" is not registered in the container.', $discriminator->value)
             );
         }
 
-        return $this->locator->get($provider->value);
+        return $this->locator->get($discriminator->value);
     }
 }
