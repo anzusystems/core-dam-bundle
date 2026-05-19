@@ -57,7 +57,7 @@ final readonly class VoiceResolver
         $defaultSlug = $this->config->getSystemDefaultFamilySlug();
 
         if ((null === $family || false === $family->isActive()) && $targetSlug !== $defaultSlug) {
-            $family = $this->familyRepo->findOneBySlug($defaultSlug, $extSystem);
+            $family = $this->resolveExtSystemDefaultFamily($extSystem) ?? $this->familyRepo->findOneBySlug($defaultSlug, $extSystem);
         }
 
         if (null === $family || false === $family->isActive()) {
@@ -73,6 +73,21 @@ final readonly class VoiceResolver
                 $targetSlug,
                 $defaultSlug,
             ));
+        }
+
+        return $family;
+    }
+
+    private function resolveExtSystemDefaultFamily(ExtSystem $extSystem): ?VoiceFamily
+    {
+        $defaultId = $extSystem->getTtsSettings()->getDefaultVoiceFamilyId();
+        if (null === $defaultId) {
+            return null;
+        }
+
+        $family = $this->familyRepo->find($defaultId);
+        if (null === $family || $family->getExtSystem()->isNot($extSystem) || false === $family->isActive()) {
+            return null;
         }
 
         return $family;

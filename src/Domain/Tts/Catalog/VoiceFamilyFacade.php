@@ -39,6 +39,7 @@ final class VoiceFamilyFacade
             ->setLanguage($incoming->getLanguage())
             ->setPreferredProvider($incoming->getPreferredProvider())
             ->setActive($incoming->isActive())
+            ->setKeyword($incoming->getKeyword())
         ;
     }
 }

@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem\ExtSystemTtsSettingsUpdateDto;
+use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 
 final class ExtSystemFacade
 {
@@ -15,6 +16,7 @@ final class ExtSystemFacade
 
     public function __construct(
         private readonly ExtSystemManager $extSystemManager,
+        private readonly VoiceFamilyRepository $voiceFamilyRepository,
     ) {
     }
 
@@ -34,7 +36,25 @@ final class ExtSystemFacade
     public function updateTtsSettings(ExtSystem $extSystem, ExtSystemTtsSettingsUpdateDto $dto): ExtSystem
     {
         $this->validator->validate($dto);
+        $this->validateDefaultVoiceFamily($extSystem, $dto);
 
         return $this->extSystemManager->updateTtsSettings($extSystem, $dto);
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function validateDefaultVoiceFamily(ExtSystem $extSystem, ExtSystemTtsSettingsUpdateDto $dto): void
+    {
+        $defaultVoiceFamilyId = $dto->getDefaultVoiceFamilyId();
+        if (null === $defaultVoiceFamilyId) {
+            return;
+        }
+
+        $voiceFamily = $this->voiceFamilyRepository->find($defaultVoiceFamilyId);
+        if (null === $voiceFamily || $voiceFamily->getExtSystem()->isNot($extSystem)) {
+            throw (new ValidationException())
+                ->addFormattedError('defaultVoiceFamilyId', ValidationException::ERROR_FIELD_VALUE_NOT_FOUND);
+        }
     }
 }

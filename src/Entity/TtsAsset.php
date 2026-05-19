@@ -104,6 +104,10 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private bool $isStaging = false;
 
+    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[Serialize]
+    private ?string $voiceFamilyKeywordId = null;
+
     /**
      * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory} —
      * many non-nullable properties are populated by the factory after construction.
@@ -333,6 +337,18 @@ final class TtsAsset implements TimeTrackingInterface
     public function setIsStaging(bool $isStaging): self
     {
         $this->isStaging = $isStaging;
+
+        return $this;
+    }
+
+    public function getVoiceFamilyKeywordId(): ?string
+    {
+        return $this->voiceFamilyKeywordId;
+    }
+
+    public function setVoiceFamilyKeywordId(?string $voiceFamilyKeywordId): self
+    {
+        $this->voiceFamilyKeywordId = $voiceFamilyKeywordId;
 
         return $this;
     }

@@ -19,6 +19,10 @@ final class ExtSystemTtsSettingsUpdateDto
     private ?string $recommendedPodcastId = null;
 
     #[Serialize]
+    #[Assert\Uuid]
+    private ?string $defaultVoiceFamilyId = null;
+
+    #[Serialize]
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
 
     public function getAutoPodcastId(): ?string
@@ -41,6 +45,18 @@ final class ExtSystemTtsSettingsUpdateDto
     public function setRecommendedPodcastId(?string $recommendedPodcastId): self
     {
         $this->recommendedPodcastId = $recommendedPodcastId;
+
+        return $this;
+    }
+
+    public function getDefaultVoiceFamilyId(): ?string
+    {
+        return $this->defaultVoiceFamilyId;
+    }
+
+    public function setDefaultVoiceFamilyId(?string $defaultVoiceFamilyId): self
+    {
+        $this->defaultVoiceFamilyId = $defaultVoiceFamilyId;
 
         return $this;
     }

@@ -20,6 +20,10 @@ final class ExtSystemTtsSettings
     #[Serialize]
     private ?string $recommendedPodcastId = null;
 
+    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[Serialize]
+    private ?string $defaultVoiceFamilyId = null;
+
     #[ORM\Column(enumType: TtsActiveProviderMode::class, options: ['default' => 'auto'])]
     #[Serialize]
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
@@ -44,6 +48,18 @@ final class ExtSystemTtsSettings
     public function setRecommendedPodcastId(?string $recommendedPodcastId): self
     {
         $this->recommendedPodcastId = $recommendedPodcastId;
+
+        return $this;
+    }
+
+    public function getDefaultVoiceFamilyId(): ?string
+    {
+        return $this->defaultVoiceFamilyId;
+    }
+
+    public function setDefaultVoiceFamilyId(?string $defaultVoiceFamilyId): self
+    {
+        $this->defaultVoiceFamilyId = $defaultVoiceFamilyId;
 
         return $this;
     }

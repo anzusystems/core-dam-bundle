@@ -316,6 +316,13 @@ class Asset implements
         return $this;
     }
 
+    public function removeKeywordById(string $keywordId): self
+    {
+        $this->keywords->remove($keywordId);
+
+        return $this;
+    }
+
     /**
      * @return list<string>
      */

@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsProvider;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -66,6 +67,12 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[Serialize]
     private bool $active;
 
+    #[ORM\ManyToOne(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
+    private ?Keyword $keyword;
+
     #[ORM\OneToMany(targetEntity: Voice::class, mappedBy: 'voiceFamily', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\OrderBy(['externalVoiceId' => 'ASC'])]
     private Collection $voices;
@@ -77,6 +84,7 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         $this->setLanguage(App::EMPTY_STRING);
         $this->setPreferredProvider(null);
         $this->setActive(true);
+        $this->setKeyword(null);
         $this->setVoices(new ArrayCollection());
         $this->setCreatedAt(App::getAppDate());
         $this->setModifiedAt(App::getAppDate());
@@ -150,6 +158,18 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     public function setActive(bool $active): self
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getKeyword(): ?Keyword
+    {
+        return $this->keyword;
+    }
+
+    public function setKeyword(?Keyword $keyword): self
+    {
+        $this->keyword = $keyword;
 
         return $this;
     }

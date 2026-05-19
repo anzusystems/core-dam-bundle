@@ -69,6 +69,7 @@ final readonly class TtsRequestOrchestrator
             $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
         });
 
+        $this->syncFamilyKeyword($result->asset, $result->ttsAsset, $family);
         $this->indexManager->index($result->asset);
         $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
         $this->syncPodcastMembershipIfEligible($result->ttsAsset, $result->asset);
@@ -113,6 +114,7 @@ final readonly class TtsRequestOrchestrator
             (string) $request->getId(),
         );
 
+        $this->syncFamilyKeyword($stableAsset, $stableTts, $family);
         $this->indexManager->index($stableAsset);
         $this->requestManager->markDone($request, (string) $stableAsset->getId());
 
@@ -131,6 +133,28 @@ final readonly class TtsRequestOrchestrator
         if ($ttsAsset->isIncludeInRecommendedPodcast()) {
             $this->podcastMembership->syncRecommendedPodcast($asset, $ttsAsset->getRecommendedPodcastId(), true);
         }
+    }
+
+    private function syncFamilyKeyword(Asset $asset, TtsAsset $ttsAsset, VoiceFamily $family): void
+    {
+        $oldKeywordId = $ttsAsset->getVoiceFamilyKeywordId();
+        $newKeyword = $family->getKeyword();
+        $newKeywordId = null === $newKeyword ? null : (string) $newKeyword->getId();
+
+        if ($oldKeywordId === $newKeywordId) {
+            return;
+        }
+
+        if (null !== $oldKeywordId) {
+            $asset->removeKeywordById($oldKeywordId);
+        }
+
+        if (null !== $newKeyword) {
+            $asset->addKeyword($newKeyword);
+        }
+
+        $ttsAsset->setVoiceFamilyKeywordId($newKeywordId);
+        $this->entityManager->flush();
     }
 
     /**
