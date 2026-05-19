@@ -156,7 +156,7 @@ final readonly class TtsAudioFactory
             ->setExtResourceName($input->extResourceName)
             ->setExtId($input->extId)
             ->setExtVersion($input->extVersion)
-            ->setAssetLicenceId((string) $input->licence->getId())
+            ->setAssetLicenceId((int) $input->licence->getId())
             ->setAutoPodcastId($input->autoPodcastId)
             ->setRecommendedPodcastId($input->recommendedPodcastId)
             ->setIncludeInRecommendedPodcast($input->includeInRecommendedPodcast)

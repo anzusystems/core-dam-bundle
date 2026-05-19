@@ -33,6 +33,7 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     {
         $query = $this->createQueryBuilder('ta')
             ->innerJoin('ta.asset', 'a')
+            ->addSelect('a')
             ->where('a.id = :id')
             ->setParameter('id', $assetId)
             ->getQuery()

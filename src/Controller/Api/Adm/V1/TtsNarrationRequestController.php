@@ -22,8 +22,10 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsReasonRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Narration\TtsNarrationRequestAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -43,6 +45,7 @@ final class TtsNarrationRequestController extends AbstractApiController
         private readonly CancelRequest $cancelRequest,
         private readonly TtsNarrationRequestRepository $requestRepo,
         private readonly AssetLicenceRepository $licenceRepo,
+        private readonly TtsAssetRepository $ttsAssetRepo,
     ) {
     }
 
@@ -62,6 +65,20 @@ final class TtsNarrationRequestController extends AbstractApiController
         return $this->okResponse(
             $this->requestRepo->findByApiParams($apiParams),
         );
+    }
+
+    #[Route('/{narrationRequest}', name: 'get_one', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('narrationRequest'), OAResponse(TtsNarrationRequestAdmDetailDto::class)]
+    public function getOne(TtsNarrationRequest $narrationRequest): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ);
+
+        $resultAssetId = $narrationRequest->getResultAssetId();
+        $ttsAsset = null !== $resultAssetId
+            ? $this->ttsAssetRepo->findByAssetIdJoined($resultAssetId)
+            : null;
+
+        return $this->okResponse(TtsNarrationRequestAdmDetailDto::getInstance($narrationRequest, $ttsAsset));
     }
 
     /**

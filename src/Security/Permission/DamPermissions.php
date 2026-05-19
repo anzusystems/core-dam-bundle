@@ -185,6 +185,7 @@ class DamPermissions
 
     // TTS — TtsNarrationRequest
     public const string DAM_TTS_NARRATION_REQUEST_LIST = 'dam_ttsNarrationRequest_list';
+    public const string DAM_TTS_NARRATION_REQUEST_READ = 'dam_ttsNarrationRequest_read';
     public const string DAM_TTS_NARRATION_REQUEST_SYNTHESIZE = 'dam_ttsNarrationRequest_synthesize';
     public const string DAM_TTS_NARRATION_REQUEST_CANCEL = 'dam_ttsNarrationRequest_cancel';
 
@@ -308,6 +309,7 @@ class DamPermissions
         self::DAM_TTS_ASSET_REGENERATE,
         self::DAM_TTS_ASSET_TOGGLE_RECOMMENDED_PODCAST,
         self::DAM_TTS_NARRATION_REQUEST_LIST,
+        self::DAM_TTS_NARRATION_REQUEST_READ,
         self::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,
         self::DAM_TTS_NARRATION_REQUEST_CANCEL,
     ];

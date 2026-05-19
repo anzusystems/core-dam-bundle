@@ -13,11 +13,14 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyFacade;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomExtSystemFilter;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -47,6 +50,23 @@ final class VoiceFamilyController extends AbstractApiController
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams($apiParams),
+        );
+    }
+
+    /**
+     * @throws \Doctrine\ORM\Exception\ORMException
+     */
+    #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('extSystem'), OAResponseList(VoiceFamily::class)]
+    public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ);
+
+        return $this->okResponse(
+            $this->voiceFamilyRepository->findByApiParams(
+                apiParams: ExySystemApiParams::applyCustomFilter($apiParams, $extSystem),
+                customFilters: [new CustomExtSystemFilter()],
+            ),
         );
     }
 

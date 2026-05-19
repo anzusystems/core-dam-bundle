@@ -44,9 +44,9 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private ?string $extVersion = null;
 
-    #[ORM\Column(type: Types::GUID, length: 36)]
+    #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]
-    private string $assetLicenceId;
+    private int $assetLicenceId;
 
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]
@@ -125,6 +125,12 @@ final class TtsAsset implements TimeTrackingInterface
         return $this->asset;
     }
 
+    #[Serialize]
+    public function getAssetId(): string
+    {
+        return (string) $this->asset->getId();
+    }
+
     public function getExtResourceName(): ?string
     {
         return $this->extResourceName;
@@ -161,12 +167,12 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getAssetLicenceId(): string
+    public function getAssetLicenceId(): int
     {
         return $this->assetLicenceId;
     }
 
-    public function setAssetLicenceId(string $assetLicenceId): self
+    public function setAssetLicenceId(int $assetLicenceId): self
     {
         $this->assetLicenceId = $assetLicenceId;
 
@@ -329,7 +335,7 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function isStaging(): bool
+    public function isIsStaging(): bool
     {
         return $this->isStaging;
     }

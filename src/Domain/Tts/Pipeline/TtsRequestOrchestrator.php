@@ -123,7 +123,7 @@ final readonly class TtsRequestOrchestrator
     private function syncPodcastMembershipIfEligible(TtsAsset $ttsAsset, Asset $asset): void
     {
         $autoPodcastId = $ttsAsset->getAutoPodcastId();
-        if ($ttsAsset->getStatus()->isNot(TtsAudioStatus::Active) || $ttsAsset->isStaging() || null === $autoPodcastId) {
+        if ($ttsAsset->getStatus()->isNot(TtsAudioStatus::Active) || $ttsAsset->isIsStaging() || null === $autoPodcastId) {
             return;
         }
 

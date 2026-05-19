@@ -118,7 +118,7 @@ final readonly class DispatchNewAudioNarration
             ->setMode(TtsRequestMode::Initial)
             ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
             ->setTitle($dto->getTitle())
-            ->setAssetLicenceId((string) $licence->getId())
+            ->setAssetLicenceId($licence->getId())
             ->setOpenInitialKey($openInitialKey);
 
         $request->getExtRef()

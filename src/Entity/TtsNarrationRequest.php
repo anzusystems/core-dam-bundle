@@ -79,9 +79,9 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private ?string $resultAssetId;
 
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Serialize]
-    private ?string $assetLicenceId;
+    private ?int $assetLicenceId;
 
     #[ORM\Column(type: Types::STRING, length: 120, nullable: true)]
     #[Serialize]
@@ -225,12 +225,12 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function getAssetLicenceId(): ?string
+    public function getAssetLicenceId(): ?int
     {
         return $this->assetLicenceId;
     }
 
-    public function setAssetLicenceId(?string $assetLicenceId): self
+    public function setAssetLicenceId(?int $assetLicenceId): self
     {
         $this->assetLicenceId = $assetLicenceId;
 
