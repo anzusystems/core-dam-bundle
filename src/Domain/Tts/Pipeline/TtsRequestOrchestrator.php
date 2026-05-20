@@ -64,6 +64,7 @@ final readonly class TtsRequestOrchestrator
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, function (TtsAudioCreationResult $created) use ($request): void {
+            $created->asset->getAssetFileProperties()->setFromTts(true);
             $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
         });
 

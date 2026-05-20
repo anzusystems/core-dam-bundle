@@ -482,6 +482,12 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             'tts.elevenlabs.api.client' => [
                                 // prepend-phase partial config slices skip defaults; literal fallback prevents Undefined-key warning.
                                 'base_uri' => $configSettings[SettingsConfiguration::TTS_ELEVENLABS_API_HOST] ?? SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT,
+                                // TTS synthesis is slow — observed 5–40 s per 5k-char chunk. Generous ceilings
+                                // so a slow-but-progressing response is not killed mid-stream by Symfony's
+                                // 30 s default. Hard cap stays well under the messenger worker time-limit (600 s)
+                                // so a single stuck request never blocks the worker indefinitely.
+                                'timeout' => 60,        // connect / first-byte
+                                'max_duration' => 300,  // per request hard ceiling (5 min)
                                 'headers' => [
                                     'Content-Type' => 'application/json',
                                     'Accept' => 'audio/mpeg',
@@ -489,6 +495,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'tts.google.api.client' => [
                                 'base_uri' => $configSettings[SettingsConfiguration::TTS_GOOGLE_API_HOST] ?? SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT,
+                                'timeout' => 60,
+                                'max_duration' => 300,
                                 'headers' => [
                                     'Content-Type' => 'application/json',
                                     'Accept' => 'application/json',

@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
+use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
@@ -33,6 +37,7 @@ final readonly class DispatchNewAudioNarration
         private TtsAssetRepository $ttsAssetRepo,
         private TtsNarrationRequestManager $requestManager,
         private VoiceResolver $voiceResolver,
+        private TtsProviderContainer $providerContainer,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
     ) {
@@ -44,6 +49,8 @@ final readonly class DispatchNewAudioNarration
      *                       (used by the sync test command).
      *
      * @throws ImmutableAudioNarrationException if the both-null / both-non-null invariant is violated
+     * @throws ValidationException              if voice resolution or provider precheck fails
+     *                                          (mapped to per-field errors → admin shows snackbar / form-field highlight)
      */
     public function execute(TtsSynthesizeRequestDto $dto, AssetLicence $licence, bool $dispatch = true): DispatchResult
     {
@@ -66,10 +73,11 @@ final readonly class DispatchNewAudioNarration
             return $existing;
         }
 
-        // Fail-fast validation: ensures the slug + ExtSystem combination yields a usable voice
-        // before we persist a request. Result is discarded — handler re-resolves at processing time
-        // to pick the freshest voice (active flag may have flipped since dispatch).
-        $this->voiceResolver->resolve($dto->getVoiceFamilySlug(), $extSystem);
+        // Fail-fast: voice resolution + provider config check (deterministic, no HTTP). Surfaces
+        // as 422 ValidationException so admin uses the same alert/field-highlight flow as any
+        // other form validation error — instead of a raw 503 from the runtime exception handler.
+        $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
+        $this->precheckProviderOrThrowValidation($voice, $extSystem);
 
         $openInitialKey = TtsIdempotencyKey::forInitial($extResourceName, $extId, $extSystem);
 
@@ -82,6 +90,34 @@ final readonly class DispatchNewAudioNarration
         }
 
         return $result;
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function resolveVoiceOrThrowValidation(?string $voiceFamilySlug, ExtSystem $extSystem): Voice
+    {
+        try {
+            return $this->voiceResolver->resolve($voiceFamilySlug, $extSystem);
+        } catch (TtsProviderException) {
+            // Underlying exception is logged via the contextId chain — admin gets a translatable
+            // field error code, ops correlate via contextId.
+            throw (new ValidationException())->addFormattedError('voiceFamilySlug', ValidationException::ERROR_FIELD_INVALID);
+        }
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function precheckProviderOrThrowValidation(Voice $voice, ExtSystem $extSystem): void
+    {
+        try {
+            $this->providerContainer->forDiscriminator($voice->getDiscriminator())->precheck($voice, $extSystem);
+        } catch (TtsProviderException) {
+            // Surfaces under assetLicence because the failing config is tenant-scoped (licence → extSystem),
+            // not a user input field — admin shows it as a top-level form error instead of next to a slug input.
+            throw (new ValidationException())->addFormattedError('assetLicence', ValidationException::ERROR_FIELD_INVALID);
+        }
     }
 
     private function findExistingForExtTuple(?string $extResourceName, ?string $extId, ExtSystem $extSystem): ?DispatchResult

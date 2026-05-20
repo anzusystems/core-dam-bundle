@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -33,14 +34,12 @@ final readonly class TtsNarrationRequestHandler
 
     public function __invoke(TtsNarrationRequestMessage $message): void
     {
-        $request = $this->requestRepo->find($message->requestId);
-        if (false === $request instanceof TtsNarrationRequest) {
-            $this->logger->error(DamLogger::NAMESPACE_TTS, 'handler.requestNotFound', ['requestId' => $message->requestId]);
-
+        $request = $this->claimForProcessing($message->requestId);
+        if (null === $request) {
+            // Either not found (logged inside claim) or already past Waiting — another worker
+            // claimed it via Pub/Sub redelivery. Ack the message and stop.
             return;
         }
-
-        $this->requestManager->markProcessing($request);
 
         try {
             match ($request->getMode()) {
@@ -57,6 +56,36 @@ final readonly class TtsNarrationRequestHandler
             // is already cleared). Callers must dispatch a fresh request for a retry.
             $this->handleRequestFailure($request, $e);
         }
+    }
+
+    /**
+     * Atomic Waiting → Processing transition under a row lock. Required because Pub/Sub may
+     * redeliver the same message (ack-deadline expiry, worker crash mid-processing) — without
+     * this guard two workers would race and double-synthesise.
+     */
+    private function claimForProcessing(string $requestId): ?TtsNarrationRequest
+    {
+        return $this->entityManager->wrapInTransaction(function () use ($requestId): ?TtsNarrationRequest {
+            $request = $this->requestRepo->findForUpdate($requestId);
+            if (null === $request) {
+                $this->logger->error(DamLogger::NAMESPACE_TTS, 'handler.requestNotFound', ['requestId' => $requestId]);
+
+                return null;
+            }
+
+            if ($request->getStatus()->isNot(TtsRequestStatus::Waiting)) {
+                $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.alreadyClaimed', [
+                    'requestId' => $requestId,
+                    'status' => $request->getStatus()->value,
+                ]);
+
+                return null;
+            }
+
+            $this->requestManager->markProcessing($request);
+
+            return $request;
+        });
     }
 
     private function handleRequestFailure(TtsNarrationRequest $request, Throwable $e): void

@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
+use Doctrine\DBAL\LockMode;
 
 /**
  * @extends AbstractAnzuRepository<TtsNarrationRequest>
@@ -58,6 +59,52 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
         }
 
         return $byStable;
+    }
+
+    /**
+     * Pessimistic-write lock for handler-side claim transitions (Waiting → Processing). Pub/Sub
+     * redelivery (ack-deadline expiry, worker crash) can deliver the same message to a second
+     * worker; both must serialise on this row so only one moves the request out of Waiting.
+     */
+    public function findForUpdate(string $id): ?TtsNarrationRequest
+    {
+        return $this->find($id, LockMode::PESSIMISTIC_WRITE);
+    }
+
+    /**
+     * Latest request that touched the given asset — either as Initial result (resultAssetId)
+     * or as Regenerate target (stableAssetId). Powers the "open source request" link in the
+     * asset detail TTS panel.
+     *
+     * Implemented as two index-friendly lookups (one per column) instead of a single OR query,
+     * which MySQL cannot satisfy with index_merge alongside ORDER BY createdAt — that would
+     * degrade to a filesort as the table grows.
+     */
+    public function findLastIdByAsset(string $assetId): ?string
+    {
+        $candidates = [];
+        foreach (['resultAssetId', 'stableAssetId'] as $field) {
+            $row = $this->createQueryBuilder('r')
+                ->select('r.id', 'r.createdAt')
+                ->where(sprintf('r.%s = :id', $field))
+                ->setParameter('id', $assetId)
+                ->orderBy('r.createdAt', 'DESC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult()
+            ;
+            if (null !== $row) {
+                $candidates[] = $row;
+            }
+        }
+
+        if ([] === $candidates) {
+            return null;
+        }
+
+        usort($candidates, static fn (array $a, array $b): int => $b['createdAt'] <=> $a['createdAt']);
+
+        return (string) $candidates[0]['id'];
     }
 
     protected function getEntityClass(): string

@@ -155,6 +155,9 @@ return static function (ContainerConfigurator $configurator): void {
                 'fromRss' => [
                     'type' => 'boolean',
                 ],
+                'fromTts' => [
+                    'type' => 'boolean',
+                ],
             ]
         );
 };

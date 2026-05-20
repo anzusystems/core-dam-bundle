@@ -14,8 +14,10 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\ORM\NonUniqueResultException;
 
 class AssetPropertiesRefresher extends AbstractManager
@@ -23,6 +25,7 @@ class AssetPropertiesRefresher extends AbstractManager
     public function __construct(
         private readonly AssetTextsProcessor $assetTextsProcessor,
         private readonly DistributionRepository $distributionRepository,
+        private readonly TtsAssetRepository $ttsAssetRepository,
     ) {
     }
 
@@ -48,6 +51,7 @@ class AssetPropertiesRefresher extends AbstractManager
         $this->refreshDistributionServices($asset);
         $this->refreshSlotNames($asset);
         $this->refreshFromRss($asset);
+        $this->refreshFromTts($asset);
         $this->refreshDimensionFields($asset);
     }
 
@@ -84,6 +88,18 @@ class AssetPropertiesRefresher extends AbstractManager
             App::ZERO < $asset->getEpisodes()->filter(
                 fn (PodcastEpisode $episode): bool => $episode->getFlags()->isFromRss()
             )->count()
+        );
+    }
+
+    private function refreshFromTts(Asset $asset): void
+    {
+        // Only audio assets can have a TtsAsset row — skip the lookup for the other ~95% of saves.
+        if ($asset->getAssetType()->isNot(AssetType::Audio)) {
+            return;
+        }
+
+        $asset->getAssetFileProperties()->setFromTts(
+            null !== $this->ttsAssetRepository->findByAsset($asset)
         );
     }
 

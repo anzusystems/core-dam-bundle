@@ -26,5 +26,15 @@ interface TtsProviderInterface
      */
     public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile;
 
+    /**
+     * Deterministic, non-HTTP credential + config check — throws if {@see self::synthesize}
+     * would fail purely due to missing/malformed tenant configuration. Called at dispatch time
+     * so misconfigured tenants never persist a {@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest}.
+     * MUST NOT make network calls or check anything that can change between dispatch and processing.
+     *
+     * @throws TtsProviderException
+     */
+    public function precheck(Voice $voice, ExtSystem $extSystem): void;
+
     public function getMaxCharsPerRequest(): int;
 }

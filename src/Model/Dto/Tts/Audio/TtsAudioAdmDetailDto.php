@@ -20,11 +20,15 @@ final class TtsAudioAdmDetailDto
     #[Serialize]
     private ?TtsAsset $tts = null;
 
-    public static function getInstance(Asset $asset, ?TtsAsset $tts): self
+    #[Serialize]
+    private ?string $lastRequestId = null;
+
+    public static function getInstance(Asset $asset, ?TtsAsset $tts, ?string $lastRequestId = null): self
     {
         return (new self())
             ->setAssetId((string) $asset->getId())
             ->setTts($tts)
+            ->setLastRequestId($lastRequestId)
         ;
     }
 
@@ -48,6 +52,18 @@ final class TtsAudioAdmDetailDto
     public function setTts(?TtsAsset $tts): self
     {
         $this->tts = $tts;
+
+        return $this;
+    }
+
+    public function getLastRequestId(): ?string
+    {
+        return $this->lastRequestId;
+    }
+
+    public function setLastRequestId(?string $lastRequestId): self
+    {
+        $this->lastRequestId = $lastRequestId;
 
         return $this;
     }

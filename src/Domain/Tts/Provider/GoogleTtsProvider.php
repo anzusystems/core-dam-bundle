@@ -38,11 +38,11 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         private readonly GoogleTtsClient $ttsClient,
         private readonly GoogleTtsAuthClientProvider $authClientProvider,
         private readonly TextChunker $chunker,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigProvider,
+        ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
         FfmpegService $ffmpegService,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService);
+        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider);
     }
 
     public static function getDefaultKeyName(): string
@@ -62,11 +62,26 @@ final class GoogleTtsProvider extends AbstractTtsProvider
 
     /**
      * @throws TtsProviderException
+     */
+    public function precheck(Voice $voice, ExtSystem $extSystem): void
+    {
+        $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
+
+        // getClient() reads + parses the service-account JSON keyfile and configures the Google
+        // client. Deterministic from filesystem state, no HTTP. Cached per ExtSystem so the
+        // orchestrator that runs later doesn't pay the cost twice.
+        $this->authClientProvider->getClient($extSystem->getSlug());
+        $this->resolveChunkStorageName($extSystem);
+    }
+
+    /**
+     * @throws TtsProviderException
      * @throws FilesystemException
      */
     public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile
     {
-        $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
+        $this->precheck($voice, $extSystem);
+        assert($voice instanceof GoogleTtsVoice);
 
         $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
         if ([] === $chunks) {

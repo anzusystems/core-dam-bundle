@@ -368,6 +368,10 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('')
                     ->info('BCP-47 language tag (e.g. "sk-SK", "en-US") passed to TTS providers. Must be set explicitly by the consuming app — bundle ships no locale-opinionated default.')
                 ->end()
+                ->scalarNode(ExtSystemTtsConfiguration::CHUNK_STORAGE_NAME_KEY)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem named storage (must exist in `anzu_systems_core_dam.storages`) used to persist per-chunk MP3 blobs during multi-chunk synthesis. Empty disables TTS for this ExtSystem — provider precheck fails fast.')
+                ->end()
             ->end();
     }
 

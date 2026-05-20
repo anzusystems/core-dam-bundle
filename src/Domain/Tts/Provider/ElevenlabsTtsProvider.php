@@ -35,11 +35,11 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
     public function __construct(
         private readonly ElevenlabsClient $client,
         private readonly TextChunker $chunker,
-        private readonly ExtSystemConfigurationProvider $extSystemConfigProvider,
+        ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
         FfmpegService $ffmpegService,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService);
+        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider);
     }
 
     public static function getDefaultKeyName(): string
@@ -59,11 +59,23 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
 
     /**
      * @throws TtsProviderException
+     */
+    public function precheck(Voice $voice, ExtSystem $extSystem): void
+    {
+        $voice instanceof ElevenlabsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', ElevenlabsVoice::class, $voice::class));
+
+        $this->resolveApiKey($extSystem);
+        $this->resolveChunkStorageName($extSystem);
+    }
+
+    /**
+     * @throws TtsProviderException
      * @throws FilesystemException
      */
     public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile
     {
-        $voice instanceof ElevenlabsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', ElevenlabsVoice::class, $voice::class));
+        $this->precheck($voice, $extSystem);
+        assert($voice instanceof ElevenlabsVoice);
 
         $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
         if ([] === $chunks) {
@@ -119,6 +131,7 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
      */
     private function resolveApiKey(ExtSystem $extSystem): string
     {
+        // extSystemConfigProvider is inherited from AbstractTtsProvider — single injection point.
         $apiKey = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug())->elevenlabsApiKey;
         if ('' === $apiKey) {
             throw new TtsProviderException(sprintf(
