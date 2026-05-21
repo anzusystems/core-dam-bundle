@@ -127,7 +127,7 @@ final readonly class AssetSwap
             requestId: $requestId,
             oldAudioFileIds: $oldAudioFileIds,
             newAudioFileIds: $newAudioFileIds,
-            voiceFamilySlug: $stagingTts->getVoiceFamilySlug(),
+            voiceFamilySlug: $stagingTts->getVoiceFamily()->getSlug(),
             sourceTextHash: $stagingTts->getSourceTextHash(),
         );
 

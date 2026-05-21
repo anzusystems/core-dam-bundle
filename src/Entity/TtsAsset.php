@@ -11,13 +11,16 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use DateTimeImmutable;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * TTS-feature extension of {@see Asset}. 1:1 via shared primary key (asset delete cascades).
  * No inverse mapping — Asset stays bundle-agnostic; callers resolve via {@see TtsAssetRepository::findByAsset()}.
+ *
+ * Shape = snapshot of generation moment. Derivable state (tenant config, PodcastEpisode membership,
+ * request audit) lives elsewhere.
  */
 #[ORM\Entity(repositoryClass: TtsAssetRepository::class)]
 #[ORM\Table(name: 'tts_asset')]
@@ -40,38 +43,24 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private ?string $extId = null;
 
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    #[Serialize]
-    private ?string $extVersion = null;
-
-    #[ORM\Column(type: Types::INTEGER)]
-    #[Serialize]
-    private int $assetLicenceId;
-
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
-    #[Serialize]
-    private ?string $autoPodcastId = null;
-
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
-    #[Serialize]
-    private ?string $recommendedPodcastId = null;
-
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    #[Serialize]
-    private bool $includeInRecommendedPodcast = false;
-
-    #[ORM\Column(type: Types::STRING, length: 120)]
-    #[Serialize]
-    private string $voiceFamilySlug;
-
-    #[ORM\Column(type: Types::GUID, length: 36)]
-    #[Serialize]
-    private string $voiceFamilyId;
+    /**
+     * Generation-time snapshot. Hard-delete is blocked app-side by VoiceFamilyManager throwing
+     * {@see DependencyExistsException}; DB FK is the safety net.
+     * Eager fetch: every read site dereferences the family — lazy would N+1 the SYS list endpoint.
+     */
+    #[ORM\ManyToOne(targetEntity: VoiceFamily::class, fetch: 'EAGER')]
+    #[ORM\JoinColumn(name: 'voice_family_id', referencedColumnName: 'id', nullable: false)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private VoiceFamily $voiceFamily;
 
     #[ORM\Column(enumType: VoiceDiscriminator::class)]
     #[Serialize]
     private VoiceDiscriminator $discriminator;
 
+    /**
+     * Historical snapshot — live Voice may be replaced/deactivated, but this audio was synthesised
+     * with THIS provider voice ID.
+     */
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
     private string $externalVoiceId;
@@ -84,14 +73,6 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private string $sourceTextSnapshot;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    #[Serialize]
-    private DateTimeImmutable $generatedAt;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    #[Serialize]
-    private ?DateTimeImmutable $lastRegeneratedAt = null;
-
     #[ORM\Column(enumType: TtsAudioStatus::class)]
     #[Serialize]
     private TtsAudioStatus $status;
@@ -100,17 +81,24 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private ?string $failureReason = null;
 
+    /**
+     * True while this row is the regen-staging counterpart of the stable asset — flipped to false
+     * by {@see TtsAssetManager::markActive} at swap completion.
+     */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
-    private bool $isStaging = false;
+    private bool $staging = false;
 
+    /**
+     * GUID snapshot (not FK — Keyword can be deleted between regens). Used by
+     * {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::syncFamilyKeyword} for diff.
+     */
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]
     private ?string $voiceFamilyKeywordId = null;
 
     /**
-     * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory} —
-     * many non-nullable properties are populated by the factory after construction.
+     * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
      */
     public function __construct(Asset $asset)
     {
@@ -155,86 +143,14 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getExtVersion(): ?string
+    public function getVoiceFamily(): VoiceFamily
     {
-        return $this->extVersion;
+        return $this->voiceFamily;
     }
 
-    public function setExtVersion(?string $extVersion): self
+    public function setVoiceFamily(VoiceFamily $voiceFamily): self
     {
-        $this->extVersion = $extVersion;
-
-        return $this;
-    }
-
-    public function getAssetLicenceId(): int
-    {
-        return $this->assetLicenceId;
-    }
-
-    public function setAssetLicenceId(int $assetLicenceId): self
-    {
-        $this->assetLicenceId = $assetLicenceId;
-
-        return $this;
-    }
-
-    public function getAutoPodcastId(): ?string
-    {
-        return $this->autoPodcastId;
-    }
-
-    public function setAutoPodcastId(?string $autoPodcastId): self
-    {
-        $this->autoPodcastId = $autoPodcastId;
-
-        return $this;
-    }
-
-    public function getRecommendedPodcastId(): ?string
-    {
-        return $this->recommendedPodcastId;
-    }
-
-    public function setRecommendedPodcastId(?string $recommendedPodcastId): self
-    {
-        $this->recommendedPodcastId = $recommendedPodcastId;
-
-        return $this;
-    }
-
-    public function isIncludeInRecommendedPodcast(): bool
-    {
-        return $this->includeInRecommendedPodcast;
-    }
-
-    public function setIncludeInRecommendedPodcast(bool $includeInRecommendedPodcast): self
-    {
-        $this->includeInRecommendedPodcast = $includeInRecommendedPodcast;
-
-        return $this;
-    }
-
-    public function getVoiceFamilySlug(): string
-    {
-        return $this->voiceFamilySlug;
-    }
-
-    public function setVoiceFamilySlug(string $voiceFamilySlug): self
-    {
-        $this->voiceFamilySlug = $voiceFamilySlug;
-
-        return $this;
-    }
-
-    public function getVoiceFamilyId(): string
-    {
-        return $this->voiceFamilyId;
-    }
-
-    public function setVoiceFamilyId(string $voiceFamilyId): self
-    {
-        $this->voiceFamilyId = $voiceFamilyId;
+        $this->voiceFamily = $voiceFamily;
 
         return $this;
     }
@@ -287,30 +203,6 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getGeneratedAt(): DateTimeImmutable
-    {
-        return $this->generatedAt;
-    }
-
-    public function setGeneratedAt(DateTimeImmutable $generatedAt): self
-    {
-        $this->generatedAt = $generatedAt;
-
-        return $this;
-    }
-
-    public function getLastRegeneratedAt(): ?DateTimeImmutable
-    {
-        return $this->lastRegeneratedAt;
-    }
-
-    public function setLastRegeneratedAt(?DateTimeImmutable $lastRegeneratedAt): self
-    {
-        $this->lastRegeneratedAt = $lastRegeneratedAt;
-
-        return $this;
-    }
-
     public function getStatus(): TtsAudioStatus
     {
         return $this->status;
@@ -335,14 +227,14 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function isIsStaging(): bool
+    public function isStaging(): bool
     {
-        return $this->isStaging;
+        return $this->staging;
     }
 
-    public function setIsStaging(bool $isStaging): self
+    public function setStaging(bool $staging): self
     {
-        $this->isStaging = $isStaging;
+        $this->staging = $staging;
 
         return $this;
     }

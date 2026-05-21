@@ -69,12 +69,16 @@ final class TtsNarrationRequestManager extends AbstractManager
         return $request;
     }
 
+    /**
+     * Terminal transition: clears openInitialKey (frees the ext-ref slot) + nullifies source text
+     * (audit copy lives on TtsAsset.sourceTextSnapshot).
+     */
     private function finalize(TtsNarrationRequest $request, TtsRequestStatus $terminal, ?string $reason, bool $flush): TtsNarrationRequest
     {
         $request->setStatus($terminal);
-        $request->setFinishedAt(new DateTimeImmutable());
         $request->setFailureReason($reason);
         $request->setOpenInitialKey(null);
+        $request->getSource()->setText(null);
         $this->trackModification($request);
         $this->flush($flush);
 

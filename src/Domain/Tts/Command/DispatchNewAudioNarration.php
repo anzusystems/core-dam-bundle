@@ -82,7 +82,7 @@ final readonly class DispatchNewAudioNarration
         $openInitialKey = TtsIdempotencyKey::forInitial($extResourceName, $extId, $extSystem);
 
         $result = $this->entityManager->wrapInTransaction(
-            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $extSystem, $openInitialKey)),
+            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $openInitialKey)),
         );
 
         if ($dispatch && null !== $result->requestId) {
@@ -146,29 +146,22 @@ final readonly class DispatchNewAudioNarration
         return DispatchResult::pending((string) $request->getId());
     }
 
-    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ExtSystem $extSystem, ?string $openInitialKey): TtsNarrationRequest
+    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): TtsNarrationRequest
     {
-        $ttsSettings = $extSystem->getTtsSettings();
-
         $request = (new TtsNarrationRequest())
             ->setMode(TtsRequestMode::Initial)
             ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
             ->setTitle($dto->getTitle())
             ->setAssetLicenceId($licence->getId())
-            ->setOpenInitialKey($openInitialKey);
+            ->setOpenInitialKey($openInitialKey)
+            ->setIncludeInRecommended($dto->isIncludeInRecommendedPodcast());
 
         $request->getExtRef()
             ->setExtResourceName($dto->getExtResourceName())
             ->setExtId($dto->getExtId());
 
         $request->getSource()
-            ->setText($dto->getText())
-            ->setHash(hash('sha256', $dto->getText()));
-
-        $request->getPodcastOptions()
-            ->setAutoPodcastId($ttsSettings->getAutoPodcastId())
-            ->setRecommendedPodcastId($ttsSettings->getRecommendedPodcastId())
-            ->setIncludeInRecommended($dto->isIncludeInRecommendedPodcast());
+            ->setText($dto->getText());
 
         return $request;
     }

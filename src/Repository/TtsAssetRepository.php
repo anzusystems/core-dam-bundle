@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
+use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
 use Doctrine\DBAL\LockMode;
@@ -84,6 +85,11 @@ final class TtsAssetRepository extends AbstractAnzuRepository
             ->setParameter('threshold', $threshold)
             ->getQuery()
             ->getResult();
+    }
+
+    public function existsByVoiceFamily(VoiceFamily $voiceFamily): bool
+    {
+        return (bool) $this->count(['voiceFamily' => $voiceFamily]);
     }
 
     protected function getEntityClass(): string

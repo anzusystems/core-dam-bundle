@@ -39,7 +39,7 @@ final readonly class RegenerateTts
                 $request = (new TtsNarrationRequest())
                     ->setMode(TtsRequestMode::Regenerate)
                     ->setStableAssetId($stableAssetId)
-                    ->setAssetLicenceId($ttsAsset->getAssetLicenceId())
+                    ->setAssetLicenceId($ttsAsset->getAsset()->getLicence()->getId())
                     ->setVoiceFamilySlug($voiceFamilySlug);
                 $this->requestManager->create($request, false);
 

@@ -41,6 +41,18 @@ final readonly class PodcastMembership
         }
     }
 
+    /**
+     * Resolves the tenant's recommended-podcast target from the asset's ExtSystem and delegates.
+     */
+    public function syncRecommendedPodcastForAsset(Asset $asset, bool $include): void
+    {
+        $this->syncRecommendedPodcast(
+            $asset,
+            $asset->getExtSystem()->getTtsSettings()->getRecommendedPodcastId(),
+            $include,
+        );
+    }
+
     public function syncRecommendedPodcast(Asset $asset, ?string $recommendedPodcastId, bool $include): void
     {
         if (null === $recommendedPodcastId) {

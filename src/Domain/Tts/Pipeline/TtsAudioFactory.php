@@ -71,7 +71,7 @@ final readonly class TtsAudioFactory
         $asset = $this->resolveAsset($input, $audioFile, $now);
         $this->attachStableRoute($audioFile);
 
-        $ttsAsset = $this->buildTtsAsset($asset, $input, $now);
+        $ttsAsset = $this->buildTtsAsset($asset, $input);
         $this->ttsAssetManager->create($ttsAsset);
 
         return new TtsAudioCreationResult($asset, $audioFile, $ttsAsset, $input->audioFile);
@@ -148,27 +148,20 @@ final readonly class TtsAudioFactory
         $this->routeManager->create($route, false);
     }
 
-    private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input, DateTimeImmutable $now): TtsAsset
+    private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input): TtsAsset
     {
-        $isStaging = $input->isStaging();
+        $staging = $input->isStaging();
 
         return (new TtsAsset($asset))
             ->setExtResourceName($input->extResourceName)
             ->setExtId($input->extId)
-            ->setExtVersion($input->extVersion)
-            ->setAssetLicenceId((int) $input->licence->getId())
-            ->setAutoPodcastId($input->autoPodcastId)
-            ->setRecommendedPodcastId($input->recommendedPodcastId)
-            ->setIncludeInRecommendedPodcast($input->includeInRecommendedPodcast)
-            ->setVoiceFamilySlug($input->family->getSlug())
-            ->setVoiceFamilyId((string) $input->family->getId())
+            ->setVoiceFamily($input->family)
             ->setDiscriminator($input->voice->getDiscriminator())
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
             ->setSourceTextHash($input->sourceTextHash)
             ->setSourceTextSnapshot($input->sourceTextSnapshot)
-            ->setGeneratedAt($now)
-            ->setStatus($isStaging ? TtsAudioStatus::Superseding : TtsAudioStatus::Active)
-            ->setIsStaging($isStaging);
+            ->setStatus($staging ? TtsAudioStatus::Superseding : TtsAudioStatus::Active)
+            ->setStaging($staging);
     }
 
     private function resolveDisplayName(TtsAudioCreationInput $input, DateTimeImmutable $now): string

@@ -10,7 +10,6 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestExtRef;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestPodcastOptions;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestSource;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
@@ -49,10 +48,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     #[Serialize]
     private ?DateTimeImmutable $startedAt;
-
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    #[Serialize]
-    private ?DateTimeImmutable $finishedAt;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]
@@ -98,6 +93,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private bool $cancelRequested;
 
+    /**
+     * User intent at dispatch — applied once by the orchestrator. Target podcast lives in
+     * tenant config ({@see ExtSystemTtsSettings::getRecommendedPodcastId}).
+     */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $includeInRecommended;
+
     #[Serialize]
     #[ORM\Embedded(class: TtsNarrationRequestExtRef::class)]
     private TtsNarrationRequestExtRef $extRef;
@@ -106,16 +109,11 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[ORM\Embedded(class: TtsNarrationRequestSource::class)]
     private TtsNarrationRequestSource $source;
 
-    #[Serialize]
-    #[ORM\Embedded(class: TtsNarrationRequestPodcastOptions::class)]
-    private TtsNarrationRequestPodcastOptions $podcastOptions;
-
     public function __construct()
     {
         $this->setStatus(TtsRequestStatus::Default);
         $this->setMode(TtsRequestMode::Default);
         $this->setStartedAt(null);
-        $this->setFinishedAt(null);
         $this->setFailureReason(null);
         $this->setOpenInitialKey(null);
         $this->setStableAssetId(null);
@@ -124,9 +122,9 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setVoiceFamilySlug(null);
         $this->setTitle(null);
         $this->setCancelRequested(false);
+        $this->setIncludeInRecommended(false);
         $this->setExtRef(new TtsNarrationRequestExtRef());
         $this->setSource(new TtsNarrationRequestSource());
-        $this->setPodcastOptions(new TtsNarrationRequestPodcastOptions());
     }
 
     public function getStatus(): TtsRequestStatus
@@ -161,18 +159,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setStartedAt(?DateTimeImmutable $startedAt): self
     {
         $this->startedAt = $startedAt;
-
-        return $this;
-    }
-
-    public function getFinishedAt(): ?DateTimeImmutable
-    {
-        return $this->finishedAt;
-    }
-
-    public function setFinishedAt(?DateTimeImmutable $finishedAt): self
-    {
-        $this->finishedAt = $finishedAt;
 
         return $this;
     }
@@ -297,14 +283,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function getPodcastOptions(): TtsNarrationRequestPodcastOptions
+    public function isIncludeInRecommended(): bool
     {
-        return $this->podcastOptions;
+        return $this->includeInRecommended;
     }
 
-    public function setPodcastOptions(TtsNarrationRequestPodcastOptions $podcastOptions): self
+    public function setIncludeInRecommended(bool $includeInRecommended): self
     {
-        $this->podcastOptions = $podcastOptions;
+        $this->includeInRecommended = $includeInRecommended;
 
         return $this;
     }

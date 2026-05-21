@@ -16,13 +16,12 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * One synthesis unit of a multi-chunk TTS request. The parent {@see TtsNarrationRequest} owns the
- * lifecycle; chunks are produced eagerly at dispatch time (text split via TextChunker) and consumed
- * by per-chunk Messenger handlers — each chunk = one HTTP call to the provider, persisted to the
- * per-extSystem chunk storage (`mp3StoragePath`), then assembled by ffmpeg concat.
+ * One synthesis unit of a multi-chunk TTS request. Text derived from request.source.text via
+ * TextChunker by ordinal. Each chunk → one provider HTTP call → MP3 persisted at `mp3StoragePath`
+ * in the per-extSystem chunk storage → ffmpeg-concat'd at assemble time.
  *
- * Sequential-only in v1 (ElevenLabs `previous_request_ids` chain requires order). Atomic claim on
- * status Pending → Processing prevents double-synth under Pub/Sub redelivery.
+ * Sequential-only in v1 (ElevenLabs `previous_request_ids` chain). Atomic Pending → Processing
+ * claim prevents double-synth under Pub/Sub redelivery.
  */
 #[ORM\Entity(repositoryClass: TtsSynthesisChunkRepository::class)]
 #[ORM\Table(name: 'tts_synthesis_chunk')]
@@ -42,9 +41,6 @@ final class TtsSynthesisChunk implements UuidIdentifiableInterface, TimeTracking
     #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true])]
     #[Serialize]
     private int $ordinal;
-
-    #[ORM\Column(type: Types::TEXT)]
-    private string $text;
 
     #[ORM\Column(enumType: TtsChunkStatus::class)]
     #[Serialize]
@@ -66,17 +62,12 @@ final class TtsSynthesisChunk implements UuidIdentifiableInterface, TimeTracking
     #[Serialize]
     private ?DateTimeImmutable $startedAt;
 
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    #[Serialize]
-    private ?DateTimeImmutable $finishedAt;
-
     public function __construct()
     {
         $this->setStatus(TtsChunkStatus::Default);
         $this->setMp3StoragePath(null);
         $this->setFailureReason(null);
         $this->setStartedAt(null);
-        $this->setFinishedAt(null);
     }
 
     public function getRequest(): TtsNarrationRequest
@@ -99,18 +90,6 @@ final class TtsSynthesisChunk implements UuidIdentifiableInterface, TimeTracking
     public function setOrdinal(int $ordinal): self
     {
         $this->ordinal = $ordinal;
-
-        return $this;
-    }
-
-    public function getText(): string
-    {
-        return $this->text;
-    }
-
-    public function setText(string $text): self
-    {
-        $this->text = $text;
 
         return $this;
     }
@@ -159,18 +138,6 @@ final class TtsSynthesisChunk implements UuidIdentifiableInterface, TimeTracking
     public function setStartedAt(?DateTimeImmutable $startedAt): self
     {
         $this->startedAt = $startedAt;
-
-        return $this;
-    }
-
-    public function getFinishedAt(): ?DateTimeImmutable
-    {
-        return $this->finishedAt;
-    }
-
-    public function setFinishedAt(?DateTimeImmutable $finishedAt): self
-    {
-        $this->finishedAt = $finishedAt;
 
         return $this;
     }

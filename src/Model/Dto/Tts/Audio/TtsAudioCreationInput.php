@@ -26,10 +26,6 @@ final readonly class TtsAudioCreationInput
         public string $sourceTextSnapshot,
         public ?string $extResourceName = null,
         public ?string $extId = null,
-        public ?string $extVersion = null,
-        public ?string $autoPodcastId = null,
-        public ?string $recommendedPodcastId = null,
-        public bool $includeInRecommendedPodcast = false,
         public ?string $title = null,
         public bool $staging = false,
     ) {
@@ -54,21 +50,16 @@ final readonly class TtsAudioCreationInput
         string $sourceText,
     ): self {
         $extRef = $request->getExtRef();
-        $podcast = $request->getPodcastOptions();
 
         return new self(
             audioFile: $audioFile,
             family: $family,
             voice: $voice,
             licence: $licence,
-            sourceTextHash: (string) $request->getSource()->getHash(),
+            sourceTextHash: hash('sha256', $sourceText),
             sourceTextSnapshot: $sourceText,
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
-            extVersion: $extRef->getExtVersion(),
-            autoPodcastId: $podcast->getAutoPodcastId(),
-            recommendedPodcastId: $podcast->getRecommendedPodcastId(),
-            includeInRecommendedPodcast: $podcast->isIncludeInRecommended(),
             title: $request->getTitle(),
         );
     }
@@ -92,7 +83,6 @@ final readonly class TtsAudioCreationInput
             sourceTextSnapshot: $stableTts->getSourceTextSnapshot(),
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
-            extVersion: $extRef->getExtVersion(),
             title: $request->getTitle(),
             staging: true,
         );

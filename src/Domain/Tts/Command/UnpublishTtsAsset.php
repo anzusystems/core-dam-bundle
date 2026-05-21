@@ -35,7 +35,7 @@ final readonly class UnpublishTtsAsset
             $ttsAsset = $this->ttsAssetLocker->requireFor($asset);
 
             $this->ttsAssetManager->markUnpublished($ttsAsset, $reason);
-            $this->podcastMembership->syncRecommendedPodcast($asset, $ttsAsset->getRecommendedPodcastId(), false);
+            $this->podcastMembership->syncRecommendedPodcastForAsset($asset, false);
             $this->auditLogger->logUnpublished((string) $asset->getId(), $userId, $reason);
 
             $this->entityManager->flush();

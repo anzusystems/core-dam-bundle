@@ -22,7 +22,6 @@ use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use Closure;
@@ -71,7 +70,7 @@ final readonly class TtsRequestOrchestrator
         $this->syncFamilyKeyword($result->asset, $result->ttsAsset, $family);
         $this->indexManager->index($result->asset);
         $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
-        $this->syncPodcastMembershipIfEligible($result->ttsAsset, $result->asset);
+        $this->syncPodcastMembership($request, $result->asset);
 
         if (null !== $request->getExtRef()->getExtResourceName() && null !== $request->getExtRef()->getExtId()) {
             $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
@@ -121,16 +120,19 @@ final readonly class TtsRequestOrchestrator
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
     }
 
-    private function syncPodcastMembershipIfEligible(TtsAsset $ttsAsset, Asset $asset): void
+    /**
+     * Tail of {@see self::processInitial} — (Active && !staging) holds by construction.
+     */
+    private function syncPodcastMembership(TtsNarrationRequest $request, Asset $asset): void
     {
-        $autoPodcastId = $ttsAsset->getAutoPodcastId();
-        if ($ttsAsset->getStatus()->isNot(TtsAudioStatus::Active) || $ttsAsset->isIsStaging() || null === $autoPodcastId) {
+        $autoPodcastId = $asset->getExtSystem()->getTtsSettings()->getAutoPodcastId();
+        if (null === $autoPodcastId) {
             return;
         }
 
         $this->podcastMembership->syncAutoPodcast($asset, $autoPodcastId);
-        if ($ttsAsset->isIncludeInRecommendedPodcast()) {
-            $this->podcastMembership->syncRecommendedPodcast($asset, $ttsAsset->getRecommendedPodcastId(), true);
+        if ($request->isIncludeInRecommended()) {
+            $this->podcastMembership->syncRecommendedPodcastForAsset($asset, true);
         }
     }
 

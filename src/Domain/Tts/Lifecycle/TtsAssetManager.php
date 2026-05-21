@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
-use DateTimeImmutable;
 
 /**
  * Owns TtsAsset state transitions via named mark* methods — keeps allowed transitions in code.
@@ -72,24 +71,10 @@ final class TtsAssetManager extends AbstractManager
         return $ttsAsset;
     }
 
-    /**
-     * Finalize a successful swap: bring the asset back to Active, stamp the last-regenerated
-     * timestamp, and detach the staging flag.
-     */
     public function markActive(TtsAsset $ttsAsset, bool $flush = false): TtsAsset
     {
         $ttsAsset->setStatus(TtsAudioStatus::Active);
-        $ttsAsset->setIsStaging(false);
-        $ttsAsset->setLastRegeneratedAt(new DateTimeImmutable());
-        $this->trackModification($ttsAsset);
-        $this->flush($flush);
-
-        return $ttsAsset;
-    }
-
-    public function setIncludeInRecommendedPodcast(TtsAsset $ttsAsset, bool $include, bool $flush = false): TtsAsset
-    {
-        $ttsAsset->setIncludeInRecommendedPodcast($include);
+        $ttsAsset->setStaging(false);
         $this->trackModification($ttsAsset);
         $this->flush($flush);
 
