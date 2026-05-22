@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem;
 
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsActiveProviderMode;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class ExtSystemTtsSettingsUpdateDto
@@ -21,6 +23,9 @@ final class ExtSystemTtsSettingsUpdateDto
     #[Serialize]
     #[Assert\Uuid]
     private ?string $defaultVoiceFamilyId = null;
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?AssetLicence $ttsDefaultAssetLicence = null;
 
     #[Serialize]
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
@@ -57,6 +62,18 @@ final class ExtSystemTtsSettingsUpdateDto
     public function setDefaultVoiceFamilyId(?string $defaultVoiceFamilyId): self
     {
         $this->defaultVoiceFamilyId = $defaultVoiceFamilyId;
+
+        return $this;
+    }
+
+    public function getTtsDefaultAssetLicence(): ?AssetLicence
+    {
+        return $this->ttsDefaultAssetLicence;
+    }
+
+    public function setTtsDefaultAssetLicence(?AssetLicence $ttsDefaultAssetLicence): self
+    {
+        $this->ttsDefaultAssetLicence = $ttsDefaultAssetLicence;
 
         return $this;
     }

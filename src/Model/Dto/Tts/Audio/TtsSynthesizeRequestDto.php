@@ -8,16 +8,28 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use LogicException;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
+/**
+ * GroupSequence ensures {@see GROUP_POST} constraints (which dereference {@see getExtSystem()})
+ * run only after the base group confirmed extSystem is set — otherwise the getter throws.
+ */
 #[Assert\Expression(
     '(this.getExtResourceName() === null) === (this.getExtId() === null)',
     message: 'fields.tts.extRef.must_be_both_null_or_both_present',
 )]
-final class TtsSynthesizeRequestDto
+#[Assert\GroupSequence(['TtsSynthesizeRequestDto', self::GROUP_POST])]
+final class TtsSynthesizeRequestDto implements ExtSystemInterface
 {
+    private const string GROUP_POST = 'post';
+
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(min: 10, max: 50_000, minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -42,13 +54,28 @@ final class TtsSynthesizeRequestDto
     #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $title = null;
 
-    /**
-     * assetLicence is accepted in the body because the Adm authenticator does not yet derive
-     * AssetLicence / ExtSystem from the JWT — drop once auth wiring lands upstream.
-     */
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
+    private ?ExtSystem $extSystem = null;
+
+    #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem(groups: [self::GROUP_POST])]
     private ?AssetLicence $assetLicence = null;
+
+    #[Assert\Callback(groups: [self::GROUP_POST])]
+    public function validateLicenceResolved(ExecutionContextInterface $context): void
+    {
+        if (null === $this->resolveAssetLicence()) {
+            $context->buildViolation(ValidationException::ERROR_FIELD_EMPTY)
+                ->atPath('assetLicence')
+                ->addViolation();
+        }
+    }
+
+    public function resolveAssetLicence(): ?AssetLicence
+    {
+        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence();
+    }
 
     public function getText(): string
     {
@@ -118,6 +145,20 @@ final class TtsSynthesizeRequestDto
     public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    public function getExtSystem(): ExtSystem
+    {
+        return $this->extSystem ?? throw new LogicException(
+            'ExtSystem accessed before TtsSynthesizeRequestDto validation resolved it.',
+        );
+    }
+
+    public function setExtSystem(?ExtSystem $extSystem): self
+    {
+        $this->extSystem = $extSystem;
 
         return $this;
     }

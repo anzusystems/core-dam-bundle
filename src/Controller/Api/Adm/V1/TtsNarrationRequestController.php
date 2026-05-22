@@ -49,13 +49,6 @@ final class TtsNarrationRequestController extends AbstractApiController
     ) {
     }
 
-    /**
-     * List TTS narration requests. Standard ApiParams filters work out of the box:
-     *   - filter_eq[status]            → TtsRequestStatus enum
-     *   - filter_eq[mode]              → TtsRequestMode enum
-     *   - filter_eq[voiceFamilySlug]   → VoiceFamily slug
-     *   - filter_gte[startedAt] / filter_lte[startedAt] → startedAt range
-     */
     #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
     #[OAResponseList(TtsNarrationRequest::class)]
     public function getList(ApiParams $apiParams): JsonResponse
@@ -82,8 +75,6 @@ final class TtsNarrationRequestController extends AbstractApiController
     }
 
     /**
-     * Returns 202 Accepted on new dispatch or 200 with {status: already_exists|already_pending} on idempotent hit.
-     *
      * @throws AppReadOnlyModeException
      * @throws ValidationException
      */
@@ -91,7 +82,8 @@ final class TtsNarrationRequestController extends AbstractApiController
     #[OARequest(TtsSynthesizeRequestDto::class), OAResponseValidation]
     public function synthesize(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
-        $licence = $dto->getAssetLicence();
+        $licence = $dto->resolveAssetLicence();
+        \assert(null !== $licence, 'guaranteed non-null by DTO validation');
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $licence);
         App::throwOnReadOnlyMode();
 
@@ -105,9 +97,6 @@ final class TtsNarrationRequestController extends AbstractApiController
     }
 
     /**
-     * Cancels any in-flight TTS narration request — `initial` (no asset yet) or `regenerate` (asset
-     * in `superseding` state). Dispatch branches on `request.mode` internally.
-     *
      * @throws AppReadOnlyModeException
      * @throws ImmutableAudioNarrationException
      */

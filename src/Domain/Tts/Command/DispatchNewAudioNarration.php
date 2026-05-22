@@ -14,7 +14,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
-use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
@@ -26,10 +25,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * Idempotent on (extResourceName, extId, extSystem):
- *  - if an active TTS asset already exists for the tuple → {@see DispatchResult::alreadyExists()}
- *  - if another Initial request is in flight (openInitialKey UNIQUE collision) → {@see DispatchResult::alreadyPending()}
- *  - otherwise → persist new request, dispatch to Messenger, return {@see DispatchResult::pending()}
+ * Idempotent on (extResourceName, extId, extSystem) — short-circuits on existing active asset or
+ * in-flight Initial request before paying the voice/provider precheck cost.
  */
 final readonly class DispatchNewAudioNarration
 {
@@ -44,13 +41,10 @@ final readonly class DispatchNewAudioNarration
     }
 
     /**
-     * @param bool $dispatch When false, the request is persisted but the Messenger message is not
-     *                       dispatched — caller becomes responsible for running the orchestrator
-     *                       (used by the sync test command).
+     * @param bool $dispatch When false the Messenger message is not dispatched — caller runs the
+     *                       orchestrator itself (sync test command).
      *
-     * @throws ImmutableAudioNarrationException if the both-null / both-non-null invariant is violated
-     * @throws ValidationException              if voice resolution or provider precheck fails
-     *                                          (mapped to per-field errors → admin shows snackbar / form-field highlight)
+     * @throws ValidationException
      */
     public function execute(TtsSynthesizeRequestDto $dto, AssetLicence $licence, bool $dispatch = true): DispatchResult
     {
@@ -58,24 +52,13 @@ final readonly class DispatchNewAudioNarration
 
         $extResourceName = $dto->getExtResourceName();
         $extId = $dto->getExtId();
-        if ((null === $extResourceName) !== (null === $extId)) {
-            throw new ImmutableAudioNarrationException(
-                'extResourceName and extId must be both null or both non-null.',
-            );
-        }
-
         $extSystem = $licence->getExtSystem();
 
-        // Idempotency short-circuit runs before voice resolution — no point paying voice-DB cost
-        // when we'll return an existing assetId.
         $existing = $this->findExistingForExtTuple($extResourceName, $extId, $extSystem);
         if (null !== $existing) {
             return $existing;
         }
 
-        // Fail-fast: voice resolution + provider config check (deterministic, no HTTP). Surfaces
-        // as 422 ValidationException so admin uses the same alert/field-highlight flow as any
-        // other form validation error — instead of a raw 503 from the runtime exception handler.
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
         $this->precheckProviderOrThrowValidation($voice, $extSystem);
 
@@ -100,23 +83,23 @@ final readonly class DispatchNewAudioNarration
         try {
             return $this->voiceResolver->resolve($voiceFamilySlug, $extSystem);
         } catch (TtsProviderException) {
-            // Underlying exception is logged via the contextId chain — admin gets a translatable
-            // field error code, ops correlate via contextId.
             throw (new ValidationException())->addFormattedError('voiceFamilySlug', ValidationException::ERROR_FIELD_INVALID);
         }
     }
 
     /**
+     * Tenant-config failures (missing API key, unregistered storage) surface under `extSystem` —
+     * the broken thing is tenant config, not the caller's licence. Raw provider message is
+     * forwarded so the admin sees an actionable cause.
+     *
      * @throws ValidationException
      */
     private function precheckProviderOrThrowValidation(Voice $voice, ExtSystem $extSystem): void
     {
         try {
             $this->providerContainer->forDiscriminator($voice->getDiscriminator())->precheck($voice, $extSystem);
-        } catch (TtsProviderException) {
-            // Surfaces under assetLicence because the failing config is tenant-scoped (licence → extSystem),
-            // not a user input field — admin shows it as a top-level form error instead of next to a slug input.
-            throw (new ValidationException())->addFormattedError('assetLicence', ValidationException::ERROR_FIELD_INVALID);
+        } catch (TtsProviderException $e) {
+            throw (new ValidationException())->addFormattedError('extSystem', $e->getMessage());
         }
     }
 
@@ -137,7 +120,7 @@ final readonly class DispatchNewAudioNarration
     private function persistOrAlreadyPending(TtsNarrationRequest $request): DispatchResult
     {
         try {
-            $this->requestManager->create($request, false);
+            $this->requestManager->create(request: $request, flush: false);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException) {
             return DispatchResult::alreadyPending();
@@ -152,6 +135,7 @@ final readonly class DispatchNewAudioNarration
             ->setMode(TtsRequestMode::Initial)
             ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
             ->setTitle($dto->getTitle())
+            ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicenceId($licence->getId())
             ->setOpenInitialKey($openInitialKey)
             ->setIncludeInRecommended($dto->isIncludeInRecommendedPodcast());

@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem\ExtSystemTtsSettingsUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 
@@ -37,6 +38,11 @@ final class ExtSystemFacade
     {
         $this->validator->validate($dto);
         $this->validateDefaultVoiceFamily($extSystem, $dto);
+        $this->assertBelongsToExtSystem(
+            $extSystem,
+            $dto->getTtsDefaultAssetLicence(),
+            'ttsDefaultAssetLicence',
+        );
 
         return $this->extSystemManager->updateTtsSettings($extSystem, $dto);
     }
@@ -52,9 +58,24 @@ final class ExtSystemFacade
         }
 
         $voiceFamily = $this->voiceFamilyRepository->find($defaultVoiceFamilyId);
-        if (null === $voiceFamily || $voiceFamily->getExtSystem()->isNot($extSystem)) {
+        if (null === $voiceFamily) {
             throw (new ValidationException())
                 ->addFormattedError('defaultVoiceFamilyId', ValidationException::ERROR_FIELD_VALUE_NOT_FOUND);
+        }
+        $this->assertBelongsToExtSystem($extSystem, $voiceFamily, 'defaultVoiceFamilyId');
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function assertBelongsToExtSystem(ExtSystem $extSystem, ?ExtSystemInterface $entity, string $field): void
+    {
+        if (null === $entity) {
+            return;
+        }
+        if ($entity->getExtSystem()->isNot($extSystem)) {
+            throw (new ValidationException())
+                ->addFormattedError($field, ValidationException::ERROR_FIELD_INVALID);
         }
     }
 }

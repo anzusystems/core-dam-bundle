@@ -36,12 +36,14 @@ final readonly class RegenerateTts
             function () use ($stableAssetId, $voiceFamilySlug): TtsNarrationRequest {
                 $ttsAsset = $this->assetLocker->lockExpecting($stableAssetId, TtsLifecycle::ACTIVE_ONLY);
 
+                $assetLicence = $ttsAsset->getAsset()->getLicence();
                 $request = (new TtsNarrationRequest())
                     ->setMode(TtsRequestMode::Regenerate)
                     ->setStableAssetId($stableAssetId)
-                    ->setAssetLicenceId($ttsAsset->getAsset()->getLicence()->getId())
+                    ->setExtSystemId($assetLicence->getExtSystem()->getId())
+                    ->setAssetLicenceId($assetLicence->getId())
                     ->setVoiceFamilySlug($voiceFamilySlug);
-                $this->requestManager->create($request, false);
+                $this->requestManager->create(request: $request, flush: false);
 
                 $this->ttsAssetManager->markSuperseding($ttsAsset);
 

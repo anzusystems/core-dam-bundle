@@ -58,6 +58,7 @@ final class ExtSystemManager extends AbstractManager
             ->setRecommendedPodcastId($dto->getRecommendedPodcastId())
             ->setDefaultVoiceFamilyId($dto->getDefaultVoiceFamilyId())
             ->setActiveProviderMode($dto->getActiveProviderMode());
+        $extSystem->setTtsDefaultAssetLicence($dto->getTtsDefaultAssetLicence());
         $this->flush($flush);
 
         return $extSystem;

@@ -74,6 +74,10 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private ?string $resultAssetId;
 
+    #[ORM\Column(type: Types::INTEGER)]
+    #[Serialize]
+    private int $extSystemId;
+
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     #[Serialize]
     private ?int $assetLicenceId;
@@ -118,6 +122,7 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setOpenInitialKey(null);
         $this->setStableAssetId(null);
         $this->setResultAssetId(null);
+        $this->setExtSystemId(0);
         $this->setAssetLicenceId(null);
         $this->setVoiceFamilySlug(null);
         $this->setTitle(null);
@@ -207,6 +212,18 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setResultAssetId(?string $resultAssetId): self
     {
         $this->resultAssetId = $resultAssetId;
+
+        return $this;
+    }
+
+    public function getExtSystemId(): int
+    {
+        return $this->extSystemId;
+    }
+
+    public function setExtSystemId(int $extSystemId): self
+    {
+        $this->extSystemId = $extSystemId;
 
         return $this;
     }
