@@ -32,7 +32,7 @@ final class VoiceFixtures extends AbstractFixtures
 
     public function getEnvironments(): array
     {
-        return ['dev', 'test'];
+        return ['test'];
     }
 
     public static function getDependencies(): array

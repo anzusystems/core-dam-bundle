@@ -29,7 +29,7 @@ final class VoiceFamilyFixtures extends AbstractFixtures
 
     public function getEnvironments(): array
     {
-        return ['dev', 'test'];
+        return ['test'];
     }
 
     public static function getIndexKey(): string

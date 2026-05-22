@@ -67,6 +67,8 @@ return ECSConfig::configure()
         'SlevomatCodingStandard\Sniffs\Whitespaces\DuplicateSpacesSniff.DuplicateSpaces' => null,
         'SlevomatCodingStandard\Sniffs\Commenting\DisallowCommentAfterCodeSniff.DisallowedCommentAfterCode' => null,
         'src/Model/Enum/*.php',
+        'src/Model/Dto/Tts/Audio/CancelRequestStatus.php',
+        'src/Model/Dto/Tts/Audio/DispatchKind.php',
         'src/Prosemirror/*',
         'src/DataMigration/*',
         'src/Command/TestCommand.php',
