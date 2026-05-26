@@ -23,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsPodcastsUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsReasonRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRegenerateRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
+use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -43,6 +44,7 @@ final class TtsAssetController extends AbstractApiController
         private readonly UpdatePodcastMembership $updatePodcastMembership,
         private readonly TtsAssetRepository $ttsAssetRepo,
         private readonly TtsNarrationRequestRepository $ttsRequestRepo,
+        private readonly PodcastEpisodeRepository $episodeRepo,
     ) {
     }
 
@@ -56,6 +58,7 @@ final class TtsAssetController extends AbstractApiController
             $asset,
             $this->ttsAssetRepo->findByAsset($asset),
             $this->ttsRequestRepo->findLastIdByAsset((string) $asset->getId()),
+            $this->episodeRepo->findPodcastIdsByAsset($asset),
         ));
     }
 

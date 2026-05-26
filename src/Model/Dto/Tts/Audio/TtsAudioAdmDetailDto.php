@@ -23,13 +23,41 @@ final class TtsAudioAdmDetailDto
     #[Serialize]
     private ?string $lastRequestId = null;
 
-    public static function getInstance(Asset $asset, ?TtsAsset $tts, ?string $lastRequestId = null): self
+    /**
+     * @var string[]
+     */
+    #[Serialize]
+    private array $podcastIds = [];
+
+    /**
+     * @param string[] $podcastIds
+     */
+    public static function getInstance(Asset $asset, ?TtsAsset $tts, ?string $lastRequestId = null, array $podcastIds = []): self
     {
         return (new self())
             ->setAssetId((string) $asset->getId())
             ->setTts($tts)
             ->setLastRequestId($lastRequestId)
+            ->setPodcastIds($podcastIds)
         ;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getPodcastIds(): array
+    {
+        return $this->podcastIds;
+    }
+
+    /**
+     * @param string[] $podcastIds
+     */
+    public function setPodcastIds(array $podcastIds): self
+    {
+        $this->podcastIds = $podcastIds;
+
+        return $this;
     }
 
     public function getAssetId(): string
