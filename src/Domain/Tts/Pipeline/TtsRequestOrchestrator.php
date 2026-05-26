@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
@@ -19,11 +20,13 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -40,10 +43,12 @@ final readonly class TtsRequestOrchestrator
         private TtsAudioFactory $ttsAudioFactory,
         private PreviewMedia $previewMedia,
         private AssetSwap $assetSwap,
-        private PodcastMembership $podcastMembership,
+        private PodcastEpisodeManager $episodeManager,
+        private PodcastRepository $podcastRepo,
         private AssetFileRouteFacade $routeFacade,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private IndexManager $indexManager,
+        private DamLogger $logger,
         private EntityManagerInterface $entityManager,
     ) {
     }
@@ -120,20 +125,30 @@ final readonly class TtsRequestOrchestrator
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
     }
 
-    /**
-     * Tail of {@see self::processInitial} — (Active && !staging) holds by construction.
-     */
     private function syncPodcastMembership(TtsNarrationRequest $request, Asset $asset): void
     {
-        $autoPodcastId = $asset->getExtSystem()->getTtsSettings()->getAutoPodcastId();
-        if (null === $autoPodcastId) {
+        if ([] === $request->getPodcastIds()) {
+            $this->episodeManager->setMembership($asset, new ArrayCollection());
+
             return;
         }
 
-        $this->podcastMembership->syncAutoPodcast($asset, $autoPodcastId);
-        if ($request->isIncludeInRecommended()) {
-            $this->podcastMembership->syncRecommendedPodcastForAsset($asset, true);
+        $desired = new ArrayCollection();
+        foreach ($this->podcastRepo->findBy(['id' => $request->getPodcastIds()]) as $podcast) {
+            if ($podcast->getLicence()->is($asset->getLicence())) {
+                $desired->add($podcast);
+                continue;
+            }
+
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'podcastMembership.licenceMismatch', [
+                'podcastId' => (string) $podcast->getId(),
+                'assetId' => (string) $asset->getId(),
+                'podcastLicenceId' => (string) $podcast->getLicence()->getId(),
+                'assetLicenceId' => (string) $asset->getLicence()->getId(),
+            ]);
         }
+
+        $this->episodeManager->setMembership($asset, $desired);
     }
 
     private function syncFamilyKeyword(Asset $asset, TtsAsset $ttsAsset, VoiceFamily $family): void

@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
@@ -46,10 +47,11 @@ final readonly class DispatchNewAudioNarration
      *
      * @throws ValidationException
      */
-    public function execute(TtsSynthesizeRequestDto $dto, AssetLicence $licence, bool $dispatch = true): DispatchResult
+    public function execute(TtsSynthesizeRequestDto $dto, bool $dispatch = true): DispatchResult
     {
         App::throwOnReadOnlyMode();
 
+        $licence = $dto->resolveAssetLicence();
         $extResourceName = $dto->getExtResourceName();
         $extId = $dto->getExtId();
         $extSystem = $licence->getExtSystem();
@@ -138,7 +140,7 @@ final readonly class DispatchNewAudioNarration
             ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicenceId($licence->getId())
             ->setOpenInitialKey($openInitialKey)
-            ->setIncludeInRecommended($dto->isIncludeInRecommendedPodcast());
+            ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray());
 
         $request->getExtRef()
             ->setExtResourceName($dto->getExtResourceName())

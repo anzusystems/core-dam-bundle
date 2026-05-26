@@ -41,20 +41,16 @@ final readonly class CancelRequest
     }
 
     /**
-     * @throws ImmutableAudioNarrationException if request is missing or not cancellable
+     * @throws ImmutableAudioNarrationException if request is not cancellable
      */
-    public function execute(string $requestId, ?string $reason, ?string $userId): CancelRequestResponseDto
+    public function execute(TtsNarrationRequest $request, ?string $reason, ?string $userId): CancelRequestResponseDto
     {
         App::throwOnReadOnlyMode();
 
-        $request = $this->requestRepo->find($requestId);
-        if (null === $request) {
-            throw new ImmutableAudioNarrationException(sprintf('Request "%s" not found.', $requestId));
-        }
         if (false === $request->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
             throw new ImmutableAudioNarrationException(sprintf(
                 'Request "%s" cannot be cancelled in status "%s".',
-                $requestId,
+                (string) $request->getId(),
                 $request->getStatus()->value,
             ));
         }

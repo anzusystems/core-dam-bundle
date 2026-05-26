@@ -82,12 +82,10 @@ final class TtsNarrationRequestController extends AbstractApiController
     #[OARequest(TtsSynthesizeRequestDto::class), OAResponseValidation]
     public function synthesize(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
-        $licence = $dto->resolveAssetLicence();
-        \assert(null !== $licence, 'guaranteed non-null by DTO validation');
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $licence);
         App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto->resolveAssetLicence());
 
-        $result = $this->dispatchNew->execute($dto, $licence);
+        $result = $this->dispatchNew->execute($dto);
         $isNewRequest = DispatchKind::Pending === $result->kind;
 
         return $this->getResponse(
@@ -100,23 +98,18 @@ final class TtsNarrationRequestController extends AbstractApiController
      * @throws AppReadOnlyModeException
      * @throws ImmutableAudioNarrationException
      */
-    #[Route('/{narrationRequest}/cancel', name: 'cancel', methods: [Request::METHOD_POST])]
-    #[OAParameterPath('narrationRequest'), OARequest(TtsReasonRequestDto::class), OAResponse(CancelRequestResponseDto::class), OAResponseValidation]
-    public function cancel(TtsNarrationRequest $narrationRequest, #[SerializeParam] TtsReasonRequestDto $dto): JsonResponse
+    #[Route('/{request}/cancel', name: 'cancel', methods: [Request::METHOD_POST])]
+    #[OAParameterPath('request'), OARequest(TtsReasonRequestDto::class), OAResponse(CancelRequestResponseDto::class), OAResponseValidation]
+    public function cancel(TtsNarrationRequest $request, #[SerializeParam] TtsReasonRequestDto $dto): JsonResponse
     {
-        $licence = null !== $narrationRequest->getAssetLicenceId() ? $this->licenceRepo->find($narrationRequest->getAssetLicenceId()) : null;
-        if (null === $licence) {
-            throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $narrationRequest->getId()));
-        }
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $licence);
         App::throwOnReadOnlyMode();
 
-        $result = $this->cancelRequest->execute(
-            requestId: (string) $narrationRequest->getId(),
-            reason: $dto->getReason(),
-            userId: (string) $this->getUser()->getId(),
-        );
+        $licence = $this->licenceRepo->find($request->getAssetLicenceId())
+            ?? throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $request->getId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $licence);
 
-        return $this->okResponse($result);
+        return $this->okResponse(
+            $this->cancelRequest->execute($request, $dto->getReason(), (string) $this->getUser()->getId()),
+        );
     }
 }

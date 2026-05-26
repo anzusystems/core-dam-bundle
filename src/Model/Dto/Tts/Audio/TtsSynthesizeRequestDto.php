@@ -10,12 +10,14 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
+use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use LogicException;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 /**
  * GroupSequence ensures {@see GROUP_POST} constraints (which dereference {@see getExtSystem()})
@@ -26,6 +28,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
     message: 'fields.tts.extRef.must_be_both_null_or_both_present',
 )]
 #[Assert\GroupSequence(['TtsSynthesizeRequestDto', self::GROUP_POST])]
+#[AppAssert\TtsLicenceResolvable(groups: [self::GROUP_POST])]
 final class TtsSynthesizeRequestDto implements ExtSystemInterface
 {
     private const string GROUP_POST = 'post';
@@ -39,8 +42,12 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     #[Assert\Length(max: 120, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $voiceFamilySlug = null;
 
-    #[Serialize]
-    private bool $includeInRecommendedPodcast = false;
+    /**
+     * @var Collection<int, Podcast>
+     */
+    #[Serialize(handler: EntityIdHandler::class, type: Podcast::class)]
+    #[Assert\Valid]
+    private Collection $podcasts;
 
     #[Serialize]
     #[Assert\Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -62,19 +69,16 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     #[AppAssert\EqualExtSystem(groups: [self::GROUP_POST])]
     private ?AssetLicence $assetLicence = null;
 
-    #[Assert\Callback(groups: [self::GROUP_POST])]
-    public function validateLicenceResolved(ExecutionContextInterface $context): void
+    public function __construct()
     {
-        if (null === $this->resolveAssetLicence()) {
-            $context->buildViolation(ValidationException::ERROR_FIELD_EMPTY)
-                ->atPath('assetLicence')
-                ->addViolation();
-        }
+        $this->setPodcasts(new ArrayCollection());
     }
 
-    public function resolveAssetLicence(): ?AssetLicence
+    public function resolveAssetLicence(): AssetLicence
     {
-        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence();
+        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence() ?? throw new LogicException(
+            'AssetLicence accessed before TtsSynthesizeRequestDto validation resolved it.',
+        );
     }
 
     public function getText(): string
@@ -101,14 +105,20 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
         return $this;
     }
 
-    public function isIncludeInRecommendedPodcast(): bool
+    /**
+     * @return Collection<int, Podcast>
+     */
+    public function getPodcasts(): Collection
     {
-        return $this->includeInRecommendedPodcast;
+        return $this->podcasts;
     }
 
-    public function setIncludeInRecommendedPodcast(bool $includeInRecommendedPodcast): self
+    /**
+     * @param Collection<int, Podcast> $podcasts
+     */
+    public function setPodcasts(Collection $podcasts): self
     {
-        $this->includeInRecommendedPodcast = $includeInRecommendedPodcast;
+        $this->podcasts = $podcasts;
 
         return $this;
     }

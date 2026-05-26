@@ -8,9 +8,11 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 class PodcastEpisodeManager extends AbstractManager
 {
@@ -98,6 +100,34 @@ class PodcastEpisodeManager extends AbstractManager
         $this->flush($flush);
 
         return true;
+    }
+
+    /**
+     * @param Collection<int, Podcast> $desiredPodcasts
+     */
+    public function setMembership(Asset $asset, Collection $desiredPodcasts, bool $flush = true): void
+    {
+        // Heterogeneous diff (existing PodcastEpisode rows vs desired Podcast entities) — `colUpdate`
+        // helper assumes homogeneous Collection<T>, so index by podcastId and diff manually.
+        $currentByPodcastId = [];
+        foreach ($this->repository->findBy(['asset' => $asset]) as $episode) {
+            $currentByPodcastId[(string) $episode->getPodcast()->getId()] = $episode;
+        }
+
+        $desiredByPodcastId = [];
+        foreach ($desiredPodcasts as $podcast) {
+            $desiredByPodcastId[(string) $podcast->getId()] = $podcast;
+        }
+
+        foreach (array_diff_key($desiredByPodcastId, $currentByPodcastId) as $podcast) {
+            $this->create((new PodcastEpisode())->setPodcast($podcast)->setAsset($asset), false);
+        }
+
+        foreach (array_diff_key($currentByPodcastId, $desiredByPodcastId) as $episode) {
+            $this->delete($episode, false);
+        }
+
+        $this->flush($flush);
     }
 
     private function setPosition(PodcastEpisode $podcastEpisode): void

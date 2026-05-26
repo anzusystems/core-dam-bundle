@@ -31,6 +31,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'IDX_tts_request_status_mode', fields: ['status', 'mode'])]
 #[ORM\Index(name: 'IDX_tts_request_stable_mode_status', fields: ['stableAssetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_result_asset', fields: ['resultAssetId'])]
+#[ORM\Index(name: 'IDX_tts_request_ext_system', fields: ['extSystemId'])]
 final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
     use UuidIdentityTrait;
@@ -98,12 +99,12 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private bool $cancelRequested;
 
     /**
-     * User intent at dispatch — applied once by the orchestrator. Target podcast lives in
-     * tenant config ({@see ExtSystemTtsSettings::getRecommendedPodcastId}).
+     * Podcast IDs to attach this asset to after synthesis. Stored as JSON array of integers.
+     * CMS computes the list at dispatch time; DAM applies it generically post-synthesis.
      */
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[ORM\Column(type: Types::JSON)]
     #[Serialize]
-    private bool $includeInRecommended;
+    private array $podcastIds = [];
 
     #[Serialize]
     #[ORM\Embedded(class: TtsNarrationRequestExtRef::class)]
@@ -127,7 +128,7 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setVoiceFamilySlug(null);
         $this->setTitle(null);
         $this->setCancelRequested(false);
-        $this->setIncludeInRecommended(false);
+        $this->setPodcastIds([]);
         $this->setExtRef(new TtsNarrationRequestExtRef());
         $this->setSource(new TtsNarrationRequestSource());
     }
@@ -300,14 +301,20 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function isIncludeInRecommended(): bool
+    /**
+     * @return string[]
+     */
+    public function getPodcastIds(): array
     {
-        return $this->includeInRecommended;
+        return $this->podcastIds;
     }
 
-    public function setIncludeInRecommended(bool $includeInRecommended): self
+    /**
+     * @param string[] $podcastIds
+     */
+    public function setPodcastIds(array $podcastIds): self
     {
-        $this->includeInRecommended = $includeInRecommended;
+        $this->podcastIds = $podcastIds;
 
         return $this;
     }

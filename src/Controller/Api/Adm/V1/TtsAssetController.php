@@ -13,14 +13,14 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Command\RegenerateTts;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\ToggleRecommendedPodcast;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Command\UnpublishTtsAsset;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Command\UpdatePodcastMembership;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsPodcastsUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsReasonRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRecommendedPodcastUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRegenerateRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
@@ -40,7 +40,7 @@ final class TtsAssetController extends AbstractApiController
     public function __construct(
         private readonly RegenerateTts $regenerateTts,
         private readonly UnpublishTtsAsset $unpublishTtsAsset,
-        private readonly ToggleRecommendedPodcast $toggleRecommendedPodcast,
+        private readonly UpdatePodcastMembership $updatePodcastMembership,
         private readonly TtsAssetRepository $ttsAssetRepo,
         private readonly TtsNarrationRequestRepository $ttsRequestRepo,
     ) {
@@ -106,16 +106,16 @@ final class TtsAssetController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      */
-    #[Route('/{asset}/recommended-podcast', name: 'recommended_podcast', methods: [Request::METHOD_PATCH])]
-    #[OAParameterPath('asset'), OARequest(TtsRecommendedPodcastUpdateDto::class), OAResponseValidation]
-    public function recommendedPodcast(Request $request, Asset $asset, #[SerializeParam] TtsRecommendedPodcastUpdateDto $dto): JsonResponse
+    #[Route('/{asset}/podcasts', name: 'update_podcasts', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('asset'), OARequest(TtsPodcastsUpdateDto::class), OAResponseValidation]
+    public function updatePodcasts(Request $request, Asset $asset, #[SerializeParam] TtsPodcastsUpdateDto $dto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_TOGGLE_RECOMMENDED_PODCAST, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_UPDATE_PODCASTS, $asset);
         App::throwOnReadOnlyMode();
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
-        $newValue = $this->toggleRecommendedPodcast->execute($asset, $dto->isInclude());
+        $this->updatePodcastMembership->execute($asset, $dto->getPodcasts());
 
-        return $this->okResponse(['includeInRecommendedPodcast' => $newValue]);
+        return $this->noContentResponse();
     }
 }

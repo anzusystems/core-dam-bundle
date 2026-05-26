@@ -40,7 +40,6 @@ final class TtsSynthesizeCommand extends Command
     private const string OPT_TITLE = 'title';
     private const string OPT_EXT_RESOURCE_NAME = 'ext-resource-name';
     private const string OPT_EXT_ID = 'ext-id';
-    private const string OPT_INCLUDE_RECOMMENDED = 'include-recommended';
 
     private const string DEFAULT_EXT_SYSTEM = 'cms';
     private const string DEFAULT_ASSET_LICENCE = '100150';
@@ -107,12 +106,6 @@ final class TtsSynthesizeCommand extends Command
                 InputOption::VALUE_REQUIRED,
                 'External id for idempotency. Must be paired with --ext-resource-name.',
             )
-            ->addOption(
-                self::OPT_INCLUDE_RECOMMENDED,
-                null,
-                InputOption::VALUE_NONE,
-                'Mark the resulting asset for the recommended-podcast pool.',
-            )
         ;
     }
 
@@ -148,7 +141,7 @@ final class TtsSynthesizeCommand extends Command
             ['ext-ref' => null === $dto->getExtResourceName() ? '<none>' : sprintf('%s/%s', $dto->getExtResourceName(), $dto->getExtId())],
         );
 
-        $result = $this->dispatchNew->execute($dto, $licence, dispatch: false);
+        $result = $this->dispatchNew->execute($dto, dispatch: false);
 
         if (null === $result->requestId) {
             $io->warning(sprintf(
@@ -236,7 +229,6 @@ final class TtsSynthesizeCommand extends Command
             ->setTitle($input->getOption(self::OPT_TITLE))
             ->setExtResourceName($input->getOption(self::OPT_EXT_RESOURCE_NAME))
             ->setExtId($input->getOption(self::OPT_EXT_ID))
-            ->setIncludeInRecommendedPodcast((bool) $input->getOption(self::OPT_INCLUDE_RECOMMENDED))
             ->setAssetLicence($licence)
         ;
     }

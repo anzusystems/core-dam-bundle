@@ -8,20 +8,10 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsActiveProviderMode;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
-use Symfony\Component\Validator\Constraints as Assert;
 
 final class ExtSystemTtsSettingsUpdateDto
 {
     #[Serialize]
-    #[Assert\Uuid]
-    private ?string $autoPodcastId = null;
-
-    #[Serialize]
-    #[Assert\Uuid]
-    private ?string $recommendedPodcastId = null;
-
-    #[Serialize]
-    #[Assert\Uuid]
     private ?string $defaultVoiceFamilyId = null;
 
     #[Serialize(handler: EntityIdHandler::class)]
@@ -29,30 +19,6 @@ final class ExtSystemTtsSettingsUpdateDto
 
     #[Serialize]
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
-
-    public function getAutoPodcastId(): ?string
-    {
-        return $this->autoPodcastId;
-    }
-
-    public function setAutoPodcastId(?string $autoPodcastId): self
-    {
-        $this->autoPodcastId = $autoPodcastId;
-
-        return $this;
-    }
-
-    public function getRecommendedPodcastId(): ?string
-    {
-        return $this->recommendedPodcastId;
-    }
-
-    public function setRecommendedPodcastId(?string $recommendedPodcastId): self
-    {
-        $this->recommendedPodcastId = $recommendedPodcastId;
-
-        return $this;
-    }
 
     public function getDefaultVoiceFamilyId(): ?string
     {

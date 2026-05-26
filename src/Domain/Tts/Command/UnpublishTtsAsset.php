@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\PodcastMembership;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
@@ -19,7 +18,6 @@ final readonly class UnpublishTtsAsset
         private TtsAssetLocker $ttsAssetLocker,
         private TtsAssetManager $ttsAssetManager,
         private TtsAuditLogger $auditLogger,
-        private PodcastMembership $podcastMembership,
         private EntityManagerInterface $entityManager,
     ) {
     }
@@ -35,7 +33,6 @@ final readonly class UnpublishTtsAsset
             $ttsAsset = $this->ttsAssetLocker->requireFor($asset);
 
             $this->ttsAssetManager->markUnpublished($ttsAsset, $reason);
-            $this->podcastMembership->syncRecommendedPodcastForAsset($asset, false);
             $this->auditLogger->logUnpublished((string) $asset->getId(), $userId, $reason);
 
             $this->entityManager->flush();
