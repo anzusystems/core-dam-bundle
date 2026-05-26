@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 
@@ -30,11 +29,12 @@ final class VoiceFamilyRepository extends AbstractAnzuRepository
      */
     public function findFamiliesWithoutBindingFor(VoiceDiscriminator $discriminator): array
     {
+        $voiceClass = VoiceDiscriminator::MAP[$discriminator->value];
+
         return $this->createQueryBuilder('vf')
             ->andWhere(
-                'NOT EXISTS (SELECT 1 FROM ' . Voice::class . ' v WHERE v.voiceFamily = vf AND v INSTANCE OF :discriminator)',
+                sprintf('NOT EXISTS (SELECT 1 FROM %s v WHERE v.voiceFamily = vf)', $voiceClass),
             )
-            ->setParameter('discriminator', $discriminator->value)
             ->orderBy('vf.extSystem', 'ASC')
             ->addOrderBy('vf.slug', 'ASC')
             ->getQuery()
