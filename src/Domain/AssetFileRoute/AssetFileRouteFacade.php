@@ -122,7 +122,19 @@ final class AssetFileRouteFacade extends AbstractManager
         }
     }
 
-    private function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
+    /**
+     * Publish a pre-built {@see AssetFileRoute}: write the public-storage copy (StorageCopy mode),
+     * flush + commit, and dispatch the {@see AssetFileRouteEvent} for CDN/cache listeners.
+     *
+     * The route MUST already be attached to the EM (e.g. via {@see AssetFileRouteFactory} or the
+     * caller's own persist). Caller is also responsible for any pre-publish validation —
+     * {@see makePublicAssetFile()} / {@see makePublicFromDto()} / {@see makeImagePublic()} are the
+     * standard wrappers that handle DTO/Image-based route construction + validation.
+     *
+     * Exposed for callers that maintain their own route-build pipeline (e.g. TTS, which uses a
+     * stable slug across regenerations) and just need the publish side-effects applied uniformly.
+     */
+    public function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
     {
         $this->assetFileRouteManager->beginTransaction();
 

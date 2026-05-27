@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
@@ -24,12 +25,14 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 
 final readonly class TtsRequestOrchestrator
 {
@@ -41,6 +44,7 @@ final readonly class TtsRequestOrchestrator
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
         private TtsAudioFactory $ttsAudioFactory,
+        private AudioStatusFacade $audioStatusFacade,
         private PreviewMedia $previewMedia,
         private AssetSwap $assetSwap,
         private PodcastEpisodeManager $episodeManager,
@@ -71,6 +75,9 @@ final readonly class TtsRequestOrchestrator
             $created->asset->getAssetFileProperties()->setFromTts(true);
             $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
         });
+
+        $this->materializeMasterAudio($result, dispatchPropertyRefresh: true);
+        $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         $this->syncFamilyKeyword($result->asset, $result->ttsAsset, $family);
         $this->indexManager->index($result->asset);
@@ -109,6 +116,10 @@ final readonly class TtsRequestOrchestrator
 
         $stagingResult = $this->persistInTransaction($input);
 
+        // Staging bytes need to land in storage so AssetSwap can swap content into the stable file,
+        // but no public route is published — the staging route is cascade-deleted with the staging asset.
+        $this->materializeMasterAudio($stagingResult, dispatchPropertyRefresh: false);
+
         $this->previewMedia->generate($stagingResult->masterAudio, $stagingResult->masterTmpFile);
 
         $swapResult = $this->assetSwap->swap(
@@ -137,6 +148,7 @@ final readonly class TtsRequestOrchestrator
         foreach ($this->podcastRepo->findBy(['id' => $request->getPodcastIds()]) as $podcast) {
             if ($podcast->getLicence()->is($asset->getLicence())) {
                 $desired->add($podcast);
+
                 continue;
             }
 
@@ -171,6 +183,38 @@ final readonly class TtsRequestOrchestrator
 
         $ttsAsset->setVoiceFamilyKeywordId($newKeywordId);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Push the synthesised MP3 bytes through the standard audio pipeline:
+     * {@see AudioStatusFacade::storeAndProcess()} writes to final storage, extracts duration/codec/metadata,
+     * transitions the AudioFile to {@see AssetFileProcessStatus::Processed} (also flipping Asset → WithFile),
+     * dispatches AssetFileChangedEvent and the AssetRefreshProperties message.
+     *
+     * Duplicate detection is skipped: TTS regenerations frequently produce byte-identical MP3s for the
+     * same input, and would otherwise collapse onto a previous TTS asset.
+     *
+     * If the pipeline marks the file as Failed (status-facade swallows Throwables and transitions to
+     * Failed instead of re-throwing), surface that here so the worker handler marks the request as failed.
+     */
+    private function materializeMasterAudio(TtsAudioCreationResult $result, bool $dispatchPropertyRefresh): void
+    {
+        $audioFile = $result->masterAudio;
+        $this->audioStatusFacade->storeAndProcess(
+            assetFile: $audioFile,
+            file: $result->masterTmpFile,
+            dispatchPropertyRefresh: $dispatchPropertyRefresh,
+            skipDuplicateCheck: true,
+        );
+
+        if ($audioFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            throw new RuntimeException(sprintf(
+                'TTS master audio (%s) finished storeAndProcess in status "%s" instead of "%s".',
+                (string) $audioFile->getId(),
+                $audioFile->getAssetAttributes()->getStatus()->value,
+                AssetFileProcessStatus::Processed->value,
+            ));
+        }
     }
 
     /**

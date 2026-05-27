@@ -202,7 +202,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     /**
      * @throws SerializerException
      */
-    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true, bool $skipDuplicateCheck = false): AssetFile
     {
         $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
 
@@ -213,7 +213,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
                 // we need to lock process due to duplicity checks
                 $this->resourceLocker->lock($lockName);
-                $this->store($assetFile, $file);
+                $this->store($assetFile, $file, $skipDuplicateCheck);
             }
             if (null === $file) {
                 throw new RuntimeException(sprintf('AssetFile (%s) cant be processed without file', $assetFile->getId()));
@@ -265,9 +265,9 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws TransportExceptionInterface
      * @throws Throwable
      */
-    public function store(AssetFile $assetFile, AdapterFile $file): AdapterFile
+    public function store(AssetFile $assetFile, AdapterFile $file, bool $skipDuplicateCheck = false): AdapterFile
     {
-        $originAssetFile = $this->checkDuplicate($assetFile);
+        $originAssetFile = $skipDuplicateCheck ? null : $this->checkDuplicate($assetFile);
         if ($originAssetFile) {
             throw new DuplicateAssetFileException(
                 oldAsset: $originAssetFile,

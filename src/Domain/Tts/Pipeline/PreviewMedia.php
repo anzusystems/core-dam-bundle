@@ -6,8 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
@@ -20,6 +22,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\TmpLocalFilesystem;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
@@ -29,7 +32,8 @@ use Symfony\Component\HttpFoundation\File\File;
 
 /**
  * Generates the short-clip preview AudioFile attached to the preview slot of the master's Asset.
- * Master must be persisted with a valid file path (produced by {@see \AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory::createFromTts()}).
+ * Master must be persisted with a valid file path (produced by {@see TtsAudioFactory} + materialised
+ * via {@see AudioStatusFacade::storeAndProcess()} from {@see TtsRequestOrchestrator}).
  */
 final readonly class PreviewMedia
 {
@@ -41,9 +45,11 @@ final readonly class PreviewMedia
     public function __construct(
         private AssetSlotFactory $assetSlotFactory,
         private AssetFileRouteManager $routeManager,
+        private AssetFileRouteFacade $routeFacade,
         private AssetFileMetadataManager $metadataManager,
         private FileSystemProvider $fileSystemProvider,
         private AssetFileManager $audioFileManager,
+        private AudioStatusFacade $audioStatusFacade,
         private FfmpegService $ffmpegService,
         private Config $config,
         private EntityManagerInterface $entityManager,
@@ -51,7 +57,8 @@ final readonly class PreviewMedia
     }
 
     /**
-     * MUST run outside an open transaction — blocking ffmpeg + storage I/O. Wraps its own short tx.
+     * MUST run outside an open transaction — blocking ffmpeg + storage I/O. Wraps its own short tx
+     * for the entity create + publish phase.
      *
      * If $masterTmpFile is provided (typically by {@see TtsAudioFactory} which already mirrored the
      * master into tmp during creation), the remote-storage re-download is skipped.
@@ -74,8 +81,9 @@ final readonly class PreviewMedia
                 self::PREVIEW_DURATION_SECONDS,
             );
 
-            return $this->entityManager->wrapInTransaction(
-                function () use ($masterAudioFile, $previewFile): AudioFile {
+            /** @var array{0: AudioFile, 1: AssetFileRoute} $created */
+            $created = $this->entityManager->wrapInTransaction(
+                function () use ($masterAudioFile, $previewFile): array {
                     $preview = $this->createPreviewAudioFile($masterAudioFile, $previewFile);
 
                     $this->assetSlotFactory->createRelation(
@@ -85,12 +93,18 @@ final readonly class PreviewMedia
                         flush: false,
                     );
 
-                    $this->createRouteForPreview($preview);
+                    $route = $this->createRouteForPreview($preview);
                     $this->entityManager->flush();
 
-                    return $preview;
+                    return [$preview, $route];
                 }
             );
+
+            [$preview, $route] = $created;
+            $this->processPreview($preview, $previewFile);
+            $this->routeFacade->makePublic($preview, $route);
+
+            return $preview;
         } finally {
             $tmpFs->clearPaths();
         }
@@ -108,6 +122,11 @@ final readonly class PreviewMedia
     }
 
     /**
+     * Preview lives at a TTS-specific {@see Config::PREVIEW_STORAGE_PREFIX} path (not the date-based
+     * layout {@see \AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator}
+     * produces). The bytes are written here so the status-facade's process phase sees a `Stored` file
+     * and skips its own `store()` write.
+     *
      * @throws FilesystemException
      */
     private function createPreviewAudioFile(AudioFile $master, AdapterFile $previewFile): AudioFile
@@ -121,6 +140,7 @@ final readonly class PreviewMedia
         $preview->getAssetAttributes()
             ->setMimeType(AudioMimeTypes::MimeMpeg->value)
             ->setSize($previewFile->getSize())
+            ->setStatus(AssetFileProcessStatus::Stored)
         ;
 
         $this->audioFileManager->create($preview, false);
@@ -156,5 +176,29 @@ final readonly class PreviewMedia
         $this->routeManager->create($route, false);
 
         return $route;
+    }
+
+    /**
+     * Run the standard process phase (audio attributes via ffprobe, metadata, Stored → Processed transition,
+     * AssetFileChangedEvent dispatch, AssetRefreshProperties message). Bytes are already in storage so
+     * the facade's `store()` write is skipped.
+     */
+    private function processPreview(AudioFile $preview, AdapterFile $previewFile): void
+    {
+        $this->audioStatusFacade->storeAndProcess(
+            assetFile: $preview,
+            file: $previewFile,
+            dispatchPropertyRefresh: false,
+            skipDuplicateCheck: true,
+        );
+
+        if ($preview->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
+            throw new RuntimeException(sprintf(
+                'TTS preview audio (%s) finished storeAndProcess in status "%s" instead of "%s".',
+                (string) $preview->getId(),
+                $preview->getAssetAttributes()->getStatus()->value,
+                AssetFileProcessStatus::Processed->value,
+            ));
+        }
     }
 }
