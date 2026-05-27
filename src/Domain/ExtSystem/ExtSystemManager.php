@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem\ExtSystemTtsSettingsUpdateDto;
 use Doctrine\Common\Collections\Collection;
 
 final class ExtSystemManager extends AbstractManager
@@ -27,6 +26,12 @@ final class ExtSystemManager extends AbstractManager
         $extSystem
             ->setName($newExtSystem->getName())
             ->setSlug($newExtSystem->getSlug())
+            ->setTtsDefaultAssetLicence($newExtSystem->getTtsDefaultAssetLicence())
+            ->setTtsAdvertAsset($newExtSystem->getTtsAdvertAsset())
+        ;
+        $extSystem->getTtsSettings()
+            ->setDefaultVoiceFamilyId($newExtSystem->getTtsSettings()->getDefaultVoiceFamilyId())
+            ->setActiveProviderMode($newExtSystem->getTtsSettings()->getActiveProviderMode())
         ;
         /** @psalm-suppress InvalidArgument */
         $this->colUpdate(
@@ -45,18 +50,6 @@ final class ExtSystemManager extends AbstractManager
                 return true;
             }
         );
-        $this->flush($flush);
-
-        return $extSystem;
-    }
-
-    public function updateTtsSettings(ExtSystem $extSystem, ExtSystemTtsSettingsUpdateDto $dto, bool $flush = true): ExtSystem
-    {
-        $this->trackModification($extSystem);
-        $extSystem->getTtsSettings()
-            ->setDefaultVoiceFamilyId($dto->getDefaultVoiceFamilyId())
-            ->setActiveProviderMode($dto->getActiveProviderMode());
-        $extSystem->setTtsDefaultAssetLicence($dto->getTtsDefaultAssetLicence());
         $this->flush($flush);
 
         return $extSystem;

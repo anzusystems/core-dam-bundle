@@ -57,6 +57,7 @@ final readonly class UpdatePodcastMembership
         foreach ($podcasts as $podcast) {
             if ($podcast->getLicence()->is($asset->getLicence())) {
                 $desired->add($podcast);
+
                 continue;
             }
 

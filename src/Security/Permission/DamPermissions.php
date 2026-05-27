@@ -54,7 +54,6 @@ class DamPermissions
 
     // ExtSystem
     public const string DAM_EXT_SYSTEM_UPDATE = 'dam_extSystem_update';
-    public const string DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS = 'dam_extSystem_updateTtsSettings';
     public const string DAM_EXT_SYSTEM_READ = 'dam_extSystem_read';
     public const string DAM_EXT_SYSTEM_LIST = 'dam_extSystem_list';
     public const string DAM_EXT_SYSTEM_UI = 'dam_extSystem_ui';
@@ -219,7 +218,6 @@ class DamPermissions
         self::DAM_REGION_OF_INTEREST_READ,
         self::DAM_REGION_OF_INTEREST_DELETE,
         self::DAM_EXT_SYSTEM_UPDATE,
-        self::DAM_EXT_SYSTEM_UPDATE_TTS_SETTINGS,
         self::DAM_EXT_SYSTEM_READ,
         self::DAM_EXT_SYSTEM_LIST,
         self::DAM_EXT_SYSTEM_UI,

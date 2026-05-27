@@ -6,9 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
-use AnzuSystems\CoreDamBundle\Model\Dto\ExtSystem\ExtSystemTtsSettingsUpdateDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 
 final class ExtSystemFacade
@@ -27,6 +28,9 @@ final class ExtSystemFacade
     public function update(ExtSystem $extSystem, ExtSystem $newExtSystem): ExtSystem
     {
         $this->validator->validate($newExtSystem, $extSystem);
+        $this->validateDefaultVoiceFamily($extSystem, $newExtSystem);
+        $this->assertBelongsToExtSystem($extSystem, $newExtSystem->getTtsDefaultAssetLicence(), 'ttsDefaultAssetLicence');
+        $this->validateTtsAdvertAsset($extSystem, $newExtSystem->getTtsAdvertAsset());
 
         return $this->extSystemManager->update($extSystem, $newExtSystem);
     }
@@ -34,25 +38,9 @@ final class ExtSystemFacade
     /**
      * @throws ValidationException
      */
-    public function updateTtsSettings(ExtSystem $extSystem, ExtSystemTtsSettingsUpdateDto $dto): ExtSystem
+    private function validateDefaultVoiceFamily(ExtSystem $extSystem, ExtSystem $newExtSystem): void
     {
-        $this->validator->validate($dto);
-        $this->validateDefaultVoiceFamily($extSystem, $dto);
-        $this->assertBelongsToExtSystem(
-            $extSystem,
-            $dto->getTtsDefaultAssetLicence(),
-            'ttsDefaultAssetLicence',
-        );
-
-        return $this->extSystemManager->updateTtsSettings($extSystem, $dto);
-    }
-
-    /**
-     * @throws ValidationException
-     */
-    private function validateDefaultVoiceFamily(ExtSystem $extSystem, ExtSystemTtsSettingsUpdateDto $dto): void
-    {
-        $defaultVoiceFamilyId = $dto->getDefaultVoiceFamilyId();
+        $defaultVoiceFamilyId = $newExtSystem->getTtsSettings()->getDefaultVoiceFamilyId();
         if (null === $defaultVoiceFamilyId) {
             return;
         }
@@ -63,6 +51,23 @@ final class ExtSystemFacade
                 ->addFormattedError('defaultVoiceFamilyId', ValidationException::ERROR_FIELD_VALUE_NOT_FOUND);
         }
         $this->assertBelongsToExtSystem($extSystem, $voiceFamily, 'defaultVoiceFamilyId');
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function validateTtsAdvertAsset(ExtSystem $extSystem, ?Asset $advertAsset): void
+    {
+        if (null === $advertAsset) {
+            return;
+        }
+
+        $this->assertBelongsToExtSystem($extSystem, $advertAsset, 'ttsAdvertAsset');
+
+        if (false === $advertAsset->getAssetType()->is(AssetType::Audio)) {
+            throw (new ValidationException())
+                ->addFormattedError('ttsAdvertAsset', ValidationException::ERROR_FIELD_INVALID);
+        }
     }
 
     /**

@@ -78,6 +78,11 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     #[Serialize(handler: EntityIdHandler::class)]
     private ?AssetLicence $ttsDefaultAssetLicence = null;
 
+    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[ORM\JoinColumn(name: 'tts_advert_asset_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?Asset $ttsAdvertAsset = null;
+
     public function __construct()
     {
         $this->setName('');
@@ -189,6 +194,18 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     public function setTtsDefaultAssetLicence(?AssetLicence $ttsDefaultAssetLicence): self
     {
         $this->ttsDefaultAssetLicence = $ttsDefaultAssetLicence;
+
+        return $this;
+    }
+
+    public function getTtsAdvertAsset(): ?Asset
+    {
+        return $this->ttsAdvertAsset;
+    }
+
+    public function setTtsAdvertAsset(?Asset $ttsAdvertAsset): self
+    {
+        $this->ttsAdvertAsset = $ttsAdvertAsset;
 
         return $this;
     }
