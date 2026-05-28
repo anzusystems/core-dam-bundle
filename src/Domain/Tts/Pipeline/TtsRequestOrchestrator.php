@@ -6,7 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
@@ -15,7 +17,9 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
@@ -29,7 +33,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
@@ -56,7 +59,8 @@ final readonly class TtsRequestOrchestrator
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private IndexManager $indexManager,
         private KeywordRepository $keywordRepo,
-        private AuthorRepository $authorRepo,
+        private KeywordProvider $keywordProvider,
+        private AuthorProvider $authorProvider,
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
     ) {
@@ -209,29 +213,25 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Links caller keyword/author names matched to the ext-system, once on initial generation
-     * (unmatched skipped). The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
+     * Links caller keyword/author names to the asset on initial generation, creating any that don't yet
+     * exist in the ext-system (same provide-or-create services as the sys asset-file/from-url flow).
+     * Names are de-duplicated first. The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
      */
     private function applyInitialMetadata(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem): void
     {
         $changed = $this->ensureAutoKeyword($asset, $extSystem);
 
-        foreach ($request->getKeywords() as $name) {
-            $keyword = $this->keywordRepo->findOneByNameAndExtSystem($name, $extSystem);
-            if (null !== $keyword) {
+        foreach (array_unique($request->getKeywords()) as $name) {
+            $keyword = $this->keywordProvider->provideKeyword($name, $extSystem, false);
+            if ($keyword instanceof Keyword) {
                 $asset->addKeyword($keyword);
                 $changed = true;
             }
         }
 
-        foreach ($request->getAuthors() as $name) {
-            // (name, extSystem) is not unique on Author — attribute only on a single unambiguous match.
-            $authorIds = $this->authorRepo->findIdsByNameAndExtSystem($name, $extSystem);
-            if (1 !== count($authorIds)) {
-                continue;
-            }
-            $author = $this->authorRepo->find($authorIds[0]);
-            if (null !== $author) {
+        foreach (array_unique($request->getAuthors()) as $name) {
+            $author = $this->authorProvider->provideByTitle($name, $extSystem);
+            if ($author instanceof Author) {
                 $asset->addAuthor($author);
                 $changed = true;
             }
