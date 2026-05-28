@@ -28,4 +28,10 @@ interface ExtSystemCallbackInterface
      * @param Collection<array-key, ImageFile> $collection
      */
     public function notifyImagesChanged(Collection $collection): void;
+
+    public function notifyAudioNarrationFailed(
+        string $extResourceName,
+        string $extId,
+        string $failureReason,
+    ): void;
 }

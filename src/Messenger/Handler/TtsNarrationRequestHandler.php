@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
@@ -29,6 +30,7 @@ final readonly class TtsNarrationRequestHandler
         private TtsRequestOrchestrator $orchestrator,
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
+        private ExtSystemCallbackFacade $extSystemCallbackFacade,
     ) {
     }
 
@@ -90,10 +92,12 @@ final readonly class TtsNarrationRequestHandler
 
     private function handleRequestFailure(TtsNarrationRequest $request, Throwable $e): void
     {
+        $failureReason = $e->getMessage();
+
         try {
             $this->entityManager->wrapInTransaction(
-                function () use ($request, $e): void {
-                    $this->requestManager->markFailed($request, $e->getMessage(), false);
+                function () use ($request, $failureReason): void {
+                    $this->requestManager->markFailed($request, $failureReason, false);
                     $this->entityManager->flush();
                 }
             );
@@ -101,6 +105,33 @@ final readonly class TtsNarrationRequestHandler
             $this->logger->error(DamLogger::NAMESPACE_TTS, 'handler.markFailedFailed', [
                 'requestId' => (string) $request->getId(),
             ], exception: $failureEx);
+
+            return;
+        }
+
+        $this->dispatchFailureCallback($request, $failureReason);
+    }
+
+    private function dispatchFailureCallback(TtsNarrationRequest $request, string $failureReason): void
+    {
+        $extResourceName = $request->getExtRef()->getExtResourceName();
+        $extId = $request->getExtRef()->getExtId();
+        if (null === $extResourceName || null === $extId) {
+            return;
+        }
+
+        try {
+            $this->extSystemCallbackFacade->notifyAudioNarrationFailed(
+                extSystemId: $request->getExtSystemId(),
+                extResourceName: $extResourceName,
+                extId: $extId,
+                failureReason: $failureReason,
+            );
+        } catch (Throwable $callbackEx) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.dispatchFailureCallback.failed', [
+                'requestId' => (string) $request->getId(),
+                'error' => $callbackEx->getMessage(),
+            ]);
         }
     }
 }

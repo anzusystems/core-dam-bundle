@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
@@ -22,6 +23,7 @@ final class ExtSystemCallbackFacade
         #[AutowireLocator(ExtSystemCallbackInterface::class, indexAttribute: 'key')]
         ServiceLocator $extSystemCallbackLocator,
         private readonly DamLogger $logger,
+        private readonly ExtSystemRepository $extSystemRepository,
     ) {
         $this->extSystemCallbackLocator = $extSystemCallbackLocator;
     }
@@ -100,6 +102,26 @@ final class ExtSystemCallbackFacade
         }
 
         return $processed;
+    }
+
+    public function notifyAudioNarrationFailed(
+        int $extSystemId,
+        string $extResourceName,
+        string $extId,
+        string $failureReason,
+    ): void {
+        $extSystem = $this->extSystemRepository->find($extSystemId);
+        if (null === $extSystem) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyAudioNarrationFailed.extSystemNotFound', [
+                'extSystemId' => $extSystemId,
+                'extResourceName' => $extResourceName,
+                'extId' => $extId,
+            ]);
+
+            return;
+        }
+
+        $this->getCallback($extSystem->getSlug())?->notifyAudioNarrationFailed($extResourceName, $extId, $failureReason);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

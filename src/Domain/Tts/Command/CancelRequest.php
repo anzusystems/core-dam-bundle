@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
@@ -12,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestStatus;
@@ -21,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
+use Throwable;
 
 /**
  * Two-phase regen cancel: phase 1 flips superseding→cancelling on TtsAsset + signals the in-flight
@@ -37,6 +40,8 @@ final readonly class CancelRequest
         private TtsAssetManager $ttsAssetManager,
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
+        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private DamLogger $logger,
     ) {
     }
 
@@ -63,7 +68,10 @@ final readonly class CancelRequest
 
     private function cancelInitial(TtsNarrationRequest $request, ?string $reason, ?string $userId): CancelRequestResponseDto
     {
-        $this->entityManager->wrapInTransaction(function () use ($request, $reason, $userId): void {
+        /** @var array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData */
+        $callbackData = null;
+
+        $this->entityManager->wrapInTransaction(function () use ($request, $reason, $userId, &$callbackData): void {
             // Re-lock for status consistency under concurrency.
             $locked = $this->requestRepo->find((string) $request->getId(), LockMode::PESSIMISTIC_WRITE);
             if (null === $locked || false === $locked->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
@@ -73,8 +81,22 @@ final readonly class CancelRequest
             $this->requestManager->markCancelled($locked, $reason);
             $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId, $reason);
 
+            $extResourceName = $locked->getExtRef()->getExtResourceName();
+            $extId = $locked->getExtRef()->getExtId();
+            if (null !== $extResourceName && null !== $extId) {
+                $callbackData = [
+                    'extSystemId' => $locked->getExtSystemId(),
+                    'extResourceName' => $extResourceName,
+                    'extId' => $extId,
+                ];
+            }
+
             $this->entityManager->flush();
         });
+
+        if (null !== $callbackData) {
+            $this->dispatchCancelledCallback($callbackData, $reason ?? App::EMPTY_STRING);
+        }
 
         return CancelRequestResponseDto::getInstance(CancelRequestStatus::Cancelled, false);
     }
@@ -83,7 +105,20 @@ final readonly class CancelRequest
     {
         $this->entityManager->wrapInTransaction(fn () => $this->requestStop($stableAssetId));
 
-        return $this->entityManager->wrapInTransaction(fn () => $this->finalizeRegen($stableAssetId, $reason, $userId));
+        /** @var array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData */
+        $callbackData = null;
+        /** @var CancelRequestResponseDto $result */
+        $result = $this->entityManager->wrapInTransaction(
+            function () use ($stableAssetId, $reason, $userId, &$callbackData): CancelRequestResponseDto {
+                return $this->finalizeRegen($stableAssetId, $reason, $userId, $callbackData);
+            }
+        );
+
+        if (null !== $callbackData) {
+            $this->dispatchCancelledCallback($callbackData, $reason);
+        }
+
+        return $result;
     }
 
     private function requestStop(string $stableAssetId): void
@@ -100,19 +135,33 @@ final readonly class CancelRequest
         $this->entityManager->flush();
     }
 
-    private function finalizeRegen(string $stableAssetId, string $reason, ?string $userId): CancelRequestResponseDto
-    {
+    /**
+     * @param array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData passed by reference — populated if a callback should fire post-commit
+     */
+    private function finalizeRegen(
+        string $stableAssetId,
+        string $reason,
+        ?string $userId,
+        ?array &$callbackData,
+    ): CancelRequestResponseDto {
         $ttsAsset = $this->assetLocker->lock($stableAssetId);
 
         return match ($ttsAsset->getStatus()) {
-            TtsAudioStatus::Cancelling => $this->finalizeWonRace($ttsAsset, $reason, $userId),
+            TtsAudioStatus::Cancelling => $this->finalizeWonRace($ttsAsset, $reason, $userId, $callbackData),
             TtsAudioStatus::Active => CancelRequestResponseDto::getInstance(CancelRequestStatus::SwapCompleted, true),
             default => CancelRequestResponseDto::getInstance(CancelRequestStatus::AlreadyFailed, false),
         };
     }
 
-    private function finalizeWonRace(TtsAsset $ttsAsset, string $reason, ?string $userId): CancelRequestResponseDto
-    {
+    /**
+     * @param array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData passed by reference — populated if active regen had extRef
+     */
+    private function finalizeWonRace(
+        TtsAsset $ttsAsset,
+        string $reason,
+        ?string $userId,
+        ?array &$callbackData,
+    ): CancelRequestResponseDto {
         $assetId = (string) $ttsAsset->getAsset()->getId();
         $activeRegen = $this->requestRepo->findActiveRegenForStable($assetId);
 
@@ -120,6 +169,16 @@ final readonly class CancelRequest
 
         if (null !== $activeRegen) {
             $this->requestManager->markCancelled($activeRegen, $reason);
+
+            $extResourceName = $activeRegen->getExtRef()->getExtResourceName();
+            $extId = $activeRegen->getExtRef()->getExtId();
+            if (null !== $extResourceName && null !== $extId) {
+                $callbackData = [
+                    'extSystemId' => $activeRegen->getExtSystemId(),
+                    'extResourceName' => $extResourceName,
+                    'extId' => $extId,
+                ];
+            }
         }
 
         $this->auditLogger->logCancelled($assetId, (string) $activeRegen?->getId(), $userId, $reason);
@@ -127,5 +186,25 @@ final readonly class CancelRequest
         $this->entityManager->flush();
 
         return CancelRequestResponseDto::getInstance(CancelRequestStatus::Cancelled, false);
+    }
+
+    /**
+     * @param array{extSystemId: int, extResourceName: string, extId: string} $callbackData
+     */
+    private function dispatchCancelledCallback(array $callbackData, string $reason): void
+    {
+        try {
+            $this->extSystemCallbackFacade->notifyAudioNarrationFailed(
+                extSystemId: $callbackData['extSystemId'],
+                extResourceName: $callbackData['extResourceName'],
+                extId: $callbackData['extId'],
+                failureReason: sprintf('Cancelled by admin: %s', $reason),
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'cancelRequest.dispatchCancelledCallback.failed', [
+                'extSystemId' => $callbackData['extSystemId'],
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
