@@ -61,6 +61,26 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $title = null;
 
+    #[Serialize]
+    #[Assert\Length(max: 5_000, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private ?string $description = null;
+
+    /**
+     * @var string[]
+     */
+    #[Serialize]
+    #[Assert\Count(max: 100, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\All([new Assert\Length(max: 255)])]
+    private array $keywords = [];
+
+    /**
+     * @var string[]
+     */
+    #[Serialize]
+    #[Assert\Count(max: 100, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\All([new Assert\Length(max: 255)])]
+    private array $authors = [];
+
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
     private ?ExtSystem $extSystem = null;
@@ -155,6 +175,54 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getKeywords(): array
+    {
+        return $this->keywords;
+    }
+
+    /**
+     * @param string[] $keywords
+     */
+    public function setKeywords(array $keywords): self
+    {
+        $this->keywords = $keywords;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getAuthors(): array
+    {
+        return $this->authors;
+    }
+
+    /**
+     * @param string[] $authors
+     */
+    public function setAuthors(array $authors): self
+    {
+        $this->authors = $authors;
 
         return $this;
     }

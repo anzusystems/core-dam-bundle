@@ -476,6 +476,7 @@ class Configuration implements ConfigurationInterface
             ;
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::TTS_METADATA_MAP_KEY));
         }
 
         if ($type->is(AssetType::Document)) {

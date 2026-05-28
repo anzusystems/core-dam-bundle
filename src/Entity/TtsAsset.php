@@ -90,12 +90,14 @@ final class TtsAsset implements TimeTrackingInterface
     private bool $staging = false;
 
     /**
-     * GUID snapshot (not FK — Keyword can be deleted between regens). Used by
-     * {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::syncFamilyKeyword} for diff.
+     * GUID snapshot of the family keywords applied at generation (no FK — keywords may be deleted);
+     * lets {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::syncFamilyKeywords} reconcile on regen.
+     *
+     * @var string[]
      */
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[ORM\Column(type: Types::JSON)]
     #[Serialize]
-    private ?string $voiceFamilyKeywordId = null;
+    private array $voiceFamilyKeywordIds = [];
 
     /**
      * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
@@ -239,14 +241,20 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getVoiceFamilyKeywordId(): ?string
+    /**
+     * @return string[]
+     */
+    public function getVoiceFamilyKeywordIds(): array
     {
-        return $this->voiceFamilyKeywordId;
+        return $this->voiceFamilyKeywordIds;
     }
 
-    public function setVoiceFamilyKeywordId(?string $voiceFamilyKeywordId): self
+    /**
+     * @param string[] $voiceFamilyKeywordIds
+     */
+    public function setVoiceFamilyKeywordIds(array $voiceFamilyKeywordIds): self
     {
-        $this->voiceFamilyKeywordId = $voiceFamilyKeywordId;
+        $this->voiceFamilyKeywordIds = $voiceFamilyKeywordIds;
 
         return $this;
     }

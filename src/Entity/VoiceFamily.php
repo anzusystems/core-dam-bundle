@@ -73,6 +73,17 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[AppAssert\EqualExtSystem]
     private ?Keyword $keyword;
 
+    /**
+     * Keywords auto-applied to every TTS asset narrated with this family.
+     *
+     * @var Collection<int, Keyword>
+     */
+    #[ORM\ManyToMany(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\JoinTable(name: 'voice_family_keyword')]
+    #[Serialize(handler: EntityIdHandler::class, type: Keyword::class)]
+    #[Assert\All([new AppAssert\EqualExtSystem()])]
+    private Collection $keywords;
+
     #[ORM\OneToMany(targetEntity: Voice::class, mappedBy: 'voiceFamily', fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\OrderBy(['externalVoiceId' => 'ASC'])]
     private Collection $voices;
@@ -85,6 +96,7 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         $this->setPreferredProvider(null);
         $this->setActive(true);
         $this->setKeyword(null);
+        $this->setKeywords(new ArrayCollection());
         $this->setVoices(new ArrayCollection());
         $this->setCreatedAt(App::getAppDate());
         $this->setModifiedAt(App::getAppDate());
@@ -170,6 +182,40 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     public function setKeyword(?Keyword $keyword): self
     {
         $this->keyword = $keyword;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Keyword>
+     */
+    public function getKeywords(): Collection
+    {
+        return $this->keywords;
+    }
+
+    /**
+     * @param Collection<int, Keyword> $keywords
+     */
+    public function setKeywords(Collection $keywords): self
+    {
+        $this->keywords = $keywords;
+
+        return $this;
+    }
+
+    public function addKeyword(Keyword $keyword): self
+    {
+        if (false === $this->keywords->contains($keyword)) {
+            $this->keywords->add($keyword);
+        }
+
+        return $this;
+    }
+
+    public function removeKeyword(Keyword $keyword): self
+    {
+        $this->keywords->removeElement($keyword);
 
         return $this;
     }

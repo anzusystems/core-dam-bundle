@@ -20,6 +20,13 @@ final class ExtSystemTtsSettings
     #[Serialize]
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
 
+    /**
+     * Keyword auto-applied to every TTS asset of this ext-system (e.g. "podcast syntetické audio"). GUID, no FK.
+     */
+    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[Serialize]
+    private ?string $autoKeywordId = null;
+
     public function getDefaultVoiceFamilyId(): ?string
     {
         return $this->defaultVoiceFamilyId;
@@ -40,6 +47,18 @@ final class ExtSystemTtsSettings
     public function setActiveProviderMode(TtsActiveProviderMode $activeProviderMode): self
     {
         $this->activeProviderMode = $activeProviderMode;
+
+        return $this;
+    }
+
+    public function getAutoKeywordId(): ?string
+    {
+        return $this->autoKeywordId;
+    }
+
+    public function setAutoKeywordId(?string $autoKeywordId): self
+    {
+        $this->autoKeywordId = $autoKeywordId;
 
         return $this;
     }

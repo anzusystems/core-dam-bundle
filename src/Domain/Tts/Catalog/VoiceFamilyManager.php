@@ -10,54 +10,53 @@ use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\DependencyExistsException;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 
-/**
- * @implements TtsCrudManagerInterface<VoiceFamily>
- */
-final class VoiceFamilyManager extends AbstractManager implements TtsCrudManagerInterface
+final class VoiceFamilyManager extends AbstractManager
 {
     public function __construct(
         private readonly TtsAssetRepository $ttsAssetRepository,
     ) {
     }
 
-    /**
-     * @param VoiceFamily $entity
-     */
-    public function create(object $entity, bool $flush = true): VoiceFamily
+    public function create(VoiceFamily $voiceFamily, bool $flush = true): VoiceFamily
     {
-        $this->trackCreation($entity);
-        $this->entityManager->persist($entity);
+        $this->trackCreation($voiceFamily);
+        $this->entityManager->persist($voiceFamily);
         $this->flush($flush);
 
-        return $entity;
+        return $voiceFamily;
     }
 
     /**
-     * @param VoiceFamily $entity
+     * Slug + extSystem are immutable and intentionally not copied.
      */
-    public function update(object $entity, bool $flush = true): VoiceFamily
+    public function update(VoiceFamily $voiceFamily, VoiceFamily $newVoiceFamily, bool $flush = true): VoiceFamily
     {
-        $this->trackModification($entity);
+        $this->trackModification($voiceFamily);
+        $voiceFamily
+            ->setDisplayName($newVoiceFamily->getDisplayName())
+            ->setLanguage($newVoiceFamily->getLanguage())
+            ->setPreferredProvider($newVoiceFamily->getPreferredProvider())
+            ->setActive($newVoiceFamily->isActive())
+            ->setKeyword($newVoiceFamily->getKeyword())
+        ;
+        $this->colUpdate($voiceFamily->getKeywords(), $newVoiceFamily->getKeywords());
         $this->flush($flush);
 
-        return $entity;
+        return $voiceFamily;
     }
 
     /**
-     * Pre-checks TtsAsset references — surfaces a translatable validation error to the admin
-     * instead of a raw FK violation. Voice rows CASCADE-delete with the family — not user-visible.
-     *
-     * @param VoiceFamily $entity
+     * Surfaces a translatable error instead of a raw FK violation when TtsAssets still reference the family.
      *
      * @throws DependencyExistsException
      */
-    public function delete(object $entity, bool $flush = true): bool
+    public function delete(VoiceFamily $voiceFamily, bool $flush = true): bool
     {
-        if ($this->ttsAssetRepository->existsByVoiceFamily($entity)) {
+        if ($this->ttsAssetRepository->existsByVoiceFamily($voiceFamily)) {
             throw (new DependencyExistsException())->addDependency(TtsAsset::class);
         }
 
-        $this->entityManager->remove($entity);
+        $this->entityManager->remove($voiceFamily);
         $this->flush($flush);
 
         return true;

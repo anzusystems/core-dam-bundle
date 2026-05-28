@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
@@ -28,6 +29,8 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -52,6 +55,8 @@ final readonly class TtsRequestOrchestrator
         private AssetFileRouteFacade $routeFacade,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private IndexManager $indexManager,
+        private KeywordRepository $keywordRepo,
+        private AuthorRepository $authorRepo,
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
     ) {
@@ -79,7 +84,8 @@ final readonly class TtsRequestOrchestrator
         $this->materializeMasterAudio($result, dispatchPropertyRefresh: true);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
-        $this->syncFamilyKeyword($result->asset, $result->ttsAsset, $family);
+        $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
+        $this->applyInitialMetadata($result->asset, $request, $extSystem);
         $this->indexManager->index($result->asset);
         $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
         $this->syncPodcastMembership($request, $result->asset);
@@ -128,7 +134,10 @@ final readonly class TtsRequestOrchestrator
             (string) $request->getId(),
         );
 
-        $this->syncFamilyKeyword($stableAsset, $stableTts, $family);
+        $this->syncFamilyKeywords($stableAsset, $stableTts, $family);
+        if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
+            $this->entityManager->flush();
+        }
         $this->indexManager->index($stableAsset);
         $this->requestManager->markDone($request, (string) $stableAsset->getId());
 
@@ -163,26 +172,97 @@ final readonly class TtsRequestOrchestrator
         $this->episodeManager->setMembership($asset, $desired);
     }
 
-    private function syncFamilyKeyword(Asset $asset, TtsAsset $ttsAsset, VoiceFamily $family): void
+    /**
+     * Reconciles the family keyword set onto the asset without touching keywords from other sources.
+     * Runs on initial + regen — the family can change between regens.
+     */
+    private function syncFamilyKeywords(Asset $asset, TtsAsset $ttsAsset, VoiceFamily $family): void
     {
-        $oldKeywordId = $ttsAsset->getVoiceFamilyKeywordId();
-        $newKeyword = $family->getKeyword();
-        $newKeywordId = null === $newKeyword ? null : (string) $newKeyword->getId();
+        $newKeywords = [];
+        foreach ($family->getKeywords() as $keyword) {
+            $newKeywords[(string) $keyword->getId()] = $keyword;
+        }
+        // Legacy single keyword unioned with the M:N set for back-compat.
+        $legacyKeyword = $family->getKeyword();
+        if (null !== $legacyKeyword) {
+            $newKeywords[(string) $legacyKeyword->getId()] = $legacyKeyword;
+        }
 
-        if ($oldKeywordId === $newKeywordId) {
+        $oldIds = $ttsAsset->getVoiceFamilyKeywordIds();
+        $newIds = array_keys($newKeywords);
+
+        $toRemove = array_diff($oldIds, $newIds);
+        $toAdd = array_diff($newIds, $oldIds);
+        if ([] === $toRemove && [] === $toAdd) {
             return;
         }
 
-        if (null !== $oldKeywordId) {
-            $asset->removeKeywordById($oldKeywordId);
+        foreach ($toRemove as $removedId) {
+            $asset->removeKeywordById($removedId);
+        }
+        foreach ($toAdd as $addedId) {
+            $asset->addKeyword($newKeywords[$addedId]);
         }
 
-        if (null !== $newKeyword) {
-            $asset->addKeyword($newKeyword);
-        }
-
-        $ttsAsset->setVoiceFamilyKeywordId($newKeywordId);
+        $ttsAsset->setVoiceFamilyKeywordIds($newIds);
         $this->entityManager->flush();
+    }
+
+    /**
+     * Links caller keyword/author names matched to the ext-system, once on initial generation
+     * (unmatched skipped). The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
+     */
+    private function applyInitialMetadata(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem): void
+    {
+        $changed = $this->ensureAutoKeyword($asset, $extSystem);
+
+        foreach ($request->getKeywords() as $name) {
+            $keyword = $this->keywordRepo->findOneByNameAndExtSystem($name, $extSystem);
+            if (null !== $keyword) {
+                $asset->addKeyword($keyword);
+                $changed = true;
+            }
+        }
+
+        foreach ($request->getAuthors() as $name) {
+            // (name, extSystem) is not unique on Author — attribute only on a single unambiguous match.
+            $authorIds = $this->authorRepo->findIdsByNameAndExtSystem($name, $extSystem);
+            if (1 !== count($authorIds)) {
+                continue;
+            }
+            $author = $this->authorRepo->find($authorIds[0]);
+            if (null !== $author) {
+                $asset->addAuthor($author);
+                $changed = true;
+            }
+        }
+
+        if ($changed) {
+            $this->entityManager->flush();
+        }
+    }
+
+    /**
+     * Attaches the ext-system auto-keyword (in-memory; caller flushes). Re-run on regen because the
+     * family reconcile can drop a keyword that equals it. Idempotent.
+     *
+     * @return bool whether it was (re-)added
+     */
+    private function ensureAutoKeyword(Asset $asset, ExtSystem $extSystem): bool
+    {
+        $autoKeywordId = $extSystem->getTtsSettings()->getAutoKeywordId();
+        if (null === $autoKeywordId || $asset->getKeywords()->containsKey($autoKeywordId)) {
+            return false;
+        }
+
+        $autoKeyword = $this->keywordRepo->find($autoKeywordId);
+        if (null === $autoKeyword) {
+            return false;
+        }
+
+        $asset->addKeyword($autoKeyword);
+
+        return true;
     }
 
     /**

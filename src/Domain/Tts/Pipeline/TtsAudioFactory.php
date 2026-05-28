@@ -7,9 +7,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -52,6 +54,8 @@ final readonly class TtsAudioFactory
         private AssetFileRouteManager $routeManager,
         private Config $config,
         private TtsAssetManager $ttsAssetManager,
+        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private AssetTextsWriter $assetTextsWriter,
     ) {
     }
 
@@ -96,9 +100,24 @@ final readonly class TtsAudioFactory
             slotName: $this->config->getMasterSlotName(),
         );
         $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
+        $this->writeCustomMetadata($asset, $input);
         $this->assetManager->updateExisting($asset, false, false);
 
         return $asset;
+    }
+
+    /**
+     * Writes caller title/description into the asset custom-data via the ext-system `tts_metadata_map`.
+     * The map's source is the {@see TtsAudioCreationInput} (scalar `title`/`description`), not the asset,
+     * so map source paths are those props. No-op when unconfigured.
+     */
+    private function writeCustomMetadata(Asset $asset, TtsAudioCreationInput $input): void
+    {
+        $audioConfig = $this->extSystemConfigurationProvider->getAudioExtSystemConfiguration(
+            $input->licence->getExtSystem()->getSlug()
+        );
+
+        $this->assetTextsWriter->writeValues($input, $asset, $audioConfig->getTtsMetadataMap());
     }
 
     /**

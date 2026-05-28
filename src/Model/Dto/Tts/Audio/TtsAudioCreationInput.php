@@ -27,6 +27,7 @@ final readonly class TtsAudioCreationInput
         public ?string $extResourceName = null,
         public ?string $extId = null,
         public ?string $title = null,
+        public ?string $description = null,
         public bool $staging = false,
     ) {
         if ((null === $extResourceName) !== (null === $extId)) {
@@ -61,6 +62,7 @@ final readonly class TtsAudioCreationInput
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
             title: $request->getTitle(),
+            description: $request->getDescription(),
         );
     }
 

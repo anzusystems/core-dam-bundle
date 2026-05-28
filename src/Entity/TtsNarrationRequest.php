@@ -92,6 +92,27 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private ?string $title;
 
     /**
+     * Asset description (e.g. article perex); applied once on initial generation.
+     */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Serialize]
+    private ?string $description;
+
+    /**
+     * @var string[] caller keyword names, matched + linked on initial generation
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Serialize]
+    private array $keywords = [];
+
+    /**
+     * @var string[] caller author display names, best-effort matched on initial generation
+     */
+    #[ORM\Column(type: Types::JSON)]
+    #[Serialize]
+    private array $authors = [];
+
+    /**
      * Cooperative cancel flag — orchestrator checks it before destructive swap.
      */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
@@ -127,6 +148,9 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setAssetLicenceId(null);
         $this->setVoiceFamilySlug(null);
         $this->setTitle(null);
+        $this->setDescription(null);
+        $this->setKeywords([]);
+        $this->setAuthors([]);
         $this->setCancelRequested(false);
         $this->setPodcastIds([]);
         $this->setExtRef(new TtsNarrationRequestExtRef());
@@ -261,6 +285,54 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setTitle(?string $title): self
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(?string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getKeywords(): array
+    {
+        return $this->keywords;
+    }
+
+    /**
+     * @param string[] $keywords
+     */
+    public function setKeywords(array $keywords): self
+    {
+        $this->keywords = $keywords;
+
+        return $this;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getAuthors(): array
+    {
+        return $this->authors;
+    }
+
+    /**
+     * @param string[] $authors
+     */
+    public function setAuthors(array $authors): self
+    {
+        $this->authors = $authors;
 
         return $this;
     }

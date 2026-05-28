@@ -28,22 +28,6 @@ abstract class AbstractVoiceManager extends AbstractManager
         return $existing;
     }
 
-    /**
-     * Copies all shared + per-kind fields and tracks modification — does NOT flush.
-     * Called by the dispatcher ({@see VoiceManager::applyIncoming}) so VoiceFacade can validate
-     * before the flush.
-     */
-    public function applyUpdate(Voice $existing, Voice $incoming): void
-    {
-        $this->trackModification($existing);
-        $existing
-            ->setExternalVoiceId($incoming->getExternalVoiceId())
-            ->setMain($incoming->isMain())
-            ->setActive($incoming->isActive())
-        ;
-        $this->setSpecifics($existing, $incoming);
-    }
-
     public function delete(Voice $voice, bool $flush = true): bool
     {
         $this->entityManager->remove($voice);
@@ -53,4 +37,18 @@ abstract class AbstractVoiceManager extends AbstractManager
     }
 
     abstract protected function setSpecifics(Voice $existing, Voice $incoming): void;
+
+    /**
+     * Copies shared + per-kind fields and tracks modification — does not flush.
+     */
+    private function applyUpdate(Voice $existing, Voice $incoming): void
+    {
+        $this->trackModification($existing);
+        $existing
+            ->setExternalVoiceId($incoming->getExternalVoiceId())
+            ->setMain($incoming->isMain())
+            ->setActive($incoming->isActive())
+        ;
+        $this->setSpecifics($existing, $incoming);
+    }
 }

@@ -4,42 +4,48 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Catalog;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
+use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * @use TtsCrudFacadeTrait<VoiceFamily>
- */
 final class VoiceFamilyFacade
 {
-    /** @use TtsCrudFacadeTrait<VoiceFamily> */
-    use TtsCrudFacadeTrait;
+    use ValidatorAwareTrait;
 
     public function __construct(
         private readonly VoiceFamilyManager $voiceFamilyManager,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
     /**
-     * @return TtsCrudManagerInterface<VoiceFamily>
+     * @throws ValidationException
      */
-    protected function manager(): TtsCrudManagerInterface
+    public function create(VoiceFamily $voiceFamily): VoiceFamily
     {
-        return $this->voiceFamilyManager;
+        $this->validator->validate($voiceFamily);
+        $this->voiceFamilyManager->create($voiceFamily);
+
+        return $voiceFamily;
     }
 
     /**
-     * Slug + extSystem are intentionally excluded — VoiceFamily slugs are forever-stable identifiers.
+     * Validates the existing entity post-copy — it carries the immutable slug/extSystem the payload omits.
+     *
+     * @throws ValidationException
      */
-    protected function applyUpdate(object $existing, object $incoming): void
+    public function update(VoiceFamily $voiceFamily, VoiceFamily $newVoiceFamily): VoiceFamily
     {
-        /** @var VoiceFamily $existing */
-        /** @var VoiceFamily $incoming */
-        $existing
-            ->setDisplayName($incoming->getDisplayName())
-            ->setLanguage($incoming->getLanguage())
-            ->setPreferredProvider($incoming->getPreferredProvider())
-            ->setActive($incoming->isActive())
-            ->setKeyword($incoming->getKeyword())
-        ;
+        $this->voiceFamilyManager->update($voiceFamily, $newVoiceFamily, flush: false);
+        $this->validator->validate($voiceFamily);
+        $this->entityManager->flush();
+
+        return $voiceFamily;
+    }
+
+    public function delete(VoiceFamily $voiceFamily): bool
+    {
+        return $this->voiceFamilyManager->delete($voiceFamily);
     }
 }
