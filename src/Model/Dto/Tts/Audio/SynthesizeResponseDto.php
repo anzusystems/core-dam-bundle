@@ -15,6 +15,9 @@ final class SynthesizeResponseDto
     private ?string $existingAssetId = null;
 
     #[Serialize]
+    private ?string $assetId = null;
+
+    #[Serialize]
     private DispatchKind $status = DispatchKind::Pending;
 
     public static function fromResult(DispatchResult $result): self
@@ -22,6 +25,7 @@ final class SynthesizeResponseDto
         return (new self())
             ->setRequestId($result->requestId)
             ->setExistingAssetId($result->existingAssetId)
+            ->setAssetId($result->getAssetId())
             ->setStatus($result->kind);
     }
 
@@ -52,6 +56,18 @@ final class SynthesizeResponseDto
     public function setExistingAssetId(?string $existingAssetId): self
     {
         $this->existingAssetId = $existingAssetId;
+
+        return $this;
+    }
+
+    public function getAssetId(): ?string
+    {
+        return $this->assetId;
+    }
+
+    public function setAssetId(?string $assetId): self
+    {
+        $this->assetId = $assetId;
 
         return $this;
     }

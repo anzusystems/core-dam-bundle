@@ -29,6 +29,7 @@ final readonly class TtsAudioCreationInput
         public ?string $title = null,
         public ?string $description = null,
         public bool $staging = false,
+        public ?string $stableAssetId = null,
     ) {
         if ((null === $extResourceName) !== (null === $extId)) {
             throw new InvalidArgumentException(
@@ -63,6 +64,7 @@ final readonly class TtsAudioCreationInput
             extId: $extRef->getExtId(),
             title: $request->getTitle(),
             description: $request->getDescription(),
+            stableAssetId: $request->getStableAssetId(),
         );
     }
 

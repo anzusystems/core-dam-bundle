@@ -98,6 +98,7 @@ final readonly class TtsAudioFactory
             assetFile: $audioFile,
             assetLicence: $input->licence,
             slotName: $this->config->getMasterSlotName(),
+            id: $input->stableAssetId,
         );
         $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
         $this->writeCustomMetadata($asset, $input);

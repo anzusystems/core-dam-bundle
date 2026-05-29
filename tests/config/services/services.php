@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\AnzuSystemsCommonBundle;
 use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFilePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
@@ -20,18 +19,19 @@ use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config as TtsConfig;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceGroupFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\CustomFormElementFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwCdnClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
@@ -47,6 +47,17 @@ return static function (ContainerConfigurator $configurator): void {
     $configurator
         ->parameters()
         ->set('app_cache_proxy_enabled', true);
+
+    // Tts\Config scalar args are bound by the consuming app in prod (config/services/tts.php);
+    // wire literal test values here so the bundle test kernel can compile. Slot names must exist
+    // in the test audio file_slots (free/paid/bonus).
+    $services->set(TtsConfig::class)
+        ->args([
+            'sme_default_male',
+            4_800,
+            'paid',
+            'free',
+        ]);
 
     $services->set(SystemUserFixtures::class)
         ->arg('$userManager', service(UserManager::class))

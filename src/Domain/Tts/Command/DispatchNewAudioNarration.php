@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * Idempotent on (extResourceName, extId, extSystem) — short-circuits on existing active asset or
@@ -125,14 +126,19 @@ final readonly class DispatchNewAudioNarration
             $this->requestManager->create(request: $request, flush: false);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException) {
+            // A concurrent Initial dispatch already reserved this (extResourceName, extId, extSystem)
+            // and attaches the media on its own Pending result — this duplicate is a no-op.
+            // Do NOT query via the EntityManager here: it is closed after a flush exception.
             return DispatchResult::alreadyPending();
         }
 
-        return DispatchResult::pending((string) $request->getId());
+        return DispatchResult::pending((string) $request->getId(), (string) $request->getStableAssetId());
     }
 
     private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): TtsNarrationRequest
     {
+        $reserved = Uuid::v7()->toRfc4122();
+
         $request = (new TtsNarrationRequest())
             ->setMode(TtsRequestMode::Initial)
             ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
@@ -143,6 +149,7 @@ final readonly class DispatchNewAudioNarration
             ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicenceId($licence->getId())
             ->setOpenInitialKey($openInitialKey)
+            ->setStableAssetId($reserved)
             ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray());
 
         $request->getExtRef()
