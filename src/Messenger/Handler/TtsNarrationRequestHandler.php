@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
@@ -41,6 +42,7 @@ final readonly class TtsNarrationRequestHandler
         private TtsAssetManager $ttsAssetManager,
         private AssetManager $assetManager,
         private AssetRepository $assetRepo,
+        private TtsAudioFileRemover $audioFileRemover,
     ) {
     }
 
@@ -131,21 +133,22 @@ final readonly class TtsNarrationRequestHandler
             return;
         }
 
-        // Initial failed: drop the reserved (still-empty) shell asset so it doesn't linger. A partially-built
-        // shell (audio already attached before a later failure) is left to the unprocessed-asset GC.
+        // Initial failed: drop the whole partial aggregate (reserved shell + any attached audio + its TtsAsset)
+        // so it doesn't linger AND doesn't shadow future dispatch idempotency (a left-over Active TtsAsset would
+        // make findActiveByExt return a broken asset forever).
         if ($request->getMode()->is(TtsRequestMode::Initial)) {
-            $this->deleteInitialShellOnFailure($request);
+            $this->deleteInitialAssetOnFailure($request);
         }
 
         $this->dispatchFailureCallback($request, $failureReason);
     }
 
     /**
-     * Best-effort cleanup of the reserved audio shell after an initial generation failed. Only the
-     * still-empty shell is removed; once audio is attached the asset is left to the unprocessed-asset GC to
-     * avoid fragile multi-file cascade deletion on the failure path.
+     * Best-effort cleanup of the reserved asset after an initial generation failed: remove any audio already
+     * attached (file + routes + storage) and then the asset itself, which cascade-deletes its TtsAsset. Covers
+     * both the still-empty shell (synth failed before attach) and a partially-built asset (failed after attach).
      */
-    private function deleteInitialShellOnFailure(TtsNarrationRequest $request): void
+    private function deleteInitialAssetOnFailure(TtsNarrationRequest $request): void
     {
         $stableAssetId = $request->getStableAssetId();
         if (null === $stableAssetId) {
@@ -153,15 +156,23 @@ final readonly class TtsNarrationRequestHandler
         }
 
         try {
-            $this->entityManager->wrapInTransaction(function () use ($stableAssetId): void {
-                $asset = $this->assetRepo->find($stableAssetId);
-                if (null !== $asset && $asset->getSlots()->isEmpty()) {
-                    $this->assetManager->delete($asset, false);
-                    $this->entityManager->flush();
+            $asset = $this->assetRepo->find($stableAssetId);
+            if (null === $asset) {
+                return;
+            }
+
+            $audioFiles = [];
+            foreach ($asset->getSlots() as $slot) {
+                $audio = $slot->getAudio();
+                if (null !== $audio) {
+                    $audioFiles[] = $audio;
                 }
-            });
+            }
+            $this->audioFileRemover->remove(...$audioFiles);
+
+            $this->assetManager->delete($asset, true);
         } catch (Throwable $deleteEx) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.deleteInitialShellFailed', [
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.deleteInitialAssetFailed', [
                 'requestId' => (string) $request->getId(),
                 'stableAssetId' => $stableAssetId,
                 'error' => $deleteEx->getMessage(),

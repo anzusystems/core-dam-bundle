@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
@@ -41,6 +42,7 @@ use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
+use Throwable;
 
 final readonly class TtsRequestOrchestrator
 {
@@ -52,6 +54,7 @@ final readonly class TtsRequestOrchestrator
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
         private TtsAudioFactory $ttsAudioFactory,
+        private TtsAudioFileRemover $audioFileRemover,
         private AssetSlotFactory $assetSlotFactory,
         private Config $config,
         private AudioStatusFacade $audioStatusFacade,
@@ -95,17 +98,27 @@ final readonly class TtsRequestOrchestrator
         $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: true);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
-        // Commit Done before the best-effort enrichment below so an enrichment failure can't flip it to Failed.
+        // Generation succeeded once the master is published — commit Done now so the best-effort enrichment
+        // below can't flip it to Failed, and (crucially) so the CMS success callback is still sent even if a
+        // cosmetic enrichment step (e.g. ffmpeg preview) fails. DB enrichment runs before the flaky ffmpeg
+        // preview so the callback reflects keywords/podcast even when the preview fails.
         $this->requestManager->markDone($request, (string) $result->asset->getId());
 
-        $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
-        $this->applyInitialMetadata($result->asset, $request, $extSystem);
-        $this->indexManager->index($result->asset);
+        try {
+            $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
+            $this->applyInitialMetadata($result->asset, $request, $extSystem);
+            $this->syncPodcastMembership($request, $result->asset);
 
-        $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
-        $this->attachPreviewSlot($result->asset, $preview);
+            $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
+            $this->attachPreviewSlot($result->asset, $preview);
 
-        $this->syncPodcastMembership($request, $result->asset);
+            $this->indexManager->index($result->asset);
+        } catch (Throwable $e) {
+            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processInitial.enrichmentFailed', [
+                'requestId' => (string) $request->getId(),
+                'assetId' => (string) $result->asset->getId(),
+            ], exception: $e);
+        }
 
         if (null !== $request->getExtRef()->getExtResourceName() && null !== $request->getExtRef()->getExtId()) {
             $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
@@ -131,28 +144,51 @@ final readonly class TtsRequestOrchestrator
         $built = $this->entityManager->wrapInTransaction(
             fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts)
         );
-        $this->materializeMasterAudio($built->masterAudio, $built->masterTmpFile, dispatchPropertyRefresh: false);
-        $this->routeFacade->makePublic($built->masterAudio, $built->masterRoute);
 
-        $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile);
+        // The new master/preview are built + published BEFORE the swap, so until they are slotted by promote()
+        // they are unreferenced orphans (no slot, no expireAt → the reaper never collects them). If the swap
+        // aborts (concurrent cancel / wrong status) or any pre-swap step fails, delete them explicitly.
+        $newPreview = null;
 
-        // Cooperative cancel check + atomic repoint: master/preview slots swing to the new files, the old files
-        // are demoted with a grace-period expireAt (kept streamable), the TtsAsset is reactivated.
-        $this->assetSwap->promote(
-            (string) $stableAsset->getId(),
-            $built->masterAudio,
-            $newPreview,
-            (string) $request->getId(),
-            $voice,
-            $family,
-        );
+        try {
+            $this->materializeMasterAudio($built->masterAudio, $built->masterTmpFile, dispatchPropertyRefresh: false);
+            $this->routeFacade->makePublic($built->masterAudio, $built->masterRoute);
 
-        $this->syncFamilyKeywords($stableAsset, $stableTts, $family);
-        if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
-            $this->entityManager->flush();
+            $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile);
+
+            // Cooperative cancel check + atomic repoint: master/preview slots swing to the new files, the old
+            // files are demoted with a grace-period expireAt (kept streamable), the TtsAsset is reactivated.
+            $this->assetSwap->promote(
+                (string) $stableAsset->getId(),
+                $built->masterAudio,
+                $newPreview,
+                (string) $request->getId(),
+                $voice,
+                $family,
+            );
+        } catch (Throwable $e) {
+            $this->audioFileRemover->remove($built->masterAudio, $newPreview);
+
+            throw $e;
         }
-        $this->indexManager->index($stableAsset);
+
+        // Swap is the point of no return — commit Done immediately so a failure in the best-effort enrichment
+        // below can't (a) flip the request to Failed and fire a spurious failure callback after a live swap, or
+        // (b) skip the CMS success callback.
         $this->requestManager->markDone($request, (string) $stableAsset->getId());
+
+        try {
+            $this->syncFamilyKeywords($stableAsset, $stableTts, $family);
+            if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
+                $this->entityManager->flush();
+            }
+            $this->indexManager->index($stableAsset);
+        } catch (Throwable $e) {
+            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processRegenerate.enrichmentFailed', [
+                'requestId' => (string) $request->getId(),
+                'assetId' => (string) $stableAsset->getId(),
+            ], exception: $e);
+        }
 
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
     }
