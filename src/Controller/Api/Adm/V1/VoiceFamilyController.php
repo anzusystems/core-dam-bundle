@@ -49,7 +49,10 @@ final class VoiceFamilyController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ);
 
         return $this->okResponse(
-            $this->voiceFamilyRepository->findByApiParams($apiParams),
+            $this->voiceFamilyRepository->findByApiParams(
+                apiParams: $apiParams,
+                customFilters: [new CustomExtSystemFilter()],
+            ),
         );
     }
 
