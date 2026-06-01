@@ -49,6 +49,43 @@ readonly class AssetSlotFactory
         return $this->manager->create($assetSlot, $flush);
     }
 
+    /**
+     * Points the asset's named slot at {@see $newFile}, returning the file it previously held (or null
+     * if the slot did not exist yet — in which case a fresh relation is created like {@see createRelation}).
+     *
+     * The previous file is left attached to the asset (its `asset` FK is untouched, so the required
+     * relation invariant holds) but detached from the slot — TTS regeneration uses this to keep the old
+     * audio (and its public-bucket CDN URL) alive while the new file gets a new slot/URL. The caller owns
+     * the previous file's lifecycle from here (e.g. {@see AssetFile::setExpireAt()} for grace cleanup).
+     *
+     * Caller owns the surrounding transaction/flush.
+     */
+    public function replaceSlotFile(Asset $asset, AssetFile $newFile, string $slotName): ?AssetFile
+    {
+        $slot = $asset->getSlots()->findFirst(
+            static fn (mixed $key, AssetSlot $candidate): bool => $candidate->getName() === $slotName
+        );
+
+        if (false === $slot instanceof AssetSlot) {
+            $this->createRelation($asset, $newFile, $slotName, false);
+
+            return null;
+        }
+
+        $previousFile = $this->currentSlotFile($slot);
+        $previousFile?->getSlots()->removeElement($slot);
+
+        // addSlot() also points the slot back at the new file (owning side); setAsset keeps the required FK.
+        $newFile->addSlot($slot);
+        $newFile->setAsset($asset);
+
+        if ($slot->getFlags()->isMain()) {
+            $asset->setMainFile($newFile);
+        }
+
+        return $previousFile;
+    }
+
     public function getSlotName(
         ExtSystemAssetTypeConfiguration $configuration,
         ?string $slotName = null
@@ -75,5 +112,13 @@ readonly class AssetSlotFactory
         $assetSlot->getFlags()->setDefault($configuration->getSlots()->getDefault() === $actualSlotName);
 
         return $assetSlot;
+    }
+
+    private function currentSlotFile(AssetSlot $slot): ?AssetFile
+    {
+        return $slot->getImage()
+            ?? $slot->getAudio()
+            ?? $slot->getVideo()
+            ?? $slot->getDocument();
     }
 }

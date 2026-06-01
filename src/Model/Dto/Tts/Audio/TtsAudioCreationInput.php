@@ -28,19 +28,12 @@ final readonly class TtsAudioCreationInput
         public ?string $extId = null,
         public ?string $title = null,
         public ?string $description = null,
-        public bool $staging = false,
-        public ?string $stableAssetId = null,
     ) {
         if ((null === $extResourceName) !== (null === $extId)) {
             throw new InvalidArgumentException(
                 'extResourceName and extId must be both null or both non-null.'
             );
         }
-    }
-
-    public function isStaging(): bool
-    {
-        return $this->staging;
     }
 
     public static function forInitialRequest(
@@ -64,11 +57,16 @@ final readonly class TtsAudioCreationInput
             extId: $extRef->getExtId(),
             title: $request->getTitle(),
             description: $request->getDescription(),
-            stableAssetId: $request->getStableAssetId(),
         );
     }
 
-    public static function forStagingSwap(
+    /**
+     * Regeneration re-synthesises the SAME source text (snapshot/hash carried over from the stable
+     * {@see TtsAsset}) with a possibly different voice/family. The freshly built audio is attached to the
+     * existing stable asset and the previous audio is kept for a grace period — see
+     * {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\AssetSwap}.
+     */
+    public static function forRegenerate(
         TtsNarrationRequest $request,
         TtsAsset $stableTts,
         AdapterFile $audioFile,
@@ -88,7 +86,6 @@ final readonly class TtsAudioCreationInput
             extResourceName: $extRef->getExtResourceName(),
             extId: $extRef->getExtId(),
             title: $request->getTitle(),
-            staging: true,
         );
     }
 }

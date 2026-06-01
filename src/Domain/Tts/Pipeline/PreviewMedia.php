@@ -8,7 +8,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
@@ -43,7 +42,6 @@ final readonly class PreviewMedia
     private const int PREVIEW_ROUTE_RANDOM_BYTES = 16;
 
     public function __construct(
-        private AssetSlotFactory $assetSlotFactory,
         private AssetFileRouteManager $routeManager,
         private AssetFileRouteFacade $routeFacade,
         private AssetFileMetadataManager $metadataManager,
@@ -51,7 +49,6 @@ final readonly class PreviewMedia
         private AssetFileManager $audioFileManager,
         private AudioStatusFacade $audioStatusFacade,
         private FfmpegService $ffmpegService,
-        private Config $config,
         private EntityManagerInterface $entityManager,
     ) {
     }
@@ -85,14 +82,6 @@ final readonly class PreviewMedia
             $created = $this->entityManager->wrapInTransaction(
                 function () use ($masterAudioFile, $previewFile): array {
                     $preview = $this->createPreviewAudioFile($masterAudioFile, $previewFile);
-
-                    $this->assetSlotFactory->createRelation(
-                        asset: $masterAudioFile->getAsset(),
-                        assetFile: $preview,
-                        slotName: $this->config->getPreviewSlotName(),
-                        flush: false,
-                    );
-
                     $route = $this->createRouteForPreview($preview);
                     $this->entityManager->flush();
 
@@ -137,6 +126,8 @@ final readonly class PreviewMedia
         $preview = new AudioFile();
         $preview->setMetadata($metadata);
         $preview->setLicence($master->getLicence());
+        // Owned by the same asset as the master; the caller/promoter attaches it to the preview slot.
+        $preview->setAsset($master->getAsset());
         $preview->getAssetAttributes()
             ->setMimeType(AudioMimeTypes::MimeMpeg->value)
             ->setSize($previewFile->getSize())

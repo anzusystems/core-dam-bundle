@@ -57,6 +57,7 @@ return static function (ContainerConfigurator $configurator): void {
             4_800,
             'paid',
             'free',
+            86_400,
         ]);
 
     $services->set(SystemUserFixtures::class)

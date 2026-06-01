@@ -20,8 +20,10 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -40,6 +42,7 @@ use Doctrine\ORM\Mapping as ORM;
     ]
 )]
 #[ORM\Index(name: 'IDX_licence_created_at', columns: ['licence_id', 'created_at'])]
+#[ORM\Index(name: 'IDX_expire_at', fields: ['expireAt'])]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,
@@ -79,6 +82,14 @@ abstract class AssetFile implements
     #[ORM\ManyToOne(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     protected AssetLicence $licence;
 
+    /**
+     * When set, the file is scheduled for deletion by the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
+     * cron after this instant. Used to keep a superseded TTS audio (and thus its public CDN URL) alive for a grace
+     * period after a regeneration, so still-cached consumer responses pointing at the old URL keep resolving.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    protected ?DateTimeImmutable $expireAt = null;
+
     public function __construct()
     {
         $this->setAssetAttributes(new AssetFileAttributes());
@@ -88,6 +99,7 @@ abstract class AssetFile implements
         $this->setFlags(new AssetFileFlags());
         $this->setRoutes(new ArrayCollection());
         $this->setMainRoute(null);
+        $this->setExpireAt(null);
     }
 
     public function __toString(): string
@@ -184,6 +196,18 @@ abstract class AssetFile implements
     public function setLicence(AssetLicence $licence): self
     {
         $this->licence = $licence;
+
+        return $this;
+    }
+
+    public function getExpireAt(): ?DateTimeImmutable
+    {
+        return $this->expireAt;
+    }
+
+    public function setExpireAt(?DateTimeImmutable $expireAt): static
+    {
+        $this->expireAt = $expireAt;
 
         return $this;
     }

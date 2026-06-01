@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
@@ -199,12 +200,13 @@ final readonly class TtsCancellationFacade
     private function dispatchCancelledCallback(array $callbackData, string $reason): void
     {
         try {
-            $this->extSystemCallbackFacade->notifyAudioNarrationFailed(
+            $this->extSystemCallbackFacade->notifyMediaStatus(
                 extSystemId: $callbackData['extSystemId'],
                 extResourceName: $callbackData['extResourceName'],
                 extId: $callbackData['extId'],
-                failureReason: sprintf('Cancelled by admin: %s', $reason),
                 assetId: $callbackData['assetId'],
+                status: MediaStatusType::GenerationFailed,
+                failureReason: sprintf('Cancelled by admin: %s', $reason),
                 initial: $callbackData['initial'],
             );
         } catch (Throwable $e) {

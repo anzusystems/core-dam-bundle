@@ -4,81 +4,105 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
+use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
+use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SwapResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
-use Throwable;
 
 /**
- * Atomic content-swap: AudioFile rows on the stable Asset are kept; only their storage payload is
- * swapped with the staging Asset's. Stable routes remain valid — only the bytes behind them change.
- * Staging Asset is deleted afterwards (TtsAsset cascades via FK).
+ * Atomic regeneration promote: the freshly-synthesised audio (already materialised + published to its own
+ * public-bucket path = its own CDN URL) is pointed into the stable asset's master/preview slots, and the
+ * previously-active files are DEMOTED — left on the asset with an {@see AssetFile::setExpireAt()} grace stamp
+ * so their old public URLs keep streaming until the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
+ * cron reaps them. The asset id (and thus the CMS media key) never changes.
  *
- * Caller is responsible for dispatching purge events for files returned in {@see SwapResultDto}.
+ * Runs under a PESSIMISTIC_WRITE lock on the stable TtsAsset and aborts on a concurrent cancel.
  */
 final readonly class AssetSwap
 {
     public function __construct(
         private TtsAssetRepository $ttsAssetRepo,
         private TtsNarrationRequestRepository $requestRepo,
-        private AssetFileManager $audioFileManager,
+        private AssetSlotFactory $assetSlotFactory,
         private TtsAssetManager $ttsAssetManager,
         private TtsAuditLogger $auditLogger,
-        private AssetManager $assetManager,
         private Config $config,
         private EntityManagerInterface $entityManager,
-        private FileStash $fileStash,
-        private DamLogger $logger,
     ) {
     }
 
     /**
      * @throws RegenCancelledException if the swap is aborted due to cancel request or wrong status
      */
-    public function swap(string $stagingAssetId, string $stableAssetId, string $requestId): SwapResultDto
-    {
-        $result = $this->entityManager->wrapInTransaction(
-            function () use ($stagingAssetId, $stableAssetId, $requestId): SwapResultDto {
-                [$stableTts, $stagingTts] = $this->lockAndValidate($stagingAssetId, $stableAssetId, $requestId);
+    public function promote(
+        string $stableAssetId,
+        AudioFile $newMaster,
+        ?AudioFile $newPreview,
+        string $requestId,
+        Voice $voice,
+        VoiceFamily $family,
+    ): void {
+        $this->entityManager->wrapInTransaction(
+            function () use ($stableAssetId, $newMaster, $newPreview, $requestId, $voice, $family): void {
+                $stableTts = $this->lockAndValidate($stableAssetId, $requestId);
+                $stableAsset = $stableTts->getAsset();
 
-                return $this->applySwap($stableTts, $stagingTts, $requestId);
+                $expireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+
+                $demoted = [];
+                $previousMaster = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newMaster, $this->config->getMasterSlotName());
+                if (null !== $previousMaster) {
+                    $previousMaster->setExpireAt($expireAt);
+                    $demoted[] = (string) $previousMaster->getId();
+                }
+                if (null !== $newPreview) {
+                    $previousPreview = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newPreview, $this->config->getPreviewSlotName());
+                    if (null !== $previousPreview) {
+                        $previousPreview->setExpireAt($expireAt);
+                        $demoted[] = (string) $previousPreview->getId();
+                    }
+                }
+
+                $stableTts
+                    ->setVoiceFamily($family)
+                    ->setDiscriminator($voice->getDiscriminator())
+                    ->setExternalVoiceId($voice->getExternalVoiceId())
+                ;
+                $this->ttsAssetManager->markActive($stableTts);
+
+                $newIds = array_values(array_filter([
+                    (string) $newMaster->getId(),
+                    null !== $newPreview ? (string) $newPreview->getId() : null,
+                ]));
+                $this->auditLogger->logSwapped(
+                    assetId: $stableAssetId,
+                    requestId: $requestId,
+                    oldAudioFileIds: $demoted,
+                    newAudioFileIds: $newIds,
+                    voiceFamilySlug: $family->getSlug(),
+                    sourceTextHash: $stableTts->getSourceTextHash(),
+                );
+
+                $this->entityManager->flush();
             }
         );
-
-        // Delete the stashed old payloads now that the swap is committed. Best-effort: a leaked file must
-        // not fail an already-completed regen.
-        try {
-            $this->fileStash->emptyAll();
-        } catch (Throwable $e) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'assetSwap.fileStashEmptyFailed', [
-                'stableAssetId' => $result->stableAssetId,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return $result;
     }
 
     /**
-     * @return array{0: TtsAsset, 1: TtsAsset}
-     *
      * @throws RegenCancelledException
      */
-    private function lockAndValidate(string $stagingAssetId, string $stableAssetId, string $requestId): array
+    private function lockAndValidate(string $stableAssetId, string $requestId): TtsAsset
     {
         $stableTts = $this->ttsAssetRepo->findByAssetIdJoined($stableAssetId, LockMode::PESSIMISTIC_WRITE);
         if (null === $stableTts) {
@@ -99,82 +123,6 @@ final readonly class AssetSwap
             );
         }
 
-        $stagingTts = $this->ttsAssetRepo->findByAssetIdJoined($stagingAssetId);
-        if (null === $stagingTts) {
-            throw new RegenCancelledException(sprintf('Staging asset "%s" is not a TTS asset (or does not exist).', $stagingAssetId));
-        }
-
-        return [$stableTts, $stagingTts];
-    }
-
-    private function applySwap(TtsAsset $stableTts, TtsAsset $stagingTts, string $requestId): SwapResultDto
-    {
-        $stableAsset = $stableTts->getAsset();
-        $stagingAsset = $stagingTts->getAsset();
-
-        $slotPairs = [
-            $this->buildSlotPair($stableAsset, $stagingAsset, $this->config->getMasterSlotName()),
-            $this->buildSlotPair($stableAsset, $stagingAsset, $this->config->getPreviewSlotName()),
-        ];
-
-        $audioFilesToPurge = [];
-        $oldAudioFileIds = [];
-        $newAudioFileIds = [];
-
-        foreach ($slotPairs as [$old, $new]) {
-            if (null !== $old) {
-                $audioFilesToPurge[] = $old;
-                $oldAudioFileIds[] = (string) $old->getId();
-            }
-            if (null !== $new) {
-                $newAudioFileIds[] = (string) $new->getId();
-            }
-            if (null !== $old && null !== $new) {
-                $this->audioFileManager->swapContent($old, $new);
-            }
-            if (null !== $new) {
-                $this->audioFileManager->delete($new, false);
-            }
-        }
-
-        $this->assetManager->delete($stagingAsset, false);
-        $this->ttsAssetManager->markActive($stableTts);
-
-        $this->auditLogger->logSwapped(
-            assetId: (string) $stableAsset->getId(),
-            requestId: $requestId,
-            oldAudioFileIds: $oldAudioFileIds,
-            newAudioFileIds: $newAudioFileIds,
-            voiceFamilySlug: $stagingTts->getVoiceFamily()->getSlug(),
-            sourceTextHash: $stagingTts->getSourceTextHash(),
-        );
-
-        $this->entityManager->flush();
-
-        return new SwapResultDto(
-            stableAssetId: (string) $stableAsset->getId(),
-            oldAudioFileIds: $oldAudioFileIds,
-            newAudioFileIds: $newAudioFileIds,
-            audioFilesToPurge: $audioFilesToPurge,
-        );
-    }
-
-    /**
-     * @return array{0: ?AudioFile, 1: ?AudioFile} (stable, staging) pair for the slot
-     */
-    private function buildSlotPair(Asset $stable, Asset $staging, string $slotName): array
-    {
-        return [$this->getSlotAudio($stable, $slotName), $this->getSlotAudio($staging, $slotName)];
-    }
-
-    private function getSlotAudio(Asset $asset, string $slotName): ?AudioFile
-    {
-        foreach ($asset->getSlots() as $slot) {
-            if ($slot->getName() === $slotName) {
-                return $slot->getAudio();
-            }
-        }
-
-        return null;
+        return $stableTts;
     }
 }

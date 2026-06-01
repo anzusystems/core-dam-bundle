@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
@@ -32,7 +32,12 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
 
 /**
- * Builds the Asset + AudioFile + Route + TtsAsset aggregate from TTS provider output.
+ * Builds the AudioFile (+ route + TtsAsset) aggregate for a TTS Asset from provider output.
+ *
+ * The asset always pre-exists: {@see create()} attaches the master audio onto the file-less audio shell
+ * reserved at dispatch (initial), while {@see buildReplacementMaster()} builds a fresh, not-yet-slotted master
+ * for a regeneration that {@see AssetSwap} later promotes into the live asset (keeping the old audio for a grace
+ * period). Either way the asset id — and thus the CMS media key — stays stable.
  *
  * The audio bytes are NOT persisted to final storage here — the file is left in the {@see AssetFileProcessStatus::Uploaded}
  * state with a pre-built stable route entity. The orchestrator subsequently drives the standard
@@ -48,7 +53,7 @@ final readonly class TtsAudioFactory
 
     public function __construct(
         private AudioFactory $audioFactory,
-        private AssetFactory $assetFactory,
+        private AssetSlotFactory $assetSlotFactory,
         private AssetManager $assetManager,
         private AssetFileManager $assetFileManager,
         private AssetFileRouteManager $routeManager,
@@ -59,20 +64,52 @@ final readonly class TtsAudioFactory
     ) {
     }
 
-    public function create(TtsAudioCreationInput $input): TtsAudioCreationResult
+    /**
+     * Initial generation: attach the master audio onto the pre-created (Draft, file-less) shell asset and
+     * create its TtsAsset. The asset keeps the id reserved at dispatch.
+     */
+    public function create(TtsAudioCreationInput $input, Asset $asset): TtsAudioCreationResult
     {
         $now = new DateTimeImmutable();
 
         $audioFile = $this->buildAudioFile($input);
         $this->assetFileManager->create($audioFile, false);
 
-        $asset = $this->resolveAsset($input, $audioFile, $now);
+        $this->assetSlotFactory->createRelation(
+            asset: $asset,
+            assetFile: $audioFile,
+            slotName: $this->config->getMasterSlotName(),
+            flush: false,
+        );
+        $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
+        $this->writeCustomMetadata($asset, $input);
+        $this->assetManager->updateExisting($asset, false, false);
+
         $masterRoute = $this->attachStableRoute($audioFile);
 
         $ttsAsset = $this->buildTtsAsset($asset, $input);
         $this->ttsAssetManager->create($ttsAsset);
 
         return new TtsAudioCreationResult($asset, $audioFile, $ttsAsset, $input->audioFile, $masterRoute);
+    }
+
+    /**
+     * Regeneration: build a fresh master AudioFile owned by the stable asset (its `asset` FK is set so the
+     * required relation holds) but NOT yet attached to any slot — the orchestrator materialises + publishes
+     * its bytes first, then {@see AssetSwap} repoints the live master slot at it. The previous audio (and its
+     * public CDN URL) is left untouched until the swap demotes it with a grace period.
+     *
+     * @return array{0: AudioFile, 1: AssetFileRoute} the not-yet-published master file and its public route
+     */
+    public function buildReplacementMaster(TtsAudioCreationInput $input, Asset $stableAsset): array
+    {
+        $audioFile = $this->buildAudioFile($input);
+        $audioFile->setAsset($stableAsset);
+        $this->assetFileManager->create($audioFile, false);
+
+        $masterRoute = $this->attachStableRoute($audioFile);
+
+        return [$audioFile, $masterRoute];
     }
 
     private function buildAudioFile(TtsAudioCreationInput $input): AudioFile
@@ -86,25 +123,6 @@ final readonly class TtsAudioFactory
         ;
 
         return $audioFile;
-    }
-
-    private function resolveAsset(TtsAudioCreationInput $input, AudioFile $audioFile, DateTimeImmutable $now): Asset
-    {
-        if ($input->isStaging()) {
-            return new Asset();
-        }
-
-        $asset = $this->assetFactory->createForAssetFile(
-            assetFile: $audioFile,
-            assetLicence: $input->licence,
-            slotName: $this->config->getMasterSlotName(),
-            id: $input->stableAssetId,
-        );
-        $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
-        $this->writeCustomMetadata($asset, $input);
-        $this->assetManager->updateExisting($asset, false, false);
-
-        return $asset;
     }
 
     /**
@@ -122,7 +140,8 @@ final readonly class TtsAudioFactory
     }
 
     /**
-     * Route slug must stay stable across regen — content swaps but the URL must not change.
+     * Each (re)generation gets its own stable route: the slug/path derive from the new AudioFile id, so a
+     * regeneration produces a NEW public-bucket path = NEW public URL, while the old file keeps its own.
      * The route is persisted (no flush); the orchestrator publishes it after bytes land in storage.
      */
     private function attachStableRoute(AudioFile $audioFile): AssetFileRoute
@@ -150,8 +169,6 @@ final readonly class TtsAudioFactory
 
     private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input): TtsAsset
     {
-        $staging = $input->isStaging();
-
         return (new TtsAsset($asset))
             ->setExtResourceName($input->extResourceName)
             ->setExtId($input->extId)
@@ -160,8 +177,8 @@ final readonly class TtsAudioFactory
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
             ->setSourceTextHash($input->sourceTextHash)
             ->setSourceTextSnapshot($input->sourceTextSnapshot)
-            ->setStatus($staging ? TtsAudioStatus::Superseding : TtsAudioStatus::Active)
-            ->setStaging($staging);
+            ->setStatus(TtsAudioStatus::Active)
+            ->setStaging(false);
     }
 
     private function resolveDisplayName(TtsAudioCreationInput $input, DateTimeImmutable $now): string

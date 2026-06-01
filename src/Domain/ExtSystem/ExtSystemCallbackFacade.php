@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -104,17 +105,18 @@ final class ExtSystemCallbackFacade
         return $processed;
     }
 
-    public function notifyAudioNarrationFailed(
+    public function notifyMediaStatus(
         int $extSystemId,
         string $extResourceName,
         string $extId,
-        string $failureReason,
         string $assetId,
+        MediaStatusType $status,
+        ?string $failureReason,
         bool $initial,
     ): void {
         $extSystem = $this->extSystemRepository->find($extSystemId);
         if (null === $extSystem) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyAudioNarrationFailed.extSystemNotFound', [
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.extSystemNotFound', [
                 'extSystemId' => $extSystemId,
                 'extResourceName' => $extResourceName,
                 'extId' => $extId,
@@ -123,7 +125,7 @@ final class ExtSystemCallbackFacade
             return;
         }
 
-        $this->getCallback($extSystem->getSlug())?->notifyAudioNarrationFailed($extResourceName, $extId, $failureReason, $assetId, $initial);
+        $this->getCallback($extSystem->getSlug())?->notifyMediaStatus($extResourceName, $extId, $assetId, $status, $failureReason, $initial);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

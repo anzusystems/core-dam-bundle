@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
@@ -24,7 +25,6 @@ use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Uid\Uuid;
 
 /**
  * Idempotent on (extResourceName, extId, extSystem) — short-circuits on existing active asset or
@@ -39,6 +39,7 @@ final readonly class TtsDispatchFacade
         private TtsProviderContainer $providerContainer,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
+        private AssetFactory $assetFactory,
     ) {
     }
 
@@ -137,7 +138,10 @@ final readonly class TtsDispatchFacade
 
     private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): TtsNarrationRequest
     {
-        $reserved = Uuid::v7()->toRfc4122();
+        // Reserve a stable asset id by creating the file-less audio shell up front: the CMS placeholder media
+        // (created from the dispatch response) and the audio attached on completion then share one id, and the
+        // success callback targets the media CMS already holds. Rolled back with the request on a unique clash.
+        $shellAsset = $this->assetFactory->createAudioShell($licence);
 
         $request = (new TtsNarrationRequest())
             ->setMode(TtsRequestMode::Initial)
@@ -149,7 +153,7 @@ final readonly class TtsDispatchFacade
             ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicenceId($licence->getId())
             ->setOpenInitialKey($openInitialKey)
-            ->setStableAssetId($reserved)
+            ->setStableAssetId((string) $shellAsset->getId())
             ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray());
 
         $request->getExtRef()

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
@@ -12,9 +13,11 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -36,6 +39,8 @@ final readonly class TtsNarrationRequestHandler
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private TtsAssetLocker $assetLocker,
         private TtsAssetManager $ttsAssetManager,
+        private AssetManager $assetManager,
+        private AssetRepository $assetRepo,
     ) {
     }
 
@@ -126,7 +131,42 @@ final readonly class TtsNarrationRequestHandler
             return;
         }
 
+        // Initial failed: drop the reserved (still-empty) shell asset so it doesn't linger. A partially-built
+        // shell (audio already attached before a later failure) is left to the unprocessed-asset GC.
+        if ($request->getMode()->is(TtsRequestMode::Initial)) {
+            $this->deleteInitialShellOnFailure($request);
+        }
+
         $this->dispatchFailureCallback($request, $failureReason);
+    }
+
+    /**
+     * Best-effort cleanup of the reserved audio shell after an initial generation failed. Only the
+     * still-empty shell is removed; once audio is attached the asset is left to the unprocessed-asset GC to
+     * avoid fragile multi-file cascade deletion on the failure path.
+     */
+    private function deleteInitialShellOnFailure(TtsNarrationRequest $request): void
+    {
+        $stableAssetId = $request->getStableAssetId();
+        if (null === $stableAssetId) {
+            return;
+        }
+
+        try {
+            $this->entityManager->wrapInTransaction(function () use ($stableAssetId): void {
+                $asset = $this->assetRepo->find($stableAssetId);
+                if (null !== $asset && $asset->getSlots()->isEmpty()) {
+                    $this->assetManager->delete($asset, false);
+                    $this->entityManager->flush();
+                }
+            });
+        } catch (Throwable $deleteEx) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.deleteInitialShellFailed', [
+                'requestId' => (string) $request->getId(),
+                'stableAssetId' => $stableAssetId,
+                'error' => $deleteEx->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -165,12 +205,13 @@ final readonly class TtsNarrationRequestHandler
         }
 
         try {
-            $this->extSystemCallbackFacade->notifyAudioNarrationFailed(
+            $this->extSystemCallbackFacade->notifyMediaStatus(
                 extSystemId: $request->getExtSystemId(),
                 extResourceName: $extResourceName,
                 extId: $extId,
-                failureReason: $failureReason,
                 assetId: (string) $request->getStableAssetId(),
+                status: MediaStatusType::GenerationFailed,
+                failureReason: $failureReason,
                 initial: $request->getMode()->is(TtsRequestMode::Initial),
             );
         } catch (Throwable $callbackEx) {

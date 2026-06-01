@@ -5,24 +5,26 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
-use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
@@ -36,6 +38,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -50,6 +53,8 @@ final readonly class TtsRequestOrchestrator
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
         private TtsAudioFactory $ttsAudioFactory,
+        private AssetSlotFactory $assetSlotFactory,
+        private Config $config,
         private AudioStatusFacade $audioStatusFacade,
         private PreviewMedia $previewMedia,
         private AssetSwap $assetSwap,
@@ -70,6 +75,8 @@ final readonly class TtsRequestOrchestrator
     {
         $licence = $this->resolveAssetLicence($request);
         $extSystem = $licence->getExtSystem();
+        // The file-less audio shell reserved at dispatch — its id is the one CMS already holds.
+        $shellAsset = $this->resolveStableAsset($request);
 
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $family = $voice->getVoiceFamily();
@@ -80,13 +87,13 @@ final readonly class TtsRequestOrchestrator
 
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
-        $result = $this->persistInTransaction($input, static function (TtsAudioCreationResult $created): void {
+        $result = $this->persistInTransaction($input, $shellAsset, static function (TtsAudioCreationResult $created): void {
             $created->asset->getAssetFileProperties()->setFromTts(true);
         });
 
         // Audio must materialize and be publicly routable before we mark Done; a failure here is a real
-        // generation failure (request stays non-terminal → marked Failed, placeholder media dropped).
-        $this->materializeMasterAudio($result, dispatchPropertyRefresh: true);
+        // generation failure (request stays non-terminal → marked Failed, shell asset dropped).
+        $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: true);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         // Commit Done before the best-effort enrichment below so an enrichment failure can't flip it to Failed.
@@ -95,7 +102,10 @@ final readonly class TtsRequestOrchestrator
         $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
         $this->applyInitialMetadata($result->asset, $request, $extSystem);
         $this->indexManager->index($result->asset);
-        $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
+
+        $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
+        $this->attachPreviewSlot($result->asset, $preview, expireOldAt: null);
+
         $this->syncPodcastMembership($request, $result->asset);
 
         if (null !== $request->getExtRef()->getExtResourceName() && null !== $request->getExtRef()->getExtId()) {
@@ -114,32 +124,28 @@ final readonly class TtsRequestOrchestrator
         $audioFile = $this->providerContainer->forDiscriminator($voice->getDiscriminator())
             ->synthesize($stableTts->getSourceTextSnapshot(), $voice, $stableAsset->getExtSystem());
 
-        $this->stageAndSwap($request, $stableAsset, $stableTts, $audioFile, $voice, $family, $licence);
-    }
+        $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $audioFile, $family, $voice, $licence);
 
-    private function stageAndSwap(
-        TtsNarrationRequest $request,
-        Asset $stableAsset,
-        TtsAsset $stableTts,
-        AdapterFile $audioFile,
-        Voice $voice,
-        VoiceFamily $family,
-        AssetLicence $licence,
-    ): void {
-        $input = TtsAudioCreationInput::forStagingSwap($request, $stableTts, $audioFile, $family, $voice, $licence);
+        // Build the new master + preview on the stable asset but NOT yet slotted, and fully materialize +
+        // publish their bytes to fresh public-bucket paths (= fresh CDN URLs). The live asset still serves the
+        // old audio until the atomic promote below — so a failure here leaves the old narration fully intact.
+        [$newMaster, $newMasterRoute] = $this->entityManager->wrapInTransaction(
+            fn (): array => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset)
+        );
+        $this->materializeMasterAudio($newMaster, $audioFile, dispatchPropertyRefresh: false);
+        $this->routeFacade->makePublic($newMaster, $newMasterRoute);
 
-        $stagingResult = $this->persistInTransaction($input);
+        $newPreview = $this->previewMedia->generate($newMaster, $audioFile);
 
-        // Staging bytes need to land in storage so AssetSwap can swap content into the stable file,
-        // but no public route is published — the staging route is cascade-deleted with the staging asset.
-        $this->materializeMasterAudio($stagingResult, dispatchPropertyRefresh: false);
-
-        $this->previewMedia->generate($stagingResult->masterAudio, $stagingResult->masterTmpFile);
-
-        $swapResult = $this->assetSwap->swap(
-            (string) $stagingResult->asset->getId(),
+        // Cooperative cancel check + atomic repoint: master/preview slots swing to the new files, the old files
+        // are demoted with a grace-period expireAt (kept streamable), the TtsAsset is reactivated.
+        $this->assetSwap->promote(
             (string) $stableAsset->getId(),
+            $newMaster,
+            $newPreview,
             (string) $request->getId(),
+            $voice,
+            $family,
         );
 
         $this->syncFamilyKeywords($stableAsset, $stableTts, $family);
@@ -149,8 +155,23 @@ final readonly class TtsRequestOrchestrator
         $this->indexManager->index($stableAsset);
         $this->requestManager->markDone($request, (string) $stableAsset->getId());
 
-        $this->routeFacade->dispatchRoutePurgeForAssetFiles($swapResult->audioFilesToPurge);
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
+    }
+
+    /**
+     * Attaches the freshly-built+published preview onto the asset's preview slot. On initial generation the
+     * slot is empty (created fresh); on regeneration the previously-active preview is demoted and stamped with
+     * {@see $expireOldAt} so its old CDN URL survives the grace period. Runs in its own short transaction.
+     */
+    private function attachPreviewSlot(Asset $asset, AudioFile $preview, ?DateTimeImmutable $expireOldAt): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($asset, $preview, $expireOldAt): void {
+            $previous = $this->assetSlotFactory->replaceSlotFile($asset, $preview, $this->config->getPreviewSlotName());
+            if (null !== $previous && null !== $expireOldAt) {
+                $previous->setExpireAt($expireOldAt);
+            }
+            $this->entityManager->flush();
+        });
     }
 
     private function syncPodcastMembership(TtsNarrationRequest $request, Asset $asset): void
@@ -281,12 +302,11 @@ final readonly class TtsRequestOrchestrator
      * If the pipeline marks the file as Failed (status-facade swallows Throwables and transitions to
      * Failed instead of re-throwing), surface that here so the worker handler marks the request as failed.
      */
-    private function materializeMasterAudio(TtsAudioCreationResult $result, bool $dispatchPropertyRefresh): void
+    private function materializeMasterAudio(AudioFile $audioFile, AdapterFile $tmpFile, bool $dispatchPropertyRefresh): void
     {
-        $audioFile = $result->masterAudio;
         $this->audioStatusFacade->storeAndProcess(
             assetFile: $audioFile,
-            file: $result->masterTmpFile,
+            file: $tmpFile,
             dispatchPropertyRefresh: $dispatchPropertyRefresh,
             skipDuplicateCheck: true,
         );
@@ -304,11 +324,11 @@ final readonly class TtsRequestOrchestrator
     /**
      * @param null|Closure(TtsAudioCreationResult): void $afterCreate
      */
-    private function persistInTransaction(TtsAudioCreationInput $input, ?Closure $afterCreate = null): TtsAudioCreationResult
+    private function persistInTransaction(TtsAudioCreationInput $input, Asset $asset, ?Closure $afterCreate = null): TtsAudioCreationResult
     {
         return $this->entityManager->wrapInTransaction(
-            function () use ($input, $afterCreate): TtsAudioCreationResult {
-                $created = $this->ttsAudioFactory->create($input);
+            function () use ($input, $asset, $afterCreate): TtsAudioCreationResult {
+                $created = $this->ttsAudioFactory->create($input, $asset);
                 $afterCreate?->__invoke($created);
                 $this->entityManager->flush();
 

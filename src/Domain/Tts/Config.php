@@ -17,6 +17,7 @@ final readonly class Config
         private int $chunkSizeChars,
         private string $masterSlotName,
         private string $previewSlotName,
+        private int $audioRetentionGraceSeconds,
     ) {
     }
 
@@ -38,5 +39,15 @@ final readonly class Config
     public function getPreviewSlotName(): string
     {
         return $this->previewSlotName;
+    }
+
+    /**
+     * Grace period (seconds) for which a superseded TTS audio file — and thus its public CDN URL —
+     * is kept alive after a regeneration before the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
+     * cron deletes it. Lets still-cached consumer responses pointing at the old public-bucket path keep streaming.
+     */
+    public function getAudioRetentionGraceSeconds(): int
+    {
+        return $this->audioRetentionGraceSeconds;
     }
 }
