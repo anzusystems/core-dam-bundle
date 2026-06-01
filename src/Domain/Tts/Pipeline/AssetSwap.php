@@ -59,9 +59,8 @@ final readonly class AssetSwap
             }
         );
 
-        // The in-place content swap stashes the previous master/preview payloads (and the staging
-        // asset's files) for storage deletion; drain it now that the swap is durably committed.
-        // Failures must NOT fail an already-completed regen — a leaked file is far less harmful.
+        // Delete the stashed old payloads now that the swap is committed. Best-effort: a leaked file must
+        // not fail an already-completed regen.
         try {
             $this->fileStash->emptyAll();
         } catch (Throwable $e) {

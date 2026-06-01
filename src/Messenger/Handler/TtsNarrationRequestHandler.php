@@ -59,18 +59,6 @@ final readonly class TtsNarrationRequestHandler
                 'mode' => $request->getMode()->value,
             ], exception: $e);
 
-            // The asset was already created and the request committed Done — this is a post-completion
-            // enrichment failure (keywords/metadata/index/preview/podcast/notify). Marking it Failed now
-            // would fire a failure callback that deletes the freshly-generated media in the ext-system.
-            if ($request->getStatus()->is(TtsRequestStatus::Done)) {
-                $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.postDoneEnrichmentFailed', [
-                    'requestId' => (string) $request->getId(),
-                    'mode' => $request->getMode()->value,
-                ]);
-
-                return;
-            }
-
             // Never rethrow — Messenger retry would re-process a terminal request (openInitialKey
             // is already cleared). Callers must dispatch a fresh request for a retry.
             $this->handleRequestFailure($request, $e);
@@ -109,11 +97,16 @@ final readonly class TtsNarrationRequestHandler
 
     private function handleRequestFailure(TtsNarrationRequest $request, Throwable $e): void
     {
+        // Already terminal (e.g. Done after a post-completion enrichment failure): don't flip status or
+        // fire a failure callback that would delete the good media.
+        if ($request->getStatus()->in(TtsRequestStatus::TERMINAL_STATUSES)) {
+            return;
+        }
+
         $failureReason = $e->getMessage();
 
-        // Regenerate failure (before the atomic swap): the stable asset's content is untouched and the
-        // previously-generated audio is still valid. Release it back to Active so it can be regenerated
-        // again — otherwise it stays stuck in Superseding and is permanently un-regeneratable.
+        // Regen failed before the swap: the old audio is still valid, so release the stable asset back to
+        // Active rather than leaving it stuck in Superseding.
         if ($request->getMode()->is(TtsRequestMode::Regenerate)) {
             $this->releaseStableAssetOnRegenFailure($request);
         }
@@ -151,8 +144,7 @@ final readonly class TtsNarrationRequestHandler
             $this->entityManager->wrapInTransaction(function () use ($stableAssetId): void {
                 $ttsAsset = $this->assetLocker->lock($stableAssetId);
                 if ($ttsAsset->getStatus()->is(TtsAudioStatus::Superseding)) {
-                    $this->ttsAssetManager->markActive($ttsAsset);
-                    $this->entityManager->flush();
+                    $this->ttsAssetManager->markActive($ttsAsset, flush: true);
                 }
             });
         } catch (Throwable $releaseEx) {

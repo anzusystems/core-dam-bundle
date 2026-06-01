@@ -16,7 +16,7 @@ use DateTimeImmutable;
  * Flush convention: defaults to `flush = true` because the orchestrator updates state outside any
  * caller transaction (the Messenger handler runs each transition standalone — see
  * {@see \AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler}). Callers inside a
- * transaction (e.g. {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Command\CancelRequest}) pass `false`.
+ * transaction (e.g. {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade}) pass `false`.
  */
 final class TtsNarrationRequestManager extends AbstractManager
 {
@@ -75,9 +75,8 @@ final class TtsNarrationRequestManager extends AbstractManager
      */
     private function finalize(TtsNarrationRequest $request, TtsRequestStatus $terminal, ?string $reason, bool $flush): TtsNarrationRequest
     {
-        // Never transition out of a terminal state. Protects a successfully-Done request from being
-        // flipped to Failed/Cancelled by a post-completion pipeline error (which would otherwise fire
-        // a failure callback that deletes the freshly-generated media in the ext-system).
+        // Never transition out of a terminal state (defense-in-depth against a post-Done error flipping
+        // the request to Failed).
         if ($request->getStatus()->in(TtsRequestStatus::TERMINAL_STATUSES)) {
             return $request;
         }

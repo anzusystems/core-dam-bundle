@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
@@ -30,7 +30,7 @@ use Symfony\Component\Uid\Uuid;
  * Idempotent on (extResourceName, extId, extSystem) — short-circuits on existing active asset or
  * in-flight Initial request before paying the voice/provider precheck cost.
  */
-final readonly class DispatchNewAudioNarration
+final readonly class TtsDispatchFacade
 {
     public function __construct(
         private TtsAssetRepository $ttsAssetRepo,

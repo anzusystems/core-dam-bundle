@@ -13,8 +13,8 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\CancelRequest;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\DispatchNewAudioNarration;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
@@ -41,8 +41,8 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TtsNarrationRequestController extends AbstractApiController
 {
     public function __construct(
-        private readonly DispatchNewAudioNarration $dispatchNew,
-        private readonly CancelRequest $cancelRequest,
+        private readonly TtsDispatchFacade $dispatchNew,
+        private readonly TtsCancellationFacade $cancelRequest,
         private readonly TtsNarrationRequestRepository $requestRepo,
         private readonly AssetLicenceRepository $licenceRepo,
         private readonly TtsAssetRepository $ttsAssetRepo,

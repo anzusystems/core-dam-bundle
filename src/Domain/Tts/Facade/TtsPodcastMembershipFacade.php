@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
@@ -19,7 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
  * Replace the full set of podcast memberships for a TTS asset (PUT semantics).
  * Licence-mismatched podcasts are logged + skipped — sync never aborts the request.
  */
-final readonly class UpdatePodcastMembership
+final readonly class TtsPodcastMembershipFacade
 {
     public function __construct(
         private TtsAssetLocker $ttsAssetLocker,

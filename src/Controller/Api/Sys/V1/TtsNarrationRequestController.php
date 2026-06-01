@@ -9,7 +9,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\DispatchNewAudioNarration;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
@@ -26,7 +26,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TtsNarrationRequestController extends AbstractApiController
 {
     public function __construct(
-        private readonly DispatchNewAudioNarration $dispatchNew,
+        private readonly TtsDispatchFacade $dispatchNew,
     ) {
     }
 

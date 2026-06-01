@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\DispatchNewAudioNarration;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler;
@@ -45,7 +45,7 @@ final class TtsSynthesizeCommand extends Command
     private const string DEFAULT_ASSET_LICENCE = '100150';
 
     public function __construct(
-        private readonly DispatchNewAudioNarration $dispatchNew,
+        private readonly TtsDispatchFacade $dispatchNew,
         private readonly TtsNarrationRequestHandler $handler,
         private readonly TtsNarrationRequestRepository $requestRepo,
         private readonly ExtSystemRepository $extSystemRepo,

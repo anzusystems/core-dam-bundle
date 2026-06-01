@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
@@ -15,7 +15,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-final readonly class RegenerateTts
+final readonly class TtsRegenerationFacade
 {
     public function __construct(
         private TtsAssetLocker $assetLocker,

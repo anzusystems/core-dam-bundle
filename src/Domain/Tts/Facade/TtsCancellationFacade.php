@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
@@ -31,7 +31,7 @@ use Throwable;
  * resolves the race with the orchestrator's swap. Initial cancel mutates only the request
  * (no asset exists yet).
  */
-final readonly class CancelRequest
+final readonly class TtsCancellationFacade
 {
     public function __construct(
         private TtsAssetLocker $assetLocker,
@@ -167,8 +167,7 @@ final readonly class CancelRequest
         $assetId = (string) $ttsAsset->getAsset()->getId();
         $activeRegen = $this->requestRepo->findActiveRegenForStable($assetId);
 
-        // Cancelling a regen leaves the previously-generated audio untouched (the swap never ran), so the
-        // stable asset returns to Active — NOT Failed, which would brick a perfectly good audio.
+        // The swap never ran, so the old audio is intact — return the asset to Active, not Failed.
         $this->ttsAssetManager->markActive($ttsAsset);
 
         if (null !== $activeRegen) {

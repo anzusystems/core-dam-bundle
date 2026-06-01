@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 /**
- * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Command\DispatchNewAudioNarration}.
+ * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}.
  * Callers map `kind` directly to HTTP status (Pending → 202, AlreadyExists/AlreadyPending → 200).
  */
 final readonly class DispatchResult

@@ -12,9 +12,9 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\RegenerateTts;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\UnpublishTtsAsset;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Command\UpdatePodcastMembership;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsPodcastMembershipFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsRegenerationFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsUnpublishFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
@@ -39,9 +39,9 @@ use Symfony\Component\Routing\Attribute\Route;
 final class TtsAssetController extends AbstractApiController
 {
     public function __construct(
-        private readonly RegenerateTts $regenerateTts,
-        private readonly UnpublishTtsAsset $unpublishTtsAsset,
-        private readonly UpdatePodcastMembership $updatePodcastMembership,
+        private readonly TtsRegenerationFacade $regenerateTts,
+        private readonly TtsUnpublishFacade $unpublishTtsAsset,
+        private readonly TtsPodcastMembershipFacade $updatePodcastMembership,
         private readonly TtsAssetRepository $ttsAssetRepo,
         private readonly TtsNarrationRequestRepository $ttsRequestRepo,
         private readonly PodcastEpisodeRepository $episodeRepo,

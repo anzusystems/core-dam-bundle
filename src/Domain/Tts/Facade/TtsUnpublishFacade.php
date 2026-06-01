@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts\Command;
+namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use Doctrine\ORM\EntityManagerInterface;
 
-final readonly class UnpublishTtsAsset
+final readonly class TtsUnpublishFacade
 {
     public function __construct(
         private TtsAssetLocker $ttsAssetLocker,

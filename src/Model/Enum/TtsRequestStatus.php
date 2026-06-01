@@ -27,9 +27,8 @@ enum TtsRequestStatus: string implements EnumInterface
     public const array CANCELLABLE_STATUSES = [self::Waiting, self::Processing];
 
     /**
-     * Terminal statuses — a request that has reached any of these must never transition again.
-     * Guards against a post-completion pipeline error flipping a {@see self::Done} request to
-     * {@see self::Failed} (which would trigger a spurious failure callback to the ext-system).
+     * Terminal statuses — a request that reached any of these must never transition again (stops a
+     * post-completion error from flipping a Done request to Failed).
      */
     public const array TERMINAL_STATUSES = [self::Done, self::Failed, self::Cancelled];
 }
