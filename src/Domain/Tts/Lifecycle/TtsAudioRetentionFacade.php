@@ -45,6 +45,12 @@ final readonly class TtsAudioRetentionFacade
             }
         }
 
+        // Drop the stashed master payloads once for the whole batch — emptyAll() re-walks the entire stash,
+        // so calling it per file would be quadratic in the batch size.
+        if ($deleted > 0) {
+            $this->fileStash->emptyAll();
+        }
+
         return $deleted;
     }
 
@@ -60,9 +66,6 @@ final readonly class TtsAudioRetentionFacade
                 $this->assetFileManager->delete($audioFile, false);
                 $this->entityManager->flush();
             });
-
-            // Drop the stashed master payload now that the row is gone (best-effort, mirrors the upload-delete flow).
-            $this->fileStash->emptyAll();
 
             return true;
         } catch (Throwable $e) {

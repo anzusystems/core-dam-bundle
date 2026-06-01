@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
@@ -17,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
+use DateTimeImmutable;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -60,19 +62,10 @@ final readonly class AssetSwap
 
                 $expireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
 
-                $demoted = [];
-                $previousMaster = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newMaster, $this->config->getMasterSlotName());
-                if (null !== $previousMaster) {
-                    $previousMaster->setExpireAt($expireAt);
-                    $demoted[] = (string) $previousMaster->getId();
-                }
-                if (null !== $newPreview) {
-                    $previousPreview = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newPreview, $this->config->getPreviewSlotName());
-                    if (null !== $previousPreview) {
-                        $previousPreview->setExpireAt($expireAt);
-                        $demoted[] = (string) $previousPreview->getId();
-                    }
-                }
+                $demoted = array_values(array_filter([
+                    $this->demoteAndReplace($stableAsset, $newMaster, $this->config->getMasterSlotName(), $expireAt),
+                    null !== $newPreview ? $this->demoteAndReplace($stableAsset, $newPreview, $this->config->getPreviewSlotName(), $expireAt) : null,
+                ]));
 
                 $stableTts
                     ->setVoiceFamily($family)
@@ -97,6 +90,23 @@ final readonly class AssetSwap
                 $this->entityManager->flush();
             }
         );
+    }
+
+    /**
+     * Points the slot at the freshly-built file and stamps the demoted previous file with the grace expireAt.
+     *
+     * @return string|null the demoted file id (null when the slot had no previous file)
+     */
+    private function demoteAndReplace(Asset $stableAsset, AudioFile $newFile, string $slotName, DateTimeImmutable $expireAt): ?string
+    {
+        $previous = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newFile, $slotName);
+        if (null === $previous) {
+            return null;
+        }
+
+        $previous->setExpireAt($expireAt);
+
+        return (string) $previous->getId();
     }
 
     /**

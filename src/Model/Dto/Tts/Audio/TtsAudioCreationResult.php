@@ -18,8 +18,7 @@ final readonly class TtsAudioCreationResult
      *     can reuse it instead of re-downloading from remote storage.
      * @param AssetFileRoute $masterRoute Pre-built (persisted, not yet flushed) public route for the master
      *     audio. The orchestrator publishes it via {@see \AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade::makePublic()}
-     *     after the bytes land in storage. For staging (regenerate) flows the publish step is skipped
-     *     and this route is cascade-deleted when the staging asset is removed by the swap.
+     *     after the bytes land in storage.
      */
     public function __construct(
         public Asset $asset,

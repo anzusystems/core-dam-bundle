@@ -38,7 +38,6 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use Closure;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -104,7 +103,7 @@ final readonly class TtsRequestOrchestrator
         $this->indexManager->index($result->asset);
 
         $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
-        $this->attachPreviewSlot($result->asset, $preview, expireOldAt: null);
+        $this->attachPreviewSlot($result->asset, $preview);
 
         $this->syncPodcastMembership($request, $result->asset);
 
@@ -159,17 +158,13 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Attaches the freshly-built+published preview onto the asset's preview slot. On initial generation the
-     * slot is empty (created fresh); on regeneration the previously-active preview is demoted and stamped with
-     * {@see $expireOldAt} so its old CDN URL survives the grace period. Runs in its own short transaction.
+     * Attaches the freshly-built+published preview onto the (empty) preview slot of the initial-generation asset.
+     * Regeneration repoints the preview slot via {@see AssetSwap::promote()} instead. Runs in its own short transaction.
      */
-    private function attachPreviewSlot(Asset $asset, AudioFile $preview, ?DateTimeImmutable $expireOldAt): void
+    private function attachPreviewSlot(Asset $asset, AudioFile $preview): void
     {
-        $this->entityManager->wrapInTransaction(function () use ($asset, $preview, $expireOldAt): void {
-            $previous = $this->assetSlotFactory->replaceSlotFile($asset, $preview, $this->config->getPreviewSlotName());
-            if (null !== $previous && null !== $expireOldAt) {
-                $previous->setExpireAt($expireOldAt);
-            }
+        $this->entityManager->wrapInTransaction(function () use ($asset, $preview): void {
+            $this->assetSlotFactory->replaceSlotFile($asset, $preview, $this->config->getPreviewSlotName());
             $this->entityManager->flush();
         });
     }
