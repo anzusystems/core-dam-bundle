@@ -68,7 +68,7 @@ final readonly class CancelRequest
 
     private function cancelInitial(TtsNarrationRequest $request, ?string $reason, ?string $userId): CancelRequestResponseDto
     {
-        /** @var array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData */
+        /** @var array{extSystemId: int, extResourceName: string, extId: string, assetId: string, initial: bool}|null $callbackData */
         $callbackData = null;
 
         $this->entityManager->wrapInTransaction(function () use ($request, $reason, $userId, &$callbackData): void {
@@ -88,6 +88,8 @@ final readonly class CancelRequest
                     'extSystemId' => $locked->getExtSystemId(),
                     'extResourceName' => $extResourceName,
                     'extId' => $extId,
+                    'assetId' => (string) $locked->getStableAssetId(),
+                    'initial' => true,
                 ];
             }
 
@@ -105,7 +107,7 @@ final readonly class CancelRequest
     {
         $this->entityManager->wrapInTransaction(fn () => $this->requestStop($stableAssetId));
 
-        /** @var array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData */
+        /** @var array{extSystemId: int, extResourceName: string, extId: string, assetId: string, initial: bool}|null $callbackData */
         $callbackData = null;
         /** @var CancelRequestResponseDto $result */
         $result = $this->entityManager->wrapInTransaction(
@@ -136,7 +138,7 @@ final readonly class CancelRequest
     }
 
     /**
-     * @param array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData passed by reference — populated if a callback should fire post-commit
+     * @param array{extSystemId: int, extResourceName: string, extId: string, assetId: string, initial: bool}|null $callbackData passed by reference — populated if a callback should fire post-commit
      */
     private function finalizeRegen(
         string $stableAssetId,
@@ -154,7 +156,7 @@ final readonly class CancelRequest
     }
 
     /**
-     * @param array{extSystemId: int, extResourceName: string, extId: string}|null $callbackData passed by reference — populated if active regen had extRef
+     * @param array{extSystemId: int, extResourceName: string, extId: string, assetId: string, initial: bool}|null $callbackData passed by reference — populated if active regen had extRef
      */
     private function finalizeWonRace(
         TtsAsset $ttsAsset,
@@ -165,7 +167,9 @@ final readonly class CancelRequest
         $assetId = (string) $ttsAsset->getAsset()->getId();
         $activeRegen = $this->requestRepo->findActiveRegenForStable($assetId);
 
-        $this->ttsAssetManager->markFailed($ttsAsset, $reason);
+        // Cancelling a regen leaves the previously-generated audio untouched (the swap never ran), so the
+        // stable asset returns to Active — NOT Failed, which would brick a perfectly good audio.
+        $this->ttsAssetManager->markActive($ttsAsset);
 
         if (null !== $activeRegen) {
             $this->requestManager->markCancelled($activeRegen, $reason);
@@ -177,6 +181,8 @@ final readonly class CancelRequest
                     'extSystemId' => $activeRegen->getExtSystemId(),
                     'extResourceName' => $extResourceName,
                     'extId' => $extId,
+                    'assetId' => $assetId,
+                    'initial' => false,
                 ];
             }
         }
@@ -189,7 +195,7 @@ final readonly class CancelRequest
     }
 
     /**
-     * @param array{extSystemId: int, extResourceName: string, extId: string} $callbackData
+     * @param array{extSystemId: int, extResourceName: string, extId: string, assetId: string, initial: bool} $callbackData
      */
     private function dispatchCancelledCallback(array $callbackData, string $reason): void
     {
@@ -199,6 +205,8 @@ final readonly class CancelRequest
                 extResourceName: $callbackData['extResourceName'],
                 extId: $callbackData['extId'],
                 failureReason: sprintf('Cancelled by admin: %s', $reason),
+                assetId: $callbackData['assetId'],
+                initial: $callbackData['initial'],
             );
         } catch (Throwable $e) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'cancelRequest.dispatchCancelledCallback.failed', [

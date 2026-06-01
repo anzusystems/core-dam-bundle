@@ -75,6 +75,13 @@ final class TtsNarrationRequestManager extends AbstractManager
      */
     private function finalize(TtsNarrationRequest $request, TtsRequestStatus $terminal, ?string $reason, bool $flush): TtsNarrationRequest
     {
+        // Never transition out of a terminal state. Protects a successfully-Done request from being
+        // flipped to Failed/Cancelled by a post-completion pipeline error (which would otherwise fire
+        // a failure callback that deletes the freshly-generated media in the ext-system).
+        if ($request->getStatus()->in(TtsRequestStatus::TERMINAL_STATUSES)) {
+            return $request;
+        }
+
         $request->setStatus($terminal);
         $request->setFailureReason($reason);
         $request->setOpenInitialKey(null);

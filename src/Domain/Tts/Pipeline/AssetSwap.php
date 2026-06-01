@@ -6,12 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileStash;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SwapResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
@@ -19,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
+use Throwable;
 
 /**
  * Atomic content-swap: AudioFile rows on the stable Asset are kept; only their storage payload is
@@ -38,6 +41,8 @@ final readonly class AssetSwap
         private AssetManager $assetManager,
         private Config $config,
         private EntityManagerInterface $entityManager,
+        private FileStash $fileStash,
+        private DamLogger $logger,
     ) {
     }
 
@@ -46,13 +51,27 @@ final readonly class AssetSwap
      */
     public function swap(string $stagingAssetId, string $stableAssetId, string $requestId): SwapResultDto
     {
-        return $this->entityManager->wrapInTransaction(
+        $result = $this->entityManager->wrapInTransaction(
             function () use ($stagingAssetId, $stableAssetId, $requestId): SwapResultDto {
                 [$stableTts, $stagingTts] = $this->lockAndValidate($stagingAssetId, $stableAssetId, $requestId);
 
                 return $this->applySwap($stableTts, $stagingTts, $requestId);
             }
         );
+
+        // The in-place content swap stashes the previous master/preview payloads (and the staging
+        // asset's files) for storage deletion; drain it now that the swap is durably committed.
+        // Failures must NOT fail an already-completed regen — a leaked file is far less harmful.
+        try {
+            $this->fileStash->emptyAll();
+        } catch (Throwable $e) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'assetSwap.fileStashEmptyFailed', [
+                'stableAssetId' => $result->stableAssetId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return $result;
     }
 
     /**

@@ -80,13 +80,20 @@ final readonly class TtsRequestOrchestrator
 
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
-        $result = $this->persistInTransaction($input, function (TtsAudioCreationResult $created) use ($request): void {
+        $result = $this->persistInTransaction($input, static function (TtsAudioCreationResult $created): void {
             $created->asset->getAssetFileProperties()->setFromTts(true);
-            $this->requestManager->markDone($request, (string) $created->asset->getId(), false);
         });
 
+        // Critical steps: the audio must materialize and be publicly routable for the narration to be
+        // usable. A failure here is a genuine generation failure — the request stays non-terminal so the
+        // handler marks it Failed and the ext-system drops its placeholder media.
         $this->materializeMasterAudio($result, dispatchPropertyRefresh: true);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
+
+        // The asset is now playable — commit Done BEFORE the best-effort enrichment below so a failure
+        // in keywords/metadata/index/preview/podcast can no longer flip the request to Failed (the
+        // terminal-state guard + the handler's Done check both rely on this ordering).
+        $this->requestManager->markDone($request, (string) $result->asset->getId());
 
         $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
         $this->applyInitialMetadata($result->asset, $request, $extSystem);

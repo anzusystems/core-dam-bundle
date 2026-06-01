@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
@@ -31,6 +34,8 @@ final readonly class TtsNarrationRequestHandler
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private TtsAssetLocker $assetLocker,
+        private TtsAssetManager $ttsAssetManager,
     ) {
     }
 
@@ -53,6 +58,18 @@ final readonly class TtsNarrationRequestHandler
                 'requestId' => (string) $request->getId(),
                 'mode' => $request->getMode()->value,
             ], exception: $e);
+
+            // The asset was already created and the request committed Done — this is a post-completion
+            // enrichment failure (keywords/metadata/index/preview/podcast/notify). Marking it Failed now
+            // would fire a failure callback that deletes the freshly-generated media in the ext-system.
+            if ($request->getStatus()->is(TtsRequestStatus::Done)) {
+                $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.postDoneEnrichmentFailed', [
+                    'requestId' => (string) $request->getId(),
+                    'mode' => $request->getMode()->value,
+                ]);
+
+                return;
+            }
 
             // Never rethrow — Messenger retry would re-process a terminal request (openInitialKey
             // is already cleared). Callers must dispatch a fresh request for a retry.
@@ -94,6 +111,13 @@ final readonly class TtsNarrationRequestHandler
     {
         $failureReason = $e->getMessage();
 
+        // Regenerate failure (before the atomic swap): the stable asset's content is untouched and the
+        // previously-generated audio is still valid. Release it back to Active so it can be regenerated
+        // again — otherwise it stays stuck in Superseding and is permanently un-regeneratable.
+        if ($request->getMode()->is(TtsRequestMode::Regenerate)) {
+            $this->releaseStableAssetOnRegenFailure($request);
+        }
+
         try {
             $this->entityManager->wrapInTransaction(
                 function () use ($request, $failureReason): void {
@@ -112,6 +136,34 @@ final readonly class TtsNarrationRequestHandler
         $this->dispatchFailureCallback($request, $failureReason);
     }
 
+    /**
+     * Resets the stable TtsAsset from Superseding back to Active after a failed regeneration. Skips the
+     * asset if a concurrent cancel already moved it out of Superseding (that flow owns the final state).
+     */
+    private function releaseStableAssetOnRegenFailure(TtsNarrationRequest $request): void
+    {
+        $stableAssetId = $request->getStableAssetId();
+        if (null === $stableAssetId) {
+            return;
+        }
+
+        try {
+            $this->entityManager->wrapInTransaction(function () use ($stableAssetId): void {
+                $ttsAsset = $this->assetLocker->lock($stableAssetId);
+                if ($ttsAsset->getStatus()->is(TtsAudioStatus::Superseding)) {
+                    $this->ttsAssetManager->markActive($ttsAsset);
+                    $this->entityManager->flush();
+                }
+            });
+        } catch (Throwable $releaseEx) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.releaseStableAssetFailed', [
+                'requestId' => (string) $request->getId(),
+                'stableAssetId' => $stableAssetId,
+                'error' => $releaseEx->getMessage(),
+            ]);
+        }
+    }
+
     private function dispatchFailureCallback(TtsNarrationRequest $request, string $failureReason): void
     {
         $extResourceName = $request->getExtRef()->getExtResourceName();
@@ -126,6 +178,8 @@ final readonly class TtsNarrationRequestHandler
                 extResourceName: $extResourceName,
                 extId: $extId,
                 failureReason: $failureReason,
+                assetId: (string) $request->getStableAssetId(),
+                initial: $request->getMode()->is(TtsRequestMode::Initial),
             );
         } catch (Throwable $callbackEx) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.dispatchFailureCallback.failed', [

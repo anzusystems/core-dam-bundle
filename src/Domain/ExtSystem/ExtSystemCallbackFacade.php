@@ -109,6 +109,8 @@ final class ExtSystemCallbackFacade
         string $extResourceName,
         string $extId,
         string $failureReason,
+        string $assetId,
+        bool $initial,
     ): void {
         $extSystem = $this->extSystemRepository->find($extSystemId);
         if (null === $extSystem) {
@@ -121,7 +123,7 @@ final class ExtSystemCallbackFacade
             return;
         }
 
-        $this->getCallback($extSystem->getSlug())?->notifyAudioNarrationFailed($extResourceName, $extId, $failureReason);
+        $this->getCallback($extSystem->getSlug())?->notifyAudioNarrationFailed($extResourceName, $extId, $failureReason, $assetId, $initial);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface
