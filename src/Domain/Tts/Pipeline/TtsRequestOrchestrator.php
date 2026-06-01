@@ -129,19 +129,19 @@ final readonly class TtsRequestOrchestrator
         // Build the new master + preview on the stable asset but NOT yet slotted, and fully materialize +
         // publish their bytes to fresh public-bucket paths (= fresh CDN URLs). The live asset still serves the
         // old audio until the atomic promote below — so a failure here leaves the old narration fully intact.
-        [$newMaster, $newMasterRoute] = $this->entityManager->wrapInTransaction(
-            fn (): array => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset)
+        $built = $this->entityManager->wrapInTransaction(
+            fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts)
         );
-        $this->materializeMasterAudio($newMaster, $audioFile, dispatchPropertyRefresh: false);
-        $this->routeFacade->makePublic($newMaster, $newMasterRoute);
+        $this->materializeMasterAudio($built->masterAudio, $built->masterTmpFile, dispatchPropertyRefresh: false);
+        $this->routeFacade->makePublic($built->masterAudio, $built->masterRoute);
 
-        $newPreview = $this->previewMedia->generate($newMaster, $audioFile);
+        $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile);
 
         // Cooperative cancel check + atomic repoint: master/preview slots swing to the new files, the old files
         // are demoted with a grace-period expireAt (kept streamable), the TtsAsset is reactivated.
         $this->assetSwap->promote(
             (string) $stableAsset->getId(),
-            $newMaster,
+            $built->masterAudio,
             $newPreview,
             (string) $request->getId(),
             $voice,

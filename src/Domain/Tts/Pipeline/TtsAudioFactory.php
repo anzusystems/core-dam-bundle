@@ -97,11 +97,10 @@ final readonly class TtsAudioFactory
      * Regeneration: build a fresh master AudioFile owned by the stable asset (its `asset` FK is set so the
      * required relation holds) but NOT yet attached to any slot — the orchestrator materialises + publishes
      * its bytes first, then {@see AssetSwap} repoints the live master slot at it. The previous audio (and its
-     * public CDN URL) is left untouched until the swap demotes it with a grace period.
-     *
-     * @return array{0: AudioFile, 1: AssetFileRoute} the not-yet-published master file and its public route
+     * public CDN URL) is left untouched until the swap demotes it with a grace period. The result carries the
+     * still-active stable {@see TtsAsset} (updated in place by the swap, not recreated here).
      */
-    public function buildReplacementMaster(TtsAudioCreationInput $input, Asset $stableAsset): array
+    public function buildReplacementMaster(TtsAudioCreationInput $input, Asset $stableAsset, TtsAsset $stableTts): TtsAudioCreationResult
     {
         $audioFile = $this->buildAudioFile($input);
         $audioFile->setAsset($stableAsset);
@@ -109,7 +108,7 @@ final readonly class TtsAudioFactory
 
         $masterRoute = $this->attachStableRoute($audioFile);
 
-        return [$audioFile, $masterRoute];
+        return new TtsAudioCreationResult($stableAsset, $audioFile, $stableTts, $input->audioFile, $masterRoute);
     }
 
     private function buildAudioFile(TtsAudioCreationInput $input): AudioFile

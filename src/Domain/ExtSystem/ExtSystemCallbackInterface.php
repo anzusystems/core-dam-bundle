@@ -33,11 +33,11 @@ interface ExtSystemCallbackInterface
     /**
      * Reports an out-of-band media outcome (e.g. a generation failure) that can't be expressed as positive
      * current-state on {@see notifyAssetsChanged()}. Generic side-channel — extend via {@see MediaStatusType}.
+     * The ext-system correlates the affected media by {@see $assetId} and decides any cleanup from its own
+     * media state (e.g. drop a not-yet-playable placeholder, keep a playable one).
      *
      * @param string $assetId the asset this operation targeted (reserved id for Initial, stable id for
      *                         Regenerate) — lets the ext-system correlate which media the status pertains to
-     * @param bool   $initial  true = Initial generation (ext-system may drop its placeholder media);
-     *                         false = Regenerate (the previously-generated media must be kept)
      */
     public function notifyMediaStatus(
         string $extResourceName,
@@ -45,6 +45,5 @@ interface ExtSystemCallbackInterface
         string $assetId,
         MediaStatusType $status,
         ?string $failureReason,
-        bool $initial,
     ): void;
 }

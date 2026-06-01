@@ -212,7 +212,6 @@ final readonly class TtsNarrationRequestHandler
                 assetId: (string) $request->getStableAssetId(),
                 status: MediaStatusType::GenerationFailed,
                 failureReason: $failureReason,
-                initial: $request->getMode()->is(TtsRequestMode::Initial),
             );
         } catch (Throwable $callbackEx) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.dispatchFailureCallback.failed', [
