@@ -43,6 +43,12 @@ final readonly class TtsRegenerationFacade
                     ->setExtSystemId($assetLicence->getExtSystem()->getId())
                     ->setAssetLicenceId($assetLicence->getId())
                     ->setVoiceFamilySlug($voiceFamilySlug);
+                // Carry the originating ext reference (set on the asset at initial dispatch) so the regen
+                // request stays correlatable to its CMS resource — the admin surfaces the in-progress state
+                // by polling pending narration requests by extId; without this a regeneration is invisible.
+                $request->getExtRef()
+                    ->setExtResourceName($ttsAsset->getExtResourceName())
+                    ->setExtId($ttsAsset->getExtId());
                 $this->requestManager->create(request: $request, flush: false);
 
                 $this->ttsAssetManager->markSuperseding($ttsAsset);
