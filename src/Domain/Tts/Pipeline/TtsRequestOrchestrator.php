@@ -90,7 +90,8 @@ final readonly class TtsRequestOrchestrator
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, $shellAsset, static function (TtsAudioCreationResult $created): void {
-            $created->asset->getAssetFileProperties()->setFromTts(true);
+            // Mark the asset as TTS-generated audio (manually toggleable later in the sidebar).
+            $created->asset->getAssetFlags()->setTtsAudio(true);
         });
 
         // Audio must materialize and be publicly routable before we mark Done; a failure here is a real

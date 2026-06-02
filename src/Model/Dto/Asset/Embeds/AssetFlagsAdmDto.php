@@ -15,11 +15,15 @@ final class AssetFlagsAdmDto
     #[Serialize]
     private bool $visible;
 
+    #[Serialize]
+    private bool $ttsAudio;
+
     public static function getInstance(AssetFlags $assetFlags): self
     {
         return (new self())
             ->setDescribed($assetFlags->isDescribed())
-            ->setVisible($assetFlags->isVisible());
+            ->setVisible($assetFlags->isVisible())
+            ->setTtsAudio($assetFlags->isTtsAudio());
     }
 
     public function isDescribed(): bool
@@ -42,6 +46,18 @@ final class AssetFlagsAdmDto
     public function setVisible(bool $visible): self
     {
         $this->visible = $visible;
+
+        return $this;
+    }
+
+    public function isTtsAudio(): bool
+    {
+        return $this->ttsAudio;
+    }
+
+    public function setTtsAudio(bool $ttsAudio): self
+    {
+        $this->ttsAudio = $ttsAudio;
 
         return $this;
     }

@@ -19,9 +19,6 @@ class AssetFileProperties
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $fromRss;
 
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    private bool $fromTts;
-
     #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true])]
     private int $width;
 
@@ -33,7 +30,6 @@ class AssetFileProperties
         $this->setDistributesInServices([]);
         $this->setSlotNames([]);
         $this->setFromRss(false);
-        $this->setFromTts(false);
         $this->setWidth(0);
         $this->setHeight(0);
     }
@@ -70,18 +66,6 @@ class AssetFileProperties
     public function setFromRss(bool $fromRss): self
     {
         $this->fromRss = $fromRss;
-
-        return $this;
-    }
-
-    public function isFromTts(): bool
-    {
-        return $this->fromTts;
-    }
-
-    public function setFromTts(bool $fromTts): self
-    {
-        $this->fromTts = $fromTts;
 
         return $this;
     }

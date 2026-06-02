@@ -12,7 +12,6 @@ final class AssetFilePropertiesAdmDto
     private array $distributesInServices;
     private array $slotNames;
     private bool $fromRss;
-    private bool $fromTts;
     private int $width;
     private int $height;
 
@@ -22,7 +21,6 @@ final class AssetFilePropertiesAdmDto
             ->setDistributesInServices($properties->getDistributesInServices())
             ->setSlotNames($properties->getSlotNames())
             ->setFromRss($properties->isFromRss())
-            ->setFromTts($properties->isFromTts())
             ->setWidth($properties->getWidth())
             ->setHeight($properties->getHeight());
     }
@@ -62,19 +60,6 @@ final class AssetFilePropertiesAdmDto
     public function setFromRss(bool $fromRss): self
     {
         $this->fromRss = $fromRss;
-
-        return $this;
-    }
-
-    #[Serialize]
-    public function isFromTts(): bool
-    {
-        return $this->fromTts;
-    }
-
-    public function setFromTts(bool $fromTts): self
-    {
-        $this->fromTts = $fromTts;
 
         return $this;
     }

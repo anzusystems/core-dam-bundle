@@ -29,6 +29,7 @@ class AssetMetadataBulkManager extends AbstractManager
     ): Asset {
         $this->updateMetadata($asset, $dto);
         $this->updateDescribed($asset, $dto);
+        $this->updateTtsAudio($asset, $dto);
         $this->updateMainFileSingleUse($asset, $dto);
         $this->updateMainFileOverrideInternal($asset, $dto);
         $this->updateMainFileInternal($asset, $dto);
@@ -62,6 +63,15 @@ class AssetMetadataBulkManager extends AbstractManager
             newCollection: $updateDto->getAuthors(),
         );
         $this->authorProvider->provideCurrentAuthorToColl($asset);
+    }
+
+    private function updateTtsAudio(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
+    {
+        if ($updateDto->isTtsAudioUndefined()) {
+            return;
+        }
+
+        $asset->getAssetFlags()->setTtsAudio($updateDto->isTtsAudio());
     }
 
     private function updateMainFileSingleUse(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
