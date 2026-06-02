@@ -33,7 +33,9 @@ class AssetAdmListDto extends AbstractEntityDto
         return $parent
             ->setTexts(AssetTextsAdmListDto::getInstance($asset->getTexts()))
             ->setAttributes(AssetAttributesAdmDto::getInstance($asset->getAttributes()))
-            ->setAssetFileProperties(AssetFilePropertiesAdmDto::getInstance($asset->getAssetFileProperties()))
+            ->setAssetFileProperties(
+                AssetFilePropertiesAdmDto::getInstance($asset->getAssetFileProperties(), ttsAudio: $asset->getAssetFlags()->isTtsAudio())
+            )
             ->setAsset($asset);
     }
 
