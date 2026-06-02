@@ -64,6 +64,14 @@ final readonly class TtsDispatchFacade
         }
 
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
+
+        // PRVÝ BERIE: identical (licence, source text, voiceFamily) already produced an asset — reuse it,
+        // don't burn synthesis quota. CMS gets the existing asset id (status: duplicate) and informs the editor.
+        $duplicate = $this->findExistingForContent($dto->getText(), $voice, $licence);
+        if (null !== $duplicate) {
+            return $duplicate;
+        }
+
         $this->precheckProviderOrThrowValidation($voice, $extSystem);
 
         $openInitialKey = TtsIdempotencyKey::forInitial($extResourceName, $extId, $extSystem);
@@ -119,6 +127,21 @@ final readonly class TtsDispatchFacade
         }
 
         return DispatchResult::alreadyExists((string) $existing->getAsset()->getId());
+    }
+
+    private function findExistingForContent(string $text, Voice $voice, AssetLicence $licence): ?DispatchResult
+    {
+        // sourceTextHash must match TtsAudioCreationInput's computation (sha256 of the source text).
+        $existing = $this->ttsAssetRepo->findActiveByContent(
+            licence: $licence,
+            sourceTextHash: hash('sha256', $text),
+            voiceFamily: $voice->getVoiceFamily(),
+        );
+        if (null === $existing) {
+            return null;
+        }
+
+        return DispatchResult::duplicate((string) $existing->getAsset()->getId());
     }
 
     private function persistOrAlreadyPending(TtsNarrationRequest $request): DispatchResult

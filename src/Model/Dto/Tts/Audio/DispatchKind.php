@@ -18,4 +18,5 @@ enum DispatchKind: string implements EnumInterface
     case Pending = 'pending';
     case AlreadyExists = 'already_exists';
     case AlreadyPending = 'already_pending';
+    case Duplicate = 'duplicate';
 }

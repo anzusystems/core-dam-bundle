@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
@@ -64,6 +65,35 @@ final class TtsAssetRepository extends AbstractAnzuRepository
             ->setParameter('extSystem', $extSystem)
             ->setParameter('extResourceName', $extResourceName)
             ->setParameter('extId', $extId)
+            ->setParameter('statuses', $activeStatuses)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * PRVÝ BERIE dedup: an active asset with the same source text + voiceFamily already exists in this
+     * licence. Identical text in the same voice produces identical audio, so the caller reuses it instead
+     * of paying for another synthesis. Keyed on (licence, sourceTextHash, voiceFamily) — language rides on
+     * the licence's ext-system, the voiceFamily pins the voice.
+     *
+     * @param non-empty-list<TtsAudioStatus> $activeStatuses
+     */
+    public function findActiveByContent(
+        AssetLicence $licence,
+        string $sourceTextHash,
+        VoiceFamily $voiceFamily,
+        array $activeStatuses = [TtsAudioStatus::Active, TtsAudioStatus::Superseding, TtsAudioStatus::Cancelling],
+    ): ?TtsAsset {
+        return $this->createQueryBuilder('ta')
+            ->innerJoin('ta.asset', 'a')
+            ->where('a.licence = :licence')
+            ->andWhere('ta.sourceTextHash = :sourceTextHash')
+            ->andWhere('ta.voiceFamily = :voiceFamily')
+            ->andWhere('ta.status IN (:statuses)')
+            ->setParameter('licence', $licence)
+            ->setParameter('sourceTextHash', $sourceTextHash)
+            ->setParameter('voiceFamily', $voiceFamily)
             ->setParameter('statuses', $activeStatuses)
             ->setMaxResults(1)
             ->getQuery()

@@ -161,7 +161,6 @@ final readonly class PreviewMedia
             assetFile: $preview,
             file: $previewFile,
             dispatchPropertyRefresh: false,
-            skipDuplicateCheck: true,
         );
 
         if ($preview->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {

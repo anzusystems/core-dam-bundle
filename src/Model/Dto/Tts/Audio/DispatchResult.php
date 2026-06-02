@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 /**
  * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}.
- * Callers map `kind` directly to HTTP status (Pending → 202, AlreadyExists/AlreadyPending → 200).
+ * Callers map `kind` directly to HTTP status (Pending → 202, AlreadyExists/Duplicate → 200, AlreadyPending → 409).
  */
 final readonly class DispatchResult
 {
@@ -28,6 +28,16 @@ final readonly class DispatchResult
         return new self(DispatchKind::AlreadyExists, existingAssetId: $existingAssetId);
     }
 
+    /**
+     * PRVÝ BERIE: identical (licence, source text, voiceFamily) already produced an asset, so no
+     * synthesis runs — the existing asset id is handed back so the caller (CMS) can reuse it and
+     * inform the editor that the narration already exists.
+     */
+    public static function duplicate(string $originAssetId): self
+    {
+        return new self(DispatchKind::Duplicate, existingAssetId: $originAssetId);
+    }
+
     public static function alreadyPending(): self
     {
         return new self(DispatchKind::AlreadyPending);
@@ -42,7 +52,7 @@ final readonly class DispatchResult
     public function getAssetId(): ?string
     {
         return match ($this->kind) {
-            DispatchKind::AlreadyExists => $this->existingAssetId,
+            DispatchKind::AlreadyExists, DispatchKind::Duplicate => $this->existingAssetId,
             default => $this->assetId,
         };
     }

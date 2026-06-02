@@ -11,11 +11,11 @@ use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 #[AutoconfigureTag]
 interface AssetFileStatusInterface
 {
-    public function store(AssetFile $assetFile, AdapterFile $file, bool $skipDuplicateCheck = false): AdapterFile;
+    public function store(AssetFile $assetFile, AdapterFile $file): AdapterFile;
 
     public function process(AssetFile $assetFile, AdapterFile $file, bool $dispatchPropertyRefresh): AssetFile;
 
-    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true, bool $skipDuplicateCheck = false): AssetFile;
+    public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile;
 
     public static function getDefaultKeyName(): string;
 }

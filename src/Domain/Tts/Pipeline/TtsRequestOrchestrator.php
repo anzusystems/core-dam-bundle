@@ -336,8 +336,10 @@ final readonly class TtsRequestOrchestrator
      * transitions the AudioFile to {@see AssetFileProcessStatus::Processed} (also flipping Asset → WithFile),
      * dispatches AssetFileChangedEvent and the AssetRefreshProperties message.
      *
-     * Duplicate detection is skipped: TTS regenerations frequently produce byte-identical MP3s for the
-     * same input, and would otherwise collapse onto a previous TTS asset.
+     * Duplicate detection runs (licence checksum invariant), but a regen producing byte-identical audio
+     * to the asset's own current master is not a duplicate — {@see AudioStatusFacade::checkDuplicate()}
+     * excludes the same asset. Cross-article identical text is already short-circuited earlier at dispatch
+     * ({@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}, PRVÝ BERIE).
      *
      * If the pipeline marks the file as Failed (status-facade swallows Throwables and transitions to
      * Failed instead of re-throwing), surface that here so the worker handler marks the request as failed.
@@ -348,7 +350,6 @@ final readonly class TtsRequestOrchestrator
             assetFile: $audioFile,
             file: $tmpFile,
             dispatchPropertyRefresh: $dispatchPropertyRefresh,
-            skipDuplicateCheck: true,
         );
 
         if ($audioFile->getAssetAttributes()->getStatus()->isNot(AssetFileProcessStatus::Processed)) {
