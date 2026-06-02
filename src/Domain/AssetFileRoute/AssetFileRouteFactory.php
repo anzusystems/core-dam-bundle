@@ -55,6 +55,16 @@ final class AssetFileRouteFactory extends AbstractManager
         );
     }
 
+    /**
+     * Wires a caller-prepared main route (slug + storage path already computed) onto an audio file and
+     * persists it WITHOUT the uniqueness guard {@see createFileRoute} applies — TTS uses random slugs, so a
+     * path collision is not a concern and the extra lookup is skipped. Caller owns the surrounding flush.
+     */
+    public function createPrebuiltAudioRoute(AudioFile $audioFile, string $slug, string $path): AssetFileRoute
+    {
+        return $this->wireMainRoute($audioFile, $slug, $path, RouteMode::StorageCopy);
+    }
+
     private function createFileRoute(AssetFile $assetFile, string $slug, string $path): AssetFileRoute
     {
         $existingRoute = $this->assetFileRouteRepository->findOneByUriPath($path);
@@ -62,6 +72,11 @@ final class AssetFileRouteFactory extends AbstractManager
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
+        return $this->wireMainRoute($assetFile, $slug, $path, $this->getMode($assetFile));
+    }
+
+    private function wireMainRoute(AssetFile $assetFile, string $slug, string $path, RouteMode $mode): AssetFileRoute
+    {
         $route = (new AssetFileRoute())
             ->setUri(
                 (new RouteUri())
@@ -70,7 +85,7 @@ final class AssetFileRouteFactory extends AbstractManager
                     ->setPath($path)
             )
             ->setStatus(RouteStatus::Active)
-            ->setMode($this->getMode($assetFile))
+            ->setMode($mode)
         ;
         $route->setTargetAssetFile($assetFile);
         $assetFile->getRoutes()->add($route);

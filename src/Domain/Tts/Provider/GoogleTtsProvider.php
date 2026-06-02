@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
 
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsAuthClientProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsClient;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -27,8 +28,9 @@ use League\Flysystem\FilesystemException;
  */
 final class GoogleTtsProvider extends AbstractTtsProvider
 {
-    // Google's documented per-request limit. Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS
-    // — do not merge into a shared constant.
+    // Google's hard documented per-request ceiling. The effective chunk size is the operator-driven
+    // Config::chunkSizeChars clamped to this — see AbstractTtsProvider::resolveChunkSize().
+    // Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
     private const string AUDIO_ENCODING_MP3 = 'MP3';
     private const string RESPONSE_KEY_AUDIO_CONTENT = 'audioContent';
@@ -41,8 +43,9 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
         FfmpegService $ffmpegService,
+        Config $config,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider);
+        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config);
     }
 
     public static function getDefaultKeyName(): string
@@ -83,7 +86,7 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         $this->precheck($voice, $extSystem);
         assert($voice instanceof GoogleTtsVoice);
 
-        $chunks = $this->chunker->chunk($text, self::MAX_CHARS);
+        $chunks = $this->chunker->chunk($text, $this->resolveChunkSize());
         if ([] === $chunks) {
             throw new TtsProviderException('Cannot synthesize empty text.');
         }

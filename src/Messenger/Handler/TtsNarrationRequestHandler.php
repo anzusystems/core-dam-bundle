@@ -215,20 +215,13 @@ final readonly class TtsNarrationRequestHandler
             return;
         }
 
-        try {
-            $this->extSystemCallbackFacade->notifyMediaStatus(
-                extSystemId: $request->getExtSystemId(),
-                extResourceName: $extResourceName,
-                extId: $extId,
-                assetId: (string) $request->getStableAssetId(),
-                status: MediaStatusType::GenerationFailed,
-                failureReason: $failureReason,
-            );
-        } catch (Throwable $callbackEx) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.dispatchFailureCallback.failed', [
-                'requestId' => (string) $request->getId(),
-                'error' => $callbackEx->getMessage(),
-            ]);
-        }
+        $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
+            extSystemId: $request->getExtSystemId(),
+            extResourceName: $extResourceName,
+            extId: $extId,
+            assetId: (string) $request->getStableAssetId(),
+            status: MediaStatusType::GenerationFailed,
+            failureReason: $failureReason,
+        );
     }
 }

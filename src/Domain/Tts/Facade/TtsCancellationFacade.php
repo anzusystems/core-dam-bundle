@@ -13,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelledCallbackData;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
@@ -26,7 +25,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
-use Throwable;
 
 /**
  * Two-phase regen cancel: phase 1 flips superseding→cancelling on TtsAsset + signals the in-flight
@@ -44,7 +42,6 @@ final readonly class TtsCancellationFacade
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
-        private DamLogger $logger,
     ) {
     }
 
@@ -177,20 +174,13 @@ final readonly class TtsCancellationFacade
 
     private function dispatchCancelledCallback(CancelledCallbackData $callbackData, string $reason): void
     {
-        try {
-            $this->extSystemCallbackFacade->notifyMediaStatus(
-                extSystemId: $callbackData->extSystemId,
-                extResourceName: $callbackData->extResourceName,
-                extId: $callbackData->extId,
-                assetId: $callbackData->assetId,
-                status: MediaStatusType::GenerationFailed,
-                failureReason: sprintf('Cancelled by admin: %s', $reason),
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'cancelRequest.dispatchCancelledCallback.failed', [
-                'extSystemId' => $callbackData->extSystemId,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
+            extSystemId: $callbackData->extSystemId,
+            extResourceName: $callbackData->extResourceName,
+            extId: $callbackData->extId,
+            assetId: $callbackData->assetId,
+            status: MediaStatusType::GenerationFailed,
+            failureReason: sprintf('Cancelled by admin: %s', $reason),
+        );
     }
 }

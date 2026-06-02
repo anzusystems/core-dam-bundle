@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
@@ -17,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
@@ -26,8 +25,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
-use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
 
@@ -56,7 +53,7 @@ final readonly class TtsAudioFactory
         private AssetSlotFactory $assetSlotFactory,
         private AssetManager $assetManager,
         private AssetFileManager $assetFileManager,
-        private AssetFileRouteManager $routeManager,
+        private AssetFileRouteFactory $routeFactory,
         private Config $config,
         private TtsAssetManager $ttsAssetManager,
         private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
@@ -148,22 +145,7 @@ final readonly class TtsAudioFactory
         $routeSlug = StringHelper::base64UrlRandom(self::ROUTE_RANDOM_BYTES);
         $routePath = sprintf('%s/%s.%s', (string) $audioFile->getId(), $routeSlug, FfmpegService::AUDIO_EXTENSION_MP3);
 
-        $route = (new AssetFileRoute())
-            ->setUri(
-                (new RouteUri())
-                    ->setSlug($routeSlug)
-                    ->setMain(true)
-                    ->setPath($routePath)
-            )
-            ->setStatus(RouteStatus::Active)
-            ->setMode(RouteMode::StorageCopy)
-        ;
-        $route->setTargetAssetFile($audioFile);
-        $audioFile->getRoutes()->add($route);
-        $audioFile->setMainRoute($route);
-        $this->routeManager->create($route, false);
-
-        return $route;
+        return $this->routeFactory->createPrebuiltAudioRoute($audioFile, $routeSlug, $routePath);
     }
 
     private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input): TtsAsset

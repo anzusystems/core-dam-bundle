@@ -8,10 +8,10 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\PodcastLicenceFilter;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,7 +26,7 @@ final readonly class TtsPodcastMembershipFacade
         private TtsAssetLocker $ttsAssetLocker,
         private PodcastEpisodeManager $episodeManager,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
-        private DamLogger $logger,
+        private PodcastLicenceFilter $podcastLicenceFilter,
         private EntityManagerInterface $entityManager,
     ) {
     }
@@ -40,7 +40,7 @@ final readonly class TtsPodcastMembershipFacade
     {
         App::throwOnReadOnlyMode();
 
-        $desired = $this->filterByLicence($asset, $podcasts);
+        $desired = $this->podcastLicenceFilter->filter($asset, $podcasts);
 
         $this->entityManager->wrapInTransaction(function () use ($asset, $desired): void {
             $this->ttsAssetLocker->requireFor($asset);
@@ -50,31 +50,5 @@ final readonly class TtsPodcastMembershipFacade
         // Propagate the membership change to linked ext-systems (e.g. the CMS medium's episode/podcast) —
         // mirrors the creation paths in TtsRequestOrchestrator, which the standalone change path was missing.
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$asset]));
-    }
-
-    /**
-     * @param Collection<int, Podcast> $podcasts
-     *
-     * @return Collection<int, Podcast>
-     */
-    private function filterByLicence(Asset $asset, Collection $podcasts): Collection
-    {
-        $desired = new ArrayCollection();
-        foreach ($podcasts as $podcast) {
-            if ($podcast->getLicence()->is($asset->getLicence())) {
-                $desired->add($podcast);
-
-                continue;
-            }
-
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'podcastMembership.licenceMismatch', [
-                'podcastId' => (string) $podcast->getId(),
-                'assetId' => (string) $asset->getId(),
-                'podcastLicenceId' => (string) $podcast->getLicence()->getId(),
-                'assetLicenceId' => (string) $asset->getLicence()->getId(),
-            ]);
-        }
-
-        return $desired;
     }
 }

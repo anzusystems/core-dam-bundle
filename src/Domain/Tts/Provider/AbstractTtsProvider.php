@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
@@ -25,7 +26,19 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
         protected readonly FileSystemProvider $fileSystemProvider,
         protected readonly FfmpegService $ffmpegService,
         protected readonly ExtSystemConfigurationProvider $extSystemConfigProvider,
+        protected readonly Config $config,
     ) {
+    }
+
+    /**
+     * Effective per-request chunk size: the operator-driven {@see Config::getChunkSizeChars()} (env
+     * `TTS_CHUNK_SIZE_CHARS`), clamped to this provider's hard API ceiling ({@see getMaxCharsPerRequest()})
+     * so a misconfigured override can never exceed the documented per-request limit, and floored at 1 so a
+     * zero/negative value can't break chunking. Lets ops steer chunk size (cost/latency) without a deploy.
+     */
+    protected function resolveChunkSize(): int
+    {
+        return max(1, min($this->config->getChunkSizeChars(), $this->getMaxCharsPerRequest()));
     }
 
     /**

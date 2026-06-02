@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\PodcastLicenceFilter;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -63,6 +64,7 @@ final readonly class TtsRequestOrchestrator
         private AssetSwap $assetSwap,
         private PodcastEpisodeManager $episodeManager,
         private PodcastRepository $podcastRepo,
+        private PodcastLicenceFilter $podcastLicenceFilter,
         private AssetFileRouteFacade $routeFacade,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private IndexManager $indexManager,
@@ -231,21 +233,10 @@ final readonly class TtsRequestOrchestrator
             return;
         }
 
-        $desired = new ArrayCollection();
-        foreach ($this->podcastRepo->findBy(['id' => $request->getPodcastIds()]) as $podcast) {
-            if ($podcast->getLicence()->is($asset->getLicence())) {
-                $desired->add($podcast);
-
-                continue;
-            }
-
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'podcastMembership.licenceMismatch', [
-                'podcastId' => (string) $podcast->getId(),
-                'assetId' => (string) $asset->getId(),
-                'podcastLicenceId' => (string) $podcast->getLicence()->getId(),
-                'assetLicenceId' => (string) $asset->getLicence()->getId(),
-            ]);
-        }
+        $desired = $this->podcastLicenceFilter->filter(
+            $asset,
+            $this->podcastRepo->findBy(['id' => $request->getPodcastIds()]),
+        );
 
         $this->episodeManager->setMembership($asset, $desired);
     }

@@ -7,13 +7,12 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileMetadata\AssetFileMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
-use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileMetadata;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Exception\FfmpegException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
@@ -23,8 +22,6 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
-use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
-use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
@@ -42,7 +39,7 @@ final readonly class PreviewMedia
     private const int PREVIEW_ROUTE_RANDOM_BYTES = 16;
 
     public function __construct(
-        private AssetFileRouteManager $routeManager,
+        private AssetFileRouteFactory $routeFactory,
         private AssetFileRouteFacade $routeFacade,
         private AssetFileMetadataManager $metadataManager,
         private FileSystemProvider $fileSystemProvider,
@@ -150,23 +147,7 @@ final readonly class PreviewMedia
         $slug = StringHelper::base64UrlRandom(self::PREVIEW_ROUTE_RANDOM_BYTES);
         $path = (string) $previewAudio->getId() . '/' . $slug . '.' . FfmpegService::AUDIO_EXTENSION_MP3;
 
-        $route = (new AssetFileRoute())
-            ->setUri(
-                (new RouteUri())
-                    ->setSlug($slug)
-                    ->setMain(true)
-                    ->setPath($path)
-            )
-            ->setStatus(RouteStatus::Active)
-            ->setMode(RouteMode::StorageCopy)
-        ;
-        $route->setTargetAssetFile($previewAudio);
-        $previewAudio->getRoutes()->add($route);
-        $previewAudio->setMainRoute($route);
-
-        $this->routeManager->create($route, false);
-
-        return $route;
+        return $this->routeFactory->createPrebuiltAudioRoute($previewAudio, $slug, $path);
     }
 
     /**
