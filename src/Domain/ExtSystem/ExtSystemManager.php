@@ -27,7 +27,7 @@ final class ExtSystemManager extends AbstractManager
             ->setName($newExtSystem->getName())
             ->setSlug($newExtSystem->getSlug())
             ->setTtsDefaultAssetLicence($newExtSystem->getTtsDefaultAssetLicence())
-            ->setTtsAdvertAsset($newExtSystem->getTtsAdvertAsset())
+            ->setTtsFreeAudioEpilogAsset($newExtSystem->getTtsFreeAudioEpilogAsset())
         ;
         $extSystem->getTtsSettings()
             ->setDefaultVoiceFamilyId($newExtSystem->getTtsSettings()->getDefaultVoiceFamilyId())

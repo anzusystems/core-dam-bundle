@@ -10,14 +10,17 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
+use AnzuSystems\CoreDamBundle\Exception\DependencyExistsException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\ReadableCollection;
@@ -43,6 +46,7 @@ class AssetFacade
         private readonly AssetEventDispatcher $assetEventDispatcher,
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
         private readonly AssetRepository $assetRepository,
+        private readonly ExtSystemRepository $extSystemRepository,
     ) {
     }
 
@@ -128,6 +132,7 @@ class AssetFacade
 
     public function delete(Asset $asset): void
     {
+        $this->assertDeletable($asset);
         $this->assetManager->beginTransaction();
 
         try {
@@ -160,12 +165,26 @@ class AssetFacade
             return 0;
         }
         foreach ($assets as $asset) {
+            $this->assertDeletable($asset);
             $deletedId = (string) $asset->getId();
             $this->deleteWithFiles($asset);
             $this->indexManager->delete($asset, $deletedId);
         }
 
         return $assets->count();
+    }
+
+    /**
+     * Surfaces a 422 dependency error instead of a raw FK violation when the asset is still referenced
+     * (currently: an ext-system TTS free audio epilog — the FK uses no ON DELETE action by design).
+     *
+     * @throws DependencyExistsException
+     */
+    private function assertDeletable(Asset $asset): void
+    {
+        if ($this->extSystemRepository->existsByTtsFreeAudioEpilogAsset($asset)) {
+            throw (new DependencyExistsException())->addDependency(ExtSystem::class);
+        }
     }
 
     /**

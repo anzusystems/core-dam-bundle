@@ -79,9 +79,9 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     private ?AssetLicence $ttsDefaultAssetLicence = null;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
-    #[ORM\JoinColumn(name: 'tts_advert_asset_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(name: 'tts_free_audio_epilog_asset_id', referencedColumnName: 'id', nullable: true)]
     #[Serialize(handler: EntityIdHandler::class)]
-    private ?Asset $ttsAdvertAsset = null;
+    private ?Asset $ttsFreeAudioEpilogAsset = null;
 
     public function __construct()
     {
@@ -198,14 +198,14 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this;
     }
 
-    public function getTtsAdvertAsset(): ?Asset
+    public function getTtsFreeAudioEpilogAsset(): ?Asset
     {
-        return $this->ttsAdvertAsset;
+        return $this->ttsFreeAudioEpilogAsset;
     }
 
-    public function setTtsAdvertAsset(?Asset $ttsAdvertAsset): self
+    public function setTtsFreeAudioEpilogAsset(?Asset $ttsFreeAudioEpilogAsset): self
     {
-        $this->ttsAdvertAsset = $ttsAdvertAsset;
+        $this->ttsFreeAudioEpilogAsset = $ttsFreeAudioEpilogAsset;
 
         return $this;
     }

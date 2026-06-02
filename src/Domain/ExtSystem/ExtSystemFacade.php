@@ -30,7 +30,7 @@ final class ExtSystemFacade
         $this->validator->validate($newExtSystem, $extSystem);
         $this->validateDefaultVoiceFamily($extSystem, $newExtSystem);
         $this->assertBelongsToExtSystem($extSystem, $newExtSystem->getTtsDefaultAssetLicence(), 'ttsDefaultAssetLicence');
-        $this->validateTtsAdvertAsset($extSystem, $newExtSystem->getTtsAdvertAsset());
+        $this->validateTtsFreeAudioEpilogAsset($extSystem, $newExtSystem->getTtsFreeAudioEpilogAsset());
 
         return $this->extSystemManager->update($extSystem, $newExtSystem);
     }
@@ -56,17 +56,17 @@ final class ExtSystemFacade
     /**
      * @throws ValidationException
      */
-    private function validateTtsAdvertAsset(ExtSystem $extSystem, ?Asset $advertAsset): void
+    private function validateTtsFreeAudioEpilogAsset(ExtSystem $extSystem, ?Asset $freeAudioEpilogAsset): void
     {
-        if (null === $advertAsset) {
+        if (null === $freeAudioEpilogAsset) {
             return;
         }
 
-        $this->assertBelongsToExtSystem($extSystem, $advertAsset, 'ttsAdvertAsset');
+        $this->assertBelongsToExtSystem($extSystem, $freeAudioEpilogAsset, 'ttsFreeAudioEpilogAsset');
 
-        if (false === $advertAsset->getAssetType()->is(AssetType::Audio)) {
+        if (false === $freeAudioEpilogAsset->getAssetType()->is(AssetType::Audio)) {
             throw (new ValidationException())
-                ->addFormattedError('ttsAdvertAsset', ValidationException::ERROR_FIELD_INVALID);
+                ->addFormattedError('ttsFreeAudioEpilogAsset', ValidationException::ERROR_FIELD_INVALID);
         }
     }
 

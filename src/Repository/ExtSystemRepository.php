@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -37,6 +38,17 @@ final class ExtSystemRepository extends AbstractAnzuRepository
                 ->getQuery()
                 ->getResult()
         );
+    }
+
+    public function existsByTtsFreeAudioEpilogAsset(Asset $asset): bool
+    {
+        return (bool) $this->createQueryBuilder('entity')
+            ->select('1')
+            ->where('entity.ttsFreeAudioEpilogAsset = :asset')
+            ->setParameter('asset', $asset)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     protected function getEntityClass(): string
