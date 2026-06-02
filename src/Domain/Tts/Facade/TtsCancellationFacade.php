@@ -15,8 +15,6 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelledCallbackData;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestStatus;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\RegenCancelOutcome;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
@@ -31,6 +29,9 @@ use Doctrine\ORM\EntityManagerInterface;
  * request via {@see TtsNarrationRequest::$cancelRequested}; phase 2 re-locks after commit and
  * resolves the race with the orchestrator's swap. Initial cancel mutates only the request
  * (no asset exists yet).
+ *
+ * Returns true when the request was successfully cancelled (HTTP 200), false when it could not be
+ * cancelled because the terminal state was already reached (HTTP 409).
  */
 final readonly class TtsCancellationFacade
 {
@@ -46,9 +47,12 @@ final readonly class TtsCancellationFacade
     }
 
     /**
-     * @throws ImmutableAudioNarrationException if request is not cancellable
+     * Returns true when cancelled (caller → HTTP 200 with the refreshed entity),
+     * false when the request can no longer be cancelled (caller → HTTP 409).
+     *
+     * @throws ImmutableAudioNarrationException if the request status is not in CANCELLABLE_STATUSES
      */
-    public function execute(TtsNarrationRequest $request, ?string $reason, ?string $userId): CancelRequestResponseDto
+    public function execute(TtsNarrationRequest $request, ?string $userId): bool
     {
         App::throwOnReadOnlyMode();
 
@@ -61,23 +65,23 @@ final readonly class TtsCancellationFacade
         }
 
         return match ($request->getMode()) {
-            TtsRequestMode::Initial => $this->cancelInitial($request, $reason, $userId),
-            TtsRequestMode::Regenerate => $this->cancelRegenerate((string) $request->getStableAssetId(), $reason ?? App::EMPTY_STRING, $userId),
+            TtsRequestMode::Initial => $this->cancelInitial($request, $userId),
+            TtsRequestMode::Regenerate => $this->cancelRegenerate((string) $request->getStableAssetId(), $userId),
         };
     }
 
-    private function cancelInitial(TtsNarrationRequest $request, ?string $reason, ?string $userId): CancelRequestResponseDto
+    private function cancelInitial(TtsNarrationRequest $request, ?string $userId): bool
     {
         $callbackData = $this->entityManager->wrapInTransaction(
-            function () use ($request, $reason, $userId): ?CancelledCallbackData {
+            function () use ($request, $userId): ?CancelledCallbackData {
                 // Re-lock for status consistency under concurrency.
                 $locked = $this->requestRepo->find((string) $request->getId(), LockMode::PESSIMISTIC_WRITE);
                 if (null === $locked || false === $locked->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
                     throw new ImmutableAudioNarrationException(sprintf('Request "%s" no longer cancellable.', (string) $request->getId()));
                 }
 
-                $this->requestManager->markCancelled($locked, $reason);
-                $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId, $reason);
+                $this->requestManager->markCancelled($locked);
+                $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId);
 
                 $callbackData = $this->buildCallbackData($locked, (string) $locked->getStableAssetId());
 
@@ -88,25 +92,25 @@ final readonly class TtsCancellationFacade
         );
 
         if (null !== $callbackData) {
-            $this->dispatchCancelledCallback($callbackData, $reason ?? App::EMPTY_STRING);
+            $this->dispatchCancelledCallback($callbackData);
         }
 
-        return CancelRequestResponseDto::getInstance(CancelRequestStatus::Cancelled, false);
+        return true;
     }
 
-    private function cancelRegenerate(string $stableAssetId, string $reason, ?string $userId): CancelRequestResponseDto
+    private function cancelRegenerate(string $stableAssetId, ?string $userId): bool
     {
         $this->entityManager->wrapInTransaction(fn () => $this->requestStop($stableAssetId));
 
         $outcome = $this->entityManager->wrapInTransaction(
-            fn (): RegenCancelOutcome => $this->finalizeRegen($stableAssetId, $reason, $userId)
+            fn (): RegenCancelOutcome => $this->finalizeRegen($stableAssetId, $userId)
         );
 
         if (null !== $outcome->callbackData) {
-            $this->dispatchCancelledCallback($outcome->callbackData, $reason);
+            $this->dispatchCancelledCallback($outcome->callbackData);
         }
 
-        return $outcome->response;
+        return $outcome->cancelled;
     }
 
     private function requestStop(string $stableAssetId): void
@@ -125,21 +129,19 @@ final readonly class TtsCancellationFacade
 
     private function finalizeRegen(
         string $stableAssetId,
-        string $reason,
         ?string $userId,
     ): RegenCancelOutcome {
         $ttsAsset = $this->assetLocker->lock($stableAssetId);
 
         return match ($ttsAsset->getStatus()) {
-            TtsAudioStatus::Cancelling => $this->finalizeWonRace($ttsAsset, $reason, $userId),
-            TtsAudioStatus::Active => new RegenCancelOutcome(CancelRequestResponseDto::getInstance(CancelRequestStatus::SwapCompleted, true), null),
-            default => new RegenCancelOutcome(CancelRequestResponseDto::getInstance(CancelRequestStatus::AlreadyFailed, false), null),
+            TtsAudioStatus::Cancelling => $this->finalizeWonRace($ttsAsset, $userId),
+            // SwapCompleted or AlreadyFailed — both collapse to "can't cancel" (409)
+            default => new RegenCancelOutcome(cancelled: false, callbackData: null),
         };
     }
 
     private function finalizeWonRace(
         TtsAsset $ttsAsset,
-        string $reason,
         ?string $userId,
     ): RegenCancelOutcome {
         $assetId = (string) $ttsAsset->getAsset()->getId();
@@ -150,15 +152,15 @@ final readonly class TtsCancellationFacade
 
         $callbackData = null;
         if (null !== $activeRegen) {
-            $this->requestManager->markCancelled($activeRegen, $reason);
+            $this->requestManager->markCancelled($activeRegen);
             $callbackData = $this->buildCallbackData($activeRegen, $assetId);
         }
 
-        $this->auditLogger->logCancelled($assetId, (string) $activeRegen?->getId(), $userId, $reason);
+        $this->auditLogger->logCancelled($assetId, (string) $activeRegen?->getId(), $userId);
 
         $this->entityManager->flush();
 
-        return new RegenCancelOutcome(CancelRequestResponseDto::getInstance(CancelRequestStatus::Cancelled, false), $callbackData);
+        return new RegenCancelOutcome(cancelled: true, callbackData: $callbackData);
     }
 
     private function buildCallbackData(TtsNarrationRequest $request, string $assetId): ?CancelledCallbackData
@@ -172,7 +174,7 @@ final readonly class TtsCancellationFacade
         return new CancelledCallbackData($request->getExtSystemId(), $extResourceName, $extId, $assetId);
     }
 
-    private function dispatchCancelledCallback(CancelledCallbackData $callbackData, string $reason): void
+    private function dispatchCancelledCallback(CancelledCallbackData $callbackData): void
     {
         $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
             extSystemId: $callbackData->extSystemId,
@@ -180,7 +182,7 @@ final readonly class TtsCancellationFacade
             extId: $callbackData->extId,
             assetId: $callbackData->assetId,
             status: MediaStatusType::GenerationFailed,
-            failureReason: sprintf('Cancelled by admin: %s', $reason),
+            failureReason: 'Cancelled by admin',
         );
     }
 }

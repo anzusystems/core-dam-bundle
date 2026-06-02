@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Tts;
 
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
@@ -14,17 +15,19 @@ use PHPUnit\Framework\TestCase;
  */
 final class DispatchResultTest extends TestCase
 {
-    public function testPendingCarriesStableAssetId(): void
+    public function testPendingCarriesStableAssetIdAndEntity(): void
     {
         $requestId = 'req-uuid-1';
         $assetId = 'asset-uuid-stable';
+        $narrationRequest = new TtsNarrationRequest();
 
-        $result = DispatchResult::pending($requestId, $assetId);
+        $result = DispatchResult::pending($requestId, $assetId, $narrationRequest);
 
         $this->assertSame(DispatchKind::Pending, $result->kind);
         $this->assertSame($requestId, $result->requestId);
         $this->assertNotNull($result->getAssetId(), 'Pending result must expose a non-null assetId');
         $this->assertSame($assetId, $result->getAssetId());
+        $this->assertSame($narrationRequest, $result->narrationRequest);
     }
 
     public function testAlreadyPendingHasNoAssetId(): void
@@ -33,6 +36,7 @@ final class DispatchResultTest extends TestCase
 
         $this->assertSame(DispatchKind::AlreadyPending, $result->kind);
         $this->assertNull($result->getAssetId(), 'AlreadyPending is a duplicate no-op — a concurrent dispatch owns the media attach');
+        $this->assertNull($result->narrationRequest);
     }
 
     public function testAlreadyExistsCarriesExistingAssetId(): void
@@ -49,7 +53,7 @@ final class DispatchResultTest extends TestCase
 
     public function testSynthesizeResponseDtoFromPendingResult(): void
     {
-        $result = DispatchResult::pending('req-1', 'asset-1');
+        $result = DispatchResult::pending('req-1', 'asset-1', new TtsNarrationRequest());
         $dto = SynthesizeResponseDto::fromResult($result);
 
         $this->assertSame('req-1', $dto->getRequestId());

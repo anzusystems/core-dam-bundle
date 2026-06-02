@@ -51,9 +51,9 @@ final class TtsNarrationRequestManager extends AbstractManager
         return $this->finalize($request, TtsRequestStatus::Failed, $reason, $flush);
     }
 
-    public function markCancelled(TtsNarrationRequest $request, ?string $reason = null, bool $flush = false): TtsNarrationRequest
+    public function markCancelled(TtsNarrationRequest $request, bool $flush = false): TtsNarrationRequest
     {
-        return $this->finalize($request, TtsRequestStatus::Cancelled, $reason, $flush);
+        return $this->finalize($request, TtsRequestStatus::Cancelled, null, $flush);
     }
 
     /**

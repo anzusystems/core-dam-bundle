@@ -17,12 +17,8 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelRequestResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsReasonRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Narration\TtsNarrationRequestAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
@@ -61,7 +57,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     }
 
     #[Route('/{narrationRequest}', name: 'get_one', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('narrationRequest'), OAResponse(TtsNarrationRequestAdmDetailDto::class)]
+    #[OAParameterPath('narrationRequest'), OAResponse(TtsNarrationRequest::class)]
     public function getOne(TtsNarrationRequest $narrationRequest): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ);
@@ -71,7 +67,9 @@ final class TtsNarrationRequestController extends AbstractApiController
             ? $this->ttsAssetRepo->findByAssetIdJoined($resultAssetId)
             : null;
 
-        return $this->okResponse(TtsNarrationRequestAdmDetailDto::getInstance($narrationRequest, $ttsAsset));
+        $narrationRequest->setTtsAsset($ttsAsset);
+
+        return $this->okResponse($narrationRequest);
     }
 
     /**
@@ -86,12 +84,12 @@ final class TtsNarrationRequestController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto->resolveAssetLicence());
 
         $result = $this->dispatchNew->execute($dto);
-        $isNewRequest = DispatchKind::Pending === $result->kind;
 
-        return $this->getResponse(
-            SynthesizeResponseDto::fromResult($result),
-            $isNewRequest ? Response::HTTP_ACCEPTED : Response::HTTP_OK,
-        );
+        if (DispatchKind::Pending === $result->kind && null !== $result->narrationRequest) {
+            return $this->createdResponse($result->narrationRequest);
+        }
+
+        return new JsonResponse(null, Response::HTTP_CONFLICT);
     }
 
     /**
@@ -99,8 +97,8 @@ final class TtsNarrationRequestController extends AbstractApiController
      * @throws ImmutableAudioNarrationException
      */
     #[Route('/{request}/cancel', name: 'cancel', methods: [Request::METHOD_POST])]
-    #[OAParameterPath('request'), OARequest(TtsReasonRequestDto::class), OAResponse(CancelRequestResponseDto::class), OAResponseValidation]
-    public function cancel(TtsNarrationRequest $request, #[SerializeParam] TtsReasonRequestDto $dto): JsonResponse
+    #[OAParameterPath('request'), OAResponse(TtsNarrationRequest::class)]
+    public function cancel(TtsNarrationRequest $request): JsonResponse
     {
         App::throwOnReadOnlyMode();
 
@@ -108,8 +106,12 @@ final class TtsNarrationRequestController extends AbstractApiController
             ?? throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $request->getId()));
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $licence);
 
-        return $this->okResponse(
-            $this->cancelRequest->execute($request, $dto->getReason(), (string) $this->getUser()->getId()),
-        );
+        $cancelled = $this->cancelRequest->execute($request, (string) $this->getUser()->getId());
+
+        if (false === $cancelled) {
+            return new JsonResponse(null, Response::HTTP_CONFLICT);
+        }
+
+        return $this->okResponse($request);
     }
 }

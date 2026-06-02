@@ -25,15 +25,15 @@ final readonly class TtsUnpublishFacade
     /**
      * @throws RegenCancelledException if the asset is not a TTS asset
      */
-    public function execute(Asset $asset, ?string $reason, ?string $userId): void
+    public function execute(Asset $asset, ?string $userId): void
     {
         App::throwOnReadOnlyMode();
 
-        $this->entityManager->wrapInTransaction(function () use ($asset, $reason, $userId): void {
+        $this->entityManager->wrapInTransaction(function () use ($asset, $userId): void {
             $ttsAsset = $this->ttsAssetLocker->requireFor($asset);
 
-            $this->ttsAssetManager->markUnpublished($ttsAsset, $reason);
-            $this->auditLogger->logUnpublished((string) $asset->getId(), $userId, $reason);
+            $this->ttsAssetManager->markUnpublished($ttsAsset);
+            $this->auditLogger->logUnpublished((string) $asset->getId(), $userId);
 
             $this->entityManager->flush();
         });

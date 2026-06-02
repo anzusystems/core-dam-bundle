@@ -16,11 +16,10 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsPodcastMembershipFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsRegenerationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsUnpublishFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsPodcastsUpdateDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsReasonRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRegenerateRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
@@ -31,7 +30,6 @@ use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/tts-asset', name: 'adm_tts_asset_v1_')]
@@ -67,7 +65,7 @@ final class TtsAssetController extends AbstractApiController
      * @throws ImmutableAudioNarrationException
      */
     #[Route('/{asset}/regenerate', name: 'regenerate', methods: [Request::METHOD_POST])]
-    #[OAParameterPath('asset'), OARequest(TtsRegenerateRequestDto::class), OAResponseValidation]
+    #[OAParameterPath('asset'), OARequest(TtsRegenerateRequestDto::class), OAResponse(TtsNarrationRequest::class), OAResponseValidation]
     public function regenerate(Request $request, Asset $asset, #[SerializeParam] TtsRegenerateRequestDto $dto): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_REGENERATE, $asset);
@@ -79,10 +77,7 @@ final class TtsAssetController extends AbstractApiController
             voiceFamilySlug: $dto->getVoiceFamilySlug(),
         );
 
-        return $this->getResponse(
-            SynthesizeResponseDto::fromRequestId((string) $narrationRequest->getId()),
-            Response::HTTP_ACCEPTED,
-        );
+        return $this->createdResponse($narrationRequest);
     }
 
     /**
@@ -90,8 +85,8 @@ final class TtsAssetController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/{asset}', name: 'unpublish', methods: [Request::METHOD_DELETE])]
-    #[OAParameterPath('asset'), OARequest(TtsReasonRequestDto::class), OAResponseValidation]
-    public function unpublish(Request $request, Asset $asset, #[SerializeParam] TtsReasonRequestDto $dto): JsonResponse
+    #[OAParameterPath('asset'), OAResponseValidation]
+    public function unpublish(Request $request, Asset $asset): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_UNPUBLISH, $asset);
         App::throwOnReadOnlyMode();
@@ -99,7 +94,6 @@ final class TtsAssetController extends AbstractApiController
 
         $this->unpublishTtsAsset->execute(
             asset: $asset,
-            reason: $dto->getReason(),
             userId: (string) $this->getUser()->getId(),
         );
 

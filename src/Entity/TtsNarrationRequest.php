@@ -135,6 +135,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[ORM\Embedded(class: TtsNarrationRequestSource::class)]
     private TtsNarrationRequestSource $source;
 
+    /**
+     * Transient (non-persisted) — populated by the Adm getOne controller after a repo join.
+     * Serialized into the API response to avoid a separate DTO wrapper.
+     * No ORM mapping on purpose: Doctrine ignores unmapped properties.
+     */
+    #[Serialize]
+    private ?TtsAsset $ttsAsset = null;
+
     public function __construct()
     {
         $this->setStatus(TtsRequestStatus::Default);
@@ -387,6 +395,18 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setPodcastIds(array $podcastIds): self
     {
         $this->podcastIds = $podcastIds;
+
+        return $this;
+    }
+
+    public function getTtsAsset(): ?TtsAsset
+    {
+        return $this->ttsAsset;
+    }
+
+    public function setTtsAsset(?TtsAsset $ttsAsset): self
+    {
+        $this->ttsAsset = $ttsAsset;
 
         return $this;
     }

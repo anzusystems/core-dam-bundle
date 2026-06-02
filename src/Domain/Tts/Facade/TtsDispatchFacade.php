@@ -156,7 +156,7 @@ final readonly class TtsDispatchFacade
             return DispatchResult::alreadyPending();
         }
 
-        return DispatchResult::pending((string) $request->getId(), (string) $request->getStableAssetId());
+        return DispatchResult::pending((string) $request->getId(), (string) $request->getStableAssetId(), $request);
     }
 
     private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): TtsNarrationRequest

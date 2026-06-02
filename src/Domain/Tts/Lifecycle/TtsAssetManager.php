@@ -61,10 +61,9 @@ final class TtsAssetManager extends AbstractManager
         return $ttsAsset;
     }
 
-    public function markUnpublished(TtsAsset $ttsAsset, ?string $reason, bool $flush = false): TtsAsset
+    public function markUnpublished(TtsAsset $ttsAsset, bool $flush = false): TtsAsset
     {
         $ttsAsset->setStatus(TtsAudioStatus::Unpublished);
-        $ttsAsset->setFailureReason($reason);
         $this->trackModification($ttsAsset);
         $this->flush($flush);
 
