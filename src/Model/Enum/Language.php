@@ -25,16 +25,11 @@ enum Language: string implements EnumInterface
     }
 
     /**
-     * BCP-47 language tag (hyphenated) — the single source of truth for the locale passed to TTS
-     * providers (Google `languageCode`, ElevenLabs).
+     * BCP-47 language tag (hyphenated) for the locale passed to TTS providers — Google `languageCode`
+     * (ElevenLabs auto-detects from its multilingual model and needs no explicit locale).
      */
     public function getBcpLocale(): string
     {
-        return match($this)
-        {
-            self::Slovak => 'sk-SK',
-            self::English => 'en-US',
-            default => throw new InvalidArgumentException('Missing BCP-47 locale')
-        };
+        return str_replace('_', '-', $this->getLocale());
     }
 }
