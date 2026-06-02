@@ -67,12 +67,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[Serialize]
     private bool $active;
 
-    #[ORM\ManyToOne(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
-    #[Serialize(handler: EntityIdHandler::class)]
-    #[AppAssert\EqualExtSystem]
-    private ?Keyword $keyword;
-
     /**
      * Keywords auto-applied to every TTS asset narrated with this family.
      *
@@ -95,7 +89,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         $this->setLanguage(App::EMPTY_STRING);
         $this->setPreferredProvider(null);
         $this->setActive(true);
-        $this->setKeyword(null);
         $this->setKeywords(new ArrayCollection());
         $this->setVoices(new ArrayCollection());
         $this->setCreatedAt(App::getAppDate());
@@ -170,18 +163,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     public function setActive(bool $active): self
     {
         $this->active = $active;
-
-        return $this;
-    }
-
-    public function getKeyword(): ?Keyword
-    {
-        return $this->keyword;
-    }
-
-    public function setKeyword(?Keyword $keyword): self
-    {
-        $this->keyword = $keyword;
 
         return $this;
     }

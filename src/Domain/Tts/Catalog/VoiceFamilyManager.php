@@ -37,7 +37,6 @@ final class VoiceFamilyManager extends AbstractManager
             ->setLanguage($newVoiceFamily->getLanguage())
             ->setPreferredProvider($newVoiceFamily->getPreferredProvider())
             ->setActive($newVoiceFamily->isActive())
-            ->setKeyword($newVoiceFamily->getKeyword())
         ;
         $this->colUpdate($voiceFamily->getKeywords(), $newVoiceFamily->getKeywords());
         $this->flush($flush);

@@ -251,11 +251,6 @@ final readonly class TtsRequestOrchestrator
         foreach ($family->getKeywords() as $keyword) {
             $newKeywords[(string) $keyword->getId()] = $keyword;
         }
-        // Legacy single keyword unioned with the M:N set for back-compat.
-        $legacyKeyword = $family->getKeyword();
-        if (null !== $legacyKeyword) {
-            $newKeywords[(string) $legacyKeyword->getId()] = $legacyKeyword;
-        }
 
         $oldIds = $ttsAsset->getVoiceFamilyKeywordIds();
         $newIds = array_keys($newKeywords);
