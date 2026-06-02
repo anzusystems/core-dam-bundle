@@ -26,6 +26,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'tts_asset')]
 #[ORM\Index(name: 'IDX_tts_asset_status', fields: ['status'])]
 #[ORM\Index(name: 'IDX_tts_asset_ext_status', fields: ['extResourceName', 'extId', 'status'])]
+#[ORM\Index(name: 'IDX_tts_asset_content', fields: ['sourceTextHash', 'voiceFamily'])]
 final class TtsAsset implements TimeTrackingInterface
 {
     use TimeTrackingTrait;
