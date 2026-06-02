@@ -16,13 +16,12 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFactory;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
-use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\VoiceRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
-use JsonException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,6 +34,7 @@ final class VoiceController extends AbstractApiController
     public function __construct(
         private readonly VoiceFacade $voiceFacade,
         private readonly VoiceRepository $voiceRepository,
+        private readonly VoiceFactory $voiceFactory,
     ) {
     }
 
@@ -69,7 +69,7 @@ final class VoiceController extends AbstractApiController
     public function create(Request $request): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $voice = $this->deserializeVoice($request);
+        $voice = $this->voiceFactory->fromJson((string) $request->getContent());
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_CREATE, $voice);
 
         $this->voiceFacade->create($voice);
@@ -92,7 +92,7 @@ final class VoiceController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_UPDATE, $voice);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $voice);
 
-        $newVoice = $this->deserializeVoice($request);
+        $newVoice = $this->voiceFactory->fromJson((string) $request->getContent());
 
         return $this->okResponse(
             $this->voiceFacade->update($voice, $newVoice),
@@ -112,21 +112,5 @@ final class VoiceController extends AbstractApiController
         $this->voiceFacade->delete($voice);
 
         return $this->noContentResponse();
-    }
-
-    private function deserializeVoice(Request $request): Voice
-    {
-        $content = (string) $request->getContent();
-
-        try {
-            $data = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            $data = [];
-        }
-
-        $discriminatorValue = is_array($data) ? ($data['discriminator'] ?? VoiceDiscriminator::Default->value) : VoiceDiscriminator::Default->value;
-        $class = VoiceDiscriminator::MAP[$discriminatorValue] ?? VoiceDiscriminator::MAP[VoiceDiscriminator::Default->value];
-
-        return $this->serializer->deserialize($content, $class);
     }
 }

@@ -20,7 +20,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\LicensedEntityFilter;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -29,7 +28,6 @@ use Doctrine\ORM\Exception\ORMException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/podcast', name: 'adm_podcast_v1_')]
@@ -39,30 +37,7 @@ final class PodcastController extends AbstractApiController
     public function __construct(
         private readonly PodcastFacade $podcastFacade,
         private readonly PodcastRepository $podcastRepository,
-        private readonly AssetLicenceRepository $assetLicenceRepository,
     ) {
-    }
-
-    /**
-     * Lists podcasts that belong to the same ext system as the asset licence supplied via the
-     * `filter_custom[assetLicence]` query filter. The licence also drives authorization (it carries the
-     * ext system the user must have access to), so it is resolved up front.
-     *
-     * @throws ORMException
-     */
-    #[Route(path: '', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponseInfiniteList(Podcast::class)]
-    public function getListByAssetLicence(ApiParams $apiParams): JsonResponse
-    {
-        $this->denyAccessUnlessGranted(
-            DamPermissions::DAM_PODCAST_READ,
-            $this->resolveFilterAssetLicence($apiParams)
-        );
-
-        return $this->okResponse($this->podcastRepository->findByApiParamsWithInfiniteListing(
-            apiParams: $apiParams,
-            customFilters: [new LicensedEntityFilter()]
-        ));
     }
 
     #[Route('/{podcast}', name: 'get_one', methods: [Request::METHOD_GET])]
@@ -135,19 +110,5 @@ final class PodcastController extends AbstractApiController
             apiParams: LicensedEntityApiParams::applyLicenceCustomFilter($apiParams, $assetLicence),
             customFilters: [new LicensedEntityFilter()]
         ));
-    }
-
-    private function resolveFilterAssetLicence(ApiParams $apiParams): AssetLicence
-    {
-        $assetLicenceId = $apiParams->getFilter()[ApiParams::FILTER_CUSTOM][LicensedEntityFilter::ASSET_LICENCE] ?? null;
-        $assetLicence = null === $assetLicenceId
-            ? null
-            : $this->assetLicenceRepository->find((int) $assetLicenceId);
-
-        if (null === $assetLicence) {
-            throw new NotFoundHttpException();
-        }
-
-        return $assetLicence;
     }
 }
