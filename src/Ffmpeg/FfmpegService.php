@@ -167,8 +167,9 @@ final class FfmpegService
         $outRel = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
         $outAbsPath = $tmpFs->extendPath($outRel);
 
+        // concat demuxer reads single-quoted paths and unescapes backslashes — escape only `\` and `'`.
         $listLines = array_map(
-            static fn (File $part): string => "file '" . addcslashes($part->getRealPath(), '\'"\\\0 ') . "'",
+            static fn (File $part): string => "file '" . str_replace(['\\', "'"], ['\\\\', "'\\''"], $part->getRealPath()) . "'",
             $parts,
         );
         $listRel = $tmpFs->writeTmpFileFromBytes(implode("\n", $listLines), 'txt');
