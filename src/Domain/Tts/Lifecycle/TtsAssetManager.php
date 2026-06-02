@@ -73,7 +73,6 @@ final class TtsAssetManager extends AbstractManager
     public function markActive(TtsAsset $ttsAsset, bool $flush = false): TtsAsset
     {
         $ttsAsset->setStatus(TtsAudioStatus::Active);
-        $ttsAsset->setStaging(false);
         $this->trackModification($ttsAsset);
         $this->flush($flush);
 

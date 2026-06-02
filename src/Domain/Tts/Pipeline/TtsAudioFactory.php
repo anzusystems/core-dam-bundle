@@ -158,8 +158,7 @@ final readonly class TtsAudioFactory
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
             ->setSourceTextHash($input->sourceTextHash)
             ->setSourceTextSnapshot($input->sourceTextSnapshot)
-            ->setStatus(TtsAudioStatus::Active)
-            ->setStaging(false);
+            ->setStatus(TtsAudioStatus::Active);
     }
 
     private function resolveDisplayName(TtsAudioCreationInput $input, DateTimeImmutable $now): string

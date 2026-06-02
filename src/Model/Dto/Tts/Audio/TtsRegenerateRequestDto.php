@@ -11,6 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class TtsRegenerateRequestDto
 {
     #[Serialize]
+    #[Assert\Regex(pattern: '/^[a-z0-9_-]+$/', message: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Length(max: 120, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $voiceFamilySlug = null;
 

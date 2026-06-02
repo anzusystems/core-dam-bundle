@@ -61,14 +61,12 @@ return ECSConfig::configure()
         UselessParenthesesSniff::class => null,
         MethodChainingIndentationFixer::class => ['src/DependencyInjection/*Configuration.php'],
         'PHP_CodeSniffer\Standards\Generic\Sniffs\CodeAnalysis\AssignmentInConditionSniff.FoundInWhileCondition' => [
-            'src/Security/OAuth2TokenStorage/RedisRefreshTokenStorage.php'
+            'src/Security/OAuth2TokenStorage/RedisRefreshTokenStorage.php',
         ],
         'SlevomatCodingStandard\Sniffs\Classes\UnusedPrivateElementsSniff.WriteOnlyProperty' => ['src/Entity/User.php'],
         'SlevomatCodingStandard\Sniffs\Whitespaces\DuplicateSpacesSniff.DuplicateSpaces' => null,
         'SlevomatCodingStandard\Sniffs\Commenting\DisallowCommentAfterCodeSniff.DisallowedCommentAfterCode' => null,
         'src/Model/Enum/*.php',
-        'src/Model/Dto/Tts/Audio/CancelRequestStatus.php',
-        'src/Model/Dto/Tts/Audio/DispatchKind.php',
         'src/Prosemirror/*',
         'src/DataMigration/*',
         'src/Command/TestCommand.php',
@@ -141,4 +139,4 @@ return ECSConfig::configure()
         BlankLineBeforeStatementFixer::class,
         GlobalNamespaceImportFixer::class,
     ])
-    ;
+;

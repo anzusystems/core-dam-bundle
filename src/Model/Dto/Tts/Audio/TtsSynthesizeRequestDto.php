@@ -39,6 +39,7 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     private string $text = App::EMPTY_STRING;
 
     #[Serialize]
+    #[Assert\Regex(pattern: '/^[a-z0-9_-]+$/', message: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Length(max: 120, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $voiceFamilySlug = null;
 

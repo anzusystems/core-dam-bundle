@@ -77,10 +77,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[Assert\All([new AppAssert\EqualExtSystem()])]
     private Collection $keywords;
 
-    #[ORM\OneToMany(targetEntity: Voice::class, mappedBy: 'voiceFamily', fetch: App::DOCTRINE_EXTRA_LAZY)]
-    #[ORM\OrderBy(['externalVoiceId' => 'ASC'])]
-    private Collection $voices;
-
     public function __construct()
     {
         $this->setSlug(App::EMPTY_STRING);
@@ -89,7 +85,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         $this->setPreferredProvider(null);
         $this->setActive(true);
         $this->setKeywords(new ArrayCollection());
-        $this->setVoices(new ArrayCollection());
         $this->setCreatedAt(App::getAppDate());
         $this->setModifiedAt(App::getAppDate());
     }
@@ -196,21 +191,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     public function removeKeyword(Keyword $keyword): self
     {
         $this->keywords->removeElement($keyword);
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Voice>
-     */
-    public function getVoices(): Collection
-    {
-        return $this->voices;
-    }
-
-    public function setVoices(Collection $voices): self
-    {
-        $this->voices = $voices;
 
         return $this;
     }

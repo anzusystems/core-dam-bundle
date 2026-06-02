@@ -83,14 +83,6 @@ final class TtsAsset implements TimeTrackingInterface
     private ?string $failureReason = null;
 
     /**
-     * True while this row is the regen-staging counterpart of the stable asset — flipped to false
-     * by {@see TtsAssetManager::markActive} at swap completion.
-     */
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    #[Serialize]
-    private bool $staging = false;
-
-    /**
      * GUID snapshot of the family keywords applied at generation (no FK — keywords may be deleted);
      * lets {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::syncFamilyKeywords} reconcile on regen.
      *
@@ -226,18 +218,6 @@ final class TtsAsset implements TimeTrackingInterface
     public function setFailureReason(?string $failureReason): self
     {
         $this->failureReason = $failureReason;
-
-        return $this;
-    }
-
-    public function isStaging(): bool
-    {
-        return $this->staging;
-    }
-
-    public function setStaging(bool $staging): self
-    {
-        $this->staging = $staging;
 
         return $this;
     }

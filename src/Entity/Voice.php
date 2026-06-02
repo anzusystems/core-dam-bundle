@@ -35,7 +35,7 @@ abstract class Voice implements UuidIdentifiableInterface, TimeTrackingInterface
     use TimeTrackingTrait;
     use UserTrackingTrait;
 
-    #[ORM\ManyToOne(targetEntity: VoiceFamily::class, inversedBy: 'voices', fetch: App::DOCTRINE_EXTRA_LAZY)]
+    #[ORM\ManyToOne(targetEntity: VoiceFamily::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]

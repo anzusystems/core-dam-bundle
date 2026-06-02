@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * External-system reference triple ({@see extResourceName}, {@see extId}, {@see extVersion}).
+ * External-system reference pair ({@see extResourceName}, {@see extId}).
  * The (resourceName, id) pair is the idempotency tuple per {@see ExtSystem}.
  */
 #[ORM\Embeddable]
@@ -23,15 +23,10 @@ class TtsNarrationRequestExtRef
     #[Serialize]
     private ?string $extId;
 
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    #[Serialize]
-    private ?string $extVersion;
-
     public function __construct()
     {
         $this->setExtResourceName(null);
         $this->setExtId(null);
-        $this->setExtVersion(null);
     }
 
     public function getExtResourceName(): ?string
@@ -54,18 +49,6 @@ class TtsNarrationRequestExtRef
     public function setExtId(?string $extId): self
     {
         $this->extId = $extId;
-
-        return $this;
-    }
-
-    public function getExtVersion(): ?string
-    {
-        return $this->extVersion;
-    }
-
-    public function setExtVersion(?string $extVersion): self
-    {
-        $this->extVersion = $extVersion;
 
         return $this;
     }

@@ -29,13 +29,6 @@ final class SynthesizeResponseDto
             ->setStatus($result->status);
     }
 
-    public static function fromRequestId(string $requestId): self
-    {
-        return (new self())
-            ->setRequestId($requestId)
-            ->setStatus(DispatchStatus::Pending);
-    }
-
     public function getRequestId(): ?string
     {
         return $this->requestId;
