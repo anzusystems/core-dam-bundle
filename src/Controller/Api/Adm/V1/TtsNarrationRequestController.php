@@ -17,7 +17,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -85,7 +85,7 @@ final class TtsNarrationRequestController extends AbstractApiController
 
         $result = $this->dispatchNew->execute($dto);
 
-        if (DispatchKind::Pending === $result->kind && null !== $result->narrationRequest) {
+        if (DispatchStatus::Pending === $result->status && null !== $result->narrationRequest) {
             return $this->createdResponse($result->narrationRequest);
         }
 

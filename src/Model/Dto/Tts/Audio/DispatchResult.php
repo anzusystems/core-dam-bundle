@@ -8,12 +8,12 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 
 /**
  * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}.
- * Callers map `kind` directly to HTTP status (Pending → 201, AlreadyExists/Duplicate → 200, AlreadyPending → 409).
+ * Callers map `status` directly to HTTP status (Pending → 201, AlreadyExists/Duplicate → 200, AlreadyPending → 409).
  */
 final readonly class DispatchResult
 {
     private function __construct(
-        public DispatchKind $kind,
+        public DispatchStatus $status,
         public ?string $requestId = null,
         public ?string $existingAssetId = null,
         private ?string $assetId = null,
@@ -23,12 +23,12 @@ final readonly class DispatchResult
 
     public static function pending(string $requestId, string $assetId, TtsNarrationRequest $narrationRequest): self
     {
-        return new self(DispatchKind::Pending, requestId: $requestId, assetId: $assetId, narrationRequest: $narrationRequest);
+        return new self(DispatchStatus::Pending, requestId: $requestId, assetId: $assetId, narrationRequest: $narrationRequest);
     }
 
     public static function alreadyExists(string $existingAssetId): self
     {
-        return new self(DispatchKind::AlreadyExists, existingAssetId: $existingAssetId);
+        return new self(DispatchStatus::AlreadyExists, existingAssetId: $existingAssetId);
     }
 
     /**
@@ -38,12 +38,12 @@ final readonly class DispatchResult
      */
     public static function duplicate(string $originAssetId): self
     {
-        return new self(DispatchKind::Duplicate, existingAssetId: $originAssetId);
+        return new self(DispatchStatus::Duplicate, existingAssetId: $originAssetId);
     }
 
     public static function alreadyPending(): self
     {
-        return new self(DispatchKind::AlreadyPending);
+        return new self(DispatchStatus::AlreadyPending);
     }
 
     /**
@@ -54,8 +54,8 @@ final readonly class DispatchResult
      */
     public function getAssetId(): ?string
     {
-        return match ($this->kind) {
-            DispatchKind::AlreadyExists, DispatchKind::Duplicate => $this->existingAssetId,
+        return match ($this->status) {
+            DispatchStatus::AlreadyExists, DispatchStatus::Duplicate => $this->existingAssetId,
             default => $this->assetId,
         };
     }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Tts;
 
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use PHPUnit\Framework\TestCase;
 
@@ -23,7 +23,7 @@ final class DispatchResultTest extends TestCase
 
         $result = DispatchResult::pending($requestId, $assetId, $narrationRequest);
 
-        $this->assertSame(DispatchKind::Pending, $result->kind);
+        $this->assertSame(DispatchStatus::Pending, $result->status);
         $this->assertSame($requestId, $result->requestId);
         $this->assertNotNull($result->getAssetId(), 'Pending result must expose a non-null assetId');
         $this->assertSame($assetId, $result->getAssetId());
@@ -34,7 +34,7 @@ final class DispatchResultTest extends TestCase
     {
         $result = DispatchResult::alreadyPending();
 
-        $this->assertSame(DispatchKind::AlreadyPending, $result->kind);
+        $this->assertSame(DispatchStatus::AlreadyPending, $result->status);
         $this->assertNull($result->getAssetId(), 'AlreadyPending is a duplicate no-op — a concurrent dispatch owns the media attach');
         $this->assertNull($result->narrationRequest);
     }
@@ -45,7 +45,7 @@ final class DispatchResultTest extends TestCase
 
         $result = DispatchResult::alreadyExists($existingAssetId);
 
-        $this->assertSame(DispatchKind::AlreadyExists, $result->kind);
+        $this->assertSame(DispatchStatus::AlreadyExists, $result->status);
         $this->assertSame($existingAssetId, $result->existingAssetId);
         $this->assertNotNull($result->getAssetId(), 'AlreadyExists result must expose a non-null assetId via getAssetId()');
         $this->assertSame($existingAssetId, $result->getAssetId());
@@ -58,7 +58,7 @@ final class DispatchResultTest extends TestCase
 
         $this->assertSame('req-1', $dto->getRequestId());
         $this->assertSame('asset-1', $dto->getAssetId());
-        $this->assertSame(DispatchKind::Pending, $dto->getStatus());
+        $this->assertSame(DispatchStatus::Pending, $dto->getStatus());
     }
 
     public function testSynthesizeResponseDtoFromAlreadyPendingResult(): void
@@ -68,7 +68,7 @@ final class DispatchResultTest extends TestCase
 
         $this->assertNull($dto->getRequestId());
         $this->assertNull($dto->getAssetId());
-        $this->assertSame(DispatchKind::AlreadyPending, $dto->getStatus());
+        $this->assertSame(DispatchStatus::AlreadyPending, $dto->getStatus());
     }
 
     public function testSynthesizeResponseDtoFromAlreadyExistsResult(): void
@@ -78,6 +78,6 @@ final class DispatchResultTest extends TestCase
 
         $this->assertSame('asset-existing', $dto->getExistingAssetId());
         $this->assertSame('asset-existing', $dto->getAssetId());
-        $this->assertSame(DispatchKind::AlreadyExists, $dto->getStatus());
+        $this->assertSame(DispatchStatus::AlreadyExists, $dto->getStatus());
     }
 }

@@ -10,7 +10,7 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchKind;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
@@ -44,9 +44,9 @@ final class TtsNarrationRequestController extends AbstractApiController
 
         return $this->getResponse(
             SynthesizeResponseDto::fromResult($result),
-            match ($result->kind) {
-                DispatchKind::AlreadyPending => Response::HTTP_CONFLICT,
-                DispatchKind::Pending => Response::HTTP_ACCEPTED,
+            match ($result->status) {
+                DispatchStatus::AlreadyPending => Response::HTTP_CONFLICT,
+                DispatchStatus::Pending => Response::HTTP_ACCEPTED,
                 default => Response::HTTP_OK,
             },
         );
