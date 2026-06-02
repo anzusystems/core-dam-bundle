@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -24,6 +25,7 @@ final readonly class TtsPodcastMembershipFacade
     public function __construct(
         private TtsAssetLocker $ttsAssetLocker,
         private PodcastEpisodeManager $episodeManager,
+        private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
     ) {
@@ -44,6 +46,10 @@ final readonly class TtsPodcastMembershipFacade
             $this->ttsAssetLocker->requireFor($asset);
             $this->episodeManager->setMembership($asset, $desired);
         });
+
+        // Propagate the membership change to linked ext-systems (e.g. the CMS medium's episode/podcast) —
+        // mirrors the creation paths in TtsRequestOrchestrator, which the standalone change path was missing.
+        $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$asset]));
     }
 
     /**

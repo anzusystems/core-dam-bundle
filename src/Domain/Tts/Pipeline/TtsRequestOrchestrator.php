@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
@@ -65,6 +66,7 @@ final readonly class TtsRequestOrchestrator
         private AssetFileRouteFacade $routeFacade,
         private ExtSystemCallbackFacade $extSystemCallbackFacade,
         private IndexManager $indexManager,
+        private AssetManager $assetManager,
         private KeywordRepository $keywordRepo,
         private KeywordProvider $keywordProvider,
         private AuthorProvider $authorProvider,
@@ -95,8 +97,10 @@ final readonly class TtsRequestOrchestrator
         });
 
         // Audio must materialize and be publicly routable before we mark Done; a failure here is a real
-        // generation failure (request stays non-terminal → marked Failed, shell asset dropped).
-        $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: true);
+        // generation failure (request stays non-terminal → marked Failed, shell asset dropped). Property
+        // refresh is intentionally NOT dispatched here — the synchronous updateExisting() below owns it once
+        // both slots (master + preview) exist, so slotNames & co. reflect the final state.
+        $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: false);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         // Generation succeeded once the master is published — commit Done now so the best-effort enrichment
@@ -105,6 +109,8 @@ final readonly class TtsRequestOrchestrator
         // preview so the callback reflects keywords/podcast even when the preview fails.
         $this->requestManager->markDone($request, (string) $result->asset->getId());
 
+        // Best-effort enrichment. The preview is flaky ffmpeg; isolating it (and the metadata steps) here means
+        // a failure can no longer skip the property refresh + reindex below.
         try {
             $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
             $this->applyInitialMetadata($result->asset, $request, $extSystem);
@@ -112,10 +118,21 @@ final readonly class TtsRequestOrchestrator
 
             $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
             $this->attachPreviewSlot($result->asset, $preview);
-
-            $this->indexManager->index($result->asset);
         } catch (Throwable $e) {
             $this->logger->error(DamLogger::NAMESPACE_TTS, 'processInitial.enrichmentFailed', [
+                'requestId' => (string) $request->getId(),
+                'assetId' => (string) $result->asset->getId(),
+            ], exception: $e);
+        }
+
+        // Single point of truth for derived properties (slotNames, status, …) now that both slots + metadata
+        // exist, then (re)index so ES reflects keywords/authors/podcast + slotNames. Guaranteed regardless of
+        // whether the best-effort enrichment above (e.g. the ffmpeg preview) failed.
+        try {
+            $this->assetManager->updateExisting($result->asset);
+            $this->indexManager->index($result->asset);
+        } catch (Throwable $e) {
+            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processInitial.refreshIndexFailed', [
                 'requestId' => (string) $request->getId(),
                 'assetId' => (string) $result->asset->getId(),
             ], exception: $e);
