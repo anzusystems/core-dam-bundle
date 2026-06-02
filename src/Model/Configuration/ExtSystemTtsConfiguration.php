@@ -20,13 +20,11 @@ final readonly class ExtSystemTtsConfiguration
     public const string KEY = 'tts';
     public const string ELEVENLABS_API_KEY = 'elevenlabs_api_key';
     public const string GOOGLE_CREDENTIALS_PATH = 'google_credentials_path';
-    public const string LANGUAGE_CODE = 'language_code';
     public const string CHUNK_STORAGE_NAME_KEY = 'chunk_storage_name';
 
     public function __construct(
         public string $elevenlabsApiKey,
         public string $googleCredentialsPath,
-        public string $languageCode,
         public string $chunkStorageName,
     ) {
     }
@@ -39,7 +37,6 @@ final readonly class ExtSystemTtsConfiguration
         return new self(
             elevenlabsApiKey: (string) ($config[self::ELEVENLABS_API_KEY] ?? App::EMPTY_STRING),
             googleCredentialsPath: (string) ($config[self::GOOGLE_CREDENTIALS_PATH] ?? App::EMPTY_STRING),
-            languageCode: (string) ($config[self::LANGUAGE_CODE] ?? App::EMPTY_STRING),
             chunkStorageName: (string) ($config[self::CHUNK_STORAGE_NAME_KEY] ?? App::EMPTY_STRING),
         );
     }

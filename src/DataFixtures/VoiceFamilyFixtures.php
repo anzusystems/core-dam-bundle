@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\DataFixtures\Fixtures\AbstractFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyManager;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
+use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Generator;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -61,7 +62,7 @@ final class VoiceFamilyFixtures extends AbstractFixtures
             ->setExtSystem($cmsExtSystem)
             ->setSlug('sk-default')
             ->setDisplayName('Slovenský hlas (default)')
-            ->setLanguage('sk-SK')
+            ->setLanguage(Language::Slovak)
             ->setPreferredProvider(VoiceDiscriminator::GoogleTts)
             ->setActive(true)
         ;
@@ -71,7 +72,7 @@ final class VoiceFamilyFixtures extends AbstractFixtures
             ->setExtSystem($cmsExtSystem)
             ->setSlug('sk-secondary')
             ->setDisplayName('Slovenský hlas (secondary)')
-            ->setLanguage('sk-SK')
+            ->setLanguage(Language::Slovak)
             ->setPreferredProvider(VoiceDiscriminator::Elevenlabs)
             ->setActive(true)
         ;
@@ -81,7 +82,7 @@ final class VoiceFamilyFixtures extends AbstractFixtures
             ->setExtSystem($cmsExtSystem)
             ->setSlug('en-default')
             ->setDisplayName('English voice (default)')
-            ->setLanguage('en-US')
+            ->setLanguage(Language::English)
             ->setPreferredProvider(VoiceDiscriminator::Elevenlabs)
             ->setActive(true)
         ;
@@ -91,7 +92,7 @@ final class VoiceFamilyFixtures extends AbstractFixtures
             ->setExtSystem($cmsExtSystem)
             ->setSlug('sk-archived')
             ->setDisplayName('Slovenský hlas (archived)')
-            ->setLanguage('sk-SK')
+            ->setLanguage(Language::Slovak)
             ->setPreferredProvider(null)
             ->setActive(false)
         ;

@@ -92,7 +92,8 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         }
 
         $accessToken = $this->getAccessToken($extSystem);
-        $languageCode = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug())->languageCode;
+        // Single source of truth: the voice family carries the language; Google needs it as a BCP-47 tag.
+        $languageCode = $voice->getVoiceFamily()->getLanguage()->getBcpLocale();
 
         if (1 === count($chunks)) {
             return $this->writeSingleChunk(

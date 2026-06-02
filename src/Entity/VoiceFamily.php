@@ -14,6 +14,7 @@ use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
@@ -53,11 +54,9 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $displayName;
 
-    #[ORM\Column(type: Types::STRING, length: 16)]
+    #[ORM\Column(enumType: Language::class)]
     #[Serialize]
-    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Length(max: 16, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    private string $language;
+    private Language $language;
 
     #[ORM\Column(enumType: VoiceDiscriminator::class, nullable: true)]
     #[Serialize]
@@ -86,7 +85,7 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     {
         $this->setSlug(App::EMPTY_STRING);
         $this->setDisplayName(App::EMPTY_STRING);
-        $this->setLanguage(App::EMPTY_STRING);
+        $this->setLanguage(Language::Slovak);
         $this->setPreferredProvider(null);
         $this->setActive(true);
         $this->setKeywords(new ArrayCollection());
@@ -131,12 +130,12 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
         return $this;
     }
 
-    public function getLanguage(): string
+    public function getLanguage(): Language
     {
         return $this->language;
     }
 
-    public function setLanguage(string $language): self
+    public function setLanguage(Language $language): self
     {
         $this->language = $language;
 
