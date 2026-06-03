@@ -252,6 +252,12 @@ final readonly class TtsRequestOrchestrator
 
         if ($changed) {
             $this->entityManager->flush();
+            // Bulk-index the keyword/author entities here — the providers no longer index per-item
+            // ({@see KeywordProvider}, {@see AuthorProvider}); indexing belongs one level up.
+            $indexEntities = array_values([...$asset->getAuthors(), ...$asset->getKeywords()]);
+            if ([] !== $indexEntities) {
+                $this->indexManager->indexBulk($indexEntities);
+            }
         }
     }
 

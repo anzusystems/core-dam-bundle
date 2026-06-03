@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Keyword;
 
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
@@ -15,7 +14,6 @@ final readonly class KeywordProvider
     public function __construct(
         private KeywordRepository $repository,
         private KeywordManager $keywordManager,
-        private IndexManager $indexManager,
     ) {
     }
 
@@ -35,16 +33,13 @@ final readonly class KeywordProvider
             return $keyword;
         }
 
-        $keyword = $this->keywordManager->create(
+        // No ES indexing here — the caller bulk-indexes the created keywords/authors one level up
+        // ({@see \AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade}, TtsRequestOrchestrator).
+        return $this->keywordManager->create(
             keyword: (new Keyword())
                 ->setExtSystem($extSystem)
                 ->setName($title),
             flush: $flush
         );
-        // Provider-created keywords bypass KeywordFacade, so index them here — otherwise newly created
-        // keywords (TTS narration, sys asset-file/from-url) exist in DB but never reach Elasticsearch.
-        $this->indexManager->index($keyword);
-
-        return $keyword;
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -16,7 +15,6 @@ final readonly class AuthorProvider
     public function __construct(
         private AuthorRepository $repository,
         private AuthorManager $authorManager,
-        private IndexManager $indexManager,
     ) {
     }
 
@@ -36,16 +34,13 @@ final readonly class AuthorProvider
             return $author;
         }
 
-        $author = $this->authorManager->create(
+        // No ES indexing here — the caller bulk-indexes the created keywords/authors one level up
+        // ({@see \AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade}, TtsRequestOrchestrator).
+        return $this->authorManager->create(
             author: (new Author())
                 ->setExtSystem($extSystem)
                 ->setName($title),
         );
-        // Provider-created authors bypass AuthorFacade, so index them here — otherwise newly created
-        // authors (TTS narration, sys asset-file/from-url) exist in DB but never reach Elasticsearch.
-        $this->indexManager->index($author);
-
-        return $author;
     }
 
     public function provideCurrentAuthorToColl(Asset $asset): bool
