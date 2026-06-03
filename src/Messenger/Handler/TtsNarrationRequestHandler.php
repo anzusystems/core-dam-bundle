@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
@@ -13,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
@@ -22,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
 /**
@@ -37,7 +38,7 @@ final readonly class TtsNarrationRequestHandler
         private TtsRequestOrchestrator $orchestrator,
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
-        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private MessageBusInterface $messageBus,
         private TtsAssetLocker $assetLocker,
         private TtsAssetManager $ttsAssetManager,
         private AssetManager $assetManager,
@@ -214,11 +215,12 @@ final readonly class TtsNarrationRequestHandler
             return;
         }
 
-        $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
+        // Dispatched to pub/sub so a transient CMS outage is retried by the transport — never swallowed.
+        $this->messageBus->dispatch(new TtsMediaStatusCallbackMessage(
             extSystemId: $request->getExtSystemId(),
             assetId: $assetId,
             status: MediaStatusType::GenerationFailed,
             failureReason: $failureReason,
-        );
+        ));
     }
 }

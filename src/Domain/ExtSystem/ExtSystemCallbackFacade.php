@@ -129,28 +129,6 @@ final class ExtSystemCallbackFacade
         $this->getCallback($extSystem->getSlug())?->notifyMediaStatus($assetId, $status, $failureReason);
     }
 
-    /**
-     * Best-effort variant: never throws. A failed status callback (e.g. the CMS being unreachable) is logged
-     * and swallowed so the caller's already-committed work (cancel finalised / request marked failed) is not
-     * rolled back by a notification error.
-     */
-    public function notifyMediaStatusBestEffort(
-        int $extSystemId,
-        string $assetId,
-        MediaStatusType $status,
-        ?string $failureReason,
-    ): void {
-        try {
-            $this->notifyMediaStatus($extSystemId, $assetId, $status, $failureReason);
-        } catch (Throwable $e) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.bestEffortFailed', [
-                'extSystemId' => $extSystemId,
-                'assetId' => $assetId,
-                'error' => $e->getMessage(),
-            ]);
-        }
-    }
-
     private function getCallback(string $slug): ?ExtSystemCallbackInterface
     {
         try {

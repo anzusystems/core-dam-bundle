@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
@@ -14,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelledCallbackData;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\RegenCancelOutcome;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
@@ -23,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Two-phase regen cancel: phase 1 flips superseding→cancelling on TtsAsset + signals the in-flight
@@ -42,7 +43,7 @@ final readonly class TtsCancellationFacade
         private TtsAssetManager $ttsAssetManager,
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
-        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -168,11 +169,12 @@ final readonly class TtsCancellationFacade
 
     private function dispatchCancelledCallback(CancelledCallbackData $callbackData): void
     {
-        $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
+        // Dispatched to pub/sub so a transient CMS outage is retried by the transport — never swallowed.
+        $this->messageBus->dispatch(new TtsMediaStatusCallbackMessage(
             extSystemId: $callbackData->extSystemId,
             assetId: $callbackData->assetId,
             status: MediaStatusType::GenerationFailed,
             failureReason: 'Cancelled by admin',
-        );
+        ));
     }
 }

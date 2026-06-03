@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastLicenceFilter;
@@ -27,6 +26,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
@@ -61,7 +61,7 @@ final readonly class TtsRequestOrchestrator
         private PodcastRepository $podcastRepo,
         private PodcastLicenceFilter $podcastLicenceFilter,
         private AssetFileRouteFacade $routeFacade,
-        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private AssetChangedEventDispatcher $assetChangedEventDispatcher,
         private IndexManager $indexManager,
         private AssetManager $assetManager,
         private KeywordRepository $keywordRepo,
@@ -117,7 +117,7 @@ final readonly class TtsRequestOrchestrator
             $this->indexManager->index($result->asset);
         });
 
-        $this->extSystemCallbackFacade->notifyAssetChanged($result->asset);
+        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$result->asset]));
     }
 
     public function processRegenerate(TtsNarrationRequest $request): void
@@ -176,7 +176,7 @@ final readonly class TtsRequestOrchestrator
             $this->indexManager->index($stableAsset);
         });
 
-        $this->extSystemCallbackFacade->notifyAssetChanged($stableAsset);
+        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$stableAsset]));
     }
 
     /**
