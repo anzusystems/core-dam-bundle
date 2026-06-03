@@ -21,9 +21,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestAssetFilter;
-use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
+use AnzuSystems\CoreDamBundle\Repository\Decorator\TtsNarrationRequestRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
@@ -39,8 +37,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function __construct(
         private readonly TtsDispatchFacade $dispatchNew,
         private readonly TtsCancellationFacade $cancelRequest,
-        private readonly TtsNarrationRequestRepository $requestRepo,
-        private readonly TtsAssetRepository $ttsAssetRepo,
+        private readonly TtsNarrationRequestRepositoryDecorator $requestDecorator,
     ) {
     }
 
@@ -53,12 +50,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $asset);
 
-        return $this->okResponse(
-            $this->requestRepo->findByApiParams(
-                apiParams: TtsNarrationRequestAssetFilter::applyTo($apiParams, $asset),
-                customFilters: [new TtsNarrationRequestAssetFilter()],
-            ),
-        );
+        return $this->okResponse($this->requestDecorator->findByAsset($apiParams, $asset));
     }
 
     #[Route('/{narrationRequest}', name: 'get_one', methods: [Request::METHOD_GET])]
@@ -67,14 +59,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $narrationRequest);
 
-        $assetId = $narrationRequest->getAssetId();
-        $ttsAsset = null !== $assetId
-            ? $this->ttsAssetRepo->findByAssetIdJoined($assetId)
-            : null;
-
-        $narrationRequest->setTtsAsset($ttsAsset);
-
-        return $this->okResponse($narrationRequest);
+        return $this->okResponse($this->requestDecorator->getDetail($narrationRequest));
     }
 
     /**

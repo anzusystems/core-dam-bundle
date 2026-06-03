@@ -20,9 +20,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRegenerateRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
-use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
+use AnzuSystems\CoreDamBundle\Repository\Decorator\TtsAssetRepositoryDecorator;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
@@ -37,9 +35,7 @@ final class TtsAssetController extends AbstractApiController
     public function __construct(
         private readonly TtsRegenerationFacade $regenerateTts,
         private readonly TtsUnpublishFacade $unpublishTtsAsset,
-        private readonly TtsAssetRepository $ttsAssetRepo,
-        private readonly TtsNarrationRequestRepository $ttsRequestRepo,
-        private readonly PodcastEpisodeRepository $episodeRepo,
+        private readonly TtsAssetRepositoryDecorator $ttsAssetDecorator,
     ) {
     }
 
@@ -49,12 +45,7 @@ final class TtsAssetController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_READ, $asset);
 
-        return $this->okResponse(TtsAudioAdmDetailDto::getInstance(
-            $asset,
-            $this->ttsAssetRepo->findByAsset($asset),
-            $this->ttsRequestRepo->findLastIdByAsset((string) $asset->getId()),
-            $this->episodeRepo->findPodcastIdsByAsset($asset),
-        ));
+        return $this->okResponse($this->ttsAssetDecorator->getDetail($asset));
     }
 
     /**
