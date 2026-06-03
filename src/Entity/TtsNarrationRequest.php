@@ -57,7 +57,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
      * cleared on terminal so the slot frees up for a fresh dispatch.
      */
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    #[Serialize]
     private ?string $openInitialKey;
 
     /**
