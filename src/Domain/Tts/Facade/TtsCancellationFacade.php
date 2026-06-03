@@ -53,7 +53,7 @@ final readonly class TtsCancellationFacade
      *
      * @throws ImmutableAudioNarrationException if the request status is not in CANCELLABLE_STATUSES
      */
-    public function execute(TtsNarrationRequest $request, ?string $userId): bool
+    public function cancel(TtsNarrationRequest $request, ?string $userId): bool
     {
         App::throwOnReadOnlyMode();
 

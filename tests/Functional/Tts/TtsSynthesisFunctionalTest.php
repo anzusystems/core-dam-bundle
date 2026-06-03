@@ -79,7 +79,7 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
             ->setVoiceFamilySlug(TtsVoiceFixtures::DEFAULT_FAMILY_SLUG)
             ->setPodcasts(new ArrayCollection());
 
-        $result = $this->dispatchFacade->execute($dto, dispatch: false);
+        $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
         $this->orchestrator->processInitial($result->narrationRequest);
 

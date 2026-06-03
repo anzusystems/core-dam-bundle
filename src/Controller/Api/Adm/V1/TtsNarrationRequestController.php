@@ -73,7 +73,7 @@ final class TtsNarrationRequestController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
 
-        $result = $this->dispatchNew->execute($dto);
+        $result = $this->dispatchNew->synthesize($dto);
 
         if (DispatchStatus::Pending === $result->status && null !== $result->narrationRequest) {
             return $this->createdResponse($result->narrationRequest);
@@ -93,7 +93,7 @@ final class TtsNarrationRequestController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $request);
 
-        $cancelled = $this->cancelRequest->execute($request, (string) $this->getUser()->getId());
+        $cancelled = $this->cancelRequest->cancel($request, (string) $this->getUser()->getId());
 
         if (false === $cancelled) {
             return new JsonResponse(null, Response::HTTP_CONFLICT);

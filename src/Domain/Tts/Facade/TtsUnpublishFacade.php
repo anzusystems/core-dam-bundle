@@ -25,7 +25,7 @@ final readonly class TtsUnpublishFacade
     /**
      * @throws RegenCancelledException if the asset is not a TTS asset
      */
-    public function execute(Asset $asset, ?string $userId): void
+    public function unpublish(Asset $asset, ?string $userId): void
     {
         App::throwOnReadOnlyMode();
 

@@ -60,7 +60,7 @@ final class TtsAssetController extends AbstractApiController
         App::throwOnReadOnlyMode();
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
-        $narrationRequest = $this->regenerateTts->execute(
+        $narrationRequest = $this->regenerateTts->regenerate(
             stableAssetId: (string) $asset->getId(),
             voiceFamilySlug: $dto->getVoiceFamilySlug(),
         );
@@ -80,7 +80,7 @@ final class TtsAssetController extends AbstractApiController
         App::throwOnReadOnlyMode();
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
-        $this->unpublishTtsAsset->execute(
+        $this->unpublishTtsAsset->unpublish(
             asset: $asset,
             userId: (string) $this->getUser()->getId(),
         );

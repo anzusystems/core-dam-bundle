@@ -111,7 +111,7 @@ final class PodcastEpisodeController extends AbstractApiController
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
-        $this->membershipFacade->execute($asset, $dto->getPodcasts());
+        $this->membershipFacade->setMembership($asset, $dto->getPodcasts());
 
         return $this->noContentResponse();
     }

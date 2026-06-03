@@ -46,12 +46,12 @@ final readonly class TtsDispatchFacade
     }
 
     /**
-     * @param bool $dispatch When false the Messenger message is not dispatched — caller runs the
-     *                       orchestrator itself (sync test command).
+     * @param bool $enqueue When false the Messenger message is not dispatched — caller runs the
+     *                      orchestrator itself (sync test command).
      *
      * @throws ValidationException
      */
-    public function execute(TtsSynthesizeRequestDto $dto, bool $dispatch = true): DispatchResult
+    public function synthesize(TtsSynthesizeRequestDto $dto, bool $enqueue = true): DispatchResult
     {
         App::throwOnReadOnlyMode();
         $this->validator->validate($dto);
@@ -78,7 +78,7 @@ final readonly class TtsDispatchFacade
             fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $initialIdempotencyKey)),
         );
 
-        if ($dispatch && null !== $result->narrationRequest) {
+        if ($enqueue && null !== $result->narrationRequest) {
             $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $result->narrationRequest->getId()));
         }
 

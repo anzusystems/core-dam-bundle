@@ -28,7 +28,7 @@ final readonly class PodcastMembershipFacade
     /**
      * @param Collection<int, Podcast> $podcasts
      */
-    public function execute(Asset $asset, Collection $podcasts): void
+    public function setMembership(Asset $asset, Collection $podcasts): void
     {
         App::throwOnReadOnlyMode();
 

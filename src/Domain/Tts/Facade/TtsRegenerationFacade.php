@@ -26,7 +26,7 @@ final readonly class TtsRegenerationFacade
     ) {
     }
 
-    public function execute(
+    public function regenerate(
         string $stableAssetId,
         ?string $voiceFamilySlug,
     ): TtsNarrationRequest {

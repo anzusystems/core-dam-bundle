@@ -42,7 +42,7 @@ final class TtsNarrationRequestController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
 
-        $result = $this->dispatchNew->execute($dto);
+        $result = $this->dispatchNew->synthesize($dto);
 
         return $this->getResponse(
             SynthesizeResponseDto::fromResult($result),
