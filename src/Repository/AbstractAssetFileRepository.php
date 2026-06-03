@@ -81,10 +81,16 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
             ->getOneOrNullResult();
     }
 
+    /**
+     * QB for the asset's *live* files. Grace-demoted files (expireAt set — detached from their slot during a
+     * TTS regen swap but still FK-attached until the reaper runs) are excluded, so an FK-based enumeration can
+     * never resurface a superseded file as current. See {@see AssetSlotFactory::replaceSlotFile()}.
+     */
     public function getByAssetIdQb(string $assetId): QueryBuilder
     {
         return $this->createQueryBuilder('entity')
             ->andWhere('IDENTITY(entity.asset) = :assetId')
+            ->andWhere('entity.expireAt IS NULL')
             ->setParameter('assetId', $assetId);
     }
 
