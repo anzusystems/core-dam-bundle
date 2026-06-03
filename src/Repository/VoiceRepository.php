@@ -40,6 +40,24 @@ final class VoiceRepository extends AbstractAnzuRepository
     }
 
     /**
+     * Any active voice in the family — the auto-mode fallback when no voice is flagged primary, so a
+     * single-voice family is usable without the admin having to mark one as main. Primary wins ties.
+     */
+    public function findOneActiveByFamily(VoiceFamily $family): ?Voice
+    {
+        return $this->findOneBy(
+            [
+                'voiceFamily' => $family,
+                'active' => true,
+            ],
+            [
+                'main' => 'DESC',
+                'id' => 'ASC',
+            ],
+        );
+    }
+
+    /**
      * @return list<Voice>
      */
     public function findAllByFamily(VoiceFamily $family): array

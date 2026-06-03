@@ -13,8 +13,8 @@ use AnzuSystems\Contracts\Model\Enum\EnumInterface;
  *  - Elevenlabs / GoogleTts: forced — the resolver MUST pick this provider's voice for the
  *    requested VoiceFamily; if the family has no voice for the forced provider, the dispatch is
  *    rejected with a validation error (no silent fallback).
- *  - Auto: resolver uses {@see VoiceFamily::preferredProvider} as primary, then falls back to the
- *    family's main voice. Original cascade.
+ *  - Auto: resolver uses {@see VoiceFamily::preferredProvider} as primary, then the family's main
+ *    voice, then any active voice in the family. Original cascade.
  */
 enum TtsActiveProviderMode: string implements EnumInterface
 {

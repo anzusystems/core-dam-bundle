@@ -233,9 +233,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function getLicence(): AssetLicence
+    public function getAssetLicence(): AssetLicence
     {
         return $this->assetLicence;
+    }
+
+    public function getLicence(): AssetLicence
+    {
+        return $this->getAssetLicence();
     }
 
     public function setAssetLicence(AssetLicence $assetLicence): self

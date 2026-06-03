@@ -114,7 +114,10 @@ final readonly class VoiceResolver
             }
         }
 
-        $voice = $this->voiceRepo->findOnePrimaryActiveByFamily($family);
+        // Prefer the explicitly-primary voice, but fall back to any active voice in the family so a
+        // single-voice family is usable without the admin having to flag one as main (auto mode).
+        $voice = $this->voiceRepo->findOnePrimaryActiveByFamily($family)
+            ?? $this->voiceRepo->findOneActiveByFamily($family);
         if (null !== $voice) {
             return $voice;
         }
