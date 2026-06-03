@@ -71,7 +71,7 @@ final class VoiceFamilyController extends AbstractApiController
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams(
-                apiParams: ExySystemApiParams::applyAssetLicenceCustomFilter($apiParams, $assetLicence),
+                apiParams: ExySystemApiParams::applyAssetLicenceExtSystemCustomFilter($apiParams, $assetLicence),
                 customFilters: [new CustomExtSystemFilter()],
             ),
         );

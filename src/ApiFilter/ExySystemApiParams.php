@@ -21,12 +21,13 @@ final class ExySystemApiParams
     }
 
     /**
-     * Scopes an ext-system-bound catalog by the ext system the given asset licence belongs to.
+     * Scopes an ext-system-bound catalog by the ext system the given asset licence belongs to. The licence
+     * already carries its ext system, so resolve it here and reuse the plain ext-system filter.
      */
-    public static function applyAssetLicenceCustomFilter(ApiParams $apiParams, AssetLicence $assetLicence): ApiParams
+    public static function applyAssetLicenceExtSystemCustomFilter(ApiParams $apiParams, AssetLicence $assetLicence): ApiParams
     {
         $filter = $apiParams->getFilter();
-        $filter[ApiParams::FILTER_CUSTOM][CustomExtSystemFilter::ASSET_LICENCE] = $assetLicence->getId();
+        $filter[ApiParams::FILTER_CUSTOM][CustomExtSystemFilter::EXT_SYSTEM] = $assetLicence->getExtSystem()->getId();
         $apiParams->setFilter($filter);
 
         return $apiParams;
