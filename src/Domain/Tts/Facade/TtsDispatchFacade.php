@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
@@ -40,6 +41,7 @@ final readonly class TtsDispatchFacade
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
         private AssetFactory $assetFactory,
+        private Validator $validator,
     ) {
     }
 
@@ -52,6 +54,7 @@ final readonly class TtsDispatchFacade
     public function execute(TtsSynthesizeRequestDto $dto, bool $dispatch = true): DispatchResult
     {
         App::throwOnReadOnlyMode();
+        $this->validator->validate($dto);
 
         $licence = $dto->resolveAssetLicence();
         $extSystem = $licence->getExtSystem();
