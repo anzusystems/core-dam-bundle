@@ -9,6 +9,7 @@ use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
@@ -25,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  */
 #[Assert\GroupSequence(['TtsSynthesizeRequestDto', self::GROUP_POST])]
 #[AppAssert\TtsLicenceResolvable(groups: [self::GROUP_POST])]
-final class TtsSynthesizeRequestDto implements ExtSystemInterface
+final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceInterface
 {
     private const string GROUP_POST = 'post';
 
@@ -88,6 +89,11 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
         return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence() ?? throw new LogicException(
             'AssetLicence accessed before TtsSynthesizeRequestDto validation resolved it.',
         );
+    }
+
+    public function getLicence(): AssetLicence
+    {
+        return $this->resolveAssetLicence();
     }
 
     public function getText(): string

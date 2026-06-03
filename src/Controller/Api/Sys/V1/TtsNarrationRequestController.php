@@ -40,7 +40,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function dispatch(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto->resolveAssetLicence());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
 
         $result = $this->dispatchNew->execute($dto);
 

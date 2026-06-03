@@ -9,11 +9,13 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -27,7 +29,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'IDX_tts_request_status_mode', fields: ['status', 'mode'])]
 #[ORM\Index(name: 'IDX_tts_request_asset_mode_status', fields: ['assetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_ext_system', fields: ['extSystemId'])]
-final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
+final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, AssetLicenceInterface
 {
     use UuidIdentityTrait;
     use TimeTrackingTrait;
@@ -69,9 +71,10 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private int $extSystemId;
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    #[Serialize]
-    private ?int $assetLicenceId;
+    #[ORM\ManyToOne(targetEntity: AssetLicence::class)]
+    #[ORM\JoinColumn(name: 'asset_licence_id', referencedColumnName: 'id', nullable: false)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private AssetLicence $assetLicence;
 
     #[ORM\Column(type: Types::STRING, length: 120, nullable: true)]
     #[Serialize]
@@ -141,7 +144,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setInitialIdempotencyKey(null);
         $this->setAssetId(null);
         $this->setExtSystemId(0);
-        $this->setAssetLicenceId(null);
         $this->setVoiceFamilySlug(null);
         $this->setTitle(null);
         $this->setDescription(null);
@@ -231,14 +233,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function getAssetLicenceId(): ?int
+    public function getLicence(): AssetLicence
     {
-        return $this->assetLicenceId;
+        return $this->assetLicence;
     }
 
-    public function setAssetLicenceId(?int $assetLicenceId): self
+    public function setAssetLicence(AssetLicence $assetLicence): self
     {
-        $this->assetLicenceId = $assetLicenceId;
+        $this->assetLicence = $assetLicence;
 
         return $this;
     }

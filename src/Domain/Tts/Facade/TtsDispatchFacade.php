@@ -157,7 +157,7 @@ final readonly class TtsDispatchFacade
             ->setKeywords($dto->getKeywords())
             ->setAuthors($dto->getAuthors())
             ->setExtSystemId($licence->getExtSystem()->getId())
-            ->setAssetLicenceId($licence->getId())
+            ->setAssetLicence($licence)
             ->setInitialIdempotencyKey($initialIdempotencyKey)
             ->setAssetId((string) $shellAsset->getId())
             ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray())

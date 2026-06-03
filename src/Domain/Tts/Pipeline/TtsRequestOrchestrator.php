@@ -21,7 +21,6 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -29,13 +28,11 @@ use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
-use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
@@ -51,7 +48,6 @@ final readonly class TtsRequestOrchestrator
         private TtsNarrationRequestManager $requestManager,
         private AssetRepository $assetRepo,
         private TtsAssetLocker $ttsAssetLocker,
-        private AssetLicenceRepository $licenceRepo,
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
         private TtsAudioFactory $ttsAudioFactory,
@@ -78,7 +74,7 @@ final readonly class TtsRequestOrchestrator
 
     public function processInitial(TtsNarrationRequest $request): void
     {
-        $licence = $this->resolveAssetLicence($request);
+        $licence = $request->getLicence();
         $extSystem = $licence->getExtSystem();
         // The file-less audio shell reserved at dispatch — its id is the one CMS already holds.
         $shellAsset = $this->resolveTargetAsset($request);
@@ -128,7 +124,7 @@ final readonly class TtsRequestOrchestrator
     {
         $stableAsset = $this->resolveTargetAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
-        $licence = $this->resolveAssetLicence($request);
+        $licence = $request->getLicence();
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
         $family = $voice->getVoiceFamily();
 
@@ -349,23 +345,4 @@ final readonly class TtsRequestOrchestrator
 
         return $asset;
     }
-
-    /**
-     * @throws TtsProviderException if licence is not found
-     */
-    private function resolveAssetLicence(TtsNarrationRequest $request): AssetLicence
-    {
-        $licenceId = $request->getAssetLicenceId();
-        if (null === $licenceId) {
-            throw new TtsProviderException(sprintf('Request "%s" has no assetLicenceId.', (string) $request->getId()));
-        }
-
-        $licence = $this->licenceRepo->find($licenceId);
-        if (null === $licence) {
-            throw new TtsProviderException(sprintf('AssetLicence "%s" not found for request "%s".', $licenceId, (string) $request->getId()));
-        }
-
-        return $licence;
-    }
-
 }

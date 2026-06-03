@@ -41,7 +41,7 @@ final readonly class TtsRegenerationFacade
                     ->setMode(TtsRequestMode::Regenerate)
                     ->setAssetId($stableAssetId)
                     ->setExtSystemId($assetLicence->getExtSystem()->getId())
-                    ->setAssetLicenceId($assetLicence->getId())
+                    ->setAssetLicence($assetLicence)
                     ->setVoiceFamilySlug($voiceFamilySlug);
                 $this->requestManager->create(request: $request, flush: false);
 

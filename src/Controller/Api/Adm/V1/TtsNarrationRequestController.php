@@ -21,7 +21,6 @@ use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestAssetFilter;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
@@ -31,7 +30,6 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(path: '/tts-narration-request', name: 'adm_tts_narration_request_v1_')]
@@ -42,7 +40,6 @@ final class TtsNarrationRequestController extends AbstractApiController
         private readonly TtsDispatchFacade $dispatchNew,
         private readonly TtsCancellationFacade $cancelRequest,
         private readonly TtsNarrationRequestRepository $requestRepo,
-        private readonly AssetLicenceRepository $licenceRepo,
         private readonly TtsAssetRepository $ttsAssetRepo,
     ) {
     }
@@ -56,13 +53,9 @@ final class TtsNarrationRequestController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $asset);
 
-        $filter = $apiParams->getFilter();
-        $filter[ApiParams::FILTER_CUSTOM][TtsNarrationRequestAssetFilter::ASSET] = (string) $asset->getId();
-        $apiParams->setFilter($filter);
-
         return $this->okResponse(
             $this->requestRepo->findByApiParams(
-                apiParams: $apiParams,
+                apiParams: TtsNarrationRequestAssetFilter::applyTo($apiParams, $asset),
                 customFilters: [new TtsNarrationRequestAssetFilter()],
             ),
         );
@@ -72,9 +65,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     #[OAParameterPath('narrationRequest'), OAResponse(TtsNarrationRequest::class)]
     public function getOne(TtsNarrationRequest $narrationRequest): JsonResponse
     {
-        $licence = $this->licenceRepo->find($narrationRequest->getAssetLicenceId())
-            ?? throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $narrationRequest->getId()));
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $licence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $narrationRequest);
 
         $assetId = $narrationRequest->getAssetId();
         $ttsAsset = null !== $assetId
@@ -95,7 +86,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function synthesize(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto->resolveAssetLicence());
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
 
         $result = $this->dispatchNew->execute($dto);
 
@@ -115,10 +106,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function cancel(TtsNarrationRequest $request): JsonResponse
     {
         App::throwOnReadOnlyMode();
-
-        $licence = $this->licenceRepo->find($request->getAssetLicenceId())
-            ?? throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $request->getId()));
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $licence);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL, $request);
 
         $cancelled = $this->cancelRequest->execute($request, (string) $this->getUser()->getId());
 
