@@ -26,6 +26,7 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
         protected readonly FfmpegService $ffmpegService,
         protected readonly ExtSystemConfigurationProvider $extSystemConfigProvider,
         protected readonly Config $config,
+        protected readonly TextChunker $chunker,
     ) {
     }
 
@@ -38,6 +39,24 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
     protected function resolveChunkSize(): int
     {
         return max(1, min($this->config->getChunkSizeChars(), $this->getMaxCharsPerRequest()));
+    }
+
+    /**
+     * Splits text into provider-sized chunks, failing closed on empty input so a provider never issues a
+     * synthesis request for nothing.
+     *
+     * @return list<string>
+     *
+     * @throws TtsProviderException
+     */
+    protected function chunkTextOrFail(string $text): array
+    {
+        $chunks = $this->chunker->chunk($text, $this->resolveChunkSize());
+        if ([] === $chunks) {
+            throw new TtsProviderException('Cannot synthesize empty text.');
+        }
+
+        return $chunks;
     }
 
     /**

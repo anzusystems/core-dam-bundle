@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
+use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -36,8 +37,8 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     private string $text = App::EMPTY_STRING;
 
     #[Serialize]
-    #[Assert\Regex(pattern: '/^[a-z0-9_-]+$/', message: ValidationException::ERROR_FIELD_INVALID)]
-    #[Assert\Length(max: 120, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Regex(pattern: VoiceFamily::SLUG_REGEX, message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: VoiceFamily::SLUG_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $voiceFamilySlug = null;
 
     /**

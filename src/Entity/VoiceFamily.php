@@ -35,17 +35,20 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     use TimeTrackingTrait;
     use UserTrackingTrait;
 
+    public const string SLUG_REGEX = '/^[a-z0-9_-]+$/';
+    public const int SLUG_MAX_LENGTH = 120;
+
     #[ORM\ManyToOne(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinColumn(nullable: false)]
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
     private ExtSystem $extSystem;
 
-    #[ORM\Column(type: Types::STRING, length: 120)]
+    #[ORM\Column(type: Types::STRING, length: self::SLUG_MAX_LENGTH)]
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Regex(pattern: '/^[a-z0-9_-]+$/', message: ValidationException::ERROR_FIELD_INVALID)]
-    #[Assert\Length(max: 120, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Regex(pattern: self::SLUG_REGEX, message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: self::SLUG_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $slug;
 
     #[ORM\Column(type: Types::STRING, length: 255)]

@@ -76,7 +76,7 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize(handler: EntityIdHandler::class)]
     private AssetLicence $assetLicence;
 
-    #[ORM\Column(type: Types::STRING, length: 120, nullable: true)]
+    #[ORM\Column(type: Types::STRING, length: VoiceFamily::SLUG_MAX_LENGTH, nullable: true)]
     #[Serialize]
     private ?string $voiceFamilySlug;
 

@@ -39,13 +39,13 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     public function __construct(
         private readonly GoogleTtsClient $ttsClient,
         private readonly GoogleTtsAuthClientProvider $authClientProvider,
-        private readonly TextChunker $chunker,
         ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
         FfmpegService $ffmpegService,
         Config $config,
+        TextChunker $chunker,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config);
+        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config, $chunker);
     }
 
     public static function getDefaultKeyName(): string
@@ -86,11 +86,7 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         $this->precheck($voice, $extSystem);
         assert($voice instanceof GoogleTtsVoice);
 
-        $chunks = $this->chunker->chunk($text, $this->resolveChunkSize());
-        if ([] === $chunks) {
-            throw new TtsProviderException('Cannot synthesize empty text.');
-        }
-
+        $chunks = $this->chunkTextOrFail($text);
         $accessToken = $this->getAccessToken($extSystem);
         // Single source of truth: the voice family carries the language; Google needs it as a BCP-47 tag.
         $languageCode = $voice->getVoiceFamily()->getLanguage()->getBcpLocale();
@@ -151,7 +147,9 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     private function buildBody(string $text, GoogleTtsVoice $voice, string $languageCode): array
     {
         return [
-            'input' => ['text' => $text],
+            'input' => [
+                'text' => $text,
+            ],
             'voice' => [
                 'languageCode' => $languageCode,
                 'name' => $voice->getExternalVoiceId(),

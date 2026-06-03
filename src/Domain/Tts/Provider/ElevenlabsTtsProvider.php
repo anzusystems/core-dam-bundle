@@ -36,13 +36,13 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
 
     public function __construct(
         private readonly ElevenlabsClient $client,
-        private readonly TextChunker $chunker,
         ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
         FfmpegService $ffmpegService,
         Config $config,
+        TextChunker $chunker,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config);
+        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config, $chunker);
     }
 
     public static function getDefaultKeyName(): string
@@ -80,11 +80,7 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
         $this->precheck($voice, $extSystem);
         assert($voice instanceof ElevenlabsVoice);
 
-        $chunks = $this->chunker->chunk($text, $this->resolveChunkSize());
-        if ([] === $chunks) {
-            throw new TtsProviderException('Cannot synthesize empty text.');
-        }
-
+        $chunks = $this->chunkTextOrFail($text);
         $apiKey = $this->resolveApiKey($extSystem);
 
         if (1 === count($chunks)) {
