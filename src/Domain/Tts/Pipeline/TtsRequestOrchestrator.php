@@ -12,12 +12,12 @@ use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
+use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastLicenceFilter;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
-use AnzuSystems\CoreDamBundle\Domain\Tts\PodcastLicenceFilter;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -121,7 +121,7 @@ final readonly class TtsRequestOrchestrator
             $this->indexManager->index($result->asset);
         });
 
-        $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
+        $this->extSystemCallbackFacade->notifyAssetChanged($result->asset);
     }
 
     public function processRegenerate(TtsNarrationRequest $request): void
@@ -180,7 +180,7 @@ final readonly class TtsRequestOrchestrator
             $this->indexManager->index($stableAsset);
         });
 
-        $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
+        $this->extSystemCallbackFacade->notifyAssetChanged($stableAsset);
     }
 
     /**

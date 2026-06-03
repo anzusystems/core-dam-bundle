@@ -72,6 +72,11 @@ final class ExtSystemCallbackFacade
         return $processed;
     }
 
+    public function notifyAssetChanged(Asset $asset): bool
+    {
+        return $this->notifyAssetsChanged(new ArrayCollection([$asset]));
+    }
+
     /**
      * @param Collection<array-key, ImageFile> $images
      */

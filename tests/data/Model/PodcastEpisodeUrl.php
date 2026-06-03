@@ -28,6 +28,11 @@ final class PodcastEpisodeUrl
         return sprintf('/api/adm/v%d/podcast-episode/asset/%s', self::API_VERSION, $assetId);
     }
 
+    public static function setMembershipByAsset(string $assetId): string
+    {
+        return sprintf('/api/adm/v%d/podcast-episode/asset/%s', self::API_VERSION, $assetId);
+    }
+
     public static function createPath(): string
     {
         return sprintf('/api/adm/v%d/podcast-episode', self::API_VERSION);

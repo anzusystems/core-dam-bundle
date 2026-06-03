@@ -182,7 +182,6 @@ class DamPermissions
     public const string DAM_TTS_ASSET_READ = 'dam_ttsAsset_read';
     public const string DAM_TTS_ASSET_UNPUBLISH = 'dam_ttsAsset_unpublish';
     public const string DAM_TTS_ASSET_REGENERATE = 'dam_ttsAsset_regenerate';
-    public const string DAM_TTS_ASSET_UPDATE_PODCASTS = 'dam_ttsAsset_updatePodcasts';
     public const string DAM_TTS_ASSET_UI = 'dam_ttsAsset_ui';
 
     // TTS — TtsNarrationRequest
@@ -310,7 +309,6 @@ class DamPermissions
         self::DAM_TTS_ASSET_READ,
         self::DAM_TTS_ASSET_UNPUBLISH,
         self::DAM_TTS_ASSET_REGENERATE,
-        self::DAM_TTS_ASSET_UPDATE_PODCASTS,
         self::DAM_TTS_ASSET_UI,
         self::DAM_TTS_NARRATION_REQUEST_READ,
         self::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,

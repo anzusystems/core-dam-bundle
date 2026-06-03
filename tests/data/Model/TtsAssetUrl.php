@@ -22,9 +22,4 @@ final class TtsAssetUrl
     {
         return sprintf('/api/adm/v%d/tts-asset/%s', self::API_VERSION, $assetId);
     }
-
-    public static function updatePodcasts(string $assetId): string
-    {
-        return sprintf('/api/adm/v%d/tts-asset/%s/podcasts', self::API_VERSION, $assetId);
-    }
 }

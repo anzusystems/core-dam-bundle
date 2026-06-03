@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
+namespace AnzuSystems\CoreDamBundle\Model\Dto\PodcastEpisode;
 
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -11,7 +11,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class TtsPodcastsUpdateDto
+/**
+ * Full desired set of podcasts an asset should belong to (PUT/full-replace semantics).
+ */
+final class PodcastMembershipUpdateDto
 {
     /**
      * @var Collection<int, Podcast>

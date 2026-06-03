@@ -12,14 +12,12 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsPodcastMembershipFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsRegenerationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsUnpublishFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioAdmDetailDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsPodcastsUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsRegenerateRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
@@ -39,7 +37,6 @@ final class TtsAssetController extends AbstractApiController
     public function __construct(
         private readonly TtsRegenerationFacade $regenerateTts,
         private readonly TtsUnpublishFacade $unpublishTtsAsset,
-        private readonly TtsPodcastMembershipFacade $updatePodcastMembership,
         private readonly TtsAssetRepository $ttsAssetRepo,
         private readonly TtsNarrationRequestRepository $ttsRequestRepo,
         private readonly PodcastEpisodeRepository $episodeRepo,
@@ -96,22 +93,6 @@ final class TtsAssetController extends AbstractApiController
             asset: $asset,
             userId: (string) $this->getUser()->getId(),
         );
-
-        return $this->noContentResponse();
-    }
-
-    /**
-     * @throws AppReadOnlyModeException
-     */
-    #[Route('/{asset}/podcasts', name: 'update_podcasts', methods: [Request::METHOD_PUT])]
-    #[OAParameterPath('asset'), OARequest(TtsPodcastsUpdateDto::class), OAResponseValidation]
-    public function updatePodcasts(Request $request, Asset $asset, #[SerializeParam] TtsPodcastsUpdateDto $dto): JsonResponse
-    {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_UPDATE_PODCASTS, $asset);
-        App::throwOnReadOnlyMode();
-        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
-
-        $this->updatePodcastMembership->execute($asset, $dto->getPodcasts());
 
         return $this->noContentResponse();
     }

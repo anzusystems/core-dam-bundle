@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Domain\Tts;
+namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
@@ -11,9 +11,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 /**
- * Keeps only the podcasts whose licence matches the TTS asset's licence; licence-mismatched podcasts are
- * logged and skipped so membership sync never aborts. Shared by the orchestrator (initial/regen creation)
- * and the standalone {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsPodcastMembershipFacade}.
+ * Keeps only the podcasts whose licence matches the asset's licence; licence-mismatched podcasts are
+ * logged and skipped so membership sync never aborts. Shared by the podcast-membership facade and the
+ * TTS orchestrator (initial/regen creation).
  */
 final readonly class PodcastLicenceFilter
 {
@@ -37,7 +37,7 @@ final readonly class PodcastLicenceFilter
                 continue;
             }
 
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'podcastMembership.licenceMismatch', [
+            $this->logger->warning(DamLogger::NAMESPACE_PODCAST_MEMBERSHIP, 'podcastMembership.licenceMismatch', [
                 'podcastId' => (string) $podcast->getId(),
                 'assetId' => (string) $asset->getId(),
                 'podcastLicenceId' => (string) $podcast->getLicence()->getId(),

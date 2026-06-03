@@ -18,9 +18,11 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeBodyFacade;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeFacade;
+use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastMembershipFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Model\Dto\PodcastEpisode\PodcastMembershipUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\PodcastEpisodeFilter;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
@@ -41,6 +43,7 @@ final class PodcastEpisodeController extends AbstractApiController
         private readonly PodcastEpisodeRepository $podcastEpisodeRepository,
         private readonly PodcastEpisodeFacade $podcastEpisodeFacade,
         private readonly PodcastEpisodeBodyFacade $episodeBodyFacade,
+        private readonly PodcastMembershipFacade $membershipFacade,
     ) {
     }
 
@@ -91,6 +94,26 @@ final class PodcastEpisodeController extends AbstractApiController
             apiParams: PodcastEpisodeApiParams::applyCustomFilterByAsset($apiParams, $asset),
             customFilters: [new PodcastEpisodeFilter()],
         ));
+    }
+
+    /**
+     * Replaces the full set of podcasts the asset belongs to (PUT/full-replace). Authorized on the asset's
+     * licence/ext-system via DAM_ASSET_UPDATE; licence-mismatched podcasts are skipped server-side.
+     *
+     * @throws AppReadOnlyModeException
+     */
+    #[Route('/asset/{asset}', name: 'set_membership_by_asset', methods: [Request::METHOD_PUT])]
+    #[OAParameterPath('asset'), OARequest(PodcastMembershipUpdateDto::class), OAResponseValidation]
+    public function setMembershipByAsset(Request $request, Asset $asset, #[SerializeParam] PodcastMembershipUpdateDto $dto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_UPDATE, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $asset);
+        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
+
+        $this->membershipFacade->execute($asset, $dto->getPodcasts());
+
+        return $this->noContentResponse();
     }
 
     /**
