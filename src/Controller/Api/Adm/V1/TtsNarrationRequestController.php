@@ -62,9 +62,9 @@ final class TtsNarrationRequestController extends AbstractApiController
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ);
 
-        $resultAssetId = $narrationRequest->getResultAssetId();
-        $ttsAsset = null !== $resultAssetId
-            ? $this->ttsAssetRepo->findByAssetIdJoined($resultAssetId)
+        $assetId = $narrationRequest->getAssetId();
+        $ttsAsset = null !== $assetId
+            ? $this->ttsAssetRepo->findByAssetIdJoined($assetId)
             : null;
 
         $narrationRequest->setTtsAsset($ttsAsset);

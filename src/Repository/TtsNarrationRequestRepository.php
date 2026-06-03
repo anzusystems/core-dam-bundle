@@ -25,7 +25,7 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     public function findActiveRegenForStable(string $stableAssetId): ?TtsNarrationRequest
     {
         return $this->findOneBy([
-            'stableAssetId' => $stableAssetId,
+            'assetId' => $stableAssetId,
             'mode' => TtsRequestMode::Regenerate,
             'status' => TtsRequestStatus::CANCELLABLE_STATUSES,
         ]);
@@ -45,16 +45,16 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
         }
 
         $requests = $this->findBy([
-            'stableAssetId' => $stableAssetIds,
+            'assetId' => $stableAssetIds,
             'mode' => TtsRequestMode::Regenerate,
             'status' => TtsRequestStatus::CANCELLABLE_STATUSES,
         ]);
 
         $byStable = [];
         foreach ($requests as $request) {
-            $stableId = $request->getStableAssetId();
-            if (null !== $stableId) {
-                $byStable[$stableId] = $request;
+            $assetId = $request->getAssetId();
+            if (null !== $assetId) {
+                $byStable[$assetId] = $request;
             }
         }
 
@@ -72,39 +72,23 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Latest request that touched the given asset — either as Initial result (resultAssetId)
-     * or as Regenerate target (stableAssetId). Powers the "open source request" link in the
-     * asset detail TTS panel.
-     *
-     * Implemented as two index-friendly lookups (one per column) instead of a single OR query,
-     * which MySQL cannot satisfy with index_merge alongside ORDER BY createdAt — that would
-     * degrade to a filesort as the table grows.
+     * Latest request that touched the given asset (as Initial shell or Regenerate target). Powers the
+     * "open source request" link in the asset detail TTS panel. Index-friendly: a single lookup on
+     * {@see TtsNarrationRequest::$assetId} (IDX_tts_request_asset_mode_status leads with assetId).
      */
     public function findLastIdByAsset(string $assetId): ?string
     {
-        $candidates = [];
-        foreach (['resultAssetId', 'stableAssetId'] as $field) {
-            $row = $this->createQueryBuilder('r')
-                ->select('r.id', 'r.createdAt')
-                ->where(sprintf('r.%s = :id', $field))
-                ->setParameter('id', $assetId)
-                ->orderBy('r.createdAt', 'DESC')
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult()
-            ;
-            if (null !== $row) {
-                $candidates[] = $row;
-            }
-        }
+        $row = $this->createQueryBuilder('r')
+            ->select('r.id')
+            ->where('r.assetId = :id')
+            ->setParameter('id', $assetId)
+            ->orderBy('r.createdAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult()
+        ;
 
-        if ([] === $candidates) {
-            return null;
-        }
-
-        usort($candidates, static fn (array $a, array $b): int => $b['createdAt'] <=> $a['createdAt']);
-
-        return (string) $candidates[0]['id'];
+        return null !== $row ? (string) $row['id'] : null;
     }
 
     protected function getEntityClass(): string

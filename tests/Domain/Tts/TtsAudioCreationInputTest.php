@@ -25,8 +25,8 @@ final class TtsAudioCreationInputTest extends TestCase
     public function testForInitialRequestHashesLiveSourceText(): void
     {
         $request = (new TtsNarrationRequest())
-            ->setTitle('My title');
-        $request->getSource()->setText('Hello world');
+            ->setTitle('My title')
+            ->setSourceText('Hello world');
 
         $input = TtsAudioCreationInput::forInitialRequest(
             request: $request,

@@ -66,7 +66,7 @@ final readonly class TtsNarrationRequestHandler
                 'mode' => $request->getMode()->value,
             ], exception: $e);
 
-            // Never rethrow — Messenger retry would re-process a terminal request (openInitialKey
+            // Never rethrow — Messenger retry would re-process a terminal request (initialIdempotencyKey
             // is already cleared). Callers must dispatch a fresh request for a retry.
             $this->handleRequestFailure($request, $e);
         }
@@ -150,13 +150,13 @@ final readonly class TtsNarrationRequestHandler
      */
     private function deleteInitialAssetOnFailure(TtsNarrationRequest $request): void
     {
-        $stableAssetId = $request->getStableAssetId();
-        if (null === $stableAssetId) {
+        $assetId = $request->getAssetId();
+        if (null === $assetId) {
             return;
         }
 
         try {
-            $asset = $this->assetRepo->find($stableAssetId);
+            $asset = $this->assetRepo->find($assetId);
             if (null === $asset) {
                 return;
             }
@@ -174,7 +174,7 @@ final readonly class TtsNarrationRequestHandler
         } catch (Throwable $deleteEx) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.deleteInitialAssetFailed', [
                 'requestId' => (string) $request->getId(),
-                'stableAssetId' => $stableAssetId,
+                'assetId' => $assetId,
                 'error' => $deleteEx->getMessage(),
             ]);
         }
@@ -186,14 +186,14 @@ final readonly class TtsNarrationRequestHandler
      */
     private function releaseStableAssetOnRegenFailure(TtsNarrationRequest $request): void
     {
-        $stableAssetId = $request->getStableAssetId();
-        if (null === $stableAssetId) {
+        $assetId = $request->getAssetId();
+        if (null === $assetId) {
             return;
         }
 
         try {
-            $this->entityManager->wrapInTransaction(function () use ($stableAssetId): void {
-                $ttsAsset = $this->assetLocker->lock($stableAssetId);
+            $this->entityManager->wrapInTransaction(function () use ($assetId): void {
+                $ttsAsset = $this->assetLocker->lock($assetId);
                 if ($ttsAsset->getStatus()->is(TtsAudioStatus::Superseding)) {
                     $this->ttsAssetManager->markActive($ttsAsset, flush: true);
                 }
@@ -201,7 +201,7 @@ final readonly class TtsNarrationRequestHandler
         } catch (Throwable $releaseEx) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'handler.releaseStableAssetFailed', [
                 'requestId' => (string) $request->getId(),
-                'stableAssetId' => $stableAssetId,
+                'assetId' => $assetId,
                 'error' => $releaseEx->getMessage(),
             ]);
         }
@@ -209,14 +209,14 @@ final readonly class TtsNarrationRequestHandler
 
     private function dispatchFailureCallback(TtsNarrationRequest $request, string $failureReason): void
     {
-        $stableAssetId = $request->getStableAssetId();
-        if (null === $stableAssetId) {
+        $assetId = $request->getAssetId();
+        if (null === $assetId) {
             return;
         }
 
         $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
             extSystemId: $request->getExtSystemId(),
-            assetId: $stableAssetId,
+            assetId: $assetId,
             status: MediaStatusType::GenerationFailed,
             failureReason: $failureReason,
         );

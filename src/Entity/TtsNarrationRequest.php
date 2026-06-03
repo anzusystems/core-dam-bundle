@@ -9,7 +9,6 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestSource;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
@@ -21,14 +20,12 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * Standalone TTS request — NOT a {@see Job} subtype. Owns its own async lifecycle via Messenger;
- * the produced artifact is a {@see TtsAsset} linked via {@see resultAssetId} on Done.
+ * the produced artifact is a {@see TtsAsset} linked via {@see assetId} (success indicated by status Done).
  */
 #[ORM\Entity(repositoryClass: TtsNarrationRequestRepository::class)]
-#[ORM\Table(name: 'tts_narration_request')]
-#[ORM\UniqueConstraint(name: 'UNIQ_tts_request_open_initial_key', fields: ['openInitialKey'])]
+#[ORM\UniqueConstraint(name: 'UNIQ_tts_request_initial_idempotency_key', fields: ['initialIdempotencyKey'])]
 #[ORM\Index(name: 'IDX_tts_request_status_mode', fields: ['status', 'mode'])]
-#[ORM\Index(name: 'IDX_tts_request_stable_mode_status', fields: ['stableAssetId', 'mode', 'status'])]
-#[ORM\Index(name: 'IDX_tts_request_result_asset', fields: ['resultAssetId'])]
+#[ORM\Index(name: 'IDX_tts_request_asset_mode_status', fields: ['assetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_ext_system', fields: ['extSystemId'])]
 final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface
 {
@@ -53,25 +50,20 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private ?string $failureReason;
 
     /**
-     * Initial-mode idempotency key (content-addressed: licenceId+sourceTextHash+voiceFamilySlug);
-     * cleared on terminal so the slot frees up for a fresh dispatch.
+     * In-flight idempotency guard for Initial dispatch (content-addressed: licenceId+sourceTextHash+
+     * voiceFamilySlug); cleared on terminal so the slot frees up for a fresh dispatch.
      */
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    private ?string $openInitialKey;
+    private ?string $initialIdempotencyKey;
 
     /**
-     * Stable Asset being regenerated (only set for Regenerate mode).
+     * The asset this request targets: the file-less shell reserved at dispatch (Initial) or the existing
+     * stable asset being regenerated (Regenerate). The same id is kept alive across the regenerate swap;
+     * whether the request succeeded is read from {@see status} (Done), not from a separate result column.
      */
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]
-    private ?string $stableAssetId;
-
-    /**
-     * Asset produced (Initial) or updated (Regenerate) by this request. Set on Done transition.
-     */
-    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
-    #[Serialize]
-    private ?string $resultAssetId;
+    private ?string $assetId;
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Serialize]
@@ -125,9 +117,12 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private array $podcastIds = [];
 
+    /**
+     * Text to synthesize. Nullified at terminal status (audit copy lives on {@see TtsAsset::$sourceTextSnapshot}).
+     */
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]
-    #[ORM\Embedded(class: TtsNarrationRequestSource::class)]
-    private TtsNarrationRequestSource $source;
+    private ?string $sourceText;
 
     /**
      * Transient (non-persisted) — populated by the Adm getOne controller after a repo join.
@@ -143,9 +138,8 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setMode(TtsRequestMode::Default);
         $this->setStartedAt(null);
         $this->setFailureReason(null);
-        $this->setOpenInitialKey(null);
-        $this->setStableAssetId(null);
-        $this->setResultAssetId(null);
+        $this->setInitialIdempotencyKey(null);
+        $this->setAssetId(null);
         $this->setExtSystemId(0);
         $this->setAssetLicenceId(null);
         $this->setVoiceFamilySlug(null);
@@ -155,7 +149,7 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setAuthors([]);
         $this->setCancelRequested(false);
         $this->setPodcastIds([]);
-        $this->setSource(new TtsNarrationRequestSource());
+        $this->setSourceText(null);
     }
 
     public function getStatus(): TtsRequestStatus
@@ -206,33 +200,21 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function setOpenInitialKey(?string $openInitialKey): self
+    public function setInitialIdempotencyKey(?string $initialIdempotencyKey): self
     {
-        $this->openInitialKey = $openInitialKey;
+        $this->initialIdempotencyKey = $initialIdempotencyKey;
 
         return $this;
     }
 
-    public function getStableAssetId(): ?string
+    public function getAssetId(): ?string
     {
-        return $this->stableAssetId;
+        return $this->assetId;
     }
 
-    public function setStableAssetId(?string $stableAssetId): self
+    public function setAssetId(?string $assetId): self
     {
-        $this->stableAssetId = $stableAssetId;
-
-        return $this;
-    }
-
-    public function getResultAssetId(): ?string
-    {
-        return $this->resultAssetId;
-    }
-
-    public function setResultAssetId(?string $resultAssetId): self
-    {
-        $this->resultAssetId = $resultAssetId;
+        $this->assetId = $assetId;
 
         return $this;
     }
@@ -345,14 +327,14 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         return $this;
     }
 
-    public function getSource(): TtsNarrationRequestSource
+    public function getSourceText(): ?string
     {
-        return $this->source;
+        return $this->sourceText;
     }
 
-    public function setSource(TtsNarrationRequestSource $source): self
+    public function setSourceText(?string $sourceText): self
     {
-        $this->source = $source;
+        $this->sourceText = $sourceText;
 
         return $this;
     }

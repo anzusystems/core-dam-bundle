@@ -69,7 +69,7 @@ final readonly class AssetSwap
 
                 $stableTts
                     ->setVoiceFamily($family)
-                    ->setDiscriminator($voice->getDiscriminator())
+                    ->setProvider($voice->getDiscriminator())
                     ->setExternalVoiceId($voice->getExternalVoiceId())
                 ;
                 $this->ttsAssetManager->markActive($stableTts);

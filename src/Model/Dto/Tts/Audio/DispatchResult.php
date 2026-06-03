@@ -41,8 +41,8 @@ final readonly class DispatchResult
     }
 
     /**
-     * Returns the stable asset id:
-     * - Pending: the freshly reserved stableAssetId
+     * Returns the target asset id:
+     * - Pending: the freshly reserved asset id (the shell created at dispatch)
      * - Duplicate: the existing active asset id
      * - AlreadyPending: null — a concurrent dispatch owns the media attach, this duplicate is a no-op
      */

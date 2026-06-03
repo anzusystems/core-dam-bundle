@@ -23,7 +23,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VoiceRepository::class)]
-#[ORM\Table(name: 'voice')]
 #[ORM\InheritanceType('JOINED')]
 #[ORM\DiscriminatorColumn(name: 'discriminator', enumType: VoiceDiscriminator::class)]
 #[ORM\DiscriminatorMap(VoiceDiscriminator::MAP)]

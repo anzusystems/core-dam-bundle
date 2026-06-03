@@ -152,7 +152,7 @@ final readonly class TtsAudioFactory
     {
         return (new TtsAsset($asset))
             ->setVoiceFamily($input->family)
-            ->setDiscriminator($input->voice->getDiscriminator())
+            ->setProvider($input->voice->getDiscriminator())
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
             ->setSourceTextHash($input->sourceTextHash)
             ->setSourceTextSnapshot($input->sourceTextSnapshot)

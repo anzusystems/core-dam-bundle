@@ -66,7 +66,7 @@ final readonly class TtsCancellationFacade
 
         return match ($request->getMode()) {
             TtsRequestMode::Initial => $this->cancelInitial($request, $userId),
-            TtsRequestMode::Regenerate => $this->cancelRegenerate((string) $request->getStableAssetId(), $userId),
+            TtsRequestMode::Regenerate => $this->cancelRegenerate((string) $request->getAssetId(), $userId),
         };
     }
 
@@ -83,9 +83,9 @@ final readonly class TtsCancellationFacade
                 $this->requestManager->markCancelled($locked);
                 $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId);
 
-                $stableAssetId = $locked->getStableAssetId();
-                $callbackData = null !== $stableAssetId
-                    ? new CancelledCallbackData($locked->getExtSystemId(), $stableAssetId)
+                $assetId = $locked->getAssetId();
+                $callbackData = null !== $assetId
+                    ? new CancelledCallbackData($locked->getExtSystemId(), $assetId)
                     : null;
 
                 $this->entityManager->flush();

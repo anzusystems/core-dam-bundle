@@ -39,7 +39,7 @@ final readonly class TtsRegenerationFacade
                 $assetLicence = $ttsAsset->getAsset()->getLicence();
                 $request = (new TtsNarrationRequest())
                     ->setMode(TtsRequestMode::Regenerate)
-                    ->setStableAssetId($stableAssetId)
+                    ->setAssetId($stableAssetId)
                     ->setExtSystemId($assetLicence->getExtSystem()->getId())
                     ->setAssetLicenceId($assetLicence->getId())
                     ->setVoiceFamilySlug($voiceFamilySlug);

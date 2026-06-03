@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 
 /**
  * Owns TtsAsset state transitions via named mark* methods — keeps allowed transitions in code.
- * Cross-link to the in-flight {@see TtsNarrationRequest} is via the request's `stableAssetId` FK
+ * Cross-link to the in-flight {@see TtsNarrationRequest} is via the request's `assetId`
  * pointing here (no back-pointer on TtsAsset).
  *
  * Flush convention: all methods default to `flush = false`. TtsAsset mutations always happen inside

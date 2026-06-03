@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use DateTimeImmutable;
 
 /**
- * State transitions for {@see TtsNarrationRequest}. `openInitialKey` is cleared on every terminal
+ * State transitions for {@see TtsNarrationRequest}. `initialIdempotencyKey` is cleared on every terminal
  * transition (Done / Failed / Cancelled) — enforced here so callers can't forget.
  *
  * Flush convention: defaults to `flush = true` because the orchestrator updates state outside any
@@ -39,10 +39,10 @@ final class TtsNarrationRequestManager extends AbstractManager
         return $request;
     }
 
-    public function markDone(TtsNarrationRequest $request, string $resultAssetId, bool $flush = true): TtsNarrationRequest
+    public function markDone(TtsNarrationRequest $request, bool $flush = true): TtsNarrationRequest
     {
-        $request->setResultAssetId($resultAssetId);
-
+        // assetId is set at dispatch (shell for Initial, stable for Regenerate) and the request produces into
+        // that same asset, so Done needs no separate result id — success is the Done status itself.
         return $this->finalize($request, TtsRequestStatus::Done, null, $flush);
     }
 
@@ -70,7 +70,7 @@ final class TtsNarrationRequestManager extends AbstractManager
     }
 
     /**
-     * Terminal transition: clears openInitialKey (frees the ext-ref slot) + nullifies source text
+     * Terminal transition: clears initialIdempotencyKey (frees the in-flight slot) + nullifies source text
      * (audit copy lives on TtsAsset.sourceTextSnapshot).
      */
     private function finalize(TtsNarrationRequest $request, TtsRequestStatus $terminal, ?string $reason, bool $flush): TtsNarrationRequest
@@ -83,8 +83,8 @@ final class TtsNarrationRequestManager extends AbstractManager
 
         $request->setStatus($terminal);
         $request->setFailureReason($reason);
-        $request->setOpenInitialKey(null);
-        $request->getSource()->setText(null);
+        $request->setInitialIdempotencyKey(null);
+        $request->setSourceText(null);
         $this->trackModification($request);
         $this->flush($flush);
 

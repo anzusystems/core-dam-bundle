@@ -23,7 +23,6 @@ use Doctrine\ORM\Mapping as ORM;
  * request audit) lives elsewhere.
  */
 #[ORM\Entity(repositoryClass: TtsAssetRepository::class)]
-#[ORM\Table(name: 'tts_asset')]
 #[ORM\Index(name: 'IDX_tts_asset_status', fields: ['status'])]
 #[ORM\Index(name: 'IDX_tts_asset_content', fields: ['sourceTextHash', 'voiceFamily'])]
 final class TtsAsset implements TimeTrackingInterface
@@ -45,9 +44,12 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize(handler: EntityIdHandler::class)]
     private VoiceFamily $voiceFamily;
 
+    /**
+     * Which provider actually generated this audio (snapshot of the resolved Voice's discriminator).
+     */
     #[ORM\Column(enumType: VoiceDiscriminator::class)]
     #[Serialize]
-    private VoiceDiscriminator $discriminator;
+    private VoiceDiscriminator $provider;
 
     /**
      * Historical snapshot — live Voice may be replaced/deactivated, but this audio was synthesised
@@ -107,14 +109,14 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    public function getDiscriminator(): VoiceDiscriminator
+    public function getProvider(): VoiceDiscriminator
     {
-        return $this->discriminator;
+        return $this->provider;
     }
 
-    public function setDiscriminator(VoiceDiscriminator $discriminator): self
+    public function setProvider(VoiceDiscriminator $provider): self
     {
-        $this->discriminator = $discriminator;
+        $this->provider = $provider;
 
         return $this;
     }

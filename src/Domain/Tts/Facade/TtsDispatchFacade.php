@@ -70,10 +70,10 @@ final readonly class TtsDispatchFacade
 
         $this->precheckProviderOrThrowValidation($voice, $extSystem);
 
-        $openInitialKey = TtsIdempotencyKey::forInitial($licence, $sourceTextHash, $dto->getVoiceFamilySlug());
+        $initialIdempotencyKey = TtsIdempotencyKey::forInitial($licence, $sourceTextHash, $dto->getVoiceFamilySlug());
 
         $result = $this->entityManager->wrapInTransaction(
-            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $openInitialKey)),
+            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $initialIdempotencyKey)),
         );
 
         if ($dispatch && null !== $result->narrationRequest) {
@@ -137,10 +137,10 @@ final readonly class TtsDispatchFacade
             return DispatchResult::alreadyPending();
         }
 
-        return DispatchResult::pending((string) $request->getStableAssetId(), $request);
+        return DispatchResult::pending((string) $request->getAssetId(), $request);
     }
 
-    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, string $openInitialKey): TtsNarrationRequest
+    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, string $initialIdempotencyKey): TtsNarrationRequest
     {
         // Reserve a stable asset id by creating the file-less audio shell up front: the CMS placeholder media
         // (created from the dispatch response) and the audio attached on completion then share one id, and the
@@ -156,12 +156,10 @@ final readonly class TtsDispatchFacade
             ->setAuthors($dto->getAuthors())
             ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicenceId($licence->getId())
-            ->setOpenInitialKey($openInitialKey)
-            ->setStableAssetId((string) $shellAsset->getId())
-            ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray());
-
-        $request->getSource()
-            ->setText($dto->getText());
+            ->setInitialIdempotencyKey($initialIdempotencyKey)
+            ->setAssetId((string) $shellAsset->getId())
+            ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray())
+            ->setSourceText($dto->getText());
 
         return $request;
     }

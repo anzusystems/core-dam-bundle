@@ -87,7 +87,7 @@ final readonly class TtsRequestOrchestrator
         $family = $voice->getVoiceFamily();
         $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
 
-        $sourceText = (string) $request->getSource()->getText();
+        $sourceText = (string) $request->getSourceText();
         $audioFile = $provider->synthesize($sourceText, $voice, $extSystem);
 
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
@@ -108,7 +108,7 @@ final readonly class TtsRequestOrchestrator
         // below can't flip it to Failed, and (crucially) so the CMS success callback is still sent even if a
         // cosmetic enrichment step (e.g. ffmpeg preview) fails. DB enrichment runs before the flaky ffmpeg
         // preview so the callback reflects keywords/podcast even when the preview fails.
-        $this->requestManager->markDone($request, (string) $result->asset->getId());
+        $this->requestManager->markDone($request);
 
         // Best-effort enrichment. The preview is flaky ffmpeg; isolating it (and the metadata steps) here means
         // a failure can no longer skip the property refresh + reindex below.
@@ -192,7 +192,7 @@ final readonly class TtsRequestOrchestrator
         // Swap is the point of no return — commit Done immediately so a failure in the best-effort enrichment
         // below can't (a) flip the request to Failed and fire a spurious failure callback after a live swap, or
         // (b) skip the CMS success callback.
-        $this->requestManager->markDone($request, (string) $stableAsset->getId());
+        $this->requestManager->markDone($request);
 
         try {
             $this->syncFamilyKeywords($stableAsset, $family);
@@ -362,7 +362,7 @@ final readonly class TtsRequestOrchestrator
 
     private function resolveStableAsset(TtsNarrationRequest $request): Asset
     {
-        $stableAssetId = (string) $request->getStableAssetId();
+        $stableAssetId = (string) $request->getAssetId();
         $stableAsset = $this->assetRepo->find($stableAssetId);
         if (null === $stableAsset) {
             throw new RegenCancelledException(
