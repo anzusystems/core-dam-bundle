@@ -144,6 +144,9 @@ anzu_systems_core_dam:
     cms:
       id: 1
       ext_storage: 'cms.image'
+      tts:
+        elevenlabs_api_key: 'test-elevenlabs-key'
+        chunk_storage_name: 'cms.audio'
       image:
         title: ['customData:title']
         custom_metadata_pinned_amount: 3

@@ -19,10 +19,13 @@ use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config as TtsConfig;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceGroupFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\CustomFormElementFixtures;
@@ -31,8 +34,11 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\ElevenlabsClientMock;
+use AnzuSystems\CoreDamBundle\Tests\HttpClient\GoogleTtsClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwCdnClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\JwClientMock;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
@@ -67,6 +73,13 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(ExtSystemFixtures::class)
         ->arg('$extSystemManager', service(ExtSystemManager::class))
+        ->call('setEntityManager', [service(EntityManagerInterface::class)])
+        ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
+
+    $services->set(TtsVoiceFixtures::class)
+        ->arg('$voiceFamilyManager', service(VoiceFamilyManager::class))
+        ->arg('$voiceManager', service(VoiceManager::class))
+        ->arg('$extSystemRepository', service(ExtSystemRepository::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 
@@ -135,6 +148,14 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(RssPodcastMock::class);
     $services->set(HttpClientInterface::class . ' $httpClient', MockHttpClient::class)
         ->factory(service(RssPodcastMock::class));
+
+    $services->set(ElevenlabsClientMock::class);
+    $services->set(HttpClientInterface::class . ' $ttsElevenlabsApiClient', MockHttpClient::class)
+        ->factory(service(ElevenlabsClientMock::class));
+
+    $services->set(GoogleTtsClientMock::class);
+    $services->set(HttpClientInterface::class . ' $ttsGoogleApiClient', MockHttpClient::class)
+        ->factory(service(GoogleTtsClientMock::class));
 
     $services->set(ValidationExceptionHandler::class)
         ->tag(AnzuSystemsCommonBundle::TAG_EXCEPTION_HANDLER);
