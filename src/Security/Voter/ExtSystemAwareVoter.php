@@ -96,6 +96,8 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_TTS_ASSET_READ,
             DamPermissions::DAM_TTS_ASSET_UNPUBLISH,
             DamPermissions::DAM_TTS_ASSET_REGENERATE,
+            // Also AssetLicence-scoped (per-asset/per-request reads); here for the ext-system-scoped admin list.
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_READ,
         ];
     }
 }

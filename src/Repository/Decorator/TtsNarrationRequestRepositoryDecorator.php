@@ -6,9 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Repository\Decorator;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestAssetFilter;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestExtSystemFilter;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestLicenceFilter;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 
@@ -20,11 +23,23 @@ final class TtsNarrationRequestRepositoryDecorator
     ) {
     }
 
-    public function findByAsset(ApiParams $apiParams, Asset $asset): ApiResponseList
+    /**
+     * Scoped to one asset licence (path); the asset custom filter stays registered so the CMS can narrow
+     * to a single article's asset via api params.
+     */
+    public function findByLicence(ApiParams $apiParams, AssetLicence $licence): ApiResponseList
     {
         return $this->requestRepository->findByApiParams(
-            apiParams: TtsNarrationRequestAssetFilter::applyTo($apiParams, $asset),
-            customFilters: [new TtsNarrationRequestAssetFilter()],
+            apiParams: TtsNarrationRequestLicenceFilter::applyTo($apiParams, $licence),
+            customFilters: [new TtsNarrationRequestLicenceFilter(), new TtsNarrationRequestAssetFilter()],
+        );
+    }
+
+    public function findByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): ApiResponseList
+    {
+        return $this->requestRepository->findByApiParams(
+            apiParams: TtsNarrationRequestExtSystemFilter::applyTo($apiParams, $extSystem),
+            customFilters: [new TtsNarrationRequestExtSystemFilter()],
         );
     }
 

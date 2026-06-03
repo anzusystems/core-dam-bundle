@@ -15,7 +15,8 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
@@ -42,15 +43,28 @@ final class TtsNarrationRequestController extends AbstractApiController
     }
 
     /**
-     * Lists narration requests for a stable asset (CMS polls article narration progress); authorized on the asset.
+     * Lists narration requests of an asset licence; authorized on the licence. The CMS polls its article's
+     * narration progress here, narrowing to the article's asset via the `asset` api-params filter.
      */
-    #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('asset'), OAResponseList(TtsNarrationRequest::class)]
-    public function getListByAsset(ApiParams $apiParams, Asset $asset): JsonResponse
+    #[Route('/licence/{assetLicence}', name: 'get_list_by_licence', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('assetLicence'), OAResponseList(TtsNarrationRequest::class)]
+    public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $asset);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $assetLicence);
 
-        return $this->okResponse($this->requestDecorator->findByAsset($apiParams, $asset));
+        return $this->okResponse($this->requestDecorator->findByLicence($apiParams, $assetLicence));
+    }
+
+    /**
+     * Lists narration requests of an ext system (DAM admin overview); authorized on the ext system.
+     */
+    #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('extSystem'), OAResponseList(TtsNarrationRequest::class)]
+    public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $extSystem);
+
+        return $this->okResponse($this->requestDecorator->findByExtSystem($apiParams, $extSystem));
     }
 
     #[Route('/{narrationRequest}', name: 'get_one', methods: [Request::METHOD_GET])]
