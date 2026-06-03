@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterfa
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -46,6 +47,7 @@ class Asset implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
     ExtSystemIndexableInterface,
+    ExtSystemInterface,
     NotifiableInterface,
     AssetCustomFormProvidableInterface,
     AssetLicenceInterface,

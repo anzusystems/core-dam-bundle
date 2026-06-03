@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemTtsSettings;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
@@ -76,11 +77,13 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     #[ORM\ManyToOne(targetEntity: AssetLicence::class)]
     #[ORM\JoinColumn(name: 'tts_default_asset_licence_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
     private ?AssetLicence $ttsDefaultAssetLicence = null;
 
     #[ORM\ManyToOne(targetEntity: Asset::class)]
     #[ORM\JoinColumn(name: 'tts_free_audio_epilog_asset_id', referencedColumnName: 'id', nullable: true)]
     #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
     private ?Asset $ttsFreeAudioEpilogAsset = null;
 
     public function __construct()

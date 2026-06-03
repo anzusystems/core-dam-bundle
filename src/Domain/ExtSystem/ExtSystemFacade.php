@@ -8,7 +8,6 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\VoiceFamilyRepository;
 
@@ -27,15 +26,19 @@ final class ExtSystemFacade
      */
     public function update(ExtSystem $extSystem, ExtSystem $newExtSystem): ExtSystem
     {
+        // "belongs to ext system" for ttsDefaultAssetLicence / ttsFreeAudioEpilogAsset is enforced
+        // declaratively via #[AppAssert\EqualExtSystem] on the entity (validation root = the ExtSystem).
         $this->validator->validate($newExtSystem, $extSystem);
         $this->validateDefaultVoiceFamily($extSystem, $newExtSystem);
-        $this->assertBelongsToExtSystem($extSystem, $newExtSystem->getTtsDefaultAssetLicence(), 'ttsDefaultAssetLicence');
-        $this->validateTtsFreeAudioEpilogAsset($extSystem, $newExtSystem->getTtsFreeAudioEpilogAsset());
+        $this->validateTtsFreeAudioEpilogAssetType($newExtSystem->getTtsFreeAudioEpilogAsset());
 
         return $this->extSystemManager->update($extSystem, $newExtSystem);
     }
 
     /**
+     * Resolves the configured default voice family by id (string id on the embed, not an entity relation)
+     * and asserts it exists and belongs to the ext system.
+     *
      * @throws ValidationException
      */
     private function validateDefaultVoiceFamily(ExtSystem $extSystem, ExtSystem $newExtSystem): void
@@ -50,37 +53,24 @@ final class ExtSystemFacade
             throw (new ValidationException())
                 ->addFormattedError('defaultVoiceFamilyId', ValidationException::ERROR_FIELD_VALUE_NOT_FOUND);
         }
-        $this->assertBelongsToExtSystem($extSystem, $voiceFamily, 'defaultVoiceFamilyId');
+        if ($voiceFamily->getExtSystem()->isNot($extSystem)) {
+            throw (new ValidationException())
+                ->addFormattedError('defaultVoiceFamilyId', ValidationException::ERROR_FIELD_INVALID);
+        }
     }
 
     /**
      * @throws ValidationException
      */
-    private function validateTtsFreeAudioEpilogAsset(ExtSystem $extSystem, ?Asset $freeAudioEpilogAsset): void
+    private function validateTtsFreeAudioEpilogAssetType(?Asset $freeAudioEpilogAsset): void
     {
         if (null === $freeAudioEpilogAsset) {
             return;
         }
 
-        $this->assertBelongsToExtSystem($extSystem, $freeAudioEpilogAsset, 'ttsFreeAudioEpilogAsset');
-
         if (false === $freeAudioEpilogAsset->getAssetType()->is(AssetType::Audio)) {
             throw (new ValidationException())
                 ->addFormattedError('ttsFreeAudioEpilogAsset', ValidationException::ERROR_FIELD_INVALID);
-        }
-    }
-
-    /**
-     * @throws ValidationException
-     */
-    private function assertBelongsToExtSystem(ExtSystem $extSystem, ?ExtSystemInterface $entity, string $field): void
-    {
-        if (null === $entity) {
-            return;
-        }
-        if ($entity->getExtSystem()->isNot($extSystem)) {
-            throw (new ValidationException())
-                ->addFormattedError($field, ValidationException::ERROR_FIELD_INVALID);
         }
     }
 }
