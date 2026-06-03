@@ -81,7 +81,7 @@ final readonly class TtsRequestOrchestrator
         $licence = $this->resolveAssetLicence($request);
         $extSystem = $licence->getExtSystem();
         // The file-less audio shell reserved at dispatch — its id is the one CMS already holds.
-        $shellAsset = $this->resolveStableAsset($request);
+        $shellAsset = $this->resolveTargetAsset($request);
 
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $family = $voice->getVoiceFamily();
@@ -112,39 +112,29 @@ final readonly class TtsRequestOrchestrator
 
         // Best-effort enrichment. The preview is flaky ffmpeg; isolating it (and the metadata steps) here means
         // a failure can no longer skip the property refresh + reindex below.
-        try {
+        $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family): void {
             $this->syncFamilyKeywords($result->asset, $family);
             $this->applyInitialMetadata($result->asset, $request, $extSystem);
             $this->syncPodcastMembership($request, $result->asset);
 
             $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
             $this->attachPreviewSlot($result->asset, $preview);
-        } catch (Throwable $e) {
-            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processInitial.enrichmentFailed', [
-                'requestId' => (string) $request->getId(),
-                'assetId' => (string) $result->asset->getId(),
-            ], exception: $e);
-        }
+        });
 
         // Single point of truth for derived properties (slotNames, status, …) now that both slots + metadata
         // exist, then (re)index so ES reflects keywords/authors/podcast + slotNames. Guaranteed regardless of
         // whether the best-effort enrichment above (e.g. the ffmpeg preview) failed.
-        try {
+        $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
             $this->assetManager->updateExisting($result->asset);
             $this->indexManager->index($result->asset);
-        } catch (Throwable $e) {
-            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processInitial.refreshIndexFailed', [
-                'requestId' => (string) $request->getId(),
-                'assetId' => (string) $result->asset->getId(),
-            ], exception: $e);
-        }
+        });
 
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
     }
 
     public function processRegenerate(TtsNarrationRequest $request): void
     {
-        $stableAsset = $this->resolveStableAsset($request);
+        $stableAsset = $this->resolveTargetAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
         $licence = $this->resolveAssetLicence($request);
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
@@ -194,18 +184,13 @@ final readonly class TtsRequestOrchestrator
         // (b) skip the CMS success callback.
         $this->requestManager->markDone($request);
 
-        try {
+        $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $family): void {
             $this->syncFamilyKeywords($stableAsset, $family);
             if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
                 $this->entityManager->flush();
             }
             $this->indexManager->index($stableAsset);
-        } catch (Throwable $e) {
-            $this->logger->error(DamLogger::NAMESPACE_TTS, 'processRegenerate.enrichmentFailed', [
-                'requestId' => (string) $request->getId(),
-                'assetId' => (string) $stableAsset->getId(),
-            ], exception: $e);
-        }
+        });
 
         $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$stableAsset]));
     }
@@ -345,6 +330,23 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
+     * Runs a post-commit step that must not undo the already-committed generation: on failure it logs
+     * (with request/asset context) and swallows, so a flaky enrichment (ffmpeg preview, reindex) can't
+     * flip a succeeded request to Failed.
+     */
+    private function bestEffort(string $step, TtsNarrationRequest $request, Asset $asset, Closure $work): void
+    {
+        try {
+            $work();
+        } catch (Throwable $e) {
+            $this->logger->error(DamLogger::NAMESPACE_TTS, $step, [
+                'requestId' => (string) $request->getId(),
+                'assetId' => (string) $asset->getId(),
+            ], exception: $e);
+        }
+    }
+
+    /**
      * @param null|Closure(TtsAudioCreationResult): void $afterCreate
      */
     private function persistInTransaction(TtsAudioCreationInput $input, Asset $asset, ?Closure $afterCreate = null): TtsAudioCreationResult
@@ -360,17 +362,17 @@ final readonly class TtsRequestOrchestrator
         );
     }
 
-    private function resolveStableAsset(TtsNarrationRequest $request): Asset
+    private function resolveTargetAsset(TtsNarrationRequest $request): Asset
     {
-        $stableAssetId = (string) $request->getAssetId();
-        $stableAsset = $this->assetRepo->find($stableAssetId);
-        if (null === $stableAsset) {
+        $assetId = (string) $request->getAssetId();
+        $asset = $this->assetRepo->find($assetId);
+        if (null === $asset) {
             throw new RegenCancelledException(
-                sprintf('Stable asset "%s" not found for request "%s".', $stableAssetId, (string) $request->getId())
+                sprintf('Target asset "%s" not found for request "%s".', $assetId, (string) $request->getId())
             );
         }
 
-        return $stableAsset;
+        return $asset;
     }
 
     /**
