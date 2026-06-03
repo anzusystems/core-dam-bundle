@@ -22,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
@@ -61,7 +62,7 @@ final readonly class PreviewMedia
      * @throws FilesystemException on filesystem read/write errors
      * @throws FfmpegException on ffmpeg failure
      */
-    public function generate(AudioFile $masterAudioFile, ?AdapterFile $masterTmpFile = null): AudioFile
+    public function generate(AudioFile $masterAudioFile, ?AdapterFile $masterTmpFile = null, ?DateTimeImmutable $expireAt = null): AudioFile
     {
         $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
         $masterLocalFile = null !== $masterTmpFile
@@ -77,8 +78,11 @@ final readonly class PreviewMedia
 
             /** @var array{0: AudioFile, 1: AssetFileRoute} $created */
             $created = $this->entityManager->wrapInTransaction(
-                function () use ($masterAudioFile, $previewFile): array {
+                function () use ($masterAudioFile, $previewFile, $expireAt): array {
                     $preview = $this->createPreviewAudioFile($masterAudioFile, $previewFile);
+                    // Regen: stamp the same safety expireAt as the master so a pre-swap crash leaves the unslotted
+                    // preview reapable; AssetSwap clears it on promote. Initial passes null (preview is slotted directly).
+                    $preview->setExpireAt($expireAt);
                     $route = $this->createRouteForPreview($preview);
                     $this->entityManager->flush();
 

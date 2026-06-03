@@ -97,6 +97,10 @@ final readonly class AssetSwap
     private function demoteAndReplace(Asset $stableAsset, AudioFile $newFile, string $slotName, DateTimeImmutable $expireAt): ?string
     {
         $previous = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newFile, $slotName);
+        // The new file was created with a safety expireAt (so a pre-swap crash leaves it reapable, not orphaned);
+        // now that it is live on the slot, clear it.
+        $newFile->setExpireAt(null);
+
         if (null === $previous) {
             return null;
         }

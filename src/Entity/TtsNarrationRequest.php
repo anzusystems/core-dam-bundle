@@ -26,7 +26,7 @@ use Doctrine\ORM\Mapping as ORM;
  */
 #[ORM\Entity(repositoryClass: TtsNarrationRequestRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_tts_request_initial_idempotency_key', fields: ['initialIdempotencyKey'])]
-#[ORM\Index(name: 'IDX_tts_request_status_mode', fields: ['status', 'mode'])]
+#[ORM\Index(name: 'IDX_tts_request_status_mode_started', fields: ['status', 'mode', 'startedAt'])]
 #[ORM\Index(name: 'IDX_tts_request_asset_mode_status', fields: ['assetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_ext_system', fields: ['extSystemId'])]
 final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, AssetLicenceInterface

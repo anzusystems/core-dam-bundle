@@ -53,6 +53,9 @@ final readonly class TtsAudioFileRemover
     private function removeOne(AudioFile $audioFile): bool
     {
         $audioFileId = (string) $audioFile->getId();
+        // Captured before deletion for the audit log below (the entity is gone afterwards).
+        $assetId = (string) $audioFile->getAsset()->getId();
+        $expireAt = $audioFile->getExpireAt()?->format('c');
 
         try {
             $this->entityManager->wrapInTransaction(function () use ($audioFile): void {
@@ -62,6 +65,13 @@ final readonly class TtsAudioFileRemover
                 $this->assetFileManager->delete($audioFile, false);
                 $this->entityManager->flush();
             });
+
+            // Audit trail: which file was hard-deleted, for which asset, and the expireAt that selected it.
+            $this->logger->info(DamLogger::NAMESPACE_TTS, 'audioFileRemover.removed', [
+                'audioFileId' => $audioFileId,
+                'assetId' => $assetId,
+                'expireAt' => $expireAt,
+            ]);
 
             return true;
         } catch (Throwable $e) {

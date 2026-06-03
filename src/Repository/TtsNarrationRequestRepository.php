@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
+use DateTimeImmutable;
 use Doctrine\DBAL\LockMode;
 
 /**
@@ -59,6 +60,29 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
         }
 
         return $byStable;
+    }
+
+    /**
+     * Initial requests left in Processing past the given threshold — a worker that claimed (Waiting →
+     * Processing) then died before reaching a terminal status. The cleanup cron fails these so their
+     * idempotency key frees up for a fresh dispatch. The threshold must exceed the worker time-limit.
+     *
+     * @return list<TtsNarrationRequest>
+     */
+    public function findStuckInitialProcessing(DateTimeImmutable $startedBefore, int $limit): array
+    {
+        return $this->createQueryBuilder('r')
+            ->where('r.mode = :mode')
+            ->andWhere('r.status = :status')
+            ->andWhere('r.startedAt < :startedBefore')
+            ->setParameter('mode', TtsRequestMode::Initial)
+            ->setParameter('status', TtsRequestStatus::Processing)
+            ->setParameter('startedBefore', $startedBefore)
+            ->addOrderBy('r.startedAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
     }
 
     /**

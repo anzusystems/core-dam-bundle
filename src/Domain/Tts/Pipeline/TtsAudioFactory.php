@@ -87,11 +87,18 @@ final readonly class TtsAudioFactory
      * public CDN URL) is left untouched until the swap demotes it with a grace period. The result carries the
      * still-active stable {@see TtsAsset} (updated in place by the swap, not recreated here).
      */
-    public function buildReplacementMaster(TtsAudioCreationInput $input, Asset $stableAsset, TtsAsset $stableTts): TtsAudioCreationResult
-    {
+    public function buildReplacementMaster(
+        TtsAudioCreationInput $input,
+        Asset $stableAsset,
+        TtsAsset $stableTts,
+        DateTimeImmutable $orphanExpireAt,
+    ): TtsAudioCreationResult {
         $audioFile = $this->buildAudioFile($input);
         $audioFile->setAsset($stableAsset);
         $this->assetFileManager->create($audioFile, false);
+        // Until AssetSwap slots it, the file is an unreferenced orphan (no slot). Stamp a safety expireAt so a
+        // crash before the swap leaves it reapable by the grace cron; AssetSwap clears it once it goes live.
+        $audioFile->setExpireAt($orphanExpireAt);
 
         $masterRoute = $this->attachStableRoute($audioFile);
 

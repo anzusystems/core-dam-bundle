@@ -81,13 +81,15 @@ final class TtsAssetRepository extends AbstractAnzuRepository
      *
      * @return list<TtsAsset>
      */
-    public function findStuckSuperseding(DateTimeImmutable $threshold): array
+    public function findStuckSuperseding(DateTimeImmutable $threshold, int $limit): array
     {
         return $this->createQueryBuilder('ta')
             ->where('ta.status = :status')
             ->andWhere('ta.modifiedAt < :threshold')
             ->setParameter('status', TtsAudioStatus::Superseding)
             ->setParameter('threshold', $threshold)
+            ->addOrderBy('ta.modifiedAt', 'ASC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
     }

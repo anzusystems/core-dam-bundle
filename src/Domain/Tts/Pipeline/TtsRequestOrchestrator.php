@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
@@ -133,21 +134,24 @@ final readonly class TtsRequestOrchestrator
 
         $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $audioFile, $family, $voice, $licence);
 
+        // Safety expiry stamped on the new (unslotted) files so a crash before the swap leaves them reapable by
+        // the grace cron instead of orphaned forever; AssetSwap::promote() clears it when they go live.
+        $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+
         // Build + publish the new master/preview but DON'T slot them yet — the live asset keeps serving the
         // old audio until the atomic promote below, so a failure here leaves the old narration intact.
         $built = $this->entityManager->wrapInTransaction(
-            fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts)
+            fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts, $orphanExpireAt)
         );
 
-        // Until promote() slots them, the new files are unreferenced orphans the reaper won't collect
-        // (no slot, no expireAt) — so on any pre-swap failure delete them explicitly.
+        // On any pre-swap exception delete the new files explicitly (faster than waiting for the grace cron).
         $newPreview = null;
 
         try {
             $this->materializeMasterAudio($built->masterAudio, $built->masterTmpFile, dispatchPropertyRefresh: false);
             $this->routeFacade->makePublic($built->masterAudio, $built->masterRoute);
 
-            $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile);
+            $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile, expireAt: $orphanExpireAt);
 
             // Cancel check + atomic repoint to the new files; the old files are demoted with a grace expireAt.
             $this->assetSwap->promote(
