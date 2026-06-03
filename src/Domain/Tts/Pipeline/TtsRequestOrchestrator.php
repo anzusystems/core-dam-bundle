@@ -93,25 +93,19 @@ final readonly class TtsRequestOrchestrator
         $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, $shellAsset, static function (TtsAudioCreationResult $created): void {
-            // Mark the asset as TTS-generated audio (manually toggleable later in the sidebar).
             $created->asset->getAssetFlags()->setTtsAudio(true);
         });
 
-        // Audio must materialize and be publicly routable before we mark Done; a failure here is a real
-        // generation failure (request stays non-terminal → marked Failed, shell asset dropped). Property
-        // refresh is intentionally NOT dispatched here — the synchronous updateExisting() below owns it once
-        // both slots (master + preview) exist, so slotNames & co. reflect the final state.
+        // Must be materialized + public before Done — a failure here is a real generation failure.
+        // Property refresh is deferred: updateExisting() below owns it once both slots exist.
         $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: false);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
-        // Generation succeeded once the master is published — commit Done now so the best-effort enrichment
-        // below can't flip it to Failed, and (crucially) so the CMS success callback is still sent even if a
-        // cosmetic enrichment step (e.g. ffmpeg preview) fails. DB enrichment runs before the flaky ffmpeg
-        // preview so the callback reflects keywords/podcast even when the preview fails.
+        // Published master = generation succeeded → commit Done now so the best-effort enrichment below
+        // can't flip it to Failed or skip the CMS success callback.
         $this->requestManager->markDone($request);
 
-        // Best-effort enrichment. The preview is flaky ffmpeg; isolating it (and the metadata steps) here means
-        // a failure can no longer skip the property refresh + reindex below.
+        // Best-effort: a flaky ffmpeg preview must not skip the refresh + reindex below.
         $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family): void {
             $this->syncFamilyKeywords($result->asset, $family);
             $this->applyInitialMetadata($result->asset, $request, $extSystem);
@@ -121,9 +115,7 @@ final readonly class TtsRequestOrchestrator
             $this->attachPreviewSlot($result->asset, $preview);
         });
 
-        // Single point of truth for derived properties (slotNames, status, …) now that both slots + metadata
-        // exist, then (re)index so ES reflects keywords/authors/podcast + slotNames. Guaranteed regardless of
-        // whether the best-effort enrichment above (e.g. the ffmpeg preview) failed.
+        // Refresh derived properties + reindex once both slots + metadata exist; runs even if enrichment failed.
         $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
             $this->assetManager->updateExisting($result->asset);
             $this->indexManager->index($result->asset);
@@ -145,16 +137,14 @@ final readonly class TtsRequestOrchestrator
 
         $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $audioFile, $family, $voice, $licence);
 
-        // Build the new master + preview on the stable asset but NOT yet slotted, and fully materialize +
-        // publish their bytes to fresh public-bucket paths (= fresh CDN URLs). The live asset still serves the
-        // old audio until the atomic promote below — so a failure here leaves the old narration fully intact.
+        // Build + publish the new master/preview but DON'T slot them yet — the live asset keeps serving the
+        // old audio until the atomic promote below, so a failure here leaves the old narration intact.
         $built = $this->entityManager->wrapInTransaction(
             fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts)
         );
 
-        // The new master/preview are built + published BEFORE the swap, so until they are slotted by promote()
-        // they are unreferenced orphans (no slot, no expireAt → the reaper never collects them). If the swap
-        // aborts (concurrent cancel / wrong status) or any pre-swap step fails, delete them explicitly.
+        // Until promote() slots them, the new files are unreferenced orphans the reaper won't collect
+        // (no slot, no expireAt) — so on any pre-swap failure delete them explicitly.
         $newPreview = null;
 
         try {
@@ -163,8 +153,7 @@ final readonly class TtsRequestOrchestrator
 
             $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile);
 
-            // Cooperative cancel check + atomic repoint: master/preview slots swing to the new files, the old
-            // files are demoted with a grace-period expireAt (kept streamable), the TtsAsset is reactivated.
+            // Cancel check + atomic repoint to the new files; the old files are demoted with a grace expireAt.
             $this->assetSwap->promote(
                 (string) $stableAsset->getId(),
                 $built->masterAudio,
@@ -179,9 +168,8 @@ final readonly class TtsRequestOrchestrator
             throw $e;
         }
 
-        // Swap is the point of no return — commit Done immediately so a failure in the best-effort enrichment
-        // below can't (a) flip the request to Failed and fire a spurious failure callback after a live swap, or
-        // (b) skip the CMS success callback.
+        // Swap is the point of no return → commit Done now so best-effort enrichment below can't flip it to
+        // Failed (spurious failure callback after a live swap) or skip the CMS success callback.
         $this->requestManager->markDone($request);
 
         $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $family): void {
@@ -196,8 +184,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Attaches the freshly-built+published preview onto the (empty) preview slot of the initial-generation asset.
-     * Regeneration repoints the preview slot via {@see AssetSwap::promote()} instead. Runs in its own short transaction.
+     * Attaches the preview onto the initial asset's empty preview slot (regen repoints via {@see AssetSwap::promote()}).
      */
     private function attachPreviewSlot(Asset $asset, AudioFile $preview): void
     {
@@ -224,9 +211,8 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Adds the current family's keywords onto the asset (additive, idempotent). Runs on initial + regen.
-     * Keywords snapshot the family at generation time; a later family change does not prune the ones
-     * already applied.
+     * Adds the current family's keywords onto the asset (additive, idempotent). A later family change does
+     * not prune already-applied keywords.
      */
     private function syncFamilyKeywords(Asset $asset, VoiceFamily $family): void
     {
@@ -245,16 +231,15 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Links caller keyword/author names to the asset on initial generation, creating any that don't yet
-     * exist in the ext-system (same provide-or-create services as the sys asset-file/from-url flow).
-     * Names are de-duplicated first. The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
+     * Links caller keyword/author names on initial generation (provide-or-create, de-duplicated).
+     * The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
      */
     private function applyInitialMetadata(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem): void
     {
         $changed = $this->ensureAutoKeyword($asset, $extSystem);
 
         foreach (array_unique($request->getKeywords()) as $name) {
-            $keyword = $this->keywordProvider->provideKeyword($name, $extSystem, false);
+            $keyword = $this->keywordProvider->provideKeyword($name, $extSystem, flush: false);
             if ($keyword instanceof Keyword) {
                 $asset->addKeyword($keyword);
                 $changed = true;
@@ -275,8 +260,8 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Attaches the ext-system auto-keyword (in-memory; caller flushes). Re-run on regen because the
-     * family reconcile can drop a keyword that equals it. Idempotent.
+     * Attaches the ext-system auto-keyword (in-memory; caller flushes). Idempotent; re-run on regen since
+     * the family reconcile can drop a keyword equal to it.
      *
      * @return bool whether it was (re-)added
      */
@@ -298,18 +283,9 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Push the synthesised MP3 bytes through the standard audio pipeline:
-     * {@see AudioStatusFacade::storeAndProcess()} writes to final storage, extracts duration/codec/metadata,
-     * transitions the AudioFile to {@see AssetFileProcessStatus::Processed} (also flipping Asset → WithFile),
-     * dispatches AssetFileChangedEvent and the AssetRefreshProperties message.
-     *
-     * Duplicate detection runs (licence checksum invariant), but a regen producing byte-identical audio
-     * to the asset's own current master is not a duplicate — {@see AudioStatusFacade::checkDuplicate()}
-     * excludes the same asset. Cross-article identical text is already short-circuited earlier at dispatch
-     * ({@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}, PRVÝ BERIE).
-     *
-     * If the pipeline marks the file as Failed (status-facade swallows Throwables and transitions to
-     * Failed instead of re-throwing), surface that here so the worker handler marks the request as failed.
+     * Runs the synthesised audio through the standard pipeline ({@see AudioStatusFacade::storeAndProcess()}),
+     * which swallows failures into a Failed status instead of throwing — so assert Processed and throw
+     * otherwise, letting the worker handler mark the request Failed.
      */
     private function materializeMasterAudio(AudioFile $audioFile, AdapterFile $tmpFile, bool $dispatchPropertyRefresh): void
     {
@@ -330,9 +306,8 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Runs a post-commit step that must not undo the already-committed generation: on failure it logs
-     * (with request/asset context) and swallows, so a flaky enrichment (ffmpeg preview, reindex) can't
-     * flip a succeeded request to Failed.
+     * Runs a post-commit step that must not undo the committed generation: on failure it logs and swallows,
+     * so a flaky enrichment can't flip a succeeded request to Failed.
      */
     private function bestEffort(string $step, TtsNarrationRequest $request, Asset $asset, Closure $work): void
     {
