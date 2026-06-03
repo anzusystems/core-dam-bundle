@@ -109,7 +109,7 @@ class PodcastEpisodeManager extends AbstractManager
     {
         // Manual diff by podcastId: colUpdate assumes a homogeneous Collection.
         $currentByPodcastId = [];
-        foreach ($this->repository->findBy(['asset' => $asset]) as $episode) {
+        foreach ($asset->getEpisodes() as $episode) {
             $currentByPodcastId[(string) $episode->getPodcast()->getId()] = $episode;
         }
 
