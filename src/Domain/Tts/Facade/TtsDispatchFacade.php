@@ -27,7 +27,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * Idempotent on (extResourceName, extId, extSystem) — short-circuits on existing active asset or
+ * Idempotent on (licence, sourceTextHash, voiceFamilySlug) — short-circuits on existing active asset or
  * in-flight Initial request before paying the voice/provider precheck cost.
  */
 final readonly class TtsDispatchFacade
@@ -54,34 +54,30 @@ final readonly class TtsDispatchFacade
         App::throwOnReadOnlyMode();
 
         $licence = $dto->resolveAssetLicence();
-        $extResourceName = $dto->getExtResourceName();
-        $extId = $dto->getExtId();
         $extSystem = $licence->getExtSystem();
-
-        $existing = $this->findExistingForExtTuple($extResourceName, $extId, $extSystem);
-        if (null !== $existing) {
-            return $existing;
-        }
 
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
 
+        // sourceTextHash must match TtsAudioCreationInput's computation (sha256 of the source text).
+        $sourceTextHash = hash('sha256', $dto->getText());
+
         // PRVÝ BERIE: identical (licence, source text, voiceFamily) already produced an asset — reuse it,
         // don't burn synthesis quota. CMS gets the existing asset id (status: duplicate) and informs the editor.
-        $duplicate = $this->findExistingForContent($dto->getText(), $voice, $licence);
+        $duplicate = $this->findExistingForContent($sourceTextHash, $voice, $licence);
         if (null !== $duplicate) {
             return $duplicate;
         }
 
         $this->precheckProviderOrThrowValidation($voice, $extSystem);
 
-        $openInitialKey = TtsIdempotencyKey::forInitial($extResourceName, $extId, $extSystem);
+        $openInitialKey = TtsIdempotencyKey::forInitial($licence, $sourceTextHash, $dto->getVoiceFamilySlug());
 
         $result = $this->entityManager->wrapInTransaction(
             fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $openInitialKey)),
         );
 
-        if ($dispatch && null !== $result->requestId) {
-            $this->messageBus->dispatch(new TtsNarrationRequestMessage($result->requestId));
+        if ($dispatch && null !== $result->narrationRequest) {
+            $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $result->narrationRequest->getId()));
         }
 
         return $result;
@@ -115,26 +111,11 @@ final readonly class TtsDispatchFacade
         }
     }
 
-    private function findExistingForExtTuple(?string $extResourceName, ?string $extId, ExtSystem $extSystem): ?DispatchResult
+    private function findExistingForContent(string $sourceTextHash, Voice $voice, AssetLicence $licence): ?DispatchResult
     {
-        if (null === $extResourceName || null === $extId) {
-            return null;
-        }
-
-        $existing = $this->ttsAssetRepo->findActiveByExt($extResourceName, $extId, $extSystem);
-        if (null === $existing) {
-            return null;
-        }
-
-        return DispatchResult::alreadyExists((string) $existing->getAsset()->getId());
-    }
-
-    private function findExistingForContent(string $text, Voice $voice, AssetLicence $licence): ?DispatchResult
-    {
-        // sourceTextHash must match TtsAudioCreationInput's computation (sha256 of the source text).
         $existing = $this->ttsAssetRepo->findActiveByContent(
             licence: $licence,
-            sourceTextHash: hash('sha256', $text),
+            sourceTextHash: $sourceTextHash,
             voiceFamily: $voice->getVoiceFamily(),
         );
         if (null === $existing) {
@@ -150,16 +131,16 @@ final readonly class TtsDispatchFacade
             $this->requestManager->create(request: $request, flush: false);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException) {
-            // A concurrent Initial dispatch already reserved this (extResourceName, extId, extSystem)
+            // A concurrent Initial dispatch already reserved this (licence, sourceTextHash, voiceFamilySlug)
             // and attaches the media on its own Pending result — this duplicate is a no-op.
             // Do NOT query via the EntityManager here: it is closed after a flush exception.
             return DispatchResult::alreadyPending();
         }
 
-        return DispatchResult::pending((string) $request->getId(), (string) $request->getStableAssetId(), $request);
+        return DispatchResult::pending((string) $request->getStableAssetId(), $request);
     }
 
-    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, ?string $openInitialKey): TtsNarrationRequest
+    private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, string $openInitialKey): TtsNarrationRequest
     {
         // Reserve a stable asset id by creating the file-less audio shell up front: the CMS placeholder media
         // (created from the dispatch response) and the audio attached on completion then share one id, and the
@@ -178,10 +159,6 @@ final readonly class TtsDispatchFacade
             ->setOpenInitialKey($openInitialKey)
             ->setStableAssetId((string) $shellAsset->getId())
             ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray());
-
-        $request->getExtRef()
-            ->setExtResourceName($dto->getExtResourceName())
-            ->setExtId($dto->getExtId());
 
         $request->getSource()
             ->setText($dto->getText());

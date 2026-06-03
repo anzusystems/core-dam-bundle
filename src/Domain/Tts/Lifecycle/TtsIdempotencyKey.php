@@ -4,26 +4,22 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle;
 
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 
 /**
- * Deterministic hash for (extResourceName, extId, extSystem) — backs the UNIQUE index that dedupes
- * in-flight initial jobs. Returns null for manual dispatches without an ext tuple.
+ * Deterministic hash for (licenceId, sourceTextHash, voiceFamilySlug) — backs the UNIQUE index that dedupes
+ * in-flight initial jobs. Always returns a non-null string (all inputs are known at dispatch time).
  */
 final class TtsIdempotencyKey
 {
     public static function forInitial(
-        ?string $extResourceName,
-        ?string $extId,
-        ExtSystem $extSystem,
-    ): ?string {
-        if (null === $extResourceName || null === $extId) {
-            return null;
-        }
-
+        AssetLicence $licence,
+        string $sourceTextHash,
+        ?string $voiceFamilySlug,
+    ): string {
         return hash(
             'sha256',
-            sprintf('%s:%s:%s:initial', $extResourceName, $extId, (string) $extSystem->getId()),
+            sprintf('%s:%s:%s:initial', (string) $licence->getId(), $sourceTextHash, (string) $voiceFamilySlug),
         );
     }
 }

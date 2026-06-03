@@ -140,9 +140,7 @@ final readonly class TtsRequestOrchestrator
             ], exception: $e);
         }
 
-        if (null !== $request->getExtRef()->getExtResourceName() && null !== $request->getExtRef()->getExtId()) {
-            $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
-        }
+        $this->extSystemCallbackFacade->notifyAssetsChanged(new ArrayCollection([$result->asset]));
     }
 
     public function processRegenerate(TtsNarrationRequest $request): void

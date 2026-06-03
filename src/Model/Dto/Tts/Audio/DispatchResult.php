@@ -8,27 +8,21 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 
 /**
  * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}.
- * Callers map `status` directly to HTTP status (Pending → 201, AlreadyExists/Duplicate → 200, AlreadyPending → 409).
+ * Callers map `status` directly to HTTP status (Pending → 201, Duplicate → 200, AlreadyPending → 409).
  */
 final readonly class DispatchResult
 {
     private function __construct(
         public DispatchStatus $status,
-        public ?string $requestId = null,
         public ?string $existingAssetId = null,
         private ?string $assetId = null,
         public ?TtsNarrationRequest $narrationRequest = null,
     ) {
     }
 
-    public static function pending(string $requestId, string $assetId, TtsNarrationRequest $narrationRequest): self
+    public static function pending(string $assetId, TtsNarrationRequest $narrationRequest): self
     {
-        return new self(DispatchStatus::Pending, requestId: $requestId, assetId: $assetId, narrationRequest: $narrationRequest);
-    }
-
-    public static function alreadyExists(string $existingAssetId): self
-    {
-        return new self(DispatchStatus::AlreadyExists, existingAssetId: $existingAssetId);
+        return new self(DispatchStatus::Pending, assetId: $assetId, narrationRequest: $narrationRequest);
     }
 
     /**
@@ -49,13 +43,13 @@ final readonly class DispatchResult
     /**
      * Returns the stable asset id:
      * - Pending: the freshly reserved stableAssetId
-     * - AlreadyExists: the existing active asset id
+     * - Duplicate: the existing active asset id
      * - AlreadyPending: null — a concurrent dispatch owns the media attach, this duplicate is a no-op
      */
     public function getAssetId(): ?string
     {
         return match ($this->status) {
-            DispatchStatus::AlreadyExists, DispatchStatus::Duplicate => $this->existingAssetId,
+            DispatchStatus::Duplicate => $this->existingAssetId,
             default => $this->assetId,
         };
     }

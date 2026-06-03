@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
@@ -45,30 +44,6 @@ final class TtsAssetRepository extends AbstractAnzuRepository
         }
 
         return $query->getOneOrNullResult();
-    }
-
-    /**
-     * @param non-empty-list<TtsAudioStatus> $activeStatuses
-     */
-    public function findActiveByExt(
-        string $extResourceName,
-        string $extId,
-        ExtSystem $extSystem,
-        array $activeStatuses = [TtsAudioStatus::Active, TtsAudioStatus::Superseding, TtsAudioStatus::Cancelling],
-    ): ?TtsAsset {
-        return $this->createQueryBuilder('ta')
-            ->innerJoin('ta.asset', 'a')
-            ->where('a.extSystem = :extSystem')
-            ->andWhere('ta.extResourceName = :extResourceName')
-            ->andWhere('ta.extId = :extId')
-            ->andWhere('ta.status IN (:statuses)')
-            ->setParameter('extSystem', $extSystem)
-            ->setParameter('extResourceName', $extResourceName)
-            ->setParameter('extId', $extId)
-            ->setParameter('statuses', $activeStatuses)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
     }
 
     /**

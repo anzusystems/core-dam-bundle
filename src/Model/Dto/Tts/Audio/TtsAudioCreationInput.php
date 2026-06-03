@@ -10,13 +10,9 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
-use InvalidArgumentException;
 
 final readonly class TtsAudioCreationInput
 {
-    /**
-     * @throws InvalidArgumentException if the ($extResourceName, $extId) both-null/both-non-null invariant is violated
-     */
     public function __construct(
         public AdapterFile $audioFile,
         public VoiceFamily $family,
@@ -24,16 +20,9 @@ final readonly class TtsAudioCreationInput
         public AssetLicence $licence,
         public string $sourceTextHash,
         public string $sourceTextSnapshot,
-        public ?string $extResourceName = null,
-        public ?string $extId = null,
         public ?string $title = null,
         public ?string $description = null,
     ) {
-        if ((null === $extResourceName) !== (null === $extId)) {
-            throw new InvalidArgumentException(
-                'extResourceName and extId must be both null or both non-null.'
-            );
-        }
     }
 
     public static function forInitialRequest(
@@ -44,8 +33,6 @@ final readonly class TtsAudioCreationInput
         AssetLicence $licence,
         string $sourceText,
     ): self {
-        $extRef = $request->getExtRef();
-
         return new self(
             audioFile: $audioFile,
             family: $family,
@@ -53,8 +40,6 @@ final readonly class TtsAudioCreationInput
             licence: $licence,
             sourceTextHash: hash('sha256', $sourceText),
             sourceTextSnapshot: $sourceText,
-            extResourceName: $extRef->getExtResourceName(),
-            extId: $extRef->getExtId(),
             title: $request->getTitle(),
             description: $request->getDescription(),
         );
@@ -74,8 +59,6 @@ final readonly class TtsAudioCreationInput
         Voice $voice,
         AssetLicence $licence,
     ): self {
-        $extRef = $request->getExtRef();
-
         return new self(
             audioFile: $audioFile,
             family: $family,
@@ -83,8 +66,6 @@ final readonly class TtsAudioCreationInput
             licence: $licence,
             sourceTextHash: $stableTts->getSourceTextHash(),
             sourceTextSnapshot: $stableTts->getSourceTextSnapshot(),
-            extResourceName: $extRef->getExtResourceName(),
-            extId: $extRef->getExtId(),
             title: $request->getTitle(),
         );
     }

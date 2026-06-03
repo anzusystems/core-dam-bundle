@@ -9,7 +9,6 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
-use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestExtRef;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\TtsNarrationRequestSource;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
@@ -27,7 +26,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: TtsNarrationRequestRepository::class)]
 #[ORM\Table(name: 'tts_narration_request')]
 #[ORM\UniqueConstraint(name: 'UNIQ_tts_request_open_initial_key', fields: ['openInitialKey'])]
-#[ORM\Index(name: 'IDX_tts_request_ext', fields: ['extRef.extResourceName', 'extRef.extId'])]
 #[ORM\Index(name: 'IDX_tts_request_status_mode', fields: ['status', 'mode'])]
 #[ORM\Index(name: 'IDX_tts_request_stable_mode_status', fields: ['stableAssetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_result_asset', fields: ['resultAssetId'])]
@@ -55,7 +53,8 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private ?string $failureReason;
 
     /**
-     * Initial-mode idempotency key; cleared on terminal so the (extResource,extId,extSystem) slot frees up.
+     * Initial-mode idempotency key (content-addressed: licenceId+sourceTextHash+voiceFamilySlug);
+     * cleared on terminal so the slot frees up for a fresh dispatch.
      */
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
     #[Serialize]
@@ -128,10 +127,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private array $podcastIds = [];
 
     #[Serialize]
-    #[ORM\Embedded(class: TtsNarrationRequestExtRef::class)]
-    private TtsNarrationRequestExtRef $extRef;
-
-    #[Serialize]
     #[ORM\Embedded(class: TtsNarrationRequestSource::class)]
     private TtsNarrationRequestSource $source;
 
@@ -161,7 +156,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->setAuthors([]);
         $this->setCancelRequested(false);
         $this->setPodcastIds([]);
-        $this->setExtRef(new TtsNarrationRequestExtRef());
         $this->setSource(new TtsNarrationRequestSource());
     }
 
@@ -211,11 +205,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
         $this->failureReason = $failureReason;
 
         return $this;
-    }
-
-    public function getOpenInitialKey(): ?string
-    {
-        return $this->openInitialKey;
     }
 
     public function setOpenInitialKey(?string $openInitialKey): self
@@ -353,18 +342,6 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setCancelRequested(bool $cancelRequested): self
     {
         $this->cancelRequested = $cancelRequested;
-
-        return $this;
-    }
-
-    public function getExtRef(): TtsNarrationRequestExtRef
-    {
-        return $this->extRef;
-    }
-
-    public function setExtRef(TtsNarrationRequestExtRef $extRef): self
-    {
-        $this->extRef = $extRef;
 
         return $this;
     }

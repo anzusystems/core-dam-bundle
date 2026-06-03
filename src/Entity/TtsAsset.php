@@ -25,7 +25,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: TtsAssetRepository::class)]
 #[ORM\Table(name: 'tts_asset')]
 #[ORM\Index(name: 'IDX_tts_asset_status', fields: ['status'])]
-#[ORM\Index(name: 'IDX_tts_asset_ext_status', fields: ['extResourceName', 'extId', 'status'])]
 #[ORM\Index(name: 'IDX_tts_asset_content', fields: ['sourceTextHash', 'voiceFamily'])]
 final class TtsAsset implements TimeTrackingInterface
 {
@@ -35,14 +34,6 @@ final class TtsAsset implements TimeTrackingInterface
     #[ORM\OneToOne(targetEntity: Asset::class)]
     #[ORM\JoinColumn(name: 'asset_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private Asset $asset;
-
-    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    #[Serialize]
-    private ?string $extResourceName = null;
-
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    #[Serialize]
-    private ?string $extId = null;
 
     /**
      * Generation-time snapshot. Hard-delete is blocked app-side by VoiceFamilyManager throwing
@@ -112,30 +103,6 @@ final class TtsAsset implements TimeTrackingInterface
     public function getAssetId(): string
     {
         return (string) $this->asset->getId();
-    }
-
-    public function getExtResourceName(): ?string
-    {
-        return $this->extResourceName;
-    }
-
-    public function setExtResourceName(?string $extResourceName): self
-    {
-        $this->extResourceName = $extResourceName;
-
-        return $this;
-    }
-
-    public function getExtId(): ?string
-    {
-        return $this->extId;
-    }
-
-    public function setExtId(?string $extId): self
-    {
-        $this->extId = $extId;
-
-        return $this;
     }
 
     public function getVoiceFamily(): VoiceFamily

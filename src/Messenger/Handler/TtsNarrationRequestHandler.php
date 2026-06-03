@@ -135,7 +135,7 @@ final readonly class TtsNarrationRequestHandler
 
         // Initial failed: drop the whole partial aggregate (reserved shell + any attached audio + its TtsAsset)
         // so it doesn't linger AND doesn't shadow future dispatch idempotency (a left-over Active TtsAsset would
-        // make findActiveByExt return a broken asset forever).
+        // block future content-keyed dedup forever).
         if ($request->getMode()->is(TtsRequestMode::Initial)) {
             $this->deleteInitialAssetOnFailure($request);
         }
@@ -209,17 +209,14 @@ final readonly class TtsNarrationRequestHandler
 
     private function dispatchFailureCallback(TtsNarrationRequest $request, string $failureReason): void
     {
-        $extResourceName = $request->getExtRef()->getExtResourceName();
-        $extId = $request->getExtRef()->getExtId();
-        if (null === $extResourceName || null === $extId) {
+        $stableAssetId = $request->getStableAssetId();
+        if (null === $stableAssetId) {
             return;
         }
 
         $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
             extSystemId: $request->getExtSystemId(),
-            extResourceName: $extResourceName,
-            extId: $extId,
-            assetId: (string) $request->getStableAssetId(),
+            assetId: $stableAssetId,
             status: MediaStatusType::GenerationFailed,
             failureReason: $failureReason,
         );

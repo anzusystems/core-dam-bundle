@@ -151,8 +151,6 @@ final readonly class TtsAudioFactory
     private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input): TtsAsset
     {
         return (new TtsAsset($asset))
-            ->setExtResourceName($input->extResourceName)
-            ->setExtId($input->extId)
             ->setVoiceFamily($input->family)
             ->setDiscriminator($input->voice->getDiscriminator())
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
@@ -165,10 +163,6 @@ final readonly class TtsAudioFactory
     {
         if (null !== $input->title && App::EMPTY_STRING !== $input->title) {
             return $input->title;
-        }
-
-        if (null !== $input->extResourceName && null !== $input->extId) {
-            return sprintf('TTS %s:%s', $input->extResourceName, $input->extId);
         }
 
         return 'TTS standalone ' . $now->format('Y-m-d H:i:s');

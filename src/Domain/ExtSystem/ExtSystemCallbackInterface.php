@@ -40,8 +40,6 @@ interface ExtSystemCallbackInterface
      *                         Regenerate) — lets the ext-system correlate which media the status pertains to
      */
     public function notifyMediaStatus(
-        string $extResourceName,
-        string $extId,
         string $assetId,
         MediaStatusType $status,
         ?string $failureReason,

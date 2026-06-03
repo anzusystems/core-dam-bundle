@@ -83,7 +83,10 @@ final readonly class TtsCancellationFacade
                 $this->requestManager->markCancelled($locked);
                 $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId);
 
-                $callbackData = $this->buildCallbackData($locked, (string) $locked->getStableAssetId());
+                $stableAssetId = $locked->getStableAssetId();
+                $callbackData = null !== $stableAssetId
+                    ? new CancelledCallbackData($locked->getExtSystemId(), $stableAssetId)
+                    : null;
 
                 $this->entityManager->flush();
 
@@ -153,7 +156,7 @@ final readonly class TtsCancellationFacade
         $callbackData = null;
         if (null !== $activeRegen) {
             $this->requestManager->markCancelled($activeRegen);
-            $callbackData = $this->buildCallbackData($activeRegen, $assetId);
+            $callbackData = new CancelledCallbackData($activeRegen->getExtSystemId(), $assetId);
         }
 
         $this->auditLogger->logCancelled($assetId, (string) $activeRegen?->getId(), $userId);
@@ -163,23 +166,10 @@ final readonly class TtsCancellationFacade
         return new RegenCancelOutcome(cancelled: true, callbackData: $callbackData);
     }
 
-    private function buildCallbackData(TtsNarrationRequest $request, string $assetId): ?CancelledCallbackData
-    {
-        $extResourceName = $request->getExtRef()->getExtResourceName();
-        $extId = $request->getExtRef()->getExtId();
-        if (null === $extResourceName || null === $extId) {
-            return null;
-        }
-
-        return new CancelledCallbackData($request->getExtSystemId(), $extResourceName, $extId, $assetId);
-    }
-
     private function dispatchCancelledCallback(CancelledCallbackData $callbackData): void
     {
         $this->extSystemCallbackFacade->notifyMediaStatusBestEffort(
             extSystemId: $callbackData->extSystemId,
-            extResourceName: $callbackData->extResourceName,
-            extId: $callbackData->extId,
             assetId: $callbackData->assetId,
             status: MediaStatusType::GenerationFailed,
             failureReason: 'Cancelled by admin',

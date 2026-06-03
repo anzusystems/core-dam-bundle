@@ -12,8 +12,6 @@ final readonly class CancelledCallbackData
 {
     public function __construct(
         public int $extSystemId,
-        public string $extResourceName,
-        public string $extId,
         public string $assetId,
     ) {
     }

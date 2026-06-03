@@ -17,9 +17,8 @@ use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
- * Unit tests for the {@see TtsAudioCreationInput} factory methods. The asset id is no longer threaded through
- * the input (the asset always pre-exists), so these assert the remaining source-text / metadata mapping:
- * initial hashes the live source text, regenerate carries the stable {@see TtsAsset} snapshot.
+ * Unit tests for the {@see TtsAudioCreationInput} factory methods. Identity is purely content-addressed
+ * (licence + sourceTextHash + voiceFamily); these assert source-text / metadata mapping only.
  */
 final class TtsAudioCreationInputTest extends TestCase
 {
@@ -28,9 +27,6 @@ final class TtsAudioCreationInputTest extends TestCase
         $request = (new TtsNarrationRequest())
             ->setTitle('My title');
         $request->getSource()->setText('Hello world');
-        $request->getExtRef()
-            ->setExtResourceName('article')
-            ->setExtId('352');
 
         $input = TtsAudioCreationInput::forInitialRequest(
             request: $request,
@@ -44,17 +40,12 @@ final class TtsAudioCreationInputTest extends TestCase
         self::assertSame('Hello world', $input->sourceTextSnapshot);
         self::assertSame(hash('sha256', 'Hello world'), $input->sourceTextHash);
         self::assertSame('My title', $input->title);
-        self::assertSame('article', $input->extResourceName);
-        self::assertSame('352', $input->extId);
     }
 
     public function testForRegenerateCarriesStableTtsSourceText(): void
     {
         $request = (new TtsNarrationRequest())
             ->setTitle('Regen title');
-        $request->getExtRef()
-            ->setExtResourceName('article')
-            ->setExtId('352');
 
         $stableTts = $this->makeTtsAssetWithSource('stable-hash', 'stable snapshot text');
 
@@ -71,8 +62,8 @@ final class TtsAudioCreationInputTest extends TestCase
         self::assertSame('stable-hash', $input->sourceTextHash);
         self::assertSame('stable snapshot text', $input->sourceTextSnapshot);
         self::assertSame('Regen title', $input->title);
-        self::assertSame('article', $input->extResourceName);
     }
+
     private static function makeAdapterFile(): AdapterFile
     {
         $tmpPath = (string) tempnam(sys_get_temp_dir(), 'tts_test_');

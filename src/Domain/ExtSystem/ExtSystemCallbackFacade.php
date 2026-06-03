@@ -107,8 +107,6 @@ final class ExtSystemCallbackFacade
 
     public function notifyMediaStatus(
         int $extSystemId,
-        string $extResourceName,
-        string $extId,
         string $assetId,
         MediaStatusType $status,
         ?string $failureReason,
@@ -117,14 +115,13 @@ final class ExtSystemCallbackFacade
         if (null === $extSystem) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.extSystemNotFound', [
                 'extSystemId' => $extSystemId,
-                'extResourceName' => $extResourceName,
-                'extId' => $extId,
+                'assetId' => $assetId,
             ]);
 
             return;
         }
 
-        $this->getCallback($extSystem->getSlug())?->notifyMediaStatus($extResourceName, $extId, $assetId, $status, $failureReason);
+        $this->getCallback($extSystem->getSlug())?->notifyMediaStatus($assetId, $status, $failureReason);
     }
 
     /**
@@ -134,19 +131,15 @@ final class ExtSystemCallbackFacade
      */
     public function notifyMediaStatusBestEffort(
         int $extSystemId,
-        string $extResourceName,
-        string $extId,
         string $assetId,
         MediaStatusType $status,
         ?string $failureReason,
     ): void {
         try {
-            $this->notifyMediaStatus($extSystemId, $extResourceName, $extId, $assetId, $status, $failureReason);
+            $this->notifyMediaStatus($extSystemId, $assetId, $status, $failureReason);
         } catch (Throwable $e) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.bestEffortFailed', [
                 'extSystemId' => $extSystemId,
-                'extResourceName' => $extResourceName,
-                'extId' => $extId,
                 'assetId' => $assetId,
                 'error' => $e->getMessage(),
             ]);

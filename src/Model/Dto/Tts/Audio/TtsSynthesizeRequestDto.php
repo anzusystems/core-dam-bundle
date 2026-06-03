@@ -23,10 +23,6 @@ use Symfony\Component\Validator\Constraints as Assert;
  * GroupSequence ensures {@see GROUP_POST} constraints (which dereference {@see getExtSystem()})
  * run only after the base group confirmed extSystem is set — otherwise the getter throws.
  */
-#[Assert\Expression(
-    '(this.getExtResourceName() === null) === (this.getExtId() === null)',
-    message: 'fields.tts.extRef.must_be_both_null_or_both_present',
-)]
 #[Assert\GroupSequence(['TtsSynthesizeRequestDto', self::GROUP_POST])]
 #[AppAssert\TtsLicenceResolvable(groups: [self::GROUP_POST])]
 final class TtsSynthesizeRequestDto implements ExtSystemInterface
@@ -49,14 +45,6 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     #[Serialize(handler: EntityIdHandler::class, type: Podcast::class)]
     #[Assert\Valid]
     private Collection $podcasts;
-
-    #[Serialize]
-    #[Assert\Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    private ?string $extResourceName = null;
-
-    #[Serialize]
-    #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    private ?string $extId = null;
 
     #[Serialize]
     #[Assert\Length(max: 255, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -140,30 +128,6 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface
     public function setPodcasts(Collection $podcasts): self
     {
         $this->podcasts = $podcasts;
-
-        return $this;
-    }
-
-    public function getExtResourceName(): ?string
-    {
-        return $this->extResourceName;
-    }
-
-    public function setExtResourceName(?string $extResourceName): self
-    {
-        $this->extResourceName = $extResourceName;
-
-        return $this;
-    }
-
-    public function getExtId(): ?string
-    {
-        return $this->extId;
-    }
-
-    public function setExtId(?string $extId): self
-    {
-        $this->extId = $extId;
 
         return $this;
     }

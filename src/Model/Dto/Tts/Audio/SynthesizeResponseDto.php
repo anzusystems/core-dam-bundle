@@ -9,9 +9,6 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 final class SynthesizeResponseDto
 {
     #[Serialize]
-    private ?string $requestId = null;
-
-    #[Serialize]
     private ?string $existingAssetId = null;
 
     #[Serialize]
@@ -23,22 +20,9 @@ final class SynthesizeResponseDto
     public static function fromResult(DispatchResult $result): self
     {
         return (new self())
-            ->setRequestId($result->requestId)
             ->setExistingAssetId($result->existingAssetId)
             ->setAssetId($result->getAssetId())
             ->setStatus($result->status);
-    }
-
-    public function getRequestId(): ?string
-    {
-        return $this->requestId;
-    }
-
-    public function setRequestId(?string $requestId): self
-    {
-        $this->requestId = $requestId;
-
-        return $this;
     }
 
     public function getExistingAssetId(): ?string
