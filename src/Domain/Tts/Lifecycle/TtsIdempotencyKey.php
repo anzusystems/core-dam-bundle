@@ -7,8 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 
 /**
- * Deterministic hash for (licenceId, sourceTextHash, voiceFamilySlug) — backs the UNIQUE index that dedupes
- * in-flight initial jobs. Always returns a non-null string (all inputs are known at dispatch time).
+ * Deterministic idempotency hash for (licenceId, sourceTextHash, voiceFamilySlug); backs the UNIQUE dedup index.
  */
 final class TtsIdempotencyKey
 {

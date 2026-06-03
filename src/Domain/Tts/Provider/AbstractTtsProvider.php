@@ -16,9 +16,8 @@ use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
- * Shared infrastructure for TTS providers — chunk persistence + ffmpeg concat. Subclasses iterate
- * chunks their own way (ElevenLabs chains `previous_request_ids`; Google is stateless) and yield
- * raw MP3 bytes; this base handles tmp lifecycle uniformly.
+ * Shared TTS-provider base: chunk persistence + ffmpeg concat + tmp lifecycle. Subclasses yield raw MP3
+ * bytes (ElevenLabs chains `previous_request_ids`; Google is stateless).
  */
 abstract class AbstractTtsProvider implements TtsProviderInterface
 {

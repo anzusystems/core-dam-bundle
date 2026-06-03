@@ -13,12 +13,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Throwable;
 
 /**
- * Single place that hard-removes TTS audio files: CDN purge of the (now stale) public route, then the file row
- * incl. its routes + StorageCopy public-bucket object, then the stashed master bytes. Each file is deleted in its
- * own transaction (one failure must not block the rest) and the storage stash is flushed once at the end.
- *
- * Used by the retention cron ({@see TtsAudioRetentionFacade}), the regenerate orphan-cleanup, and the initial
- * failure cleanup. Safe for unslotted files.
+ * Hard-removes TTS audio files: CDN route purge, then the file row (routes + public-bucket object), then the
+ * stashed master bytes. Per-file transactions isolate failures; the stash is flushed once. Safe for unslotted files.
  */
 final readonly class TtsAudioFileRemover
 {

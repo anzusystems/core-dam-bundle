@@ -9,12 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 
 /**
- * Owns TtsAsset state transitions via named mark* methods — keeps allowed transitions in code.
- * Cross-link to the in-flight {@see TtsNarrationRequest} is via the request's `assetId`
- * pointing here (no back-pointer on TtsAsset).
- *
- * Flush convention: all methods default to `flush = false`. TtsAsset mutations always happen inside
- * a caller-owned transaction (Facade / Pipeline). The caller is responsible for the flush.
+ * TtsAsset state transitions via mark* methods. Methods default flush=false — caller owns the transaction.
  */
 final class TtsAssetManager extends AbstractManager
 {

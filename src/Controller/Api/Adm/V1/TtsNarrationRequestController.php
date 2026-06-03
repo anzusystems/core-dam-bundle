@@ -48,8 +48,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     }
 
     /**
-     * Lists the narration requests targeting one stable asset (status filterable). Called by the CMS to poll
-     * its article's audio-narration progress; authorized on the asset whose requests are being read.
+     * Lists narration requests for a stable asset (CMS polls article narration progress); authorized on the asset.
      */
     #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
     #[OAParameterPath('asset'), OAResponseList(TtsNarrationRequest::class)]

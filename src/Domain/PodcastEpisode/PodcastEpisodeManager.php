@@ -107,8 +107,7 @@ class PodcastEpisodeManager extends AbstractManager
      */
     public function setMembership(Asset $asset, Collection $desiredPodcasts, bool $flush = true): void
     {
-        // Heterogeneous diff (existing PodcastEpisode rows vs desired Podcast entities) — `colUpdate`
-        // helper assumes homogeneous Collection<T>, so index by podcastId and diff manually.
+        // Manual diff by podcastId: colUpdate assumes a homogeneous Collection.
         $currentByPodcastId = [];
         foreach ($this->repository->findBy(['asset' => $asset]) as $episode) {
             $currentByPodcastId[(string) $episode->getPodcast()->getId()] = $episode;

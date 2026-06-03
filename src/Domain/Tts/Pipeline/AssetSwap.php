@@ -23,13 +23,10 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Atomic regeneration promote: the freshly-synthesised audio (already materialised + published to its own
- * public-bucket path = its own CDN URL) is pointed into the stable asset's master/preview slots, and the
- * previously-active files are DEMOTED — left on the asset with an {@see AssetFile::setExpireAt()} grace stamp
- * so their old public URLs keep streaming until the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
- * cron reaps them. The asset id (and thus the CMS media key) never changes.
- *
- * Runs under a PESSIMISTIC_WRITE lock on the stable TtsAsset and aborts on a concurrent cancel.
+ * Atomic regeneration promote: the freshly-published audio is slotted into the stable asset's master/preview
+ * slots and the previous files demoted with a grace {@see AssetFile::setExpireAt()} (old CDN URLs keep
+ * streaming until the cron reaps them). Asset id (CMS media key) never changes. Runs under PESSIMISTIC_WRITE
+ * and aborts on a concurrent cancel.
  */
 final readonly class AssetSwap
 {

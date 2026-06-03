@@ -11,8 +11,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
- * Request-only wrapper around the scoped `tts.elevenlabs.api.client`. The API key is supplied
- * per-call so a single client instance can serve multiple ExtSystem tenants.
+ * Per-call API key lets one `tts.elevenlabs.api.client` instance serve multiple ExtSystem tenants.
  */
 final readonly class ElevenlabsClient
 {

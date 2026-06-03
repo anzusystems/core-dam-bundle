@@ -61,11 +61,10 @@ final readonly class TtsDispatchFacade
 
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
 
-        // sourceTextHash must match TtsAudioCreationInput's computation (sha256 of the source text).
+        // Must match TtsAudioCreationInput's hash (sha256 of source text).
         $sourceTextHash = hash('sha256', $dto->getText());
 
-        // PRVÝ BERIE: identical (licence, source text, voiceFamily) already produced an asset — reuse it,
-        // don't burn synthesis quota. CMS gets the existing asset id (status: duplicate) and informs the editor.
+        // Same (licence, text, voice) already produced an asset — reuse it (status: duplicate), don't re-synthesize.
         $duplicate = $this->findExistingForContent($sourceTextHash, $voice, $licence);
         if (null !== $duplicate) {
             return $duplicate;

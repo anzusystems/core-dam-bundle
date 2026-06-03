@@ -27,9 +27,8 @@ final readonly class DispatchResult
     }
 
     /**
-     * PRVÝ BERIE: identical (licence, source text, voiceFamily) already produced an asset, so no
-     * synthesis runs — the existing asset id is handed back so the caller (CMS) can reuse it and
-     * inform the editor that the narration already exists.
+     * Content-addressed dedup: identical (licence, source text, voiceFamily) already produced an asset, so no
+     * synthesis runs — the existing asset id is handed back for the caller (CMS) to reuse.
      */
     public static function duplicate(string $originAssetId): self
     {

@@ -15,10 +15,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 
 /**
- * Admin-facing podcast-episode CRUD. Membership changes (create/delete) notify linked ext-systems here at
- * the facade — deliberately NOT in {@see PodcastEpisodeManager}, whose seam is also driven by bulk RSS
- * import and the TTS orchestrator (which notify on their own schedule); manager-level notify would over-
- * and double-fire.
+ * Admin-facing podcast-episode CRUD. Membership changes notify ext-systems here at the facade, not in
+ * {@see PodcastEpisodeManager} — its seam also serves bulk RSS import + the TTS orchestrator (own notify).
  */
 final class PodcastEpisodeFacade
 {
@@ -41,7 +39,6 @@ final class PodcastEpisodeFacade
         $this->validator->validate($podcastEpisode);
         $this->podcastManager->create($podcastEpisode);
 
-        // New podcast membership for the asset — refresh its properties and notify linked ext-systems.
         if ($podcastEpisode->getAsset()) {
             $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $podcastEpisode->getAsset()->getId()));
             $this->extSystemCallbackFacade->notifyAssetChanged($podcastEpisode->getAsset());
@@ -73,7 +70,6 @@ final class PodcastEpisodeFacade
         $asset = $podcastEpisode->getAsset();
         $this->podcastManager->delete($podcastEpisode);
 
-        // Removed podcast membership — notify linked ext-systems the asset changed.
         if (null !== $asset) {
             $this->extSystemCallbackFacade->notifyAssetChanged($asset);
         }

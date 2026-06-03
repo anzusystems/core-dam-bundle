@@ -29,20 +29,10 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
 
 /**
- * Builds the AudioFile (+ route + TtsAsset) aggregate for a TTS Asset from provider output.
- *
- * The asset always pre-exists: {@see create()} attaches the master audio onto the file-less audio shell
- * reserved at dispatch (initial), while {@see buildReplacementMaster()} builds a fresh, not-yet-slotted master
- * for a regeneration that {@see AssetSwap} later promotes into the live asset (keeping the old audio for a grace
- * period). Either way the asset id — and thus the CMS media key — stays stable.
- *
- * The audio bytes are NOT persisted to final storage here — the file is left in the {@see AssetFileProcessStatus::Uploaded}
- * state with a pre-built stable route entity. The orchestrator subsequently drives the standard
- * pipeline ({@see \AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade::storeAndProcess()}
- * + {@see \AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade::makePublic()})
- * so TTS shares the same store / attribute-extract / publish flow as a regular audio upload.
- *
- * Caller owns the surrounding transaction and flush.
+ * Builds the AudioFile (+ route + TtsAsset) aggregate from provider output. The asset pre-exists (file-less
+ * shell for initial, stable asset for regen) so its id — the CMS media key — stays stable. Bytes are left
+ * Uploaded with a pre-built route; the orchestrator drives the standard store/publish pipeline. Caller owns
+ * the transaction.
  */
 final readonly class TtsAudioFactory
 {

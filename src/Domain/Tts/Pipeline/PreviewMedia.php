@@ -123,7 +123,6 @@ final readonly class PreviewMedia
         $preview = new AudioFile();
         $preview->setMetadata($metadata);
         $preview->setLicence($master->getLicence());
-        // Owned by the same asset as the master; the caller/promoter attaches it to the preview slot.
         $preview->setAsset($master->getAsset());
         $preview->getAssetAttributes()
             ->setMimeType(AudioMimeTypes::MimeMpeg->value)

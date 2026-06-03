@@ -47,7 +47,7 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     }
 
     /**
-     * PRVÝ BERIE dedup: an active asset with the same source text + voiceFamily already exists in this
+     * Content-addressed dedup: an active asset with the same source text + voiceFamily already exists in this
      * licence. Identical text in the same voice produces identical audio, so the caller reuses it instead
      * of paying for another synthesis. Keyed on (licence, sourceTextHash, voiceFamily) — language rides on
      * the licence's ext-system, the voiceFamily pins the voice.

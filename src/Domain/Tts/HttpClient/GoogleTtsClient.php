@@ -11,8 +11,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
- * Request-only wrapper around the scoped `tts.google.api.client`. Manual error handling — response
- * carries large base64 audio that would balloon journal logs via loggedRequest.
+ * Manual error handling (not loggedRequest): the response carries large base64 audio that would bloat journal logs.
  */
 final readonly class GoogleTtsClient
 {

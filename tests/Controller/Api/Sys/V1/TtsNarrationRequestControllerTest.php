@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * SYS dispatch endpoint CRUD: validation, successful synthesis (handler runs synchronously in tests, so the
  * full pipeline — voice resolve, mocked ElevenLabs, ffmpeg concat, store — completes before the response),
- * and content-addressed deduplication (PRVÝ BERIE).
+ * and content-addressed deduplication.
  */
 final class TtsNarrationRequestControllerTest extends AbstractApiController
 {

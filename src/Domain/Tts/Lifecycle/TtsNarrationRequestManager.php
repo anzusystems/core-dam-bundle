@@ -10,13 +10,8 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use DateTimeImmutable;
 
 /**
- * State transitions for {@see TtsNarrationRequest}. `initialIdempotencyKey` is cleared on every terminal
- * transition (Done / Failed / Cancelled) — enforced here so callers can't forget.
- *
- * Flush convention: defaults to `flush = true` because the orchestrator updates state outside any
- * caller transaction (the Messenger handler runs each transition standalone — see
- * {@see \AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler}). Callers inside a
- * transaction (e.g. {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade}) pass `false`.
+ * State transitions for {@see TtsNarrationRequest}; clears `initialIdempotencyKey` on every terminal transition.
+ * Defaults flush=true (Messenger handler runs each transition standalone); callers inside a transaction pass false.
  */
 final class TtsNarrationRequestManager extends AbstractManager
 {

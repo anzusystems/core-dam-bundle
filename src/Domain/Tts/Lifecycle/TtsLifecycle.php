@@ -7,8 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 
 /**
- * Single source of truth for which TTS asset statuses are valid entry points for each operation.
- * Use cases reference these whitelists when locking the asset so the allowed transitions live in one place.
+ * Allowed TTS asset statuses per operation — one place for the locking entry-point whitelists.
  */
 final class TtsLifecycle
 {

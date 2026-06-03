@@ -10,12 +10,8 @@ use Google\Client as GoogleClient;
 use Google\Exception as GoogleException;
 
 /**
- * Per-ExtSystem cache of {@see GoogleClient} instances pre-configured with service-account
- * credentials. Mirrors {@see \AnzuSystems\CoreDamBundle\Distribution\Modules\Youtube\GoogleClientProvider}
- * for the TTS scope — keeps JSON keyfile parsing + scope setup out of the hot path.
- *
- * Each Google_Client owns its own token cache (set internally by `fetchAccessTokenWithAssertion`)
- * so callers get token reuse for free.
+ * Per-ExtSystem cache of service-account {@see GoogleClient} instances — keeps JSON keyfile parsing out of
+ * the hot path; each client caches its own token.
  */
 final class GoogleTtsAuthClientProvider
 {

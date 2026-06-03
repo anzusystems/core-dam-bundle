@@ -8,10 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 
 /**
- * Reaps superseded TTS audio files whose retention grace ({@see \AnzuSystems\CoreDamBundle\Entity\AssetFile::getExpireAt()})
- * has elapsed. Driven by the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand} cron.
- *
- * Deletion (routes + StorageCopy public-bucket object + master bytes, per-file best-effort) is delegated to
+ * Reaps superseded TTS audio files past their retention grace (cron-driven); per-file deletion via
  * {@see TtsAudioFileRemover}.
  */
 final readonly class TtsAudioRetentionFacade
