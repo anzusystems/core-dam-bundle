@@ -74,16 +74,6 @@ final class TtsAsset implements TimeTrackingInterface
     private ?string $failureReason = null;
 
     /**
-     * GUID snapshot of the family keywords applied at generation (no FK — keywords may be deleted);
-     * lets {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::syncFamilyKeywords} reconcile on regen.
-     *
-     * @var string[]
-     */
-    #[ORM\Column(type: Types::JSON)]
-    #[Serialize]
-    private array $voiceFamilyKeywordIds = [];
-
-    /**
      * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
      */
     public function __construct(Asset $asset)
@@ -189,21 +179,4 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
-    /**
-     * @return string[]
-     */
-    public function getVoiceFamilyKeywordIds(): array
-    {
-        return $this->voiceFamilyKeywordIds;
-    }
-
-    /**
-     * @param string[] $voiceFamilyKeywordIds
-     */
-    public function setVoiceFamilyKeywordIds(array $voiceFamilyKeywordIds): self
-    {
-        $this->voiceFamilyKeywordIds = $voiceFamilyKeywordIds;
-
-        return $this;
-    }
 }

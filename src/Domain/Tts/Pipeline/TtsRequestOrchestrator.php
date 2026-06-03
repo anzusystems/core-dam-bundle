@@ -26,7 +26,6 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
-use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
@@ -114,7 +113,7 @@ final readonly class TtsRequestOrchestrator
         // Best-effort enrichment. The preview is flaky ffmpeg; isolating it (and the metadata steps) here means
         // a failure can no longer skip the property refresh + reindex below.
         try {
-            $this->syncFamilyKeywords($result->asset, $result->ttsAsset, $family);
+            $this->syncFamilyKeywords($result->asset, $family);
             $this->applyInitialMetadata($result->asset, $request, $extSystem);
             $this->syncPodcastMembership($request, $result->asset);
 
@@ -196,7 +195,7 @@ final readonly class TtsRequestOrchestrator
         $this->requestManager->markDone($request, (string) $stableAsset->getId());
 
         try {
-            $this->syncFamilyKeywords($stableAsset, $stableTts, $family);
+            $this->syncFamilyKeywords($stableAsset, $family);
             if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
                 $this->entityManager->flush();
             }
@@ -240,34 +239,24 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Reconciles the family keyword set onto the asset without touching keywords from other sources.
-     * Runs on initial + regen — the family can change between regens.
+     * Adds the current family's keywords onto the asset (additive, idempotent). Runs on initial + regen.
+     * Keywords snapshot the family at generation time; a later family change does not prune the ones
+     * already applied.
      */
-    private function syncFamilyKeywords(Asset $asset, TtsAsset $ttsAsset, VoiceFamily $family): void
+    private function syncFamilyKeywords(Asset $asset, VoiceFamily $family): void
     {
-        $newKeywords = [];
+        $changed = false;
         foreach ($family->getKeywords() as $keyword) {
-            $newKeywords[(string) $keyword->getId()] = $keyword;
+            if ($asset->getKeywords()->contains($keyword)) {
+                continue;
+            }
+            $asset->addKeyword($keyword);
+            $changed = true;
         }
 
-        $oldIds = $ttsAsset->getVoiceFamilyKeywordIds();
-        $newIds = array_keys($newKeywords);
-
-        $toRemove = array_diff($oldIds, $newIds);
-        $toAdd = array_diff($newIds, $oldIds);
-        if ([] === $toRemove && [] === $toAdd) {
-            return;
+        if ($changed) {
+            $this->entityManager->flush();
         }
-
-        foreach ($toRemove as $removedId) {
-            $asset->removeKeywordById($removedId);
-        }
-        foreach ($toAdd as $addedId) {
-            $asset->addKeyword($newKeywords[$addedId]);
-        }
-
-        $ttsAsset->setVoiceFamilyKeywordIds($newIds);
-        $this->entityManager->flush();
     }
 
     /**
