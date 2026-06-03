@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
+use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 final class SynthesizeResponseDto
