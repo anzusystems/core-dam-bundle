@@ -15,12 +15,14 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestAssetFilter;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -45,14 +47,25 @@ final class TtsNarrationRequestController extends AbstractApiController
     ) {
     }
 
-    #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponseList(TtsNarrationRequest::class)]
-    public function getList(ApiParams $apiParams): JsonResponse
+    /**
+     * Lists the narration requests targeting one stable asset (status filterable). Called by the CMS to poll
+     * its article's audio-narration progress; authorized on the asset whose requests are being read.
+     */
+    #[Route('/asset/{asset}', name: 'get_list_by_asset', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('asset'), OAResponseList(TtsNarrationRequest::class)]
+    public function getListByAsset(ApiParams $apiParams, Asset $asset): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_LIST);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $asset);
+
+        $filter = $apiParams->getFilter();
+        $filter[ApiParams::FILTER_CUSTOM][TtsNarrationRequestAssetFilter::ASSET] = (string) $asset->getId();
+        $apiParams->setFilter($filter);
 
         return $this->okResponse(
-            $this->requestRepo->findByApiParams($apiParams),
+            $this->requestRepo->findByApiParams(
+                apiParams: $apiParams,
+                customFilters: [new TtsNarrationRequestAssetFilter()],
+            ),
         );
     }
 
@@ -60,7 +73,9 @@ final class TtsNarrationRequestController extends AbstractApiController
     #[OAParameterPath('narrationRequest'), OAResponse(TtsNarrationRequest::class)]
     public function getOne(TtsNarrationRequest $narrationRequest): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ);
+        $licence = $this->licenceRepo->find($narrationRequest->getAssetLicenceId())
+            ?? throw new NotFoundHttpException(sprintf('AssetLicence for request "%s" not found.', (string) $narrationRequest->getId()));
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_READ, $licence);
 
         $assetId = $narrationRequest->getAssetId();
         $ttsAsset = null !== $assetId

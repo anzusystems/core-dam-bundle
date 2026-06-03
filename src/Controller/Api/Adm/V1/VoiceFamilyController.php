@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyFacade;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
@@ -42,32 +43,35 @@ final class VoiceFamilyController extends AbstractApiController
     /**
      * @throws \Doctrine\ORM\Exception\ORMException
      */
-    #[Route('', name: 'get_list', methods: [Request::METHOD_GET])]
-    #[OAResponseList(VoiceFamily::class)]
-    public function getList(ApiParams $apiParams): JsonResponse
+    #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('extSystem'), OAResponseList(VoiceFamily::class)]
+    public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ, $extSystem);
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams(
-                apiParams: $apiParams,
+                apiParams: ExySystemApiParams::applyCustomFilter($apiParams, $extSystem),
                 customFilters: [new CustomExtSystemFilter()],
             ),
         );
     }
 
     /**
+     * Lists the voice families of the ext system the given asset licence belongs to. Called by the CMS,
+     * which knows the asset licence (not the DAM ext system) of the article being narrated.
+     *
      * @throws \Doctrine\ORM\Exception\ORMException
      */
-    #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('extSystem'), OAResponseList(VoiceFamily::class)]
-    public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
+    #[Route('/licence/{assetLicence}', name: 'get_list_by_asset_licence', methods: [Request::METHOD_GET])]
+    #[OAParameterPath('assetLicence'), OAResponseList(VoiceFamily::class)]
+    public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ);
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_VOICE_FAMILY_READ, $assetLicence);
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams(
-                apiParams: ExySystemApiParams::applyCustomFilter($apiParams, $extSystem),
+                apiParams: ExySystemApiParams::applyAssetLicenceCustomFilter($apiParams, $assetLicence),
                 customFilters: [new CustomExtSystemFilter()],
             ),
         );
