@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Controller\Api\Sys\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
+use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
@@ -28,6 +29,7 @@ final class TtsNarrationRequestController extends AbstractApiController
 {
     public function __construct(
         private readonly TtsDispatchFacade $dispatchNew,
+        private readonly Validator $validator,
     ) {
     }
 
@@ -40,6 +42,8 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function dispatch(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
+        // Before ACL: voter reads the licence off the DTO → malformed must be 422 here, not a 500.
+        $this->validator->validate($dto);
         $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
 
         $result = $this->dispatchNew->synthesize($dto);

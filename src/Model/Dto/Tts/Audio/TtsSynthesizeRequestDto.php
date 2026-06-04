@@ -18,18 +18,12 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use LogicException;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * GroupSequence ensures {@see GROUP_POST} constraints (which dereference {@see getExtSystem()})
- * run only after the base group confirmed extSystem is set — otherwise the getter throws.
- */
-#[Assert\GroupSequence(['TtsSynthesizeRequestDto', self::GROUP_POST])]
-#[AppAssert\TtsLicenceResolvable(groups: [self::GROUP_POST])]
+#[AppAssert\TtsLicenceResolvable]
 final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceInterface
 {
-    private const string GROUP_POST = 'post';
-
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(min: 10, max: 50_000, minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
@@ -76,7 +70,6 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     private ?ExtSystem $extSystem = null;
 
     #[Serialize(handler: EntityIdHandler::class)]
-    #[AppAssert\EqualExtSystem(groups: [self::GROUP_POST])]
     private ?AssetLicence $assetLicence = null;
 
     public function __construct()
@@ -86,9 +79,9 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
 
     public function resolveAssetLicence(): AssetLicence
     {
-        // ACL voter reaches this pre-validation — 422, not 500.
+        // Guard: post-validation only — null = bug.
         return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence()
-            ?? throw (new ValidationException())->addFormattedError('assetLicence', ValidationException::ERROR_FIELD_EMPTY);
+            ?? throw new LogicException('AssetLicence accessed before TtsSynthesizeRequestDto validation resolved it.');
     }
 
     public function getLicence(): AssetLicence
@@ -200,9 +193,17 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
 
     public function getExtSystem(): ExtSystem
     {
-        // ACL voter reaches this pre-validation — 422, not 500.
+        // Guard: post-validation only — null = bug.
         return $this->extSystem
-            ?? throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_FIELD_EMPTY);
+            ?? throw new LogicException('ExtSystem accessed before TtsSynthesizeRequestDto validation resolved it.');
+    }
+
+    /**
+     * Non-throwing accessor for validators that run before extSystem is confirmed present.
+     */
+    public function getExtSystemOrNull(): ?ExtSystem
+    {
+        return $this->extSystem;
     }
 
     public function setExtSystem(?ExtSystem $extSystem): self
