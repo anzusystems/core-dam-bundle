@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\GoogleTtsVoice;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\GoogleSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\TtsChunkSynthesisResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Google\Exception as GoogleException;
@@ -28,7 +29,6 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     // Config::chunkSizeChars clamped to this in the pipeline.
     // Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
-    private const string AUDIO_ENCODING_MP3 = 'MP3';
     private const string RESPONSE_KEY_AUDIO_CONTENT = 'audioContent';
     private const string RESPONSE_KEY_ACCESS_TOKEN = 'access_token';
 
@@ -81,7 +81,7 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         // Single source of truth: the voice family carries the language; Google needs it as a BCP-47 tag.
         $languageCode = $voice->getVoiceFamily()->getLanguage()->getBcpLocale();
         $bytes = $this->extractAudio(
-            $this->ttsClient->synthesize($this->getAccessToken($extSystem), $this->buildBody($text, $voice, $languageCode)),
+            $this->ttsClient->synthesize($this->getAccessToken($extSystem), $this->buildRequest($text, $voice, $languageCode)),
         );
 
         return new TtsChunkSynthesisResult($bytes, null);
@@ -114,26 +114,19 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         return $decoded;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function buildBody(string $text, GoogleTtsVoice $voice, string $languageCode): array
+    private function buildRequest(string $text, GoogleTtsVoice $voice, string $languageCode): GoogleSynthesizeRequestDto
     {
-        return [
-            'input' => [
-                'text' => $text,
-            ],
-            'voice' => [
-                'languageCode' => $languageCode,
-                'name' => $voice->getExternalVoiceId(),
-                'ssmlGender' => $voice->getSsmlGender()->value,
-            ],
-            'audioConfig' => [
-                'audioEncoding' => self::AUDIO_ENCODING_MP3,
-                'speakingRate' => $voice->getSpeakingRate(),
-                'pitch' => $voice->getPitch(),
-            ],
-        ];
+        $request = new GoogleSynthesizeRequestDto();
+        $request->getInput()->setText($text);
+        $request->getVoice()
+            ->setLanguageCode($languageCode)
+            ->setName($voice->getExternalVoiceId())
+            ->setSsmlGender($voice->getSsmlGender());
+        $request->getAudioConfig()
+            ->setSpeakingRate($voice->getSpeakingRate())
+            ->setPitch($voice->getPitch());
+
+        return $request;
     }
 
     /**

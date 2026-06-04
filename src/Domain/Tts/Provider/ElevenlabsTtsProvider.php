@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\ElevenlabsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\TtsChunkSynthesisResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 
@@ -75,7 +76,7 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
         $result = $this->client->synthesize(
             $voice->getExternalVoiceId(),
             $this->resolveApiKey($extSystem),
-            $this->buildBody($text, $previousRequestIds, $voice),
+            $this->buildRequest($text, $previousRequestIds, $voice),
         );
         $this->assertSuccess($result->http);
 
@@ -100,24 +101,20 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
 
     /**
      * @param list<string> $previousRequestIds
-     *
-     * @return array<string, mixed>
      */
-    private function buildBody(string $text, array $previousRequestIds, ElevenlabsVoice $voice): array
+    private function buildRequest(string $text, array $previousRequestIds, ElevenlabsVoice $voice): ElevenlabsSynthesizeRequestDto
     {
-        $body = [
-            'text' => $text,
-            'model_id' => $voice->getModelId(),
-            'voice_settings' => [
-                'stability' => $voice->getStability(),
-                'similarity_boost' => $voice->getSimilarityBoost(),
-            ],
-        ];
+        $request = (new ElevenlabsSynthesizeRequestDto())
+            ->setText($text)
+            ->setModelId($voice->getModelId());
+        $request->getVoiceSettings()
+            ->setStability($voice->getStability())
+            ->setSimilarityBoost($voice->getSimilarityBoost());
         if ([] !== $previousRequestIds) {
-            $body['previous_request_ids'] = $previousRequestIds;
+            $request->setPreviousRequestIds($previousRequestIds);
         }
 
-        return $body;
+        return $request;
     }
 
     /**

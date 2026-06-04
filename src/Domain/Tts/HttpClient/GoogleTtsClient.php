@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient;
 
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\GoogleSynthesizeRequestDto;
+use AnzuSystems\SerializerBundle\Serializer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -20,17 +22,18 @@ final readonly class GoogleTtsClient
 
     public function __construct(
         private HttpClientInterface $ttsGoogleApiClient,
+        private Serializer $serializer,
     ) {
     }
 
     /**
-     * @param array<string, mixed> $body
-     *
      * @throws TtsProviderException
      */
-    public function synthesize(string $accessToken, array $body): HttpClientResponse
+    public function synthesize(string $accessToken, GoogleSynthesizeRequestDto $request): HttpClientResponse
     {
         try {
+            /** @var array<string, mixed> $body */
+            $body = $this->serializer->toArray($request);
             $response = $this->ttsGoogleApiClient->request(
                 Request::METHOD_POST,
                 self::PATH_SYNTHESIZE,

@@ -6,6 +6,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient;
 
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\ElevenlabsSynthesizeRequestDto;
+use AnzuSystems\SerializerBundle\Context\SerializationContext;
+use AnzuSystems\SerializerBundle\Serializer;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -22,17 +25,19 @@ final readonly class ElevenlabsClient
 
     public function __construct(
         private HttpClientInterface $ttsElevenlabsApiClient,
+        private Serializer $serializer,
     ) {
     }
 
     /**
-     * @param array<string, mixed> $body
-     *
      * @throws TtsProviderException
      */
-    public function synthesize(string $externalVoiceId, string $apiKey, array $body): ElevenlabsResponse
+    public function synthesize(string $externalVoiceId, string $apiKey, ElevenlabsSynthesizeRequestDto $request): ElevenlabsResponse
     {
         try {
+            // Null-skipping: an unset `previous_request_ids` is omitted rather than sent as null.
+            /** @var array<string, mixed> $body */
+            $body = $this->serializer->toArray($request, (new SerializationContext())->setSerializeNulls(false));
             $response = $this->ttsElevenlabsApiClient->request(
                 Request::METHOD_POST,
                 self::PATH_TEXT_TO_SPEECH . $externalVoiceId,
