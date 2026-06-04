@@ -56,7 +56,7 @@ final readonly class TtsDispatchFacade
         App::throwOnReadOnlyMode();
         $this->validator->validate($dto);
 
-        $licence = $dto->resolveAssetLicence();
+        $licence = $dto->getLicence();
         $extSystem = $licence->getExtSystem();
 
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);

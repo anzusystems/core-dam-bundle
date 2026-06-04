@@ -26,7 +26,7 @@ final class ExtSystemFacade
      */
     public function update(ExtSystem $extSystem, ExtSystem $newExtSystem): ExtSystem
     {
-        // "belongs to ext system" for ttsDefaultAssetLicence / ttsFreeAudioEpilogAsset is enforced
+        // "belongs to ext system" for ttsFreeAudioEpilogAsset is enforced
         // declaratively via #[AppAssert\EqualExtSystem] on the entity (validation root = the ExtSystem).
         $this->validator->validate($newExtSystem, $extSystem);
         $this->validateDefaultVoiceFamily($extSystem, $newExtSystem);

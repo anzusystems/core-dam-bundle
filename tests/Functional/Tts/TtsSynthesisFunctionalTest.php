@@ -10,13 +10,11 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
 
@@ -67,14 +65,11 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 
     private function dispatchAndProcess(string $text): Asset
     {
-        $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_CMS);
         $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
-        self::assertInstanceOf(ExtSystem::class, $extSystem);
         self::assertInstanceOf(AssetLicence::class, $licence);
 
         $dto = (new TtsSynthesizeRequestDto())
             ->setText($text)
-            ->setExtSystem($extSystem)
             ->setAssetLicence($licence)
             ->setVoiceFamilySlug(TtsVoiceFixtures::DEFAULT_FAMILY_SLUG)
             ->setPodcasts(new ArrayCollection());

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -13,15 +12,12 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
-use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use LogicException;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[AppAssert\TtsLicenceResolvable]
 final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceInterface
 {
     #[Serialize]
@@ -65,28 +61,23 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     #[Assert\All([new Assert\Length(max: 255)])]
     private array $authors = [];
 
+    // Required; ext system is derived from it. Caller is authorized on this licence.
     #[Serialize(handler: EntityIdHandler::class)]
-    #[BaseAppAssert\NotEmptyId]
-    private ?ExtSystem $extSystem = null;
-
-    #[Serialize(handler: EntityIdHandler::class)]
-    private ?AssetLicence $assetLicence = null;
+    private AssetLicence $assetLicence;
 
     public function __construct()
     {
         $this->setPodcasts(new ArrayCollection());
     }
 
-    public function resolveAssetLicence(): AssetLicence
-    {
-        // Guard: post-validation only — null = bug.
-        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence()
-            ?? throw new LogicException('AssetLicence accessed before TtsSynthesizeRequestDto validation resolved it.');
-    }
-
     public function getLicence(): AssetLicence
     {
-        return $this->resolveAssetLicence();
+        return $this->assetLicence;
+    }
+
+    public function getExtSystem(): ExtSystem
+    {
+        return $this->assetLicence->getExtSystem();
     }
 
     public function getText(): string
@@ -191,34 +182,12 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
         return $this;
     }
 
-    public function getExtSystem(): ExtSystem
-    {
-        // Guard: post-validation only — null = bug.
-        return $this->extSystem
-            ?? throw new LogicException('ExtSystem accessed before TtsSynthesizeRequestDto validation resolved it.');
-    }
-
-    /**
-     * Non-throwing accessor for validators that run before extSystem is confirmed present.
-     */
-    public function getExtSystemOrNull(): ?ExtSystem
-    {
-        return $this->extSystem;
-    }
-
-    public function setExtSystem(?ExtSystem $extSystem): self
-    {
-        $this->extSystem = $extSystem;
-
-        return $this;
-    }
-
-    public function getAssetLicence(): ?AssetLicence
+    public function getAssetLicence(): AssetLicence
     {
         return $this->assetLicence;
     }
 
-    public function setAssetLicence(?AssetLicence $assetLicence): self
+    public function setAssetLicence(AssetLicence $assetLicence): self
     {
         $this->assetLicence = $assetLicence;
 
