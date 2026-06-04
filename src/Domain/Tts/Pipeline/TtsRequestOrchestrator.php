@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsSynthesisChunkManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TextChunker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
@@ -39,7 +40,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
@@ -83,6 +83,7 @@ final readonly class TtsRequestOrchestrator
         private TextChunker $textChunker,
         private TtsChunkStorage $chunkStorage,
         private TtsSynthesisChunkRepository $chunkRepo,
+        private TtsSynthesisChunkManager $chunkManager,
         private TtsChunkCleaner $chunkCleaner,
         private MessageBusInterface $messageBus,
         private DamLogger $logger,
@@ -146,10 +147,9 @@ final readonly class TtsRequestOrchestrator
         );
         $path = $this->chunkStorage->write($extSystem, $requestId, $chunk->getOrdinal(), $result->bytes);
 
-        $this->entityManager->wrapInTransaction(function () use ($chunk, $path, $result): void {
-            $chunk->setStatus(TtsChunkStatus::Done)->setMp3StoragePath($path)->setExternalRequestId($result->requestId);
-            $this->entityManager->flush();
-        });
+        $this->entityManager->wrapInTransaction(
+            fn (): TtsSynthesisChunk => $this->chunkManager->markDone($chunk, $path, $result->requestId),
+        );
 
         $next = $this->chunkRepo->findNextPending($requestId);
         if (null !== $next) {
@@ -187,8 +187,9 @@ final readonly class TtsRequestOrchestrator
     {
         $this->entityManager->wrapInTransaction(function () use ($request, $chunks): void {
             foreach ($chunks as $ordinal => $text) {
-                $this->entityManager->persist(
+                $this->chunkManager->create(
                     (new TtsSynthesisChunk())->setRequest($request)->setOrdinal($ordinal)->setSourceText($text),
+                    flush: false,
                 );
             }
             $this->entityManager->flush();

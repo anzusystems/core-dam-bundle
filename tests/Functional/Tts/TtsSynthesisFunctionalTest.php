@@ -10,11 +10,14 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler;
+use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsSynthChunkHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -28,6 +31,8 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 {
     private TtsDispatchFacade $dispatchFacade;
     private TtsNarrationRequestHandler $planHandler;
+    private TtsSynthChunkHandler $chunkHandler;
+    private TtsSynthesisChunkRepository $chunkRepo;
     private TtsAssetRepository $ttsAssetRepo;
     private AssetRepository $assetRepo;
     private Config $config;
@@ -37,6 +42,8 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
         parent::setUp();
         $this->dispatchFacade = $this->getService(TtsDispatchFacade::class);
         $this->planHandler = $this->getService(TtsNarrationRequestHandler::class);
+        $this->chunkHandler = $this->getService(TtsSynthChunkHandler::class);
+        $this->chunkRepo = $this->getService(TtsSynthesisChunkRepository::class);
         $this->ttsAssetRepo = $this->getService(TtsAssetRepository::class);
         $this->assetRepo = $this->getService(AssetRepository::class);
         $this->config = $this->getService(Config::class);
@@ -77,10 +84,14 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 
         $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
+        $requestId = (string) $result->narrationRequest->getId();
 
-        // Drive the real worker entry: claims the request → plans → single chunk runs inline, multi-chunk
-        // fans out per-chunk messages (handled synchronously in tests, no async transport).
-        ($this->planHandler)(new TtsNarrationRequestMessage((string) $result->narrationRequest->getId()));
+        // Real worker entry: claims the request → plans (single chunk runs inline; multi-chunk creates rows).
+        ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
+        // Drive the per-chunk chain (messages aren't auto-consumed in tests); the last chunk assembles inline.
+        while (null !== ($chunk = $this->chunkRepo->findNextPending($requestId))) {
+            ($this->chunkHandler)(new TtsSynthChunkMessage((string) $chunk->getId()));
+        }
 
         $asset = $this->assetRepo->find((string) $result->getAssetId());
         self::assertInstanceOf(Asset::class, $asset);

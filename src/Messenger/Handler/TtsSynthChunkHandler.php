@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsRequestFailer;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsSynthesisChunkManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -12,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
@@ -27,6 +27,7 @@ final readonly class TtsSynthChunkHandler
 {
     public function __construct(
         private TtsSynthesisChunkRepository $chunkRepo,
+        private TtsSynthesisChunkManager $chunkManager,
         private TtsRequestOrchestrator $orchestrator,
         private TtsRequestFailer $requestFailer,
         private EntityManagerInterface $entityManager,
@@ -79,8 +80,7 @@ final readonly class TtsSynthChunkHandler
                 return null;
             }
 
-            $chunk->setStatus(TtsChunkStatus::Processing)->setStartedAt(new DateTimeImmutable());
-            $this->entityManager->flush();
+            $this->chunkManager->markProcessing($chunk);
 
             return $chunk;
         });
@@ -93,8 +93,7 @@ final readonly class TtsSynthChunkHandler
         }
 
         try {
-            $chunk->setStatus(TtsChunkStatus::Failed)->setFailureReason($reason);
-            $this->entityManager->flush();
+            $this->chunkManager->markFailed($chunk, $reason);
         } catch (Throwable) {
             // Best-effort observability; the request-level failure is the source of truth.
         }

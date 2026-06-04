@@ -20,6 +20,7 @@ final readonly class TtsChunkCleaner
 {
     public function __construct(
         private TtsSynthesisChunkRepository $chunkRepo,
+        private TtsSynthesisChunkManager $chunkManager,
         private TtsChunkStorage $chunkStorage,
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
@@ -40,7 +41,7 @@ final readonly class TtsChunkCleaner
                 if (null !== $path) {
                     $paths[] = $path;
                 }
-                $this->entityManager->remove($chunk);
+                $this->chunkManager->delete($chunk, flush: false);
             }
             $this->chunkStorage->delete($request->getLicence()->getExtSystem(), $paths);
             $this->entityManager->flush();

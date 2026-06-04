@@ -24,7 +24,9 @@ use Symfony\Component\Console\Output\OutputInterface;
  * Recovers TTS requests left stranded by a crashed worker (the claim/synthesis windows run outside one
  * transaction, so an ungraceful kill can't be unwound inline):
  *  - regen stuck in 'superseding' → cancel (the old audio is still valid),
- *  - initial stuck in 'processing' → fail (frees the idempotency key for a fresh dispatch).
+ *  - initial stuck in 'processing' → fail (frees the idempotency key for a fresh dispatch),
+ *  - request stuck in 'waiting' → fail (dispatch/plan message lost),
+ *  - a synthesis chunk stuck pending/processing → fail its parent request.
  *
  * The threshold must stay well above the worker time-limit so in-flight requests are never touched.
  *
@@ -35,7 +37,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 #[AsCommand(
     name: 'anzu-dam:tts:cleanup-stuck',
-    description: 'Recover TTS requests stuck after a crashed worker (regen superseding, initial processing)',
+    description: 'Recover TTS requests stuck after a crashed worker (regen superseding, initial/waiting, stuck chunks)',
 )]
 final class TtsCleanupStuckCommand extends Command
 {

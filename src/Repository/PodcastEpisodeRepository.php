@@ -14,7 +14,7 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
  * @method PodcastEpisode|null find($id, $lockMode = null, $lockVersion = null)
  * @method PodcastEpisode|null findOneBy(array $criteria, array $orderBy = null)
  */
-class PodcastEpisodeRepository extends AbstractAnzuRepository
+final class PodcastEpisodeRepository extends AbstractAnzuRepository
 {
     /**
      * @return string[]
