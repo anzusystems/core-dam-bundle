@@ -99,16 +99,19 @@ final readonly class TtsRequestOrchestrator
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         // Published master = generation succeeded → commit Done now so the best-effort enrichment below
-        // can't flip it to Failed or skip the CMS success callback.
+        // can't flip it to Failed or skip the CMS success callback. Tradeoff: a crash mid-enrichment leaves a
+        // preview-less, unindexed Done asset — master intact, preview/index recoverable via reindex.
         $this->requestManager->markDone($request);
 
-        // Best-effort: a flaky ffmpeg preview must not skip the refresh + reindex below.
-        $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family): void {
+        // Best-effort enrichment. The preview carries a safety expireAt so a crash before it is slotted leaves
+        // it reapable, not orphaned (attachPreviewSlot clears it).
+        $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+        $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family, $orphanExpireAt): void {
             $this->syncFamilyKeywords($result->asset, $family);
             $this->applyInitialMetadata($result->asset, $request, $extSystem);
             $this->syncPodcastMembership($request, $result->asset);
 
-            $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile);
+            $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile, expireAt: $orphanExpireAt);
             $this->attachPreviewSlot($result->asset, $preview);
         });
 
@@ -190,6 +193,8 @@ final readonly class TtsRequestOrchestrator
     {
         $this->entityManager->wrapInTransaction(function () use ($asset, $preview): void {
             $this->assetSlotFactory->replaceSlotFile($asset, $preview, $this->config->getPreviewSlotName());
+            // Slotted (live) → clear the safety expireAt.
+            $preview->setExpireAt(null);
             $this->entityManager->flush();
         });
     }

@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
@@ -89,11 +90,15 @@ final class TtsNarrationRequestController extends AbstractApiController
 
         $result = $this->dispatchNew->synthesize($dto);
 
-        if (DispatchStatus::Pending === $result->status && null !== $result->narrationRequest) {
-            return $this->createdResponse($result->narrationRequest);
-        }
-
-        return new JsonResponse(null, Response::HTTP_CONFLICT);
+        // Per DispatchResult contract: Duplicate → 200 hands back the deduped asset id (don't drop it).
+        return $this->getResponse(
+            SynthesizeResponseDto::fromResult($result),
+            match ($result->status) {
+                DispatchStatus::AlreadyPending => Response::HTTP_CONFLICT,
+                DispatchStatus::Pending => Response::HTTP_CREATED,
+                default => Response::HTTP_OK,
+            },
+        );
     }
 
     /**

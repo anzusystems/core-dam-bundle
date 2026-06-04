@@ -18,7 +18,6 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use LogicException;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -87,9 +86,9 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
 
     public function resolveAssetLicence(): AssetLicence
     {
-        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence() ?? throw new LogicException(
-            'AssetLicence accessed before TtsSynthesizeRequestDto validation resolved it.',
-        );
+        // ACL voter reaches this pre-validation — 422, not 500.
+        return $this->assetLicence ?? $this->extSystem?->getTtsDefaultAssetLicence()
+            ?? throw (new ValidationException())->addFormattedError('assetLicence', ValidationException::ERROR_FIELD_EMPTY);
     }
 
     public function getLicence(): AssetLicence
@@ -201,9 +200,9 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
 
     public function getExtSystem(): ExtSystem
     {
-        return $this->extSystem ?? throw new LogicException(
-            'ExtSystem accessed before TtsSynthesizeRequestDto validation resolved it.',
-        );
+        // ACL voter reaches this pre-validation — 422, not 500.
+        return $this->extSystem
+            ?? throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_FIELD_EMPTY);
     }
 
     public function setExtSystem(?ExtSystem $extSystem): self

@@ -86,6 +86,9 @@ abstract class AssetFile implements
      * When set, the file is scheduled for deletion by the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
      * cron after this instant. Used to keep a superseded TTS audio (and thus its public CDN URL) alive for a grace
      * period after a regeneration, so still-cached consumer responses pointing at the old URL keep resolving.
+     *
+     * Reserved for TTS: the reaper deletes ANY audio file with an elapsed expireAt — scope that query before
+     * reusing this field elsewhere.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     protected ?DateTimeImmutable $expireAt = null;
