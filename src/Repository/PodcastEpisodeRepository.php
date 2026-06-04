@@ -9,12 +9,14 @@ use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 
 /**
+ * Not final on purpose — the host app extends it (App\Repository\PodcastEpisodeRepository).
+ *
  * @extends AbstractAnzuRepository<PodcastEpisode>
  *
  * @method PodcastEpisode|null find($id, $lockMode = null, $lockVersion = null)
  * @method PodcastEpisode|null findOneBy(array $criteria, array $orderBy = null)
  */
-final class PodcastEpisodeRepository extends AbstractAnzuRepository
+class PodcastEpisodeRepository extends AbstractAnzuRepository
 {
     /**
      * @return string[]
