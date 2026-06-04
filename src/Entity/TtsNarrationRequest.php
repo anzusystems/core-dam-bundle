@@ -30,6 +30,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'IDX_tts_request_status_mode_started', fields: ['status', 'mode', 'startedAt'])]
 #[ORM\Index(name: 'IDX_tts_request_asset_mode_status', fields: ['assetId', 'mode', 'status'])]
 #[ORM\Index(name: 'IDX_tts_request_ext_system', fields: ['extSystemId'])]
+#[ORM\Index(name: 'IDX_tts_request_status_modified', fields: ['status', 'modifiedAt'])]
+#[ORM\Index(name: 'IDX_tts_request_asset_created', fields: ['assetId', 'createdAt'])]
 final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTrackingInterface, UserTrackingInterface, AssetLicenceInterface
 {
     use UuidIdentityTrait;

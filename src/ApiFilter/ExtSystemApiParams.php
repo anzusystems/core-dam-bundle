@@ -9,7 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomExtSystemFilter;
 
-final class ExySystemApiParams
+final class ExtSystemApiParams
 {
     public static function applyCustomFilter(ApiParams $apiParams, ExtSystem $extSystem): ApiParams
     {

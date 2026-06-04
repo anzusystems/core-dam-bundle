@@ -13,7 +13,7 @@ use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseDeleted;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseList;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
-use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\ExtSystemApiParams;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyFacade;
@@ -51,7 +51,7 @@ final class VoiceFamilyController extends AbstractApiController
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams(
-                apiParams: ExySystemApiParams::applyCustomFilter($apiParams, $extSystem),
+                apiParams: ExtSystemApiParams::applyCustomFilter($apiParams, $extSystem),
                 customFilters: [new CustomExtSystemFilter()],
             ),
         );
@@ -71,7 +71,7 @@ final class VoiceFamilyController extends AbstractApiController
 
         return $this->okResponse(
             $this->voiceFamilyRepository->findByApiParams(
-                apiParams: ExySystemApiParams::applyAssetLicenceExtSystemCustomFilter($apiParams, $assetLicence),
+                apiParams: ExtSystemApiParams::applyAssetLicenceExtSystemCustomFilter($apiParams, $assetLicence),
                 customFilters: [new CustomExtSystemFilter()],
             ),
         );

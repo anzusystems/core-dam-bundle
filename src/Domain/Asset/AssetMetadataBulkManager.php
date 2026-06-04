@@ -12,7 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 
-class AssetMetadataBulkManager extends AbstractManager
+final class AssetMetadataBulkManager extends AbstractManager
 {
     public function __construct(
         private readonly AssetManager $assetManager,

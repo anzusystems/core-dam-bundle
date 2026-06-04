@@ -54,6 +54,8 @@ class PodcastEpisodeManager extends AbstractManager
         }
         $fromAsset->setEpisodes(new ArrayCollection());
 
+        $this->trackModification($fromAsset);
+        $this->trackModification($toAsset);
         $this->flush($flush);
     }
 

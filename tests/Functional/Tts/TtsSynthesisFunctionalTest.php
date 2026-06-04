@@ -4,32 +4,24 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Functional\Tts;
 
-use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsSynthChunkHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
-use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
-use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
-use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * End-to-end TTS pipeline over real fixtures + mocked providers:
  * request → voice resolve → ElevenLabs (mock returns sample MP3 bytes) → ffmpeg concat → store → asset.
  * Asserts the concatenated master audio duration so a broken chunk/concat step is caught.
  */
-final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
+final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
 {
-    private TtsDispatchFacade $dispatchFacade;
     private TtsNarrationRequestHandler $planHandler;
     private TtsSynthChunkHandler $chunkHandler;
     private TtsSynthesisChunkRepository $chunkRepo;
@@ -40,7 +32,6 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dispatchFacade = $this->getService(TtsDispatchFacade::class);
         $this->planHandler = $this->getService(TtsNarrationRequestHandler::class);
         $this->chunkHandler = $this->getService(TtsSynthChunkHandler::class);
         $this->chunkRepo = $this->getService(TtsSynthesisChunkRepository::class);
@@ -73,16 +64,7 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 
     private function dispatchAndProcess(string $text): Asset
     {
-        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
-        self::assertInstanceOf(AssetLicence::class, $licence);
-
-        $dto = (new TtsSynthesizeRequestDto())
-            ->setText($text)
-            ->setAssetLicence($licence)
-            ->setVoiceFamilySlug(TtsVoiceFixtures::DEFAULT_FAMILY_SLUG)
-            ->setPodcasts(new ArrayCollection());
-
-        $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
+        $result = $this->dispatchFacade->synthesize($this->buildSynthesizeDto($text), enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
         $requestId = (string) $result->narrationRequest->getId();
 

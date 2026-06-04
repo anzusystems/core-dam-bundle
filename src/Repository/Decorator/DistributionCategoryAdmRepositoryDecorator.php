@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\Decorator;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
-use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\ExtSystemApiParams;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomExtSystemFilter;
 use AnzuSystems\CoreDamBundle\Repository\DistributionCategoryRepository;
@@ -27,7 +27,7 @@ final class DistributionCategoryAdmRepositoryDecorator
         ExtSystem $extSystem,
     ): ApiResponseList {
         return $this->distributionCategoryRepository->findByApiParams(
-            apiParams: ExySystemApiParams::applyCustomFilter($apiParams, $extSystem),
+            apiParams: ExtSystemApiParams::applyCustomFilter($apiParams, $extSystem),
             customFilters: [new CustomExtSystemFilter()],
         );
     }
