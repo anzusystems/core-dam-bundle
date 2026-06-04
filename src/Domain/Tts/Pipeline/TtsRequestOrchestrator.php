@@ -17,7 +17,9 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TextChunker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -26,25 +28,35 @@ use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
+use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
 final readonly class TtsRequestOrchestrator
 {
+    // ElevenLabs previous_request_ids window — how many preceding chunks feed cross-splice prosody.
+    private const int CHAIN_LIMIT = 3;
+
     public function __construct(
         private TtsNarrationRequestManager $requestManager,
         private AssetRepository $assetRepo,
@@ -68,43 +80,144 @@ final readonly class TtsRequestOrchestrator
         private KeywordRepository $keywordRepo,
         private KeywordProvider $keywordProvider,
         private AuthorProvider $authorProvider,
+        private TextChunker $textChunker,
+        private TtsChunkStorage $chunkStorage,
+        private TtsSynthesisChunkRepository $chunkRepo,
+        private TtsChunkCleaner $chunkCleaner,
+        private MessageBusInterface $messageBus,
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
     ) {
     }
 
-    public function processInitial(TtsNarrationRequest $request): void
+    /**
+     * Plan step (runs after the request is claimed Processing): resolve voice, chunk the text, then either
+     * synthesise inline (single chunk — the common case, one worker run like before) or persist one chunk
+     * row per chunk and fan out per-chunk messages so each chunk gets its own run.
+     */
+    public function plan(TtsNarrationRequest $request): void
+    {
+        $extSystem = $request->getLicence()->getExtSystem();
+        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
+        $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
+        // Re-validate tenant config right before synth (dispatch precheck may be stale).
+        $provider->precheck($voice, $extSystem);
+
+        $chunks = $this->textChunker->chunk(
+            $this->resolveSourceText($request),
+            max(1, min($this->config->getChunkSizeChars(), $provider->getMaxCharsPerRequest())),
+        );
+        if ([] === $chunks) {
+            throw new RuntimeException(sprintf('TTS source text produced no chunks (request "%s").', (string) $request->getId()));
+        }
+
+        if (1 === count($chunks)) {
+            $result = $provider->synthesizeChunk($chunks[0], $voice, $extSystem, []);
+            $this->finalizeByMode($request, $this->chunkStorage->writeTmpMaster($result->bytes), $voice);
+
+            return;
+        }
+
+        $this->createChunks($request, $chunks);
+        $first = $this->chunkRepo->findNextPending((string) $request->getId());
+        if (null !== $first) {
+            $this->messageBus->dispatch(new TtsSynthChunkMessage((string) $first->getId()));
+        }
+    }
+
+    /**
+     * Synthesise one already-claimed chunk: provider call (outside any tx) → persist blob → mark Done →
+     * dispatch the next chunk, or (last chunk) assemble + finalize inline. Throwing bubbles to the handler
+     * which fails the whole request.
+     */
+    public function processChunk(TtsSynthesisChunk $chunk): void
+    {
+        $request = $chunk->getRequest();
+        $requestId = (string) $request->getId();
+        $extSystem = $request->getLicence()->getExtSystem();
+        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
+        $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
+
+        $result = $provider->synthesizeChunk(
+            $chunk->getSourceText(),
+            $voice,
+            $extSystem,
+            $this->chunkRepo->findChainRequestIds($requestId, $chunk->getOrdinal(), self::CHAIN_LIMIT),
+        );
+        $path = $this->chunkStorage->write($extSystem, $requestId, $chunk->getOrdinal(), $result->bytes);
+
+        $this->entityManager->wrapInTransaction(function () use ($chunk, $path, $result): void {
+            $chunk->setStatus(TtsChunkStatus::Done)->setMp3StoragePath($path)->setExternalRequestId($result->requestId);
+            $this->entityManager->flush();
+        });
+
+        $next = $this->chunkRepo->findNextPending($requestId);
+        if (null !== $next) {
+            $this->messageBus->dispatch(new TtsSynthChunkMessage((string) $next->getId()));
+
+            return;
+        }
+
+        // Last chunk — concat the Done blobs into the master and run the standard finalize, then purge chunks.
+        $master = $this->chunkStorage->concatToMaster($extSystem, $this->chunkRepo->findAllDoneOrdered($requestId));
+        $this->finalizeByMode($request, $master, $voice);
+        $this->chunkCleaner->purge($request);
+    }
+
+    private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
+    {
+        match ($request->getMode()) {
+            TtsRequestMode::Initial => $this->finalizeInitial($request, $master, $voice),
+            TtsRequestMode::Regenerate => $this->finalizeRegenerate($request, $master, $voice),
+        };
+    }
+
+    private function resolveSourceText(TtsNarrationRequest $request): string
+    {
+        return match ($request->getMode()) {
+            TtsRequestMode::Initial => (string) $request->getSourceText(),
+            TtsRequestMode::Regenerate => $this->ttsAssetLocker->requireFor($this->resolveTargetAsset($request))->getSourceTextSnapshot(),
+        };
+    }
+
+    /**
+     * @param list<string> $chunks
+     */
+    private function createChunks(TtsNarrationRequest $request, array $chunks): void
+    {
+        $this->entityManager->wrapInTransaction(function () use ($request, $chunks): void {
+            foreach ($chunks as $ordinal => $text) {
+                $this->entityManager->persist(
+                    (new TtsSynthesisChunk())->setRequest($request)->setOrdinal($ordinal)->setSourceText($text),
+                );
+            }
+            $this->entityManager->flush();
+        });
+    }
+
+    private function finalizeInitial(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
     {
         $licence = $request->getLicence();
         $extSystem = $licence->getExtSystem();
         // The file-less audio shell reserved at dispatch — its id is the one CMS already holds.
         $shellAsset = $this->resolveTargetAsset($request);
-
-        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $family = $voice->getVoiceFamily();
-        $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
-
         $sourceText = (string) $request->getSourceText();
-        $audioFile = $provider->synthesize($sourceText, $voice, $extSystem);
 
-        $input = TtsAudioCreationInput::forInitialRequest($request, $audioFile, $family, $voice, $licence, $sourceText);
+        $input = TtsAudioCreationInput::forInitialRequest($request, $master, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, $shellAsset, static function (TtsAudioCreationResult $created): void {
             $created->asset->getAssetFlags()->setTtsAudio(true);
         });
 
         // Must be materialized + public before Done — a failure here is a real generation failure.
-        // Property refresh is deferred: updateExisting() below owns it once both slots exist.
         $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: false);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         // Published master = generation succeeded → commit Done now so the best-effort enrichment below
-        // can't flip it to Failed or skip the CMS success callback. Tradeoff: a crash mid-enrichment leaves a
-        // preview-less, unindexed Done asset — master intact, preview/index recoverable via reindex.
+        // can't flip it to Failed or skip the CMS success callback.
         $this->requestManager->markDone($request);
 
-        // Best-effort enrichment. The preview carries a safety expireAt so a crash before it is slotted leaves
-        // it reapable, not orphaned (attachPreviewSlot clears it).
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
         $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family, $orphanExpireAt): void {
             $this->syncFamilyKeywords($result->asset, $family);
@@ -115,7 +228,6 @@ final readonly class TtsRequestOrchestrator
             $this->attachPreviewSlot($result->asset, $preview);
         });
 
-        // Refresh derived properties + reindex once both slots + metadata exist; runs even if enrichment failed.
         $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
             $this->assetManager->updateExisting($result->asset);
             $this->indexManager->index($result->asset);
@@ -124,21 +236,17 @@ final readonly class TtsRequestOrchestrator
         $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$result->asset]));
     }
 
-    public function processRegenerate(TtsNarrationRequest $request): void
+    private function finalizeRegenerate(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
     {
         $stableAsset = $this->resolveTargetAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
         $licence = $request->getLicence();
-        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $stableAsset->getExtSystem());
         $family = $voice->getVoiceFamily();
 
-        $audioFile = $this->providerContainer->forDiscriminator($voice->getDiscriminator())
-            ->synthesize($stableTts->getSourceTextSnapshot(), $voice, $stableAsset->getExtSystem());
+        $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $master, $family, $voice, $licence);
 
-        $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $audioFile, $family, $voice, $licence);
-
-        // Safety expiry stamped on the new (unslotted) files so a crash before the swap leaves them reapable by
-        // the grace cron instead of orphaned forever; AssetSwap::promote() clears it when they go live.
+        // Safety expiry stamped on the new (unslotted) files so a crash before the swap leaves them reapable
+        // by the grace cron; AssetSwap::promote() clears it when they go live.
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
 
         // Build + publish the new master/preview but DON'T slot them yet — the live asset keeps serving the
@@ -147,7 +255,6 @@ final readonly class TtsRequestOrchestrator
             fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts, $orphanExpireAt)
         );
 
-        // On any pre-swap exception delete the new files explicitly (faster than waiting for the grace cron).
         $newPreview = null;
 
         try {
@@ -171,8 +278,7 @@ final readonly class TtsRequestOrchestrator
             throw $e;
         }
 
-        // Swap is the point of no return → commit Done now so best-effort enrichment below can't flip it to
-        // Failed (spurious failure callback after a live swap) or skip the CMS success callback.
+        // Swap is the point of no return → commit Done now so best-effort enrichment can't flip it to Failed.
         $this->requestManager->markDone($request);
 
         $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $family): void {
@@ -261,8 +367,7 @@ final readonly class TtsRequestOrchestrator
 
         if ($changed) {
             $this->entityManager->flush();
-            // Bulk-index the keyword/author entities here — the providers no longer index per-item
-            // ({@see KeywordProvider}, {@see AuthorProvider}); indexing belongs one level up.
+            // Bulk-index the keyword/author entities here — the providers no longer index per-item.
             $indexEntities = array_values([...$asset->getAuthors(), ...$asset->getKeywords()]);
             if ([] !== $indexEntities) {
                 $this->indexManager->indexBulk($indexEntities);

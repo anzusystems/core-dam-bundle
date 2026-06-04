@@ -10,17 +10,20 @@ use AnzuSystems\CoreDamBundle\ApiFilter\TtsNarrationRequestApiParams;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsChunkProgress;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestAssetFilter;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestExtSystemFilter;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\TtsNarrationRequestLicenceFilter;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 
 final class TtsNarrationRequestRepositoryDecorator
 {
     public function __construct(
         private readonly TtsNarrationRequestRepository $requestRepository,
         private readonly TtsAssetRepository $ttsAssetRepository,
+        private readonly TtsSynthesisChunkRepository $chunkRepository,
     ) {
     }
 
@@ -49,9 +52,16 @@ final class TtsNarrationRequestRepositoryDecorator
     public function getDetail(TtsNarrationRequest $request): TtsNarrationRequest
     {
         $assetId = $request->getAssetId();
-
-        return $request->setTtsAsset(
+        $request->setTtsAsset(
             null !== $assetId ? $this->ttsAssetRepository->findByAssetIdJoined($assetId) : null,
         );
+
+        // Derived chunk progress (absent on single-run requests — no chunk rows).
+        $counts = $this->chunkRepository->progressCounts((string) $request->getId());
+        if ($counts['total'] > 0) {
+            $request->setChunkProgress(TtsChunkProgress::fromCounts($counts['total'], $counts['done'], $counts['failed']));
+        }
+
+        return $request;
     }
 }

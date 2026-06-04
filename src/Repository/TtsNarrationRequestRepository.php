@@ -8,6 +8,8 @@ use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\LockMode;
 
 /**
@@ -67,22 +69,45 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
      * Processing) then died before reaching a terminal status. The cleanup cron fails these so their
      * idempotency key frees up for a fresh dispatch. The threshold must exceed the worker time-limit.
      *
-     * @return list<TtsNarrationRequest>
+     * @return Collection<int, TtsNarrationRequest>
      */
-    public function findStuckInitialProcessing(DateTimeImmutable $startedBefore, int $limit): array
+    public function findStuckInitialProcessing(DateTimeImmutable $startedBefore, int $limit): Collection
     {
-        return $this->createQueryBuilder('r')
-            ->where('r.mode = :mode')
-            ->andWhere('r.status = :status')
-            ->andWhere('r.startedAt < :startedBefore')
-            ->setParameter('mode', TtsRequestMode::Initial)
-            ->setParameter('status', TtsRequestStatus::Processing)
-            ->setParameter('startedBefore', $startedBefore)
-            ->addOrderBy('r.startedAt', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult()
-        ;
+        return new ArrayCollection(
+            $this->createQueryBuilder('r')
+                ->where('r.mode = :mode')
+                ->andWhere('r.status = :status')
+                ->andWhere('r.startedAt < :startedBefore')
+                ->setParameter('mode', TtsRequestMode::Initial)
+                ->setParameter('status', TtsRequestStatus::Processing)
+                ->setParameter('startedBefore', $startedBefore)
+                ->addOrderBy('r.startedAt', 'ASC')
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    /**
+     * Requests left in Waiting past the threshold — the dispatch/plan message was lost (worker crash
+     * before claim, at-most-once transport) so the request was never picked up. Fails them so the
+     * idempotency key frees up. Uses modifiedAt since startedAt is only set at Processing.
+     *
+     * @return Collection<int, TtsNarrationRequest>
+     */
+    public function findStuckWaiting(DateTimeImmutable $modifiedBefore, int $limit): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('r')
+                ->where('r.status = :status')
+                ->andWhere('r.modifiedAt < :modifiedBefore')
+                ->setParameter('status', TtsRequestStatus::Waiting)
+                ->setParameter('modifiedBefore', $modifiedBefore)
+                ->addOrderBy('r.modifiedAt', 'ASC')
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
     }
 
     /**

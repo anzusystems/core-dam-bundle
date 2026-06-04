@@ -7,9 +7,10 @@ namespace AnzuSystems\CoreDamBundle\Tests\Functional\Tts;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
@@ -26,7 +27,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 {
     private TtsDispatchFacade $dispatchFacade;
-    private TtsRequestOrchestrator $orchestrator;
+    private TtsNarrationRequestHandler $planHandler;
     private TtsAssetRepository $ttsAssetRepo;
     private AssetRepository $assetRepo;
     private Config $config;
@@ -35,7 +36,7 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
     {
         parent::setUp();
         $this->dispatchFacade = $this->getService(TtsDispatchFacade::class);
-        $this->orchestrator = $this->getService(TtsRequestOrchestrator::class);
+        $this->planHandler = $this->getService(TtsNarrationRequestHandler::class);
         $this->ttsAssetRepo = $this->getService(TtsAssetRepository::class);
         $this->assetRepo = $this->getService(AssetRepository::class);
         $this->config = $this->getService(Config::class);
@@ -76,7 +77,10 @@ final class TtsSynthesisFunctionalTest extends CoreDamKernelTestCase
 
         $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
-        $this->orchestrator->processInitial($result->narrationRequest);
+
+        // Drive the real worker entry: claims the request → plans → single chunk runs inline, multi-chunk
+        // fans out per-chunk messages (handled synchronously in tests, no async transport).
+        ($this->planHandler)(new TtsNarrationRequestMessage((string) $result->narrationRequest->getId()));
 
         $asset = $this->assetRepo->find((string) $result->getAssetId());
         self::assertInstanceOf(Asset::class, $asset);

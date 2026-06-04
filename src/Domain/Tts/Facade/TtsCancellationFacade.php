@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Facade;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
@@ -41,6 +42,7 @@ final readonly class TtsCancellationFacade
         private TtsNarrationRequestRepository $requestRepo,
         private TtsNarrationRequestManager $requestManager,
         private TtsAssetManager $ttsAssetManager,
+        private TtsChunkCleaner $chunkCleaner,
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
@@ -65,10 +67,17 @@ final readonly class TtsCancellationFacade
             ));
         }
 
-        return match ($request->getMode()) {
+        $cancelled = match ($request->getMode()) {
             TtsRequestMode::Initial => $this->cancelInitial($request, $userId),
             TtsRequestMode::Regenerate => $this->cancelRegenerate((string) $request->getAssetId(), $userId),
         };
+
+        if ($cancelled) {
+            // Cancelled is terminal → the failer's terminal guard won't run; purge any chunk blobs/rows here.
+            $this->chunkCleaner->purge($request);
+        }
+
+        return $cancelled;
     }
 
     private function cancelInitial(TtsNarrationRequest $request, ?string $userId): bool

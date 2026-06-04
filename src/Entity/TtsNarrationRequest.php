@@ -11,6 +11,7 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsChunkProgress;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
@@ -134,6 +135,13 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
      */
     #[Serialize]
     private ?TtsAsset $ttsAsset = null;
+
+    /**
+     * Transient (non-persisted) — derived chunk progress populated by the Adm getOne controller.
+     * Null for single-run requests (no chunk rows).
+     */
+    #[Serialize]
+    private ?TtsChunkProgress $chunkProgress = null;
 
     public function __construct()
     {
@@ -372,6 +380,18 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setTtsAsset(?TtsAsset $ttsAsset): self
     {
         $this->ttsAsset = $ttsAsset;
+
+        return $this;
+    }
+
+    public function getChunkProgress(): ?TtsChunkProgress
+    {
+        return $this->chunkProgress;
+    }
+
+    public function setChunkProgress(?TtsChunkProgress $chunkProgress): self
+    {
+        $this->chunkProgress = $chunkProgress;
 
         return $this;
     }

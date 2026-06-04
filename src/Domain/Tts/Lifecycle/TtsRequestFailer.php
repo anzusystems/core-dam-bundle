@@ -31,6 +31,7 @@ final readonly class TtsRequestFailer
         private AssetManager $assetManager,
         private AssetRepository $assetRepo,
         private TtsAudioFileRemover $audioFileRemover,
+        private TtsChunkCleaner $chunkCleaner,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
         private DamLogger $logger,
@@ -72,6 +73,9 @@ final readonly class TtsRequestFailer
         if ($request->getMode()->is(TtsRequestMode::Initial)) {
             $this->deleteInitialAssetOnFailure($request);
         }
+
+        // Drop any per-chunk blobs + rows (multi-chunk requests); no-op for the single-run path.
+        $this->chunkCleaner->purge($request);
 
         $this->dispatchFailureCallback($request, $failureReason);
     }

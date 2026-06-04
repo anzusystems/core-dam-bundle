@@ -10,6 +10,8 @@ use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\LockMode;
 
 /**
@@ -79,19 +81,21 @@ final class TtsAssetRepository extends AbstractAnzuRepository
      * TtsAssets stuck in 'superseding' whose underlying Asset has not been touched since $threshold.
      * Used by the cleanup cron to cancel TTL-exceeded regen jobs.
      *
-     * @return list<TtsAsset>
+     * @return Collection<int, TtsAsset>
      */
-    public function findStuckSuperseding(DateTimeImmutable $threshold, int $limit): array
+    public function findStuckSuperseding(DateTimeImmutable $threshold, int $limit): Collection
     {
-        return $this->createQueryBuilder('ta')
-            ->where('ta.status = :status')
-            ->andWhere('ta.modifiedAt < :threshold')
-            ->setParameter('status', TtsAudioStatus::Superseding)
-            ->setParameter('threshold', $threshold)
-            ->addOrderBy('ta.modifiedAt', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
+        return new ArrayCollection(
+            $this->createQueryBuilder('ta')
+                ->where('ta.status = :status')
+                ->andWhere('ta.modifiedAt < :threshold')
+                ->setParameter('status', TtsAudioStatus::Superseding)
+                ->setParameter('threshold', $threshold)
+                ->addOrderBy('ta.modifiedAt', 'ASC')
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
     }
 
     public function existsByVoiceFamily(VoiceFamily $voiceFamily): bool

@@ -6,30 +6,26 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Provider;
 
 use AnzuSystems\CommonBundle\Model\HttpClient\HttpClientResponse;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
-use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsAuthClientProvider;
 use AnzuSystems\CoreDamBundle\Domain\Tts\HttpClient\GoogleTtsClient;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\GoogleTtsVoice;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
-use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Dto\Tts\TtsChunkSynthesisResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
-use Generator;
 use Google\Exception as GoogleException;
 use JsonException;
-use League\Flysystem\FilesystemException;
 
 /**
- * Google Cloud TTS. Service-account auth + token caching delegated to {@see GoogleTtsAuthClientProvider}
- * (per-ExtSystem GoogleClient cache, JSON keyfile parsed once). Long text chunked + concatenated via ffmpeg.
+ * Google Cloud TTS. Service-account auth + token caching delegated to {@see GoogleTtsAuthClientProvider}.
+ * Stateless across chunks (no `previous_request_ids` analogue) — one chunk = one HTTP call.
  */
 final class GoogleTtsProvider extends AbstractTtsProvider
 {
     // Google's hard documented per-request ceiling. The effective chunk size is the operator-driven
-    // Config::chunkSizeChars clamped to this — see AbstractTtsProvider::resolveChunkSize().
+    // Config::chunkSizeChars clamped to this in the pipeline.
     // Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS — do not merge into a shared constant.
     private const int MAX_CHARS = 5_000;
     private const string AUDIO_ENCODING_MP3 = 'MP3';
@@ -41,11 +37,8 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         private readonly GoogleTtsAuthClientProvider $authClientProvider,
         ExtSystemConfigurationProvider $extSystemConfigProvider,
         FileSystemProvider $fileSystemProvider,
-        FfmpegService $ffmpegService,
-        Config $config,
-        TextChunker $chunker,
     ) {
-        parent::__construct($fileSystemProvider, $ffmpegService, $extSystemConfigProvider, $config, $chunker);
+        parent::__construct($fileSystemProvider, $extSystemConfigProvider);
     }
 
     public static function getDefaultKeyName(): string
@@ -70,48 +63,28 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     {
         $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
 
-        // getClient() reads + parses the service-account JSON keyfile and configures the Google
-        // client. Deterministic from filesystem state, no HTTP. Cached per ExtSystem so the
-        // orchestrator that runs later doesn't pay the cost twice.
+        // getClient() reads + parses the service-account JSON keyfile (deterministic, no HTTP) and caches
+        // the Google client per ExtSystem.
         $this->authClientProvider->getClient($extSystem->getSlug());
-        $this->resolveChunkStorageName($extSystem);
+        $this->assertChunkStorageConfigured($extSystem);
     }
 
     /**
+     * @param list<string> $previousRequestIds ignored — Google is stateless
+     *
      * @throws TtsProviderException
-     * @throws FilesystemException
      */
-    public function synthesize(string $text, Voice $voice, ExtSystem $extSystem): AdapterFile
+    public function synthesizeChunk(string $text, Voice $voice, ExtSystem $extSystem, array $previousRequestIds): TtsChunkSynthesisResult
     {
-        $this->precheck($voice, $extSystem);
-        assert($voice instanceof GoogleTtsVoice);
+        $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
 
-        $chunks = $this->chunkTextOrFail($text);
-        $accessToken = $this->getAccessToken($extSystem);
         // Single source of truth: the voice family carries the language; Google needs it as a BCP-47 tag.
         $languageCode = $voice->getVoiceFamily()->getLanguage()->getBcpLocale();
+        $bytes = $this->extractAudio(
+            $this->ttsClient->synthesize($this->getAccessToken($extSystem), $this->buildBody($text, $voice, $languageCode)),
+        );
 
-        if (1 === count($chunks)) {
-            return $this->writeSingleChunk(
-                $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunks[0], $voice, $languageCode))),
-            );
-        }
-
-        return $this->concatChunks($this->synthesizeChunks($chunks, $voice, $accessToken, $languageCode));
-    }
-
-    /**
-     * @param list<string> $chunks
-     *
-     * @return Generator<string>
-     *
-     * @throws TtsProviderException
-     */
-    private function synthesizeChunks(array $chunks, GoogleTtsVoice $voice, string $accessToken, string $languageCode): Generator
-    {
-        foreach ($chunks as $chunk) {
-            yield $this->extractAudio($this->ttsClient->synthesize($accessToken, $this->buildBody($chunk, $voice, $languageCode)));
-        }
+        return new TtsChunkSynthesisResult($bytes, null);
     }
 
     /**

@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -45,10 +44,8 @@ final readonly class TtsNarrationRequestHandler
         }
 
         try {
-            match ($request->getMode()) {
-                TtsRequestMode::Initial => $this->orchestrator->processInitial($request),
-                TtsRequestMode::Regenerate => $this->orchestrator->processRegenerate($request),
-            };
+            // Plan: resolve voice, chunk the text, then synth inline (1 chunk) or fan out per-chunk messages.
+            $this->orchestrator->plan($request);
         } catch (Throwable $e) {
             $this->logger->error(DamLogger::NAMESPACE_TTS, 'handler.requestFailed', [
                 'requestId' => (string) $request->getId(),
