@@ -29,7 +29,10 @@ final class TextChunkerTest extends TestCase
         yield 'two sentences fitting the limit → packed into one' => ['Aa bb. Cc dd.', 100, ['Aa bb. Cc dd.']];
         yield 'two sentences over the limit → split on the boundary' => ['Aaaaa. Bbbbb.', 8, ['Aaaaa.', 'Bbbbb.']];
         yield 'greedy packing then overflow → two chunks' => ['Ab. Cd. Efghij.', 8, ['Ab. Cd.', 'Efghij.']];
-        yield 'single sentence over the limit → emitted whole, never broken mid-sentence' => ['Aaaaaaaaaa', 5, ['Aaaaaaaaaa']];
+        yield 'single oversized word → hard-split by characters' => ['Aaaaaaaaaa', 5, ['Aaaaa', 'aaaaa']];
+        yield 'oversized sentence with spaces → packed by words under the cap' => ['aa bb cc dd ee', 5, ['aa bb', 'cc dd', 'ee']];
+        yield 'oversized sentence after a fitting one → flush then hard-split' => ['Ok. Wwwwwwwwww.', 6, ['Ok.', 'Wwwwww', 'wwww.']];
+        yield 'multibyte oversized word → char-split counts characters, not bytes' => ['ÁÁÁÁÁÁ', 4, ['ÁÁÁÁ', 'ÁÁ']];
         yield 'multibyte counted by characters, not bytes' => ['Ááááá. Ééééé.', 8, ['Ááááá.', 'Ééééé.']];
     }
 }
