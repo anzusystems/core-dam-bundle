@@ -33,12 +33,13 @@ final readonly class TextChunker
 
         foreach ($sentences as $sentence) {
             $candidate = $currentChunk . ' ' . $sentence;
-            if (mb_strlen($candidate) > $maxCharsPerChunk) {
-                $chunks[] = $currentChunk;
-                $currentChunk = $sentence;
-            } else {
+            if (mb_strlen($candidate) <= $maxCharsPerChunk) {
                 $currentChunk = $candidate;
+
+                continue;
             }
+            $chunks[] = $currentChunk;
+            $currentChunk = $sentence;
         }
 
         $chunks[] = $currentChunk;

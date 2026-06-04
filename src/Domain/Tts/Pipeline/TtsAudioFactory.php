@@ -60,7 +60,7 @@ final readonly class TtsAudioFactory
         $now = new DateTimeImmutable();
 
         $audioFile = $this->buildAudioFile($input);
-        $this->assetFileManager->create($audioFile, false);
+        $this->assetFileManager->create($audioFile, flush: false);
 
         $this->assetSlotFactory->createRelation(
             asset: $asset,
@@ -70,7 +70,7 @@ final readonly class TtsAudioFactory
         );
         $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
         $this->writeCustomMetadata($asset, $input);
-        $this->assetManager->updateExisting($asset, false, false);
+        $this->assetManager->updateExisting($asset, flush: false, trackModification: false);
 
         $masterRoute = $this->attachStableRoute($audioFile);
 
@@ -95,7 +95,7 @@ final readonly class TtsAudioFactory
     ): TtsAudioCreationResult {
         $audioFile = $this->buildAudioFile($input);
         $audioFile->setAsset($stableAsset);
-        $this->assetFileManager->create($audioFile, false);
+        $this->assetFileManager->create($audioFile, flush: false);
         // Until AssetSwap slots it, the file is an unreferenced orphan (no slot). Stamp a safety expireAt so a
         // crash before the swap leaves it reapable by the grace cron; AssetSwap clears it once it goes live.
         $audioFile->setExpireAt($orphanExpireAt);
