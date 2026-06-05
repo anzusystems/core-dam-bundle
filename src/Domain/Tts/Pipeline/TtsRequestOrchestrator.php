@@ -11,7 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
-use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeManager;
+use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeFactory;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastLicenceFilter;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
@@ -74,7 +74,7 @@ final readonly class TtsRequestOrchestrator
         private AudioStatusFacade $audioStatusFacade,
         private PreviewMedia $previewMedia,
         private AssetSwap $assetSwap,
-        private PodcastEpisodeManager $episodeManager,
+        private PodcastEpisodeFactory $episodeFactory,
         private PodcastRepository $podcastRepo,
         private PodcastLicenceFilter $podcastLicenceFilter,
         private AssetFileRouteFacade $routeFacade,
@@ -365,7 +365,7 @@ final readonly class TtsRequestOrchestrator
     private function syncPodcastMembership(TtsNarrationRequest $request, Asset $asset): void
     {
         if ([] === $request->getPodcastIds()) {
-            $this->episodeManager->setMembership($asset, new ArrayCollection());
+            $this->episodeFactory->setMembership($asset, new ArrayCollection());
 
             return;
         }
@@ -375,7 +375,7 @@ final readonly class TtsRequestOrchestrator
             $this->podcastRepo->findBy(['id' => $request->getPodcastIds()]),
         );
 
-        $this->episodeManager->setMembership($asset, $desired, inheritFromAsset: true);
+        $this->episodeFactory->setMembership($asset, $desired, inheritFromAsset: true);
     }
 
     /**

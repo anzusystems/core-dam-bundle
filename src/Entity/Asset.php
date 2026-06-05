@@ -386,6 +386,13 @@ class Asset implements
         return $this;
     }
 
+    public function removeEpisode(PodcastEpisode $episode): self
+    {
+        $this->episodes->removeElement($episode);
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, PodcastEpisode>
      */
