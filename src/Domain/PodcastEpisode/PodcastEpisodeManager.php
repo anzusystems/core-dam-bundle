@@ -6,8 +6,11 @@ namespace AnzuSystems\CoreDamBundle\Domain\PodcastEpisode;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
@@ -20,7 +23,9 @@ class PodcastEpisodeManager extends AbstractManager
 
     public function __construct(
         private readonly PodcastEpisodeRepository $repository,
-        private readonly ImagePreviewManager $imagePreviewManager
+        private readonly ImagePreviewManager $imagePreviewManager,
+        private readonly AssetTextsWriter $assetTextsWriter,
+        private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
     ) {
     }
 
@@ -107,7 +112,7 @@ class PodcastEpisodeManager extends AbstractManager
     /**
      * @param Collection<int, Podcast> $desiredPodcasts
      */
-    public function setMembership(Asset $asset, Collection $desiredPodcasts, bool $flush = true): void
+    public function setMembership(Asset $asset, Collection $desiredPodcasts, bool $flush = true, bool $inheritFromAsset = false): void
     {
         // Manual diff by podcastId: colUpdate assumes a homogeneous Collection.
         $currentByPodcastId = [];
@@ -121,7 +126,11 @@ class PodcastEpisodeManager extends AbstractManager
         }
 
         foreach (array_diff_key($desiredByPodcastId, $currentByPodcastId) as $podcast) {
-            $this->create((new PodcastEpisode())->setPodcast($podcast)->setAsset($asset), false);
+            $episode = (new PodcastEpisode())->setPodcast($podcast)->setAsset($asset);
+            if ($inheritFromAsset) {
+                $this->applyAssetDefaults($episode, $asset);
+            }
+            $this->create($episode, false);
         }
 
         foreach (array_diff_key($currentByPodcastId, $desiredByPodcastId) as $episode) {
@@ -129,6 +138,26 @@ class PodcastEpisodeManager extends AbstractManager
         }
 
         $this->flush($flush);
+    }
+
+    /**
+     * Seed a freshly founded episode with data from its asset: title/description via the configured
+     * podcast_episode_entity_map, next episode number and audio duration. Public-export (web/app) is NOT
+     * set here — that is the host app's publishing concern.
+     */
+    private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset): void
+    {
+        $config = $this->extSystemConfigurationProvider->getAudioExtSystemConfiguration(
+            $asset->getLicence()->getExtSystem()->getSlug()
+        );
+        $this->assetTextsWriter->writeValues($asset, $episode, $config->getPodcastEpisodeEntityMap());
+
+        $mainFile = $asset->getMainFile();
+        $lastEpisode = $this->repository->findOneLastByPodcast($episode->getPodcast());
+        $episode->getAttributes()
+            ->setEpisodeNumber(($lastEpisode?->getAttributes()->getEpisodeNumber() ?? App::ZERO) + 1)
+            ->setDuration($mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO)
+        ;
     }
 
     private function setPosition(PodcastEpisode $podcastEpisode): void

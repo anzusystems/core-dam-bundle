@@ -375,7 +375,7 @@ final readonly class TtsRequestOrchestrator
             $this->podcastRepo->findBy(['id' => $request->getPodcastIds()]),
         );
 
-        $this->episodeManager->setMembership($asset, $desired);
+        $this->episodeManager->setMembership($asset, $desired, inheritFromAsset: true);
     }
 
     /**
