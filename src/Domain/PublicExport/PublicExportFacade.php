@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\PublicExport;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\PublicExport;
 
 final class PublicExportFacade
@@ -22,7 +23,7 @@ final class PublicExportFacade
      */
     public function create(PublicExport $publicExport): PublicExport
     {
-        $publicExport->setExtSystem($publicExport->getAssetLicence()->getExtSystem());
+        $this->reconcileLicences($publicExport);
         $this->validator->validate($publicExport);
         $this->publicExportManager->create($publicExport);
 
@@ -34,7 +35,8 @@ final class PublicExportFacade
      */
     public function update(PublicExport $publicExport, PublicExport $newPublicExport): PublicExport
     {
-        $publicExport->setExtSystem($newPublicExport->getAssetLicence()->getExtSystem());
+        $this->reconcileLicences($newPublicExport);
+        $publicExport->setExtSystem($newPublicExport->getExtSystem());
         $this->validator->validate($newPublicExport, $publicExport);
         $this->publicExportManager->update($publicExport, $newPublicExport);
 
@@ -46,5 +48,23 @@ final class PublicExportFacade
         $this->publicExportManager->delete($publicExport);
 
         return true;
+    }
+
+    /**
+     * Back-compat bridge: seed the collection from the legacy single licence if needed, then sync the
+     * deprecated single + ext system to the primary (first) licence.
+     */
+    private function reconcileLicences(PublicExport $publicExport): void
+    {
+        $legacy = $publicExport->getAssetLicence();
+        if ($publicExport->getLicences()->isEmpty() && $legacy instanceof AssetLicence) {
+            $publicExport->addLicence($legacy);
+        }
+
+        $primary = $publicExport->getLicences()->first();
+        if ($primary instanceof AssetLicence) {
+            $publicExport->setAssetLicence($primary);
+            $publicExport->setExtSystem($primary->getExtSystem());
+        }
     }
 }
