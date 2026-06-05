@@ -14,7 +14,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\SynthesizeResponseDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
-use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,8 +39,7 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function dispatch(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE, $dto);
-
+        // Sys auth is role-gated (ROLE_SYS_SYNTHETIZE via security access_control), no per-permission ACL here.
         $result = $this->dispatchNew->synthesize($dto);
 
         return $this->getResponse(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use DateTimeImmutable;
@@ -103,6 +104,36 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
                 ->andWhere('r.modifiedAt < :modifiedBefore')
                 ->setParameter('status', TtsRequestStatus::Waiting)
                 ->setParameter('modifiedBefore', $modifiedBefore)
+                ->addOrderBy('r.modifiedAt', 'ASC')
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    /**
+     * Processing requests with no chunk touched since $since — the synthesis chain stalled (a per-chunk
+     * dispatch or the finalize step was lost, or a worker died). Requests still advancing have a
+     * recently-modified chunk and are skipped, so the reconcile sweep never disturbs an in-flight narration.
+     *
+     * @return Collection<int, TtsNarrationRequest>
+     */
+    public function findStalledProcessing(DateTimeImmutable $since, int $limit): Collection
+    {
+        $recentChunk = $this->getEntityManager()->createQueryBuilder()
+            ->select('1')
+            ->from(TtsSynthesisChunk::class, 'activeChunk')
+            ->where('activeChunk.request = r')
+            ->andWhere('activeChunk.modifiedAt >= :since')
+            ->getDQL()
+        ;
+
+        return new ArrayCollection(
+            $this->createQueryBuilder('r')
+                ->where('r.status = :status')
+                ->andWhere(sprintf('NOT EXISTS (%s)', $recentChunk))
+                ->setParameter('status', TtsRequestStatus::Processing)
+                ->setParameter('since', $since)
                 ->addOrderBy('r.modifiedAt', 'ASC')
                 ->setMaxResults($limit)
                 ->getQuery()

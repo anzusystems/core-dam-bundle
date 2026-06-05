@@ -40,12 +40,16 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\TtsResumeOutcome;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use Closure;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
@@ -158,10 +162,62 @@ final readonly class TtsRequestOrchestrator
             return;
         }
 
-        // Last chunk — concat the Done blobs into the master and run the standard finalize, then purge chunks.
+        // Last chunk — assemble + finalize. Shared with the reconcile sweep, idempotent.
+        $this->finalizeRequest($request);
+    }
+
+    /**
+     * Concat the Done chunk blobs into the master and run the standard finalize, then purge chunks.
+     * Idempotent: bails if the request already left Processing, so a reconcile re-run is a no-op.
+     */
+    public function finalizeRequest(TtsNarrationRequest $request): void
+    {
+        if ($request->getStatus()->isNot(TtsRequestStatus::Processing)) {
+            return;
+        }
+        $requestId = (string) $request->getId();
+        $extSystem = $request->getLicence()->getExtSystem();
+        $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $master = $this->chunkStorage->concatToMaster($extSystem, $this->chunkRepo->findAllDoneOrdered($requestId));
         $this->finalizeByMode($request, $master, $voice);
         $this->chunkCleaner->purge($request);
+    }
+
+    /**
+     * Reconcile one stalled Processing request (reconcile sweep). Idempotent — the chunk claim guard
+     * absorbs duplicate dispatch, finalize bails if already terminal. Returns a short action label.
+     * Resets a chunk left Processing past the stale window (its worker died mid-synth) so it re-runs.
+     */
+    public function resumeStalled(TtsNarrationRequest $request, DateTimeImmutable $processingStaleBefore): TtsResumeOutcome
+    {
+        if ($request->getStatus()->isNot(TtsRequestStatus::Processing)) {
+            return TtsResumeOutcome::Skipped;
+        }
+        $requestId = (string) $request->getId();
+        $chunks = $this->chunkRepo->findAllByRequest($requestId);
+        if ($chunks->isEmpty()) {
+            return TtsResumeOutcome::NoChunks;
+        }
+        foreach ($chunks as $chunk) {
+            if ($chunk->getStatus()->is(TtsChunkStatus::Failed)) {
+                return TtsResumeOutcome::HasFailed;
+            }
+        }
+        foreach ($chunks as $chunk) {
+            $startedAt = $chunk->getStartedAt();
+            if ($chunk->getStatus()->is(TtsChunkStatus::Processing) && null !== $startedAt && $startedAt < $processingStaleBefore) {
+                $this->chunkManager->markPending($chunk);
+            }
+        }
+        $next = $this->chunkRepo->findNextPending($requestId);
+        if (null !== $next) {
+            $this->messageBus->dispatch(new TtsSynthChunkMessage((string) $next->getId()));
+
+            return TtsResumeOutcome::Redispatched;
+        }
+        $this->finalizeRequest($request);
+
+        return TtsResumeOutcome::Finalized;
     }
 
     private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void

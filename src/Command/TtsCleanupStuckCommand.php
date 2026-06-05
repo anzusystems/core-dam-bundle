@@ -7,50 +7,57 @@ namespace AnzuSystems\CoreDamBundle\Command;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsCancellationFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsRequestFailer;
-use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Helper\DateTimeHelper;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
-use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * Recovers TTS requests left stranded by a crashed worker (the claim/synthesis windows run outside one
- * transaction, so an ungraceful kill can't be unwound inline):
- *  - regen stuck in 'superseding' → cancel (the old audio is still valid),
- *  - initial stuck in 'processing' → fail (frees the idempotency key for a fresh dispatch),
- *  - request stuck in 'waiting' → fail (dispatch/plan message lost),
- *  - a synthesis chunk stuck pending/processing → fail its parent request.
+ * Reconcile TTS requests stalled by a crashed/restarted worker or a lost Pub/Sub message (the claim and
+ * synthesis windows run outside one transaction, so an ungraceful kill leaves the chain mid-flight).
  *
- * The threshold must stay well above the worker time-limit so in-flight requests are never touched.
+ * Recovery first, give-up second:
+ *  - Processing with no chunk activity since `--older-than` → RESUME (re-dispatch the next pending chunk,
+ *    re-arm a chunk stuck mid-synth, or finalize when all chunks are done) — idempotent,
+ *  - Waiting since `--older-than` → RESUME (re-dispatch the plan message),
+ *  - anything stalled past `--hard-cap` → FAIL (frees the idempotency key for a fresh dispatch),
+ *  - a chunk genuinely Failed → FAIL its parent request,
+ *  - regen stuck in 'superseding' past `--hard-cap` → cancel (the old audio is still valid).
+ *
+ * `--older-than` must exceed a single chunk's synth time (seconds) so an in-flight chunk is never reset;
+ * requests still advancing have a recently-modified chunk and are skipped entirely.
  *
  * Usage:
  *   bin/console anzu-dam:tts:cleanup-stuck
- *   bin/console anzu-dam:tts:cleanup-stuck --older-than=30m
- *   bin/console anzu-dam:tts:cleanup-stuck --older-than=2h --dry-run
+ *   bin/console anzu-dam:tts:cleanup-stuck --older-than=5m --hard-cap=1h
+ *   bin/console anzu-dam:tts:cleanup-stuck --dry-run
  */
 #[AsCommand(
     name: 'anzu-dam:tts:cleanup-stuck',
-    description: 'Recover TTS requests stuck after a crashed worker (regen superseding, initial/waiting, stuck chunks)',
+    description: 'Reconcile stalled TTS requests: resume recoverable ones, fail/cancel those past the hard cap',
 )]
 final class TtsCleanupStuckCommand extends Command
 {
     private const string OPT_OLDER_THAN = 'older-than';
+    private const string OPT_HARD_CAP = 'hard-cap';
     private const string OPT_DRY_RUN = 'dry-run';
     private const int BATCH_LIMIT = 200;
 
     public function __construct(
         private readonly TtsAssetRepository $ttsAssetRepository,
         private readonly TtsNarrationRequestRepository $requestRepository,
-        private readonly TtsSynthesisChunkRepository $chunkRepository,
+        private readonly TtsRequestOrchestrator $orchestrator,
         private readonly TtsCancellationFacade $cancelRequest,
         private readonly TtsRequestFailer $requestFailer,
+        private readonly MessageBusInterface $messageBus,
     ) {
         parent::__construct();
     }
@@ -62,7 +69,14 @@ final class TtsCleanupStuckCommand extends Command
                 self::OPT_OLDER_THAN,
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Duration threshold for "stuck" — e.g. 1h, 30m, 2h30m',
+                'Stale threshold for resume — e.g. 5m, 2m, 10m',
+                '5m',
+            )
+            ->addOption(
+                self::OPT_HARD_CAP,
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Give-up threshold — stalled longer than this is failed/cancelled instead of resumed',
                 '1h',
             )
             ->addOption(
@@ -78,30 +92,29 @@ final class TtsCleanupStuckCommand extends Command
     {
         App::throwOnReadOnlyMode();
 
-        $olderThanStr = (string) $input->getOption(self::OPT_OLDER_THAN);
         $dryRun = (bool) $input->getOption(self::OPT_DRY_RUN);
-
-        $interval = DateTimeHelper::parseDurationToInterval($olderThanStr);
-        if (null === $interval) {
-            $output->writeln(sprintf('<error>Cannot parse duration "%s". Use e.g. 1h, 30m, 2h30m.</error>', $olderThanStr));
+        $staleInterval = DateTimeHelper::parseDurationToInterval((string) $input->getOption(self::OPT_OLDER_THAN));
+        $hardCapInterval = DateTimeHelper::parseDurationToInterval((string) $input->getOption(self::OPT_HARD_CAP));
+        if (null === $staleInterval || null === $hardCapInterval) {
+            $output->writeln('<error>Cannot parse duration. Use e.g. 5m, 1h, 2h30m.</error>');
 
             return Command::FAILURE;
         }
 
-        $threshold = (new DateTimeImmutable())->sub($interval);
+        $now = new DateTimeImmutable();
+        $staleBefore = $now->sub($staleInterval);
+        $hardCapBefore = $now->sub($hardCapInterval);
 
-        $regenCount = $this->cleanupStuckRegens($threshold, $dryRun, $output);
-        $initialCount = $this->cleanupStuckInitials($threshold, $dryRun, $output);
-        $waitingCount = $this->cleanupStuckWaiting($threshold, $dryRun, $output);
-        $chunkCount = $this->cleanupStuckChunks($threshold, $dryRun, $output);
+        $regenCount = $this->cancelStuckRegens($hardCapBefore, $dryRun, $output);
+        $waitingCount = $this->reconcileWaiting($staleBefore, $hardCapBefore, $dryRun, $output);
+        $processingCount = $this->reconcileProcessing($staleBefore, $hardCapBefore, $dryRun, $output);
 
         $output->writeln(sprintf(
-            '%s: %d regen + %d initial + %d waiting + %d chunk-stalled request(s) processed%s.',
+            '%s: %d regen-cancelled + %d waiting + %d processing request(s) reconciled%s.',
             $dryRun ? 'DRY RUN' : 'DONE',
             $regenCount,
-            $initialCount,
             $waitingCount,
-            $chunkCount,
+            $processingCount,
             $dryRun ? ' (no changes made)' : App::EMPTY_STRING,
         ));
 
@@ -109,19 +122,72 @@ final class TtsCleanupStuckCommand extends Command
     }
 
     /**
-     * Requests stuck in Waiting (dispatch/plan message lost — at-most-once transport) → fail.
+     * Processing requests whose chain stopped advancing. Past the hard cap → fail; a genuinely failed
+     * chunk → fail; otherwise resume (re-dispatch next pending / re-arm stuck chunk / finalize).
      */
-    private function cleanupStuckWaiting(DateTimeImmutable $threshold, bool $dryRun, OutputInterface $output): int
-    {
+    private function reconcileProcessing(
+        DateTimeImmutable $staleBefore,
+        DateTimeImmutable $hardCapBefore,
+        bool $dryRun,
+        OutputInterface $output,
+    ): int {
         $count = 0;
-        foreach ($this->requestRepository->findStuckWaiting($threshold, self::BATCH_LIMIT) as $request) {
-            if (false === $dryRun) {
-                $this->requestFailer->fail($request, 'Stuck in waiting beyond cleanup threshold (dispatch lost).');
+        foreach ($this->requestRepository->findStalledProcessing($staleBefore, self::BATCH_LIMIT) as $request) {
+            $requestId = (string) $request->getId();
+
+            if ($request->getCreatedAt() < $hardCapBefore) {
+                if (false === $dryRun) {
+                    $this->requestFailer->fail($request, 'Processing stalled beyond hard cap.');
+                }
+                $output->writeln(sprintf('%s processing request %s (hard cap)', $dryRun ? '[dry-run] Would fail' : 'Failed', $requestId));
+                ++$count;
+
+                continue;
+            }
+
+            if ($dryRun) {
+                $output->writeln(sprintf('[dry-run] Would resume processing request %s', $requestId));
+                ++$count;
+
+                continue;
+            }
+
+            $result = $this->orchestrator->resumeStalled($request, $staleBefore);
+            if ($result->isUnrecoverable()) {
+                $this->requestFailer->fail($request, sprintf('Unrecoverable stalled request (%s).', $result->value));
+            }
+            $output->writeln(sprintf('Reconciled processing request %s: %s', $requestId, $result->value));
+            ++$count;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Requests left in Waiting (plan/dispatch message lost). Past the hard cap → fail (frees the
+     * idempotency key); otherwise re-dispatch the plan message — the claim guard makes it idempotent.
+     */
+    private function reconcileWaiting(
+        DateTimeImmutable $staleBefore,
+        DateTimeImmutable $hardCapBefore,
+        bool $dryRun,
+        OutputInterface $output,
+    ): int {
+        $count = 0;
+        foreach ($this->requestRepository->findStuckWaiting($staleBefore, self::BATCH_LIMIT) as $request) {
+            $requestId = (string) $request->getId();
+            $pastHardCap = $request->getCreatedAt() < $hardCapBefore;
+
+            if (false === $dryRun && $pastHardCap) {
+                $this->requestFailer->fail($request, 'Stuck in waiting beyond hard cap (dispatch lost).');
+            }
+            if (false === $dryRun && false === $pastHardCap) {
+                $this->messageBus->dispatch(new TtsNarrationRequestMessage($requestId));
             }
             $output->writeln(sprintf(
                 '%s waiting request %s',
-                $dryRun ? '[dry-run] Would fail' : 'Failed',
-                (string) $request->getId(),
+                $dryRun ? '[dry-run] Would reconcile' : ($pastHardCap ? 'Failed' : 'Re-dispatched'),
+                $requestId,
             ));
             ++$count;
         }
@@ -130,44 +196,11 @@ final class TtsCleanupStuckCommand extends Command
     }
 
     /**
-     * Multi-chunk requests with a chunk stuck Pending (chain dispatch lost) or Processing (worker crashed
-     * mid-synth) → fail the parent request once. No resume — the caller re-dispatches.
+     * Regen left in 'superseding' past the hard cap → cancel the active regen (the old audio is valid).
      */
-    private function cleanupStuckChunks(DateTimeImmutable $threshold, bool $dryRun, OutputInterface $output): int
+    private function cancelStuckRegens(DateTimeImmutable $hardCapBefore, bool $dryRun, OutputInterface $output): int
     {
-        /** @var array<string, TtsNarrationRequest> $stalled */
-        $stalled = [];
-        $stuckBatches = [
-            $this->chunkRepository->findStuckPending($threshold, self::BATCH_LIMIT),
-            $this->chunkRepository->findStuckProcessing($threshold, self::BATCH_LIMIT),
-        ];
-        foreach ($stuckBatches as $stuckChunks) {
-            foreach ($stuckChunks as $chunk) {
-                $request = $chunk->getRequest();
-                if ($request->getStatus()->in(TtsRequestStatus::TERMINAL_STATUSES)) {
-                    continue;
-                }
-                $stalled[(string) $request->getId()] = $request;
-            }
-        }
-
-        foreach ($stalled as $requestId => $request) {
-            if (false === $dryRun) {
-                $this->requestFailer->fail($request, 'A synthesis chunk stalled beyond cleanup threshold.');
-            }
-            $output->writeln(sprintf(
-                '%s chunk-stalled request %s',
-                $dryRun ? '[dry-run] Would fail' : 'Failed',
-                $requestId,
-            ));
-        }
-
-        return count($stalled);
-    }
-
-    private function cleanupStuckRegens(DateTimeImmutable $threshold, bool $dryRun, OutputInterface $output): int
-    {
-        $ttsAssets = $this->ttsAssetRepository->findStuckSuperseding($threshold, self::BATCH_LIMIT);
+        $ttsAssets = $this->ttsAssetRepository->findStuckSuperseding($hardCapBefore, self::BATCH_LIMIT);
 
         $stableAssetIds = [];
         foreach ($ttsAssets as $ttsAsset) {
@@ -193,26 +226,6 @@ final class TtsCleanupStuckCommand extends Command
                 $dryRun ? '[dry-run] Would cancel' : 'Cancelled',
                 $requestId,
                 $assetId,
-            ));
-            ++$count;
-        }
-
-        return $count;
-    }
-
-    private function cleanupStuckInitials(DateTimeImmutable $threshold, bool $dryRun, OutputInterface $output): int
-    {
-        $count = 0;
-        foreach ($this->requestRepository->findStuckInitialProcessing($threshold, self::BATCH_LIMIT) as $request) {
-            $requestId = (string) $request->getId();
-            if (false === $dryRun) {
-                $this->requestFailer->fail($request, 'Stuck in processing beyond cleanup threshold.');
-            }
-            $output->writeln(sprintf(
-                '%s initial request %s (asset %s)',
-                $dryRun ? '[dry-run] Would fail' : 'Failed',
-                $requestId,
-                (string) $request->getAssetId(),
             ));
             ++$count;
         }

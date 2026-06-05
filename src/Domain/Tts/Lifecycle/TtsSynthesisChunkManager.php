@@ -43,6 +43,19 @@ final class TtsSynthesisChunkManager extends AbstractManager
         return $chunk;
     }
 
+    /**
+     * Re-arm a chunk whose worker died mid-synth (stuck Processing) back to Pending so the reconcile
+     * sweep can re-dispatch it. Clears startedAt so staleness detection restarts cleanly.
+     */
+    public function markPending(TtsSynthesisChunk $chunk, bool $flush = true): TtsSynthesisChunk
+    {
+        $chunk->setStatus(TtsChunkStatus::Pending)->setStartedAt(null);
+        $this->trackModification($chunk);
+        $this->flush($flush);
+
+        return $chunk;
+    }
+
     public function markFailed(TtsSynthesisChunk $chunk, string $reason, bool $flush = true): TtsSynthesisChunk
     {
         $chunk->setStatus(TtsChunkStatus::Failed)->setFailureReason($reason);
