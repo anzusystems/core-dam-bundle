@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioRetentionFacade;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -27,6 +28,8 @@ final class TtsClearExpiredAudioCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        App::throwOnReadOnlyMode();
+
         $output->writeln(
             sprintf(
                 'Deleting expired TTS audio. Deleted count (%d).',

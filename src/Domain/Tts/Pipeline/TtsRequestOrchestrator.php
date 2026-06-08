@@ -34,6 +34,7 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
@@ -53,7 +54,6 @@ use Closure;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
-use RuntimeException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Throwable;
 
@@ -207,11 +207,16 @@ final readonly class TtsRequestOrchestrator
                 return TtsResumeOutcome::HasFailed;
             }
         }
+        $rearmed = false;
         foreach ($chunks as $chunk) {
             $startedAt = $chunk->getStartedAt();
             if ($chunk->getStatus()->is(TtsChunkStatus::Processing) && null !== $startedAt && $startedAt < $processingStaleBefore) {
-                $this->chunkManager->markPending($chunk);
+                $this->chunkManager->markPending($chunk, flush: false);
+                $rearmed = true;
             }
+        }
+        if ($rearmed) {
+            $this->entityManager->flush();
         }
         $next = $this->chunkRepo->findNextPending($requestId);
         if (null !== $next) {
@@ -441,7 +446,7 @@ final readonly class TtsRequestOrchestrator
         }
 
         foreach (array_unique($request->getAuthors()) as $name) {
-            $author = $this->authorProvider->provideByTitle($name, $extSystem);
+            $author = $this->authorProvider->provideByTitle($name, $extSystem, flush: false);
             if ($author instanceof Author) {
                 $asset->addAuthor($author);
                 $changed = true;

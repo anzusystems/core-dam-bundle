@@ -48,7 +48,7 @@ final class PodcastEpisodeController extends AbstractApiController
     }
 
     #[Route('/{podcastEpisode}', name: 'get_one', methods: [Request::METHOD_GET])]
-    #[OAParameterPath('podcast'), OAResponse(Podcast::class)]
+    #[OAParameterPath('podcastEpisode'), OAResponse(PodcastEpisode::class)]
     public function getOne(PodcastEpisode $podcastEpisode): JsonResponse
     {
         $this->denyAccessUnlessGranted(DamPermissions::DAM_PODCAST_EPISODE_READ, $podcastEpisode);

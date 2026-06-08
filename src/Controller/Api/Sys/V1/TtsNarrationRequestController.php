@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Sys\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
@@ -35,7 +36,7 @@ final class TtsNarrationRequestController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route(path: '', name: 'dispatch', methods: [Request::METHOD_POST])]
-    #[OARequest(TtsSynthesizeRequestDto::class), OAResponseValidation]
+    #[OARequest(TtsSynthesizeRequestDto::class), OAResponse(SynthesizeResponseDto::class), OAResponseValidation]
     public function dispatch(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();

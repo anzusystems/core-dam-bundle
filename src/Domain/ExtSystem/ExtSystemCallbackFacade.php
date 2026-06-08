@@ -126,7 +126,18 @@ final class ExtSystemCallbackFacade
             return;
         }
 
-        $this->getCallback($extSystem->getSlug())?->notifyMediaStatus($assetId, $status, $failureReason);
+        $callback = $this->getCallback($extSystem->getSlug());
+        if (null === $callback) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.noCallbackRegistered', [
+                'extSystemId' => $extSystemId,
+                'slug' => $extSystem->getSlug(),
+                'assetId' => $assetId,
+            ]);
+
+            return;
+        }
+
+        $callback->notifyMediaStatus($assetId, $status, $failureReason);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

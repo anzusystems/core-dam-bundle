@@ -75,7 +75,7 @@ final class TtsNarrationRequestController extends AbstractApiController
      * @throws ValidationException
      */
     #[Route('/synthesize', name: 'synthesize', methods: [Request::METHOD_POST])]
-    #[OARequest(TtsSynthesizeRequestDto::class), OAResponseValidation]
+    #[OARequest(TtsSynthesizeRequestDto::class), OAResponse(SynthesizeResponseDto::class), OAResponseValidation]
     public function synthesize(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();

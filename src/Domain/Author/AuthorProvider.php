@@ -18,7 +18,7 @@ final readonly class AuthorProvider
     ) {
     }
 
-    public function provideByTitle(string $title, ExtSystem $extSystem): ?Author
+    public function provideByTitle(string $title, ExtSystem $extSystem, bool $flush = true): ?Author
     {
         $title = StringHelper::parseString(input: $title, length: Author::NAME_MAX_LENGTH);
         if (empty($title)) {
@@ -40,6 +40,7 @@ final readonly class AuthorProvider
             author: (new Author())
                 ->setExtSystem($extSystem)
                 ->setName($title),
+            flush: $flush,
         );
     }
 

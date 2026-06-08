@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Exception;
 
-use Exception;
+use AnzuSystems\Contracts\Exception\AnzuException;
 
 /** Thrown when a hard delete would orphan dependent rows; surfaced as HTTP 422. */
-final class DependencyExistsException extends Exception
+final class DependencyExistsException extends AnzuException
 {
     public const string ERROR_MESSAGE = 'dependency_exists_error';
 

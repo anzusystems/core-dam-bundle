@@ -56,8 +56,8 @@ final class TtsAssetController extends AbstractApiController
     #[OAParameterPath('asset'), OARequest(TtsRegenerateRequestDto::class), OAResponse(TtsNarrationRequest::class), OAResponseValidation]
     public function regenerate(Request $request, Asset $asset, #[SerializeParam] TtsRegenerateRequestDto $dto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_REGENERATE, $asset);
         App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_REGENERATE, $asset);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         $narrationRequest = $this->regenerateTts->regenerate(
@@ -76,8 +76,8 @@ final class TtsAssetController extends AbstractApiController
     #[OAParameterPath('asset'), OAResponseValidation]
     public function unpublish(Request $request, Asset $asset): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_UNPUBLISH, $asset);
         App::throwOnReadOnlyMode();
+        $this->denyAccessUnlessGranted(DamPermissions::DAM_TTS_ASSET_UNPUBLISH, $asset);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $asset);
 
         $this->unpublishTtsAsset->unpublish(
