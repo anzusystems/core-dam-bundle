@@ -28,10 +28,8 @@ final class TtsAsset implements TimeTrackingInterface
     #[ORM\JoinColumn(name: 'asset_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     private Asset $asset;
 
-    /**
-     * Generation-time snapshot; eager to avoid N+1 on SYS list.
-     */
-    #[ORM\ManyToOne(targetEntity: VoiceFamily::class, fetch: 'EAGER')]
+    /** Generation-time snapshot; serialized as bare id, so a LAZY proxy id is enough (no extra load). */
+    #[ORM\ManyToOne(targetEntity: VoiceFamily::class)]
     #[ORM\JoinColumn(name: 'voice_family_id', referencedColumnName: 'id', nullable: false)]
     #[Serialize(handler: EntityIdHandler::class)]
     private VoiceFamily $voiceFamily;
