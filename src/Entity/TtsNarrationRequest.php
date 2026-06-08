@@ -21,10 +21,7 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * Standalone TTS request — NOT a {@see Job} subtype. Owns its own async lifecycle via Messenger;
- * the produced artifact is a {@see TtsAsset} linked via {@see assetId} (success indicated by status Done).
- */
+/** Standalone TTS narration request; async lifecycle via Messenger, artifact is {@see TtsAsset}. */
 #[ORM\Entity(repositoryClass: TtsNarrationRequestRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_tts_request_initial_idempotency_key', fields: ['initialIdempotencyKey'])]
 #[ORM\Index(name: 'IDX_tts_request_status_mode_started', fields: ['status', 'mode', 'startedAt'])]
@@ -55,16 +52,13 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     private ?string $failureReason;
 
     /**
-     * In-flight idempotency guard for Initial dispatch (content-addressed: licenceId+sourceTextHash+
-     * voiceFamilySlug); cleared on terminal so the slot frees up for a fresh dispatch.
+     * Content-addressed idempotency key (licenceId+textHash+voiceSlug); cleared on terminal.
      */
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
     private ?string $initialIdempotencyKey;
 
     /**
-     * The asset this request targets: the file-less shell reserved at dispatch (Initial) or the existing
-     * stable asset being regenerated (Regenerate). The same id is kept alive across the regenerate swap;
-     * whether the request succeeded is read from {@see status} (Done), not from a separate result column.
+     * Shell asset (Initial) or stable asset being regenerated; success indicated by status Done.
      */
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]
@@ -87,60 +81,50 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private ?string $title;
 
-    /**
-     * Asset description (e.g. article perex); applied once on initial generation.
-     */
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]
     private ?string $description;
 
     /**
-     * @var string[] caller keyword names, matched + linked on initial generation
+     * @var string[]
      */
     #[ORM\Column(type: Types::JSON)]
     #[Serialize]
     private array $keywords = [];
 
     /**
-     * @var string[] caller author display names, best-effort matched on initial generation
+     * @var string[]
      */
     #[ORM\Column(type: Types::JSON)]
     #[Serialize]
     private array $authors = [];
 
     /**
-     * Cooperative cancel flag — orchestrator checks it before destructive swap.
+     * Cooperative cancel: orchestrator checks before destructive swap.
      */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
     private bool $cancelRequested;
 
-    /**
-     * Podcast IDs to attach this asset to after synthesis. Stored as JSON array of integers.
-     * CMS computes the list at dispatch time; DAM applies it generically post-synthesis.
-     */
     #[ORM\Column(type: Types::JSON)]
     #[Serialize]
     private array $podcastIds = [];
 
     /**
-     * Text to synthesize. Nullified at terminal status (audit copy lives on {@see TtsAsset::$sourceTextSnapshot}).
+     * Nullified at terminal status; audit copy lives on {@see TtsAsset::$sourceTextSnapshot}.
      */
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Serialize]
     private ?string $sourceText;
 
     /**
-     * Transient (non-persisted) — populated by the Adm getOne controller after a repo join.
-     * Serialized into the API response to avoid a separate DTO wrapper.
-     * No ORM mapping on purpose: Doctrine ignores unmapped properties.
+     * Transient; populated by Adm getOne controller after repo join (no ORM mapping).
      */
     #[Serialize]
     private ?TtsAsset $ttsAsset = null;
 
     /**
-     * Transient (non-persisted) — derived chunk progress populated by the Adm getOne controller.
-     * Null for single-run requests (no chunk rows).
+     * Transient; derived chunk progress, null for single-run requests.
      */
     #[Serialize]
     private ?TtsChunkProgress $chunkProgress = null;

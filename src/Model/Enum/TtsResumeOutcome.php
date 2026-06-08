@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Enum;
 
-/**
- * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator::resumeStalled()} —
- * drives the reconcile command's fail-vs-log decision and the cron output label.
- */
+/** Outcome of TtsRequestOrchestrator::resumeStalled(); drives reconcile command fail-vs-log decision. */
 enum TtsResumeOutcome: string
 {
     case Skipped = 'skip';

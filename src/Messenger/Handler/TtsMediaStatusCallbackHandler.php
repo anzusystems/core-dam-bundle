@@ -8,10 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsMediaStatusCallbackMessage;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * Delivers a TTS media-status callback to the ext-system. Calls the throwing {@see ExtSystemCallbackFacade::notifyMediaStatus()}
- * so a failed delivery (CMS unreachable) bubbles up and the transport retries it — the standard pub/sub flow.
- */
+/** Delivers TTS media-status callback to ext-system; lets exceptions bubble so the transport retries. */
 #[AsMessageHandler]
 final readonly class TtsMediaStatusCallbackHandler
 {

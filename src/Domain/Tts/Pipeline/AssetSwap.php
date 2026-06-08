@@ -22,12 +22,7 @@ use DateTimeImmutable;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Atomic regeneration promote: the freshly-published audio is slotted into the stable asset's master/preview
- * slots and the previous files demoted with a grace {@see AssetFile::setExpireAt()} (old CDN URLs keep
- * streaming until the cron reaps them). Asset id (CMS media key) never changes. Runs under PESSIMISTIC_WRITE
- * and aborts on a concurrent cancel.
- */
+/** Atomic regen promote: slots new audio, demotes old with grace expireAt; aborts on concurrent cancel. */
 final readonly class AssetSwap
 {
     public function __construct(
@@ -90,15 +85,12 @@ final readonly class AssetSwap
     }
 
     /**
-     * Points the slot at the freshly-built file and stamps the demoted previous file with the grace expireAt.
-     *
      * @return string|null the demoted file id (null when the slot had no previous file)
      */
     private function demoteAndReplace(Asset $stableAsset, AudioFile $newFile, string $slotName, DateTimeImmutable $expireAt): ?string
     {
         $previous = $this->assetSlotFactory->replaceSlotFile($stableAsset, $newFile, $slotName);
-        // The new file was created with a safety expireAt (so a pre-swap crash leaves it reapable, not orphaned);
-        // now that it is live on the slot, clear it.
+        // Now live on slot — clear the safety expireAt.
         $newFile->setExpireAt(null);
 
         if (null === $previous) {

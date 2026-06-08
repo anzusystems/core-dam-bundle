@@ -35,6 +35,7 @@ use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsAudioCreationInput;
@@ -96,9 +97,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Plan step (runs after the request is claimed Processing): resolve voice, chunk the text, then either
-     * synthesise inline (single chunk — the common case, one worker run like before) or persist one chunk
-     * row per chunk and fan out per-chunk messages so each chunk gets its own run.
+     * Resolve voice, chunk text, synthesise inline (single chunk) or fan-out per-chunk messages.
      */
     public function plan(TtsNarrationRequest $request): void
     {
@@ -131,9 +130,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Synthesise one already-claimed chunk: provider call (outside any tx) → persist blob → mark Done →
-     * dispatch the next chunk, or (last chunk) assemble + finalize inline. Throwing bubbles to the handler
-     * which fails the whole request.
+     * Provider call → persist blob → mark Done → dispatch next chunk, or assemble + finalize on last.
      */
     public function processChunk(TtsSynthesisChunk $chunk): void
     {
@@ -162,13 +159,12 @@ final readonly class TtsRequestOrchestrator
             return;
         }
 
-        // Last chunk — assemble + finalize. Shared with the reconcile sweep, idempotent.
+        // Last chunk — assemble + finalize (shared with reconcile sweep, idempotent).
         $this->finalizeRequest($request);
     }
 
     /**
-     * Concat the Done chunk blobs into the master and run the standard finalize, then purge chunks.
-     * Idempotent: bails if the request already left Processing, so a reconcile re-run is a no-op.
+     * Concat Done chunks into master and finalize; bails if request left Processing (idempotent).
      */
     public function finalizeRequest(TtsNarrationRequest $request): void
     {
@@ -176,6 +172,16 @@ final readonly class TtsRequestOrchestrator
             return;
         }
         $requestId = (string) $request->getId();
+        // Refuse to assemble while any chunk is still unfinished — a truncated master must not be published.
+        $counts = $this->chunkRepo->progressCounts($requestId);
+        if ($counts['total'] > 0 && $counts['done'] < $counts['total']) {
+            throw new RuntimeException(sprintf(
+                'Refusing to finalize request "%s": only %d of %d chunks are done.',
+                $requestId,
+                $counts['done'],
+                $counts['total'],
+            ));
+        }
         $extSystem = $request->getLicence()->getExtSystem();
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $master = $this->chunkStorage->concatToMaster($extSystem, $this->chunkRepo->findAllDoneOrdered($requestId));
@@ -184,9 +190,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Reconcile one stalled Processing request (reconcile sweep). Idempotent — the chunk claim guard
-     * absorbs duplicate dispatch, finalize bails if already terminal. Returns a short action label.
-     * Resets a chunk left Processing past the stale window (its worker died mid-synth) so it re-runs.
+     * Reconcile a stalled Processing request; resets chunks whose worker died past the stale window.
      */
     public function resumeStalled(TtsNarrationRequest $request, DateTimeImmutable $processingStaleBefore): TtsResumeOutcome
     {
@@ -196,7 +200,7 @@ final readonly class TtsRequestOrchestrator
         $requestId = (string) $request->getId();
         $chunks = $this->chunkRepo->findAllByRequest($requestId);
         if ($chunks->isEmpty()) {
-            return TtsResumeOutcome::NoChunks;
+            return $this->recoverChunkless($request);
         }
         foreach ($chunks as $chunk) {
             if ($chunk->getStatus()->is(TtsChunkStatus::Failed)) {
@@ -218,6 +222,33 @@ final readonly class TtsRequestOrchestrator
         $this->finalizeRequest($request);
 
         return TtsResumeOutcome::Finalized;
+    }
+
+    /**
+     * Re-plan a chunkless Processing request (worker died before persisting) only if the asset has no audio yet.
+     */
+    private function recoverChunkless(TtsNarrationRequest $request): TtsResumeOutcome
+    {
+        $asset = $this->assetRepo->find((string) $request->getAssetId());
+        if (null === $asset || $this->assetHasAudio($asset)) {
+            return TtsResumeOutcome::NoChunks;
+        }
+
+        $this->requestManager->markWaiting($request);
+        $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $request->getId()));
+
+        return TtsResumeOutcome::Redispatched;
+    }
+
+    private function assetHasAudio(Asset $asset): bool
+    {
+        foreach ($asset->getSlots() as $slot) {
+            if (null !== $slot->getAudio()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
@@ -256,7 +287,7 @@ final readonly class TtsRequestOrchestrator
     {
         $licence = $request->getLicence();
         $extSystem = $licence->getExtSystem();
-        // The file-less audio shell reserved at dispatch — its id is the one CMS already holds.
+        // Shell asset reserved at dispatch — its id is the one CMS already holds.
         $shellAsset = $this->resolveTargetAsset($request);
         $family = $voice->getVoiceFamily();
         $sourceText = (string) $request->getSourceText();
@@ -267,12 +298,11 @@ final readonly class TtsRequestOrchestrator
             $created->asset->getAssetFlags()->setTtsAudio(true);
         });
 
-        // Must be materialized + public before Done — a failure here is a real generation failure.
+        // Must be materialized + public before Done — failure here is a real generation failure.
         $this->materializeMasterAudio($result->masterAudio, $result->masterTmpFile, dispatchPropertyRefresh: false);
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
-        // Published master = generation succeeded → commit Done now so the best-effort enrichment below
-        // can't flip it to Failed or skip the CMS success callback.
+        // Commit Done now so best-effort enrichment below can't flip it to Failed.
         $this->requestManager->markDone($request);
 
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
@@ -302,12 +332,10 @@ final readonly class TtsRequestOrchestrator
 
         $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $master, $family, $voice, $licence);
 
-        // Safety expiry stamped on the new (unslotted) files so a crash before the swap leaves them reapable
-        // by the grace cron; AssetSwap::promote() clears it when they go live.
+        // Safety expiry on unslotted files; AssetSwap::promote() clears it when they go live.
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
 
-        // Build + publish the new master/preview but DON'T slot them yet — the live asset keeps serving the
-        // old audio until the atomic promote below, so a failure here leaves the old narration intact.
+        // Build + publish new master/preview without slotting — failure leaves old narration intact.
         $built = $this->entityManager->wrapInTransaction(
             fn (): TtsAudioCreationResult => $this->ttsAudioFactory->buildReplacementMaster($input, $stableAsset, $stableTts, $orphanExpireAt)
         );
@@ -320,7 +348,7 @@ final readonly class TtsRequestOrchestrator
 
             $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile, expireAt: $orphanExpireAt);
 
-            // Cancel check + atomic repoint to the new files; the old files are demoted with a grace expireAt.
+            // Atomic repoint; old files demoted with grace expireAt.
             $this->assetSwap->promote(
                 (string) $stableAsset->getId(),
                 $built->masterAudio,
@@ -335,7 +363,7 @@ final readonly class TtsRequestOrchestrator
             throw $e;
         }
 
-        // Swap is the point of no return → commit Done now so best-effort enrichment can't flip it to Failed.
+        // Swap is point of no return — commit Done so best-effort enrichment can't flip it to Failed.
         $this->requestManager->markDone($request);
 
         $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $family): void {
@@ -350,13 +378,13 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Attaches the preview onto the initial asset's empty preview slot (regen repoints via {@see AssetSwap::promote()}).
+     * Attaches preview onto the initial asset's preview slot (regen repoints via AssetSwap::promote()).
      */
     private function attachPreviewSlot(Asset $asset, AudioFile $preview): void
     {
         $this->entityManager->wrapInTransaction(function () use ($asset, $preview): void {
             $this->assetSlotFactory->replaceSlotFile($asset, $preview, $this->config->getPreviewSlotName());
-            // Slotted (live) → clear the safety expireAt.
+            // Now live on slot — clear the safety expireAt.
             $preview->setExpireAt(null);
             $this->entityManager->flush();
         });
@@ -379,8 +407,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Adds the current family's keywords onto the asset (additive, idempotent). A later family change does
-     * not prune already-applied keywords.
+     * Adds the family's keywords to the asset (additive, idempotent; prior keywords are not pruned).
      */
     private function syncFamilyKeywords(Asset $asset, VoiceFamily $family): void
     {
@@ -400,7 +427,6 @@ final readonly class TtsRequestOrchestrator
 
     /**
      * Links caller keyword/author names on initial generation (provide-or-create, de-duplicated).
-     * The auto-keyword is separate ({@see ensureAutoKeyword}) so it survives regen.
      */
     private function applyInitialMetadata(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem): void
     {
@@ -424,7 +450,7 @@ final readonly class TtsRequestOrchestrator
 
         if ($changed) {
             $this->entityManager->flush();
-            // Bulk-index the keyword/author entities here — the providers no longer index per-item.
+            // Bulk-index keyword/author entities — providers no longer index per-item.
             $indexEntities = array_values([...$asset->getAuthors(), ...$asset->getKeywords()]);
             if ([] !== $indexEntities) {
                 $this->indexManager->indexBulk($indexEntities);
@@ -433,8 +459,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Attaches the ext-system auto-keyword (in-memory; caller flushes). Idempotent; re-run on regen since
-     * the family reconcile can drop a keyword equal to it.
+     * Attaches the ext-system auto-keyword in-memory; caller flushes. Re-run on regen (family reconcile can drop it).
      *
      * @return bool whether it was (re-)added
      */
@@ -456,9 +481,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Runs the synthesised audio through the standard pipeline ({@see AudioStatusFacade::storeAndProcess()}),
-     * which swallows failures into a Failed status instead of throwing — so assert Processed and throw
-     * otherwise, letting the worker handler mark the request Failed.
+     * storeAndProcess swallows failures into Failed status — assert Processed and throw otherwise.
      */
     private function materializeMasterAudio(AudioFile $audioFile, AdapterFile $tmpFile, bool $dispatchPropertyRefresh): void
     {
@@ -479,8 +502,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Runs a post-commit step that must not undo the committed generation: on failure it logs and swallows,
-     * so a flaky enrichment can't flip a succeeded request to Failed.
+     * Logs and swallows failures so a flaky enrichment step can't flip a succeeded request to Failed.
      */
     private function bestEffort(string $step, TtsNarrationRequest $request, Asset $asset, Closure $work): void
     {

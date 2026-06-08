@@ -12,9 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-/**
- * Manual error handling (not loggedRequest): the response carries large base64 audio that would bloat journal logs.
- */
+/** Manual error handling: base64 audio response would bloat journal logs. */
 final readonly class GoogleTtsClient
 {
     public const string HEADER_AUTHORIZATION = 'Authorization';

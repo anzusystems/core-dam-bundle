@@ -16,11 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
-/**
- * `dam-tts` queue worker. Synth (slow HTTP) and ffmpeg run OUTSIDE any DB transaction — only short
- * persist+commit windows hold locks. Request pipeline lives in {@see TtsRequestOrchestrator};
- * terminal failure handling in {@see TtsRequestFailer}.
- */
+/** dam-tts worker: synth/ffmpeg run outside any DB transaction; only short persist windows hold locks. */
 #[AsMessageHandler]
 final readonly class TtsNarrationRequestHandler
 {
@@ -38,13 +34,11 @@ final readonly class TtsNarrationRequestHandler
     {
         $request = $this->claimForProcessing($message->requestId);
         if (null === $request) {
-            // Either not found (logged inside claim) or already past Waiting — another worker
-            // claimed it via Pub/Sub redelivery. Ack the message and stop.
+            // Not found or already past Waiting (Pub/Sub redelivery race) — ack & stop.
             return;
         }
 
         try {
-            // Plan: resolve voice, chunk the text, then synth inline (1 chunk) or fan out per-chunk messages.
             $this->orchestrator->plan($request);
         } catch (Throwable $e) {
             $this->logger->error(DamLogger::NAMESPACE_TTS, 'handler.requestFailed', [
@@ -52,16 +46,13 @@ final readonly class TtsNarrationRequestHandler
                 'mode' => $request->getMode()->value,
             ], exception: $e);
 
-            // Never rethrow — Messenger retry would re-process a terminal request (initialIdempotencyKey
-            // is already cleared). Callers must dispatch a fresh request for a retry.
+            // Never rethrow — retrying a terminal request is wrong; dispatch a fresh one instead.
             $this->requestFailer->fail($request, $e->getMessage());
         }
     }
 
     /**
-     * Atomic Waiting → Processing transition under a row lock. Required because Pub/Sub may
-     * redeliver the same message (ack-deadline expiry, worker crash mid-processing) — without
-     * this guard two workers would race and double-synthesise.
+     * Atomic Waiting → Processing under row lock; prevents double-synthesis on Pub/Sub redelivery.
      */
     private function claimForProcessing(string $requestId): ?TtsNarrationRequest
     {

@@ -11,11 +11,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsNarrationRequestFixtures;
 use Symfony\Component\Console\Tester\CommandTester;
 
-/**
- * The cron reconciles TTS requests stranded by a lost dispatch message (the {@see TtsNarrationRequestFixtures}
- * seed the stuck state). The test only runs the command and reads the resulting state back — it never mutates
- * the DB itself. Sync messenger transport means a resumed request runs its synthesis inline and completes.
- */
+/** Reconciles stuck requests seeded by {@see TtsNarrationRequestFixtures}: fail past hard-cap, resume within. */
 final class TtsCleanupStuckCommandTest extends AbstractTtsFunctionalTestCase
 {
     private TtsNarrationRequestRepository $requestRepo;
@@ -57,7 +53,7 @@ final class TtsCleanupStuckCommandTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Reads the seeded stuck request and asserts the precondition (still Waiting) before the cron runs.
+     * Loads seeded request and asserts it is still Waiting before the cron runs.
      */
     private function requireStuckWaitingId(string $sourceText): string
     {

@@ -19,21 +19,14 @@ interface TtsProviderInterface
     public function getName(): VoiceDiscriminator;
 
     /**
-     * Synthesises ONE chunk (≤ {@see self::getMaxCharsPerRequest()} chars) into raw MP3 bytes.
-     * Chunking, chunk-storage persistence and ffmpeg concat live one level up in the pipeline so each
-     * chunk can run in its own worker message. `$previousRequestIds` threads ElevenLabs prosody across
-     * the splice (oldest-first, ≤3); the stateless Google provider ignores it.
-     *
-     * @param list<string> $previousRequestIds
+     * @param list<string> $previousRequestIds oldest-first, ≤3; ElevenLabs prosody hint; Google ignores it
      *
      * @throws TtsProviderException
      */
     public function synthesizeChunk(string $text, Voice $voice, ExtSystem $extSystem, array $previousRequestIds): TtsChunkSynthesisResult;
 
     /**
-     * Deterministic, non-HTTP credential + config check — throws if synthesis would fail purely due to
-     * missing/malformed tenant configuration. Called at dispatch time so misconfigured tenants never
-     * persist a {@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest}. MUST NOT make network calls.
+     * Credential + config check (no network calls); called at dispatch time.
      *
      * @throws TtsProviderException
      */

@@ -17,9 +17,7 @@ use RuntimeException;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * Seeds the system-default voice family (slug matches {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Config}
- * test wiring `sme_default_male`) with a single main ElevenLabs voice under the cms ext system. The
- * ElevenLabs HTTP client is mocked in tests, so the external voice id is arbitrary.
+ * Seeds the `sme_default_male` voice family with one main ElevenLabs voice under the cms ext system.
  *
  * @extends AbstractFixtures<VoiceFamily>
  */

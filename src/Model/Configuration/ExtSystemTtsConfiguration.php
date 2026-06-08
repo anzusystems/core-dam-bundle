@@ -6,15 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Configuration;
 
 use AnzuSystems\CoreDamBundle\App;
 
-/**
- * Per-ExtSystem TTS provider credentials. Holds tenant-specific keys for ElevenLabs + Google TTS;
- * lookup happens at synthesis time via {@see \AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider}.
- *
- * `chunkStorageName` names the AnzuSystemsCoreDam storage (defined in app `storages.yaml`) where
- * per-chunk MP3 blobs are persisted during multi-chunk synthesis. Per-extSystem to respect tenant
- * data separation (legal isolation). Mirrors {@see ExtSystemAssetTypeConfiguration::$chunkStorageName}
- * shape used for upload chunks.
- */
+/** Per-ExtSystem TTS credentials (ElevenLabs + Google) and chunk storage name for multi-chunk synthesis. */
 final readonly class ExtSystemTtsConfiguration
 {
     public const string KEY = 'tts';

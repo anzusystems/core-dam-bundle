@@ -26,8 +26,6 @@ final class ExtSystemFacade
      */
     public function update(ExtSystem $extSystem, ExtSystem $newExtSystem): ExtSystem
     {
-        // "belongs to ext system" for ttsFreeAudioEpilogAsset is enforced
-        // declaratively via #[AppAssert\EqualExtSystem] on the entity (validation root = the ExtSystem).
         $this->validator->validate($newExtSystem, $extSystem);
         $this->validateDefaultVoiceFamily($extSystem, $newExtSystem);
         $this->validateTtsFreeAudioEpilogAssetType($newExtSystem->getTtsFreeAudioEpilogAsset());
@@ -36,9 +34,6 @@ final class ExtSystemFacade
     }
 
     /**
-     * Resolves the configured default voice family by id (string id on the embed, not an entity relation)
-     * and asserts it exists and belongs to the ext system.
-     *
      * @throws ValidationException
      */
     private function validateDefaultVoiceFamily(ExtSystem $extSystem, ExtSystem $newExtSystem): void

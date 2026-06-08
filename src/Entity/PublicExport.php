@@ -54,8 +54,6 @@ class PublicExport implements TimeTrackingInterface, UserTrackingInterface, Iden
     private ?AssetLicence $assetLicence = null;
 
     /**
-     * Licences whose content this export serves.
-     *
      * @var Collection<int, AssetLicence>
      */
     #[ORM\ManyToMany(targetEntity: AssetLicence::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]

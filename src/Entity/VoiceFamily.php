@@ -70,8 +70,6 @@ final class VoiceFamily implements UuidIdentifiableInterface, TimeTrackingInterf
     private bool $active;
 
     /**
-     * Keywords auto-applied to every TTS asset narrated with this family.
-     *
      * @var Collection<int, Keyword>
      */
     #[ORM\ManyToMany(targetEntity: Keyword::class, fetch: App::DOCTRINE_EXTRA_LAZY)]

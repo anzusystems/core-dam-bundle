@@ -6,10 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-/**
- * Derived synthesis progress for a multi-chunk request (read projection over tts_synthesis_chunk rows).
- * Absent on single-run requests (no chunk rows) — the request just ran in one worker pass.
- */
+/** Read projection of chunk row counts; absent on single-run requests. */
 final class TtsChunkProgress
 {
     #[Serialize]

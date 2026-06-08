@@ -55,10 +55,7 @@ final readonly class AssetFactory
     }
 
     /**
-     * Creates a persisted, file-less audio Asset (status {@see \AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus::Draft},
-     * `autoDeleteUnprocessed` on by default). Used to reserve a stable asset id at TTS dispatch so the CMS placeholder
-     * media and the eventually-attached audio share one id; the master/preview audio is attached later by
-     * {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}. Caller owns the flush.
+     * Create a file-less audio Asset shell to reserve a stable id at TTS dispatch. Caller owns the flush.
      */
     public function createAudioShell(AssetLicence $assetLicence): Asset
     {

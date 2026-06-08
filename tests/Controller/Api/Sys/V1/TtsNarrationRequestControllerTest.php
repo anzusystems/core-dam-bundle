@@ -13,11 +13,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\TtsNarrationRequestSysUrl;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * SYS dispatch endpoint CRUD: validation, successful synthesis (handler runs synchronously in tests, so the
- * full pipeline — voice resolve, mocked ElevenLabs, ffmpeg concat, store — completes before the response),
- * and content-addressed deduplication.
- */
+/** SYS dispatch: validation, sync synthesis (full pipeline), and content-addressed deduplication. */
 final class TtsNarrationRequestControllerTest extends AbstractApiController
 {
     private const int LICENCE_ID = AssetLicenceFixtures::DEFAULT_LICENCE_ID;

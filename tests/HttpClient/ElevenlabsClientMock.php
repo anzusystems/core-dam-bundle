@@ -10,20 +10,14 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Mocks the ElevenLabs text-to-speech HTTP API. `POST /v1/text-to-speech/{voiceId}` returns the raw bytes
- * of a real sample MP3 ({@see tests/data/Files/audioa}) so the chunk concat + ffmpeg pipeline runs for real;
- * each chunk request returns the same blob, so an N-chunk synthesis concatenates to ~N× the sample duration.
- */
+/** Mocks ElevenLabs API; returns real sample MP3 bytes so the ffmpeg concat pipeline runs for real. */
 final class ElevenlabsClientMock
 {
-    private const string SAMPLE_MP3 = 'audioa';
-
     /**
-     * Sentinel: any synthesize whose source text contains this marker makes the provider return 500, so the
-     * failure path (chunk fails → request fails + reserved asset cleaned up) can be tested deterministically.
+     * Text containing this marker forces the provider to return 500, enabling failure-path testing.
      */
     public const string FORCE_FAIL_MARKER = 'TTS_FORCE_FAIL';
+    private const string SAMPLE_MP3 = 'audioa';
 
     public function __invoke(): MockHttpClient
     {

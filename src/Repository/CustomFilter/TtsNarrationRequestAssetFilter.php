@@ -7,11 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\CustomFilter;
 use AnzuSystems\CommonBundle\ApiFilter\CustomFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 
-/**
- * Scopes a {@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest} listing to the requests targeting
- * one stable asset. The request stores its target asset as a denormalised scalar GUID column ({@see
- * \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest::$assetId}), so it filters on `t.assetId`.
- */
+/** Filters TtsNarrationRequest listing by denormalised assetId scalar column. */
 final class TtsNarrationRequestAssetFilter implements CustomFilterInterface
 {
     public const string ASSET = 'asset';

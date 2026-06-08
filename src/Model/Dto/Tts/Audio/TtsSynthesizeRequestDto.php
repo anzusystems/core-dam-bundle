@@ -61,7 +61,7 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     #[Assert\All([new Assert\Length(max: 255)])]
     private array $authors = [];
 
-    // Required; ext system is derived from it. Caller is authorized on this licence.
+    // Ext system is derived from this; caller is authorized on it.
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private AssetLicence $assetLicence;

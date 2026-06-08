@@ -17,12 +17,7 @@ use RuntimeException;
 use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * Stuck-TTS scenarios for {@see TtsCleanupStuckCommandTest}. Requests are created through the real dispatch
- * facade (so each owns a reserved asset + a valid idempotency key) and then backdated to simulate a lost
- * dispatch message — instead of mutating the DB from the test itself:
- *  - {@see FAIL_TEXT}: abandoned in Waiting past the hard cap → the cron fails it (frees the idempotency key);
- *  - {@see RESUME_TEXT}: abandoned in Waiting but still within the hard cap → the cron re-dispatches the plan
- *    and, with the sync transport + mocked provider, the synthesis completes, so the request recovers to Done.
+ * Seeds stuck-TTS scenarios for {@see TtsCleanupStuckCommandTest}: one past the hard cap (→ Failed), one within (→ Done).
  *
  * @extends AbstractFixtures<TtsNarrationRequest>
  */
@@ -57,8 +52,6 @@ final class TtsNarrationRequestFixtures extends AbstractFixtures
         /** @var AssetLicence $licence */
         $licence = $this->assetLicenceRepository->find(BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
-        // [text, createdAt, modifiedAt]: FAIL_TEXT is past the hard cap (both old) → the cron gives up;
-        // RESUME_TEXT is stale enough to be picked up but young enough to recover (within the hard cap).
         $scenarios = [
             [self::FAIL_TEXT, '-3 hours', '-3 hours'],
             [self::RESUME_TEXT, '-10 minutes', '-2 minutes'],

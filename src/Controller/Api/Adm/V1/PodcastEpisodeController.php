@@ -97,9 +97,6 @@ final class PodcastEpisodeController extends AbstractApiController
     }
 
     /**
-     * Replaces the full set of podcasts the asset belongs to (PUT/full-replace). Authorized on the asset's
-     * licence/ext-system via DAM_ASSET_UPDATE; licence-mismatched podcasts are skipped server-side.
-     *
      * @throws AppReadOnlyModeException
      */
     #[Route('/asset/{asset}', name: 'set_membership_by_asset', methods: [Request::METHOD_PUT])]

@@ -27,11 +27,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
 
-/**
- * Generates the short-clip preview AudioFile attached to the preview slot of the master's Asset.
- * Master must be persisted with a valid file path (produced by {@see TtsAudioFactory} + materialised
- * via {@see AudioStatusFacade::storeAndProcess()} from {@see TtsRequestOrchestrator}).
- */
+/** Generates the short-clip preview AudioFile for the master's asset. */
 final readonly class PreviewMedia
 {
     private const int PREVIEW_DURATION_SECONDS = 30;
@@ -52,11 +48,7 @@ final readonly class PreviewMedia
     }
 
     /**
-     * MUST run outside an open transaction — blocking ffmpeg + storage I/O. Wraps its own short tx
-     * for the entity create + publish phase.
-     *
-     * If $masterTmpFile is provided (typically by {@see TtsAudioFactory} which already mirrored the
-     * master into tmp during creation), the remote-storage re-download is skipped.
+     * Must run outside an open transaction (blocking ffmpeg + storage I/O); wraps its own short tx internally.
      *
      * @throws RuntimeException on ffmpeg failure or storage errors
      * @throws FilesystemException on filesystem read/write errors
@@ -80,8 +72,7 @@ final readonly class PreviewMedia
             $created = $this->entityManager->wrapInTransaction(
                 function () use ($masterAudioFile, $previewFile, $expireAt): array {
                     $preview = $this->createPreviewAudioFile($masterAudioFile, $previewFile);
-                    // Regen: stamp the same safety expireAt as the master so a pre-swap crash leaves the unslotted
-                    // preview reapable; AssetSwap clears it on promote. Initial passes null (preview is slotted directly).
+                    // Regen: safety expireAt so a pre-swap crash leaves the preview reapable; AssetSwap clears on promote.
                     $preview->setExpireAt($expireAt);
                     $route = $this->createRouteForPreview($preview);
                     $this->entityManager->flush();
@@ -112,10 +103,7 @@ final readonly class PreviewMedia
     }
 
     /**
-     * Preview lives at a TTS-specific {@see Config::PREVIEW_STORAGE_PREFIX} path (not the date-based
-     * layout {@see \AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator}
-     * produces). The bytes are written here so the status-facade's process phase sees a `Stored` file
-     * and skips its own `store()` write.
+     * Bytes are written here with Stored status so the status-facade's process phase skips its own store().
      *
      * @throws FilesystemException
      */
@@ -153,11 +141,6 @@ final readonly class PreviewMedia
         return $this->routeFactory->createPrebuiltAudioRoute($previewAudio, $slug, $path);
     }
 
-    /**
-     * Run the standard process phase (audio attributes via ffprobe, metadata, Stored → Processed transition,
-     * AssetFileChangedEvent dispatch, AssetRefreshProperties message). Bytes are already in storage so
-     * the facade's `store()` write is skipped.
-     */
     private function processPreview(AudioFile $preview, AdapterFile $previewFile): void
     {
         $this->audioStatusFacade->storeAndProcess(

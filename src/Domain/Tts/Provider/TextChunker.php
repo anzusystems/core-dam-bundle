@@ -9,8 +9,7 @@ use AnzuSystems\CoreDamBundle\App;
 final readonly class TextChunker
 {
     /**
-     * Splits at sentence boundaries; a sentence longer than $maxCharsPerChunk is hard-split (by words, then by
-     * characters for a single over-long word) so no chunk ever exceeds the cap — the provider's per-request limit.
+     * Splits at sentence boundaries; over-long sentences are hard-split by words then chars.
      *
      * @return list<string>
      */
@@ -33,7 +32,7 @@ final readonly class TextChunker
         $currentChunk = App::EMPTY_STRING;
 
         foreach ($sentences as $sentence) {
-            // A sentence that alone exceeds the cap can't fit any chunk — flush, then hard-split it.
+            // Sentence exceeds cap — flush current, then hard-split.
             if (mb_strlen($sentence) > $maxCharsPerChunk) {
                 if (App::EMPTY_STRING !== $currentChunk) {
                     $chunks[] = $currentChunk;
@@ -64,8 +63,6 @@ final readonly class TextChunker
     }
 
     /**
-     * Packs words into ≤ $max pieces; a single word longer than $max is hard-cut by characters.
-     *
      * @return list<string>
      */
     private function splitLongSentence(string $sentence, int $max): array

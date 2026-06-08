@@ -51,8 +51,7 @@ final class PublicExportFacade
     }
 
     /**
-     * Back-compat bridge: seed the collection from the legacy single licence if needed, then sync the
-     * deprecated single + ext system to the primary (first) licence.
+     * Back-compat: seed licences collection from legacy single licence; sync deprecated fields to primary.
      */
     private function reconcileLicences(PublicExport $publicExport): void
     {

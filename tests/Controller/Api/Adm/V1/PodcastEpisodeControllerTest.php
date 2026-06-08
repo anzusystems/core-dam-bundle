@@ -172,33 +172,15 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         $asset = $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1)->getAsset();
         $assetId = (string) $asset->getId();
 
-        // Full-replace to a single licence-matching podcast.
         $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), [
             'podcasts' => [PodcastFixtures::PODCAST_1],
         ]);
         $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
         $this->assertSame([PodcastFixtures::PODCAST_1], $this->fetchMembershipPodcastIds($client, $assetId));
 
-        // Full-replace to empty removes membership.
         $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), ['podcasts' => []]);
         $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
         $this->assertSame([], $this->fetchMembershipPodcastIds($client, $assetId));
-    }
-
-    /**
-     * Reads the asset's current podcast membership through the API (no direct DB access).
-     *
-     * @return list<string>
-     */
-    private function fetchMembershipPodcastIds(ApiClient $client, string $assetId): array
-    {
-        $response = $client->get(PodcastEpisodeUrl::getListByAsset($assetId));
-        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
-
-        return array_values(array_map(
-            static fn (array $episode): string => (string) $episode['podcast'],
-            json_decode($response->getContent(), true)['data'],
-        ));
     }
 
     public static function podcastEpisodePayloadDataProvider(): array
@@ -224,6 +206,20 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
                 ],
             ],
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function fetchMembershipPodcastIds(ApiClient $client, string $assetId): array
+    {
+        $response = $client->get(PodcastEpisodeUrl::getListByAsset($assetId));
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        return array_values(array_map(
+            static fn (array $episode): string => (string) $episode['podcast'],
+            json_decode($response->getContent(), true)['data'],
+        ));
     }
 
     private function assertSamePodcast(array $expectedPayload, PodcastEpisode $newPodcast): void

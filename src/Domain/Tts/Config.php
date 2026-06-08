@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts;
 
-/**
- * App-level TTS configuration. Slot names are per-app configurable because each ext-system declares
- * its own `file_slots.slots` whitelist that the master/preview pair must match.
- */
+/** App-level TTS config; slot names are per-app because each ext-system's file_slots whitelist must match. */
 final readonly class Config
 {
     public const string PREVIEW_STORAGE_PREFIX = 'tts/preview/';
@@ -42,9 +39,7 @@ final readonly class Config
     }
 
     /**
-     * Grace period (seconds) for which a superseded TTS audio file — and thus its public CDN URL —
-     * is kept alive after a regeneration before the {@see \AnzuSystems\CoreDamBundle\Command\TtsClearExpiredAudioCommand}
-     * cron deletes it. Lets still-cached consumer responses pointing at the old public-bucket path keep streaming.
+     * Grace window keeping a superseded audio URL alive so cached CDN responses keep streaming.
      */
     public function getAudioRetentionGraceSeconds(): int
     {

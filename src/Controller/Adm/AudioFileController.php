@@ -18,8 +18,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class AudioFileController extends AbstractAssetFileController
 {
     /**
-     * Direct audio byte-stream through the application. Dev-only — production must serve via
-     * signed bucket URLs returned by /api/adm/v1/audio/{audio}/download-link.
+     * Dev-only byte-stream — production uses signed bucket URLs.
      *
      * @throws FilesystemException
      */

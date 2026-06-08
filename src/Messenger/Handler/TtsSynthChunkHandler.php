@@ -17,11 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
 
-/**
- * `dam-tts` worker, one run per chunk. Synth (slow HTTP) runs OUTSIDE any DB transaction — only the
- * short claim + Done commits hold locks. At-most-once: never rethrows (Messenger has no retry policy
- * here), converts a throw into request failure. Redelivery is absorbed by the row-lock claim guard.
- */
+/** dam-tts per-chunk worker: synth outside any DB transaction; redelivery absorbed by row-lock claim guard. */
 #[AsMessageHandler]
 final readonly class TtsSynthChunkHandler
 {
@@ -39,7 +35,7 @@ final readonly class TtsSynthChunkHandler
     {
         $chunk = $this->claim($message->chunkId);
         if (null === $chunk) {
-            // Not found / already claimed / parent request no longer Processing (cancel/terminal) — ack & stop.
+            // Not found, already claimed, or parent request no longer Processing — ack & stop.
             return;
         }
 
@@ -60,8 +56,7 @@ final readonly class TtsSynthChunkHandler
     }
 
     /**
-     * Atomic Pending → Processing transition under a row lock; bails if the parent request was cancelled
-     * or already moved terminal (stops the chain without spending an HTTP call).
+     * Atomic Pending → Processing under row lock; bails early if parent request is cancelled/terminal.
      */
     private function claim(string $chunkId): ?TtsSynthesisChunk
     {

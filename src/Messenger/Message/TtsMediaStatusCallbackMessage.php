@@ -6,11 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Messenger\Message;
 
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 
-/**
- * Out-of-band media-status notification to the ext-system (CMS), delivered via pub/sub so a transient CMS
- * outage is retried by the transport instead of being silently dropped. Carries only scalars + the assetId
- * (content-addressed model) so it is safely serializable and idempotent on redelivery.
- */
+/** Out-of-band media-status notification to ext-system; retried by transport on transient CMS outage. */
 final readonly class TtsMediaStatusCallbackMessage
 {
     public function __construct(

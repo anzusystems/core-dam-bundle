@@ -9,11 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
 use DateTimeImmutable;
 
-/**
- * DB gateway for {@see TtsSynthesisChunk} — every create/update/delete routes through here so timestamps
- * are tracked. Defaults flush=true (handlers run each transition standalone); callers inside a transaction
- * pass false.
- */
+/** DB gateway for {@see TtsSynthesisChunk} state transitions; flush=true by default, pass false inside transactions. */
 final class TtsSynthesisChunkManager extends AbstractManager
 {
     public function create(TtsSynthesisChunk $chunk, bool $flush = true): TtsSynthesisChunk
@@ -44,8 +40,7 @@ final class TtsSynthesisChunkManager extends AbstractManager
     }
 
     /**
-     * Re-arm a chunk whose worker died mid-synth (stuck Processing) back to Pending so the reconcile
-     * sweep can re-dispatch it. Clears startedAt so staleness detection restarts cleanly.
+     * Re-arm a stuck Processing chunk to Pending; clears startedAt so stale detection restarts.
      */
     public function markPending(TtsSynthesisChunk $chunk, bool $flush = true): TtsSynthesisChunk
     {

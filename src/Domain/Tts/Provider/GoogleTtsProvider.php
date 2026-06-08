@@ -19,15 +19,10 @@ use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 use Google\Exception as GoogleException;
 use JsonException;
 
-/**
- * Google Cloud TTS. Service-account auth + token caching delegated to {@see GoogleTtsAuthClientProvider}.
- * Stateless across chunks (no `previous_request_ids` analogue) — one chunk = one HTTP call.
- */
+/** Google Cloud TTS; stateless across chunks — one chunk = one HTTP call. */
 final class GoogleTtsProvider extends AbstractTtsProvider
 {
-    // Google's hard documented per-request ceiling. The effective chunk size is the operator-driven
-    // Config::chunkSizeChars clamped to this in the pipeline.
-    // Intentionally independent of ElevenlabsTtsProvider::MAX_CHARS — do not merge into a shared constant.
+    // Google's hard per-request ceiling; intentionally independent of ElevenlabsTtsProvider::MAX_CHARS.
     private const int MAX_CHARS = 5_000;
     private const string RESPONSE_KEY_AUDIO_CONTENT = 'audioContent';
     private const string RESPONSE_KEY_ACCESS_TOKEN = 'access_token';
@@ -63,14 +58,13 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     {
         $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
 
-        // getClient() reads + parses the service-account JSON keyfile (deterministic, no HTTP) and caches
-        // the Google client per ExtSystem.
+        // getClient() parses the service-account keyfile (no HTTP) and caches the client per ExtSystem.
         $this->authClientProvider->getClient($extSystem->getSlug());
         $this->assertChunkStorageConfigured($extSystem);
     }
 
     /**
-     * @param list<string> $previousRequestIds ignored — Google is stateless
+     * @param list<string> $previousRequestIds ignored (Google is stateless)
      *
      * @throws TtsProviderException
      */
@@ -78,7 +72,6 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     {
         $voice instanceof GoogleTtsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', GoogleTtsVoice::class, $voice::class));
 
-        // Single source of truth: the voice family carries the language; Google needs it as a BCP-47 tag.
         $languageCode = $voice->getVoiceFamily()->getLanguage()->getBcpLocale();
         $bytes = $this->extractAudio(
             $this->ttsClient->synthesize($this->getAccessToken($extSystem), $this->buildRequest($text, $voice, $languageCode)),

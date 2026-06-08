@@ -10,10 +10,7 @@ use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 
-/**
- * Initial-request cancellation: a Waiting request flips to Cancelled, and a second cancel on the now-terminal
- * request is rejected ({@see TtsRequestStatus::CANCELLABLE_STATUSES} guard).
- */
+/** Waiting → Cancelled; second cancel on terminal request throws ({@see TtsRequestStatus::CANCELLABLE_STATUSES}). */
 final class TtsCancellationFacadeTest extends AbstractTtsFunctionalTestCase
 {
     private TtsCancellationFacade $cancellationFacade;

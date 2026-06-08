@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
-/**
- * Data needed to fire the post-commit "cancelled" media-status callback to the ext-system. Returned out of the
- * cancellation transaction (instead of mutating a by-ref array) so the callback can be dispatched after commit.
- */
+/** Post-commit data for the "cancelled" media-status callback; returned out of the transaction. */
 final readonly class CancelledCallbackData
 {
     public function __construct(

@@ -38,9 +38,6 @@ abstract class AbstractVoiceManager extends AbstractManager
 
     abstract protected function setSpecifics(Voice $existing, Voice $incoming): void;
 
-    /**
-     * Copies shared + per-kind fields and tracks modification — does not flush.
-     */
     private function applyUpdate(Voice $existing, Voice $incoming): void
     {
         $this->trackModification($existing);

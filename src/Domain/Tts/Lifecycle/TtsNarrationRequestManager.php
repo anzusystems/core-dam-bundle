@@ -34,10 +34,21 @@ final class TtsNarrationRequestManager extends AbstractManager
         return $request;
     }
 
+    /**
+     * Re-arm a stalled Processing request to Waiting; clears startedAt so the stall window restarts.
+     */
+    public function markWaiting(TtsNarrationRequest $request, bool $flush = true): TtsNarrationRequest
+    {
+        $request->setStatus(TtsRequestStatus::Waiting);
+        $request->setStartedAt(null);
+        $this->trackModification($request);
+        $this->flush($flush);
+
+        return $request;
+    }
+
     public function markDone(TtsNarrationRequest $request, bool $flush = true): TtsNarrationRequest
     {
-        // assetId is set at dispatch (shell for Initial, stable for Regenerate) and the request produces into
-        // that same asset, so Done needs no separate result id — success is the Done status itself.
         return $this->finalize($request, TtsRequestStatus::Done, null, $flush);
     }
 
@@ -65,13 +76,10 @@ final class TtsNarrationRequestManager extends AbstractManager
     }
 
     /**
-     * Terminal transition: clears initialIdempotencyKey (frees the in-flight slot) + nullifies source text
-     * (audit copy lives on TtsAsset.sourceTextSnapshot).
+     * Clears initialIdempotencyKey (frees the slot) and nullifies sourceText on every terminal transition.
      */
     private function finalize(TtsNarrationRequest $request, TtsRequestStatus $terminal, ?string $reason, bool $flush): TtsNarrationRequest
     {
-        // Never transition out of a terminal state (defense-in-depth against a post-Done error flipping
-        // the request to Failed).
         if ($request->getStatus()->in(TtsRequestStatus::TERMINAL_STATUSES)) {
             return $request;
         }

@@ -46,10 +46,7 @@ final readonly class TtsAudioCreationInput
     }
 
     /**
-     * Regeneration re-synthesises the SAME source text (snapshot/hash carried over from the stable
-     * {@see TtsAsset}) with a possibly different voice/family. The freshly built audio is attached to the
-     * existing stable asset and the previous audio is kept for a grace period — see
-     * {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\AssetSwap}.
+     * Re-synthesises the same source text from the stable {@see TtsAsset} with a possibly different voice.
      */
     public static function forRegenerate(
         TtsNarrationRequest $request,

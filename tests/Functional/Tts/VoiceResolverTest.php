@@ -17,10 +17,7 @@ use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 
-/**
- * Voice-resolution cascade over real fixtures: the cms ext system seeds the `sme_default_male` family
- * (preferred ElevenLabs) with a single main+active ElevenLabs voice, in Auto provider mode.
- */
+/** Voice-resolution cascade over real fixtures (cms ext system, `sme_default_male` family, Auto mode). */
 final class VoiceResolverTest extends CoreDamKernelTestCase
 {
     private VoiceResolver $resolver;
@@ -54,7 +51,6 @@ final class VoiceResolverTest extends CoreDamKernelTestCase
 
     public function testForcedProviderWithoutMatchingVoiceThrows(): void
     {
-        // The default family carries only an ElevenLabs voice — forcing GoogleTts leaves no match.
         $this->cms->getTtsSettings()->setActiveProviderMode(TtsActiveProviderMode::GoogleTts);
 
         $this->expectException(TtsProviderException::class);

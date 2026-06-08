@@ -17,16 +17,10 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\ElevenlabsSynthesizeRequest
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\TtsChunkSynthesisResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
 
-/**
- * ElevenLabs TTS. One chunk = one HTTP call; the caller threads `previous_request_ids` (oldest-first,
- * ≤3) for cross-splice prosody. Multi-chunk MP3 is muxed via ffmpeg at assemble time — raw-byte concat
- * would leave the Xing/LAME VBR header pointing at the first chunk only, breaking duration/seek.
- */
+/** ElevenLabs TTS; previous_request_ids threads cross-splice prosody; ffmpeg mux required (VBR header). */
 final class ElevenlabsTtsProvider extends AbstractTtsProvider
 {
-    // ElevenLabs hard per-request ceiling (documented API limit). The effective chunk size is the
-    // operator-driven Config::chunkSizeChars clamped to this in the pipeline.
-    // Intentionally independent of GoogleTtsProvider::MAX_CHARS — do not merge into a shared constant.
+    // ElevenLabs hard per-request ceiling; intentionally independent of GoogleTtsProvider::MAX_CHARS.
     private const int MAX_CHARS = 5_000;
     private const int ERROR_BODY_EXCERPT_LIMIT = 500;
 

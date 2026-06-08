@@ -28,12 +28,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use DateTimeImmutable;
 
-/**
- * Builds the AudioFile (+ route + TtsAsset) aggregate from provider output. The asset pre-exists (file-less
- * shell for initial, stable asset for regen) so its id — the CMS media key — stays stable. Bytes are left
- * Uploaded with a pre-built route; the orchestrator drives the standard store/publish pipeline. Caller owns
- * the transaction.
- */
+/** Builds AudioFile + route + TtsAsset from provider output; caller owns the transaction. */
 final readonly class TtsAudioFactory
 {
     private const int ROUTE_RANDOM_BYTES = 16;
@@ -52,8 +47,7 @@ final readonly class TtsAudioFactory
     }
 
     /**
-     * Initial generation: attach the master audio onto the pre-created (Draft, file-less) shell asset and
-     * create its TtsAsset. The asset keeps the id reserved at dispatch.
+     * Attach master audio onto the pre-created shell asset and create its TtsAsset.
      */
     public function create(TtsAudioCreationInput $input, Asset $asset): TtsAudioCreationResult
     {
@@ -81,11 +75,7 @@ final readonly class TtsAudioFactory
     }
 
     /**
-     * Regeneration: build a fresh master AudioFile owned by the stable asset (its `asset` FK is set so the
-     * required relation holds) but NOT yet attached to any slot — the orchestrator materialises + publishes
-     * its bytes first, then {@see AssetSwap} repoints the live master slot at it. The previous audio (and its
-     * public CDN URL) is left untouched until the swap demotes it with a grace period. The result carries the
-     * still-active stable {@see TtsAsset} (updated in place by the swap, not recreated here).
+     * Build a fresh master AudioFile owned by the stable asset but not yet slotted; AssetSwap promotes it.
      */
     public function buildReplacementMaster(
         TtsAudioCreationInput $input,
@@ -96,8 +86,7 @@ final readonly class TtsAudioFactory
         $audioFile = $this->buildAudioFile($input);
         $audioFile->setAsset($stableAsset);
         $this->assetFileManager->create($audioFile, flush: false);
-        // Until AssetSwap slots it, the file is an unreferenced orphan (no slot). Stamp a safety expireAt so a
-        // crash before the swap leaves it reapable by the grace cron; AssetSwap clears it once it goes live.
+        // Unslotted orphan until swap — safety expireAt so a pre-swap crash leaves it reapable.
         $audioFile->setExpireAt($orphanExpireAt);
 
         $masterRoute = $this->attachStableRoute($audioFile);
@@ -119,9 +108,7 @@ final readonly class TtsAudioFactory
     }
 
     /**
-     * Writes caller title/description into the asset custom-data via the ext-system `tts_metadata_map`.
-     * The map's source is the {@see TtsAudioCreationInput} (scalar `title`/`description`), not the asset,
-     * so map source paths are those props. No-op when unconfigured.
+     * Writes caller title/description into asset custom-data via the ext-system tts_metadata_map. No-op when unconfigured.
      */
     private function writeCustomMetadata(Asset $asset, TtsAudioCreationInput $input): void
     {
@@ -133,9 +120,7 @@ final readonly class TtsAudioFactory
     }
 
     /**
-     * Each (re)generation gets its own stable route: the slug/path derive from the new AudioFile id, so a
-     * regeneration produces a NEW public-bucket path = NEW public URL, while the old file keeps its own.
-     * The route is persisted (no flush); the orchestrator publishes it after bytes land in storage.
+     * Each (re)generation gets a new route derived from the AudioFile id — a new public URL per regen.
      */
     private function attachStableRoute(AudioFile $audioFile): AssetFileRoute
     {

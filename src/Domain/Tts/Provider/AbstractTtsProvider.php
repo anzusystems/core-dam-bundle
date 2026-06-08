@@ -9,10 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 
-/**
- * Shared TTS-provider base: only the dispatch-time chunk-storage config check. Per-chunk synthesis is
- * one provider HTTP call (subclasses); chunking + persistence + ffmpeg concat live in the pipeline.
- */
+/** Shared TTS-provider base: dispatch-time chunk-storage config check. */
 abstract class AbstractTtsProvider implements TtsProviderInterface
 {
     public function __construct(
@@ -22,8 +19,6 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
     }
 
     /**
-     * Validates per-extSystem chunk storage is configured + registered (dispatch-time precheck).
-     *
      * @throws TtsProviderException
      */
     protected function assertChunkStorageConfigured(ExtSystem $extSystem): void

@@ -22,9 +22,7 @@ use Doctrine\DBAL\LockMode;
 final class TtsNarrationRequestRepository extends AbstractAnzuRepository
 {
     /**
-     * The in-flight Regenerate request targeting the given stable Asset, if any. By invariant
-     * there is at most one (concurrent regen on the same stable is blocked by TtsAssetLocker
-     * via the TtsAsset state machine).
+     * At most one in-flight Regenerate per stable Asset (enforced by TtsAssetLocker).
      */
     public function findActiveRegenForStable(string $stableAssetId): ?TtsNarrationRequest
     {
@@ -36,8 +34,6 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Batch variant of {@see findActiveRegenForStable} — one query for a list of stable Asset IDs.
-     *
      * @param list<string> $stableAssetIds
      *
      * @return array<string, TtsNarrationRequest> keyed by stableAssetId
@@ -66,33 +62,7 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Initial requests left in Processing past the given threshold — a worker that claimed (Waiting →
-     * Processing) then died before reaching a terminal status. The cleanup cron fails these so their
-     * idempotency key frees up for a fresh dispatch. The threshold must exceed the worker time-limit.
-     *
-     * @return Collection<int, TtsNarrationRequest>
-     */
-    public function findStuckInitialProcessing(DateTimeImmutable $startedBefore, int $limit): Collection
-    {
-        return new ArrayCollection(
-            $this->createQueryBuilder('r')
-                ->where('r.mode = :mode')
-                ->andWhere('r.status = :status')
-                ->andWhere('r.startedAt < :startedBefore')
-                ->setParameter('mode', TtsRequestMode::Initial)
-                ->setParameter('status', TtsRequestStatus::Processing)
-                ->setParameter('startedBefore', $startedBefore)
-                ->addOrderBy('r.startedAt', 'ASC')
-                ->setMaxResults($limit)
-                ->getQuery()
-                ->getResult()
-        );
-    }
-
-    /**
-     * Requests left in Waiting past the threshold — the dispatch/plan message was lost (worker crash
-     * before claim, at-most-once transport) so the request was never picked up. Fails them so the
-     * idempotency key frees up. Uses modifiedAt since startedAt is only set at Processing.
+     * Waiting requests past threshold — dispatch message lost; uses modifiedAt (startedAt is set only at Processing).
      *
      * @return Collection<int, TtsNarrationRequest>
      */
@@ -112,9 +82,8 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Processing requests with no chunk touched since $since — the synthesis chain stalled (a per-chunk
-     * dispatch or the finalize step was lost, or a worker died). Requests still advancing have a
-     * recently-modified chunk and are skipped, so the reconcile sweep never disturbs an in-flight narration.
+     * Processing requests with no chunk activity since $since — NOT EXISTS is trivially true on inline (no chunks),
+     * so startedAt gates that path too.
      *
      * @return Collection<int, TtsNarrationRequest>
      */
@@ -131,6 +100,7 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
         return new ArrayCollection(
             $this->createQueryBuilder('r')
                 ->where('r.status = :status')
+                ->andWhere('r.startedAt < :since')
                 ->andWhere(sprintf('NOT EXISTS (%s)', $recentChunk))
                 ->setParameter('status', TtsRequestStatus::Processing)
                 ->setParameter('since', $since)
@@ -142,9 +112,7 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Pessimistic-write lock for handler-side claim transitions (Waiting → Processing). Pub/Sub
-     * redelivery (ack-deadline expiry, worker crash) can deliver the same message to a second
-     * worker; both must serialise on this row so only one moves the request out of Waiting.
+     * Pessimistic-write lock for Waiting → Processing claim; serialises Pub/Sub redelivery races.
      */
     public function findForUpdate(string $id): ?TtsNarrationRequest
     {
@@ -152,9 +120,7 @@ final class TtsNarrationRequestRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Latest request that touched the given asset (as Initial shell or Regenerate target). Powers the
-     * "open source request" link in the asset detail TTS panel. Index-friendly: a single lookup on
-     * {@see TtsNarrationRequest::$assetId} (IDX_tts_request_asset_mode_status leads with assetId).
+     * Latest request id for an asset — powers the "open source request" link in the TTS panel.
      */
     public function findLastIdByAsset(string $assetId): ?string
     {

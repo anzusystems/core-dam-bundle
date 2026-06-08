@@ -12,10 +12,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\DBAL\LockMode;
 
-/**
- * Resolves the TtsAsset behind an Asset. {@see lock()} takes a PESSIMISTIC_WRITE row lock for the
- * mutate paths; {@see requireFor()} is the non-locking read-side variant.
- */
+/** Resolves the TtsAsset behind an Asset; lock() takes PESSIMISTIC_WRITE, requireFor() is the non-locking variant. */
 final readonly class TtsAssetLocker
 {
     public function __construct(

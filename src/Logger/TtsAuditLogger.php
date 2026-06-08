@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Logger;
 
-/**
- * Emits TTS audit events into the journal log stream — swap, cancel, unpublish, initialCancelled.
- */
+/** Emits TTS audit events (swap, cancel, unpublish, initialCancelled) to the journal log. */
 final readonly class TtsAuditLogger
 {
     public function __construct(

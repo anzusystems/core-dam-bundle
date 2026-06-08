@@ -49,8 +49,6 @@ final class GoogleTtsVoiceController extends AbstractApiController
     }
 
     /**
-     * VoiceFamily binding + discriminator are immutable post-create.
-     *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */

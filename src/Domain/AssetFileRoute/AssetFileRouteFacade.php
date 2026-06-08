@@ -106,12 +106,7 @@ final class AssetFileRouteFacade extends AbstractManager
     }
 
     /**
-     * Dispatch an AssetFileRouteEvent for every active route of every given AssetFile.
-     * App-level listeners consume these events to enqueue CDN/cache invalidations
-     * (the bundle stays transport-agnostic — it knows nothing about purgers).
-     *
-     * Use case: content of an AssetFile changed in place (same routes/URLs, new bytes)
-     * — e.g. TTS regenerate / replace-upload after AssetSwap.
+     * Dispatch purge events for all routes of the given AssetFiles (bytes changed in place, e.g. TTS regen).
      *
      * @param iterable<AssetFile> $assetFiles
      */
@@ -123,16 +118,7 @@ final class AssetFileRouteFacade extends AbstractManager
     }
 
     /**
-     * Publish a pre-built {@see AssetFileRoute}: write the public-storage copy (StorageCopy mode),
-     * flush + commit, and dispatch the {@see AssetFileRouteEvent} for CDN/cache listeners.
-     *
-     * The route MUST already be attached to the EM (e.g. via {@see AssetFileRouteFactory} or the
-     * caller's own persist). Caller is also responsible for any pre-publish validation —
-     * {@see makePublicAssetFile()} / {@see makePublicFromDto()} / {@see makeImagePublic()} are the
-     * standard wrappers that handle DTO/Image-based route construction + validation.
-     *
-     * Exposed for callers that maintain their own route-build pipeline (e.g. TTS, which uses a
-     * stable slug across regenerations) and just need the publish side-effects applied uniformly.
+     * Write public-storage copy (StorageCopy mode), flush+commit, dispatch CDN/cache event.
      */
     public function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
     {

@@ -14,10 +14,7 @@ use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 
-/**
- * Admin-facing podcast-episode CRUD. Membership changes notify ext-systems here at the facade, not in
- * {@see PodcastEpisodeManager} — its seam also serves bulk RSS import + the TTS orchestrator (own notify).
- */
+/** Admin-facing podcast-episode CRUD; ext-system notification is facade-level, not manager-level. */
 final class PodcastEpisodeFacade
 {
     use ValidatorAwareTrait;

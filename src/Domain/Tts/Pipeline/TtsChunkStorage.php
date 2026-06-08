@@ -17,11 +17,7 @@ use Doctrine\Common\Collections\Collection;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\HttpFoundation\File\File;
 
-/**
- * Per-chunk MP3 IO against the per-extSystem chunk storage: persist a chunk blob, ffmpeg-concat the Done
- * blobs into the master tmp file at assemble, purge blobs on cleanup. Resolution is keyed by the request's
- * ext-system (chunks of one request may be written by different workers).
- */
+/** Per-chunk MP3 IO: persist blobs, ffmpeg-concat to master, purge on cleanup; keyed by ext-system. */
 final readonly class TtsChunkStorage
 {
     private const string PATH_PREFIX = 'tts/chunk/';
@@ -34,8 +30,6 @@ final readonly class TtsChunkStorage
     }
 
     /**
-     * Persists one chunk's MP3 bytes; returns the relative storage path stored on the chunk row.
-     *
      * @throws TtsProviderException
      * @throws FilesystemException
      */
@@ -48,8 +42,6 @@ final readonly class TtsChunkStorage
     }
 
     /**
-     * Reads the Done chunk blobs back and ffmpeg-concats them (in given order) into a master tmp file.
-     *
      * @param Collection<int, TtsSynthesisChunk> $orderedChunks
      *
      * @throws TtsProviderException
@@ -73,8 +65,6 @@ final readonly class TtsChunkStorage
     }
 
     /**
-     * Writes raw MP3 bytes straight to a master tmp file — the single-chunk inline path (no chunk storage).
-     *
      * @throws FilesystemException
      */
     public function writeTmpMaster(string $bytes): AdapterFile
@@ -86,8 +76,6 @@ final readonly class TtsChunkStorage
     }
 
     /**
-     * Best-effort purge of chunk blobs (League delete is idempotent on a missing path).
-     *
      * @param list<string> $paths
      *
      * @throws TtsProviderException

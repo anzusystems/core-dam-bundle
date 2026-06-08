@@ -6,10 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider;
 
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
-/**
- * ElevenLabs text-to-speech request body. Serialized by {@see ElevenlabsClient} with null-skipping, so
- * `previous_request_ids` is omitted when left null (an empty list would otherwise serialize to `[]`).
- */
+/** ElevenLabs TTS request body; null-skipping serializer omits previous_request_ids when null. */
 final class ElevenlabsSynthesizeRequestDto
 {
     #[Serialize]
@@ -22,9 +19,7 @@ final class ElevenlabsSynthesizeRequestDto
     private ElevenlabsVoiceSettingsDto $voiceSettings;
 
     /**
-     * Oldest-first, ≤3; omitted from the payload when null.
-     *
-     * @var list<string>|null
+     * @var list<string>|null Oldest-first, ≤3; omitted from payload when null.
      */
     #[Serialize(serializedName: 'previous_request_ids')]
     private ?array $previousRequestIds = null;

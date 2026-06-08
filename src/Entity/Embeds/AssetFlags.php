@@ -25,10 +25,6 @@ class AssetFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $autoDeleteUnprocessed;
 
-    /**
-     * Asset holds TTS-generated audio. Auto-set when the asset is created from a TTS provider
-     * (ElevenLabs, ...), otherwise manually managed via the asset sidebar.
-     */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $ttsAudio;
 

@@ -28,7 +28,7 @@ final class TtsNarrationRequestRepositoryDecorator
     }
 
     /**
-     * Scoped to one licence; the asset filter stays registered so CMS can narrow to one asset.
+     * Asset filter is always registered so CMS can narrow to a single asset.
      */
     public function findByLicence(ApiParams $apiParams, AssetLicence $licence): ApiResponseList
     {
@@ -47,7 +47,7 @@ final class TtsNarrationRequestRepositoryDecorator
     }
 
     /**
-     * Enriches the request with its produced {@see TtsAsset} (joined, transient) for the detail response.
+     * Enriches the request with its TtsAsset and chunk progress for the detail response.
      */
     public function getDetail(TtsNarrationRequest $request): TtsNarrationRequest
     {
@@ -56,7 +56,7 @@ final class TtsNarrationRequestRepositoryDecorator
             null !== $assetId ? $this->ttsAssetRepository->findByAssetIdJoined($assetId) : null,
         );
 
-        // Derived chunk progress (absent on single-run requests — no chunk rows).
+        // Absent on single-run requests (no chunk rows).
         $counts = $this->chunkRepository->progressCounts((string) $request->getId());
         if ($counts['total'] > 0) {
             $request->setChunkProgress(TtsChunkProgress::fromCounts($counts['total'], $counts['done'], $counts['failed']));

@@ -120,8 +120,6 @@ final class FfmpegService
     }
 
     /**
-     * Clip with stream-copy (`-c copy`) — fast, lossless. Output lands in TmpLocalFilesystem.
-     *
      * @throws FfmpegException
      */
     public function clipAudio(File $source, int $startSeconds, int $durationSeconds): AdapterFile
@@ -150,10 +148,9 @@ final class FfmpegService
     }
 
     /**
-     * Concat same-codec audio parts with stream-copy via the ffmpeg concat demuxer. Inputs must share
-     * codec, sample rate and channel layout — re-encoding is not done.
+     * Concat MP3 chunks via concat demuxer (stream-copy, same codec/rate/layout required).
      *
-     * @param list<File> $parts ordered list of MP3 chunks
+     * @param list<File> $parts
      *
      * @throws FfmpegException
      */
@@ -167,7 +164,7 @@ final class FfmpegService
         $outRel = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
         $outAbsPath = $tmpFs->extendPath($outRel);
 
-        // concat demuxer reads single-quoted paths and unescapes backslashes — escape only `\` and `'`.
+        // Escape only `\` and `'` as required by the concat demuxer format.
         $listLines = array_map(
             static fn (File $part): string => "file '" . str_replace(['\\', "'"], ['\\\\', "'\\''"], $part->getRealPath()) . "'",
             $parts,

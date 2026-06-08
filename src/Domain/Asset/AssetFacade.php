@@ -175,9 +175,6 @@ class AssetFacade
     }
 
     /**
-     * Surfaces a 422 dependency error instead of a raw FK violation when the asset is still referenced
-     * (currently: an ext-system TTS free audio epilog — the FK uses no ON DELETE action by design).
-     *
      * @throws DependencyExistsException
      */
     private function assertDeletable(Asset $asset): void

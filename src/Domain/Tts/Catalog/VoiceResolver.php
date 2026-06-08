@@ -25,10 +25,6 @@ final readonly class VoiceResolver
     }
 
     /**
-     * Cascade: requested family → system default → preferred provider → primary voice in family.
-     * When ExtSystem has a forced provider mode (Elevenlabs/GoogleTts), only that provider is tried;
-     * no fallback cascade — throws immediately if no matching voice exists.
-     *
      * @throws TtsProviderException
      */
     public function resolve(?string $familySlug, ExtSystem $extSystem): Voice
@@ -53,7 +49,6 @@ final readonly class VoiceResolver
         }
 
         if (null === $family || false === $family->isActive()) {
-            // Misconfigured tenant — surface the default-family gap so ops can fix it.
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'voiceResolver.defaultFamilyMissing', [
                 'defaultSlug' => $defaultSlug,
                 'extSystem' => $extSystem->getSlug(),
@@ -114,8 +109,7 @@ final readonly class VoiceResolver
             }
         }
 
-        // Prefer the explicitly-primary voice, but fall back to any active voice in the family so a
-        // single-voice family is usable without the admin having to flag one as main (auto mode).
+        // Fall back to any active voice so a single-voice family works without a main flag.
         $voice = $this->voiceRepo->findOnePrimaryActiveByFamily($family)
             ?? $this->voiceRepo->findOneActiveByFamily($family);
         if (null !== $voice) {

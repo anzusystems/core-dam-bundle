@@ -14,8 +14,7 @@ final class DateTimeHelper
     private const string DB_DATE_TIME_FORMAT = 'Y-m-d H:i:s';
 
     /**
-     * Parses a compact "{h}h{m}m" duration (e.g. '1h', '30m', '2h30m') into a DateInterval.
-     * Returns null for an unparseable, empty or zero-length duration.
+     * Parse "{h}h{m}m" string (e.g. '1h', '30m', '2h30m') to DateInterval; null if invalid/zero.
      */
     public static function parseDurationToInterval(string $duration): ?DateInterval
     {

@@ -58,9 +58,6 @@ final class VoiceFamilyController extends AbstractApiController
     }
 
     /**
-     * Lists the voice families of the ext system the given asset licence belongs to. Called by the CMS,
-     * which knows the asset licence (not the DAM ext system) of the article being narrated.
-     *
      * @throws \Doctrine\ORM\Exception\ORMException
      */
     #[Route('/licence/{assetLicence}', name: 'get_list_by_asset_licence', methods: [Request::METHOD_GET])]
@@ -104,8 +101,6 @@ final class VoiceFamilyController extends AbstractApiController
     }
 
     /**
-     * Slug + extSystem are immutable post-create.
-     *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
      */

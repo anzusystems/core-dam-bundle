@@ -11,9 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Full desired set of podcasts an asset should belong to (PUT/full-replace semantics).
- */
+/** Full desired podcast membership set — PUT/full-replace semantics. */
 final class PodcastMembershipUpdateDto
 {
     /**

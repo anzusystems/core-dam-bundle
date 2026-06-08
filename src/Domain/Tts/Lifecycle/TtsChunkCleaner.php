@@ -11,11 +11,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Throwable;
 
-/**
- * Best-effort teardown of a request's synthesis chunks — blobs (chunk storage) + rows. Called on the
- * happy path after assemble, on failure ({@see TtsRequestFailer}), and on cancel. Row delete is explicit
- * because the FK cascade only fires if the request itself is deleted (initial-failure path).
- */
+/** Best-effort chunk teardown (blobs + rows); row delete is explicit because FK cascade only fires on request delete. */
 final readonly class TtsChunkCleaner
 {
     public function __construct(

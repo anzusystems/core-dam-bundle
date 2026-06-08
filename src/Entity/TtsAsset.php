@@ -15,13 +15,7 @@ use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * TTS-feature extension of {@see Asset}. 1:1 via shared primary key (asset delete cascades).
- * No inverse mapping — Asset stays bundle-agnostic; callers resolve via {@see TtsAssetRepository::findByAsset()}.
- *
- * Shape = snapshot of generation moment. Derivable state (tenant config, PodcastEpisode membership,
- * request audit) lives elsewhere.
- */
+/** TTS extension of {@see Asset} — 1:1 shared PK, no inverse mapping; generation-moment snapshot. */
 #[ORM\Entity(repositoryClass: TtsAssetRepository::class)]
 #[ORM\Index(name: 'IDX_tts_asset_status', fields: ['status'])]
 #[ORM\Index(name: 'IDX_tts_asset_content', fields: ['sourceTextHash', 'voiceFamily'])]
@@ -35,25 +29,19 @@ final class TtsAsset implements TimeTrackingInterface
     private Asset $asset;
 
     /**
-     * Generation-time snapshot. Hard-delete is blocked app-side by VoiceFamilyManager throwing
-     * {@see DependencyExistsException}; DB FK is the safety net.
-     * Eager fetch: every read site dereferences the family — lazy would N+1 the SYS list endpoint.
+     * Generation-time snapshot; eager to avoid N+1 on SYS list.
      */
     #[ORM\ManyToOne(targetEntity: VoiceFamily::class, fetch: 'EAGER')]
     #[ORM\JoinColumn(name: 'voice_family_id', referencedColumnName: 'id', nullable: false)]
     #[Serialize(handler: EntityIdHandler::class)]
     private VoiceFamily $voiceFamily;
 
-    /**
-     * Which provider actually generated this audio (snapshot of the resolved Voice's discriminator).
-     */
     #[ORM\Column(enumType: VoiceDiscriminator::class)]
     #[Serialize]
     private VoiceDiscriminator $provider;
 
     /**
-     * Historical snapshot — live Voice may be replaced/deactivated, but this audio was synthesised
-     * with THIS provider voice ID.
+     * Historical snapshot of the provider voice ID used for this synthesis.
      */
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
@@ -76,7 +64,7 @@ final class TtsAsset implements TimeTrackingInterface
     private ?string $failureReason = null;
 
     /**
-     * @internal Construct only via {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
+     * @internal Use {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
      */
     public function __construct(Asset $asset)
     {

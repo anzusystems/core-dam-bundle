@@ -31,8 +31,7 @@ final class PodcastEpisodeFactory extends AbstractManager
         bool $flush = true,
         bool $inheritFromAsset = false,
     ): PodcastEpisode {
-        // addEpisode() (not setAsset()) so the asset's in-memory episode collection stays in sync — the
-        // asset-changed event consumers (TTS publish, indexing) read it right after this call.
+        // addEpisode() keeps the in-memory episode collection in sync for event consumers.
         $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
         $asset->addEpisode($podcastEpisode);
         if ($inheritFromAsset) {
@@ -43,9 +42,6 @@ final class PodcastEpisodeFactory extends AbstractManager
     }
 
     /**
-     * Replace the full set of podcast memberships for an asset (PUT semantics): found the missing episodes,
-     * delete the extra ones.
-     *
      * @param Collection<int, Podcast> $desiredPodcasts
      */
     public function setMembership(Asset $asset, Collection $desiredPodcasts, bool $flush = true, bool $inheritFromAsset = false): void
@@ -74,9 +70,7 @@ final class PodcastEpisodeFactory extends AbstractManager
     }
 
     /**
-     * Seed a freshly founded episode with data from its asset: title/description via the configured
-     * podcast_episode_entity_map, next episode number and audio duration. Public-export (web/app) is NOT
-     * set here — that is the host app's publishing concern.
+     * Seed episode from asset: texts via entity map, next episode number, audio duration.
      */
     private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset): void
     {

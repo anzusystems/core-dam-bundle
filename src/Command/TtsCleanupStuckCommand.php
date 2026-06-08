@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Helper\DateTimeHelper;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use DateTimeImmutable;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -21,24 +22,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
- * Reconcile TTS requests stalled by a crashed/restarted worker or a lost Pub/Sub message (the claim and
- * synthesis windows run outside one transaction, so an ungraceful kill leaves the chain mid-flight).
- *
- * Recovery first, give-up second:
- *  - Processing with no chunk activity since `--older-than` → RESUME (re-dispatch the next pending chunk,
- *    re-arm a chunk stuck mid-synth, or finalize when all chunks are done) — idempotent,
- *  - Waiting since `--older-than` → RESUME (re-dispatch the plan message),
- *  - anything stalled past `--hard-cap` → FAIL (frees the idempotency key for a fresh dispatch),
- *  - a chunk genuinely Failed → FAIL its parent request,
- *  - regen stuck in 'superseding' past `--hard-cap` → cancel (the old audio is still valid).
- *
- * `--older-than` must exceed a single chunk's synth time (seconds) so an in-flight chunk is never reset;
- * requests still advancing have a recently-modified chunk and are skipped entirely.
- *
- * Usage:
- *   bin/console anzu-dam:tts:cleanup-stuck
- *   bin/console anzu-dam:tts:cleanup-stuck --older-than=5m --hard-cap=1h
- *   bin/console anzu-dam:tts:cleanup-stuck --dry-run
+ * Reconcile stalled TTS requests: resume recoverable ones (Waiting/Processing past --older-than),
+ * fail/cancel those past --hard-cap. --older-than must exceed one chunk's synth time.
  */
 #[AsCommand(
     name: 'anzu-dam:tts:cleanup-stuck',
@@ -54,6 +39,7 @@ final class TtsCleanupStuckCommand extends Command
     public function __construct(
         private readonly TtsAssetRepository $ttsAssetRepository,
         private readonly TtsNarrationRequestRepository $requestRepository,
+        private readonly TtsSynthesisChunkRepository $chunkRepository,
         private readonly TtsRequestOrchestrator $orchestrator,
         private readonly TtsCancellationFacade $cancelRequest,
         private readonly TtsRequestFailer $requestFailer,
@@ -122,8 +108,7 @@ final class TtsCleanupStuckCommand extends Command
     }
 
     /**
-     * Processing requests whose chain stopped advancing. Past the hard cap → fail; a genuinely failed
-     * chunk → fail; otherwise resume (re-dispatch next pending / re-arm stuck chunk / finalize).
+     * Past hard cap or failed chunk → fail; otherwise resume (re-dispatch / re-arm / finalize).
      */
     private function reconcileProcessing(
         DateTimeImmutable $staleBefore,
@@ -135,7 +120,9 @@ final class TtsCleanupStuckCommand extends Command
         foreach ($this->requestRepository->findStalledProcessing($staleBefore, self::BATCH_LIMIT) as $request) {
             $requestId = (string) $request->getId();
 
-            if ($request->getCreatedAt() < $hardCapBefore) {
+            // Hard cap from last real progress (latest chunk activity, or startedAt for inline path).
+            $stalledSince = $this->chunkRepository->findLastChunkActivity($requestId) ?? $request->getStartedAt();
+            if (null !== $stalledSince && $stalledSince < $hardCapBefore) {
                 if (false === $dryRun) {
                     $this->requestFailer->fail($request, 'Processing stalled beyond hard cap.');
                 }
@@ -164,8 +151,7 @@ final class TtsCleanupStuckCommand extends Command
     }
 
     /**
-     * Requests left in Waiting (plan/dispatch message lost). Past the hard cap → fail (frees the
-     * idempotency key); otherwise re-dispatch the plan message — the claim guard makes it idempotent.
+     * Dispatch message lost; past hard cap → fail (frees idempotency key), otherwise re-dispatch.
      */
     private function reconcileWaiting(
         DateTimeImmutable $staleBefore,
@@ -176,7 +162,7 @@ final class TtsCleanupStuckCommand extends Command
         $count = 0;
         foreach ($this->requestRepository->findStuckWaiting($staleBefore, self::BATCH_LIMIT) as $request) {
             $requestId = (string) $request->getId();
-            // Waiting age is tracked by modifiedAt (startedAt is only set at Processing) — same field findStuckWaiting filters on.
+            // Uses modifiedAt — startedAt is only set at Processing.
             $pastHardCap = $request->getModifiedAt() < $hardCapBefore;
 
             if (false === $dryRun && $pastHardCap) {
@@ -197,7 +183,7 @@ final class TtsCleanupStuckCommand extends Command
     }
 
     /**
-     * Regen left in 'superseding' past the hard cap → cancel the active regen (the old audio is valid).
+     * Regen stuck in 'superseding' past hard cap → cancel (old audio remains valid).
      */
     private function cancelStuckRegens(DateTimeImmutable $hardCapBefore, bool $dryRun, OutputInterface $output): int
     {

@@ -32,15 +32,14 @@ final class TmpLocalFilesystem extends LocalFilesystem
     }
 
     /**
-     * Best-effort variant — swallow filesystem errors. Orphaned tmp files are acceptable for the
-     * next gc sweep, so callers in `finally` blocks should not propagate cleanup failures.
+     * Best-effort: swallow errors — orphaned tmp files are acceptable for the next GC sweep.
      */
     public function tryClearPaths(): void
     {
         try {
             $this->clearPaths();
         } catch (FilesystemException) {
-            // intentional swallow — see method docblock
+            // intentional swallow
         }
     }
 

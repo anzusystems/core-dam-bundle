@@ -12,12 +12,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Replace the full set of podcast memberships for an asset (PUT semantics). Licence-mismatched podcasts are
- * logged + skipped — sync never aborts. Freshly founded episodes inherit the asset's title/description/number/
- * duration. Dispatching the asset-changed event (same seam the TTS orchestrator uses) both notifies linked
- * ext-systems (the CMS medium) and lets the host app publish the episodes of a TTS asset to web/app.
- */
+/** PUT-semantics podcast membership sync; licence-mismatched podcasts are skipped. */
 final readonly class PodcastMembershipFacade
 {
     public function __construct(

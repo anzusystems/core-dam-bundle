@@ -28,9 +28,7 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Single JOIN-fetch of TtsAsset + its Asset by Asset id. Optional pessimistic write lock for
-     * the regen / swap mutate paths — replaces the prior
-     * `assetRepo->find(LOCK)` + `ttsAssetRepo->findByAsset()` two-query pattern.
+     * JOIN-fetch TtsAsset + Asset by Asset id; optional pessimistic write lock for mutate paths.
      */
     public function findByAssetIdJoined(string $assetId, ?LockMode $lockMode = null): ?TtsAsset
     {
@@ -49,10 +47,7 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Content-addressed dedup: an active asset with the same source text + voiceFamily already exists in this
-     * licence. Identical text in the same voice produces identical audio, so the caller reuses it instead
-     * of paying for another synthesis. Keyed on (licence, sourceTextHash, voiceFamily) — language rides on
-     * the licence's ext-system, the voiceFamily pins the voice.
+     * Content-addressed dedup: same text hash + voiceFamily in this licence → reuse existing audio.
      *
      * @param non-empty-list<TtsAudioStatus> $activeStatuses
      */
@@ -78,9 +73,6 @@ final class TtsAssetRepository extends AbstractAnzuRepository
     }
 
     /**
-     * TtsAssets stuck in 'superseding' whose underlying Asset has not been touched since $threshold.
-     * Used by the cleanup cron to cancel TTL-exceeded regen jobs.
-     *
      * @return Collection<int, TtsAsset>
      */
     public function findStuckSuperseding(DateTimeImmutable $threshold, int $limit): Collection

@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsReservedAssetRemover;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
@@ -26,15 +27,7 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * Two-phase regen cancel: phase 1 flips superseding→cancelling on TtsAsset + signals the in-flight
- * request via {@see TtsNarrationRequest::$cancelRequested}; phase 2 re-locks after commit and
- * resolves the race with the orchestrator's swap. Initial cancel mutates only the request
- * (no asset exists yet).
- *
- * Returns true when the request was successfully cancelled (HTTP 200), false when it could not be
- * cancelled because the terminal state was already reached (HTTP 409).
- */
+/** Two-phase regen cancel: phase 1 flags Cancelling + signals in-flight request; phase 2 resolves race with orchestrator swap. */
 final readonly class TtsCancellationFacade
 {
     public function __construct(
@@ -43,6 +36,7 @@ final readonly class TtsCancellationFacade
         private TtsNarrationRequestManager $requestManager,
         private TtsAssetManager $ttsAssetManager,
         private TtsChunkCleaner $chunkCleaner,
+        private TtsReservedAssetRemover $reservedAssetRemover,
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
@@ -50,9 +44,6 @@ final readonly class TtsCancellationFacade
     }
 
     /**
-     * Returns true when cancelled (caller → HTTP 200 with the refreshed entity),
-     * false when the request can no longer be cancelled (caller → HTTP 409).
-     *
      * @throws ImmutableAudioNarrationException if the request status is not in CANCELLABLE_STATUSES
      */
     public function cancel(TtsNarrationRequest $request, ?string $userId): bool
@@ -73,7 +64,7 @@ final readonly class TtsCancellationFacade
         };
 
         if ($cancelled) {
-            // Cancelled is terminal → the failer's terminal guard won't run; purge any chunk blobs/rows here.
+            // Terminal cancel bypasses the failer's guard — purge chunks explicitly.
             $this->chunkCleaner->purge($request);
         }
 
@@ -84,7 +75,6 @@ final readonly class TtsCancellationFacade
     {
         $callbackData = $this->entityManager->wrapInTransaction(
             function () use ($request, $userId): ?CancelledCallbackData {
-                // Re-lock for status consistency under concurrency.
                 $locked = $this->requestRepo->find((string) $request->getId(), LockMode::PESSIMISTIC_WRITE);
                 if (null === $locked || false === $locked->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
                     throw new ImmutableAudioNarrationException(sprintf('Request "%s" no longer cancellable.', (string) $request->getId()));
@@ -107,6 +97,8 @@ final readonly class TtsCancellationFacade
         if (null !== $callbackData) {
             $this->dispatchCancelledCallback($callbackData);
         }
+
+        $this->reservedAssetRemover->remove((string) $request->getAssetId(), (string) $request->getId());
 
         return true;
     }
@@ -148,7 +140,6 @@ final readonly class TtsCancellationFacade
 
         return match ($ttsAsset->getStatus()) {
             TtsAudioStatus::Cancelling => $this->finalizeWonRace($ttsAsset, $userId),
-            // SwapCompleted or AlreadyFailed — both collapse to "can't cancel" (409)
             default => new RegenCancelOutcome(cancelled: false, callbackData: null),
         };
     }
@@ -160,7 +151,7 @@ final readonly class TtsCancellationFacade
         $assetId = (string) $ttsAsset->getAsset()->getId();
         $activeRegen = $this->requestRepo->findActiveRegenForStable($assetId);
 
-        // The swap never ran, so the old audio is intact — return the asset to Active, not Failed.
+        // Swap never ran — old audio is intact; restore Active, not Failed.
         $this->ttsAssetManager->markActive($ttsAsset);
 
         $callbackData = null;
@@ -178,7 +169,6 @@ final readonly class TtsCancellationFacade
 
     private function dispatchCancelledCallback(CancelledCallbackData $callbackData): void
     {
-        // Dispatched to pub/sub so a transient CMS outage is retried by the transport — never swallowed.
         $this->messageBus->dispatch(new TtsMediaStatusCallbackMessage(
             extSystemId: $callbackData->extSystemId,
             assetId: $callbackData->assetId,

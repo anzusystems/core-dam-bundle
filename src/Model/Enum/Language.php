@@ -26,10 +26,7 @@ enum Language: string implements EnumInterface
         };
     }
 
-    /**
-     * BCP-47 language tag (hyphenated) for the locale passed to TTS providers — Google `languageCode`
-     * (ElevenLabs auto-detects from its multilingual model and needs no explicit locale).
-     */
+    /** BCP-47 tag for Google TTS `languageCode` (ElevenLabs auto-detects from its model). */
     public function getBcpLocale(): string
     {
         return str_replace('_', '-', $this->getLocale());

@@ -39,7 +39,6 @@ final class TtsNarrationRequestController extends AbstractApiController
     public function dispatch(#[SerializeParam] TtsSynthesizeRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        // Sys auth is role-gated (ROLE_SYS_SYNTHETIZE via security access_control), no per-permission ACL here.
         $result = $this->dispatchNew->synthesize($dto);
 
         return $this->getResponse(

@@ -480,14 +480,10 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                 ],
                             ],
                             'tts.elevenlabs.api.client' => [
-                                // prepend-phase partial config slices skip defaults; literal fallback prevents Undefined-key warning.
                                 'base_uri' => $configSettings[SettingsConfiguration::TTS_ELEVENLABS_API_HOST] ?? SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT,
-                                // TTS synthesis is slow — observed 5–40 s per 5k-char chunk. Generous ceilings
-                                // so a slow-but-progressing response is not killed mid-stream by Symfony's
-                                // 30 s default. Hard cap stays well under the messenger worker time-limit (600 s)
-                                // so a single stuck request never blocks the worker indefinitely.
-                                'timeout' => 60,        // connect / first-byte
-                                'max_duration' => 300,  // per request hard ceiling (5 min)
+                                // Generous ceilings: TTS synthesis can take 5–40 s per chunk.
+                                'timeout' => 60,
+                                'max_duration' => 300,
                                 'headers' => [
                                     'Content-Type' => 'application/json',
                                     'Accept' => 'audio/mpeg',
@@ -743,8 +739,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
-                // ext-systems may omit `image:` entirely (e.g. TTS-only systems produce audio only);
-                // Symfony then auto-defaults an empty image block without required domain keys.
+                // ext-systems may omit `image:` (Symfony auto-defaults an empty block without domain keys).
                 if (AssetType::Image->toString() === $assetType && isset($assetExtSystemConfig[ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY])) {
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY];

@@ -13,9 +13,7 @@ use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
 
-/**
- * Shared dispatch helpers for TTS functional tests (default cms licence + seeded default voice family).
- */
+/** Shared dispatch helpers for TTS functional tests. */
 abstract class AbstractTtsFunctionalTestCase extends CoreDamKernelTestCase
 {
     protected TtsDispatchFacade $dispatchFacade;
@@ -39,7 +37,7 @@ abstract class AbstractTtsFunctionalTestCase extends CoreDamKernelTestCase
     }
 
     /**
-     * Dispatches an Initial request and leaves it in Waiting — enqueue:false never triggers the worker.
+     * Dispatches a request with enqueue:false, leaving it in Waiting.
      */
     protected function dispatchWaitingRequest(string $text): TtsNarrationRequest
     {

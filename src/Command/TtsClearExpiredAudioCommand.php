@@ -10,11 +10,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/**
- * Cron entrypoint: delete superseded TTS audio files whose retention grace has elapsed (kept alive so their
- * old public CDN URLs stay streamable for a window after a regeneration). Register alongside the other DAM
- * GC crons (e.g. `anzu-dam:asset:clear`).
- */
+/** Cron: delete superseded TTS audio files whose CDN retention grace has elapsed. */
 #[AsCommand(
     name: 'anzu-dam:tts:clear-expired-audio',
     description: 'Delete superseded TTS audio files whose retention grace period has elapsed'

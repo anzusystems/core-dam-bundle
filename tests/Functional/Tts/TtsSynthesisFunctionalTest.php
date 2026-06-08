@@ -19,11 +19,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\ElevenlabsClientMock;
 
-/**
- * End-to-end TTS pipeline over real fixtures + mocked providers:
- * request → voice resolve → ElevenLabs (mock returns sample MP3 bytes) → ffmpeg concat → store → asset.
- * Asserts the concatenated master audio duration so a broken chunk/concat step is caught.
- */
+/** End-to-end TTS pipeline: dispatch → chunk → ElevenLabs mock → concat → assert duration. */
 final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
 {
     private TtsNarrationRequestHandler $planHandler;
@@ -47,8 +43,7 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Provider failure path: the chunk synth returns 500 → the chunk fails → the request is marked Failed and
-     * its reserved (file-less) asset is dropped so it doesn't shadow future dispatch idempotency.
+     * Provider 500 → request marked Failed, reserved asset dropped.
      */
     public function testFailedSynthesisMarksRequestFailedAndCleansUpAsset(): void
     {
@@ -60,7 +55,6 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         $requestId = (string) $result->narrationRequest->getId();
         $reservedAssetId = (string) $result->getAssetId();
 
-        // Real worker entry: plan + drive the chunk chain; the synth hits the mocked 500.
         $this->drivePipeline($requestId);
 
         $request = $this->requestRepo->find($requestId);
@@ -77,14 +71,12 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
 
     public function testMultiChunkConcatMatchesExpectedDuration(): void
     {
-        // Single chunk → one mocked MP3 → baseline duration.
         $single = $this->dispatchAndProcess('A single short narration sentence.');
         $singleDuration = $this->masterDuration($single);
         self::assertGreaterThan(0, $singleDuration, 'Master audio duration must be extracted.');
         self::assertTrue($this->ttsStatus($single)->is(TtsAudioStatus::Active));
 
-        // Two ~3.5k-char sentences → combined > 4800 effective chunk size → exactly two chunks → concat of
-        // two identical mocked MP3s → ~double the duration. Verifies the ffmpeg concat actually concatenated.
+        // Two ~3.5k-char sentences force exactly two chunks; concat should yield ~2× duration.
         $sentence = str_repeat('veta ', 700) . '.';
         $twoChunkText = $sentence . ' ' . $sentence;
         $multi = $this->dispatchAndProcess($twoChunkText);
@@ -111,8 +103,7 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Real worker entry over the sync transport: plan the request, then drive the per-chunk chain inline
-     * (messages aren't auto-consumed in tests; the last chunk assembles + finalizes) until none stay pending.
+     * Plans the request then drives the per-chunk chain until no pending chunks remain.
      */
     private function drivePipeline(string $requestId): void
     {

@@ -56,13 +56,7 @@ final class AssetFileRouteFactory extends AbstractManager
     }
 
     /**
-     * Wires a caller-prepared main route (slug + storage path already computed) onto an audio file and
-     * persists it WITHOUT the uniqueness guard {@see createFileRoute} applies — TTS uses random slugs, so a
-     * path collision is not a concern and the extra lookup is skipped. Caller owns the surrounding flush.
-     *
-     * RouteStatus::Active here means "enabled" (vs Disabled), NOT "already serving": the URL only resolves
-     * once the bytes are copied to the public path ({@see AssetFileRouteFacade::makePublic()}) and the file
-     * is the asset's served file (slot/mainFile). Both happen after this — the route is reserved up front.
+     * Persist a pre-built route without uniqueness check (TTS uses random slugs). Caller owns the flush.
      */
     public function createPrebuiltAudioRoute(AudioFile $audioFile, string $slug, string $path): AssetFileRoute
     {

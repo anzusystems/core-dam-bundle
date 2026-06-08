@@ -7,10 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 
-/**
- * Outcome of {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade}.
- * Callers map `status` directly to HTTP status (Pending → 201, Duplicate → 200, AlreadyPending → 409).
- */
+/** Outcome of TtsDispatchFacade; status maps to HTTP (Pending→201, Duplicate→200, AlreadyPending→409). */
 final readonly class DispatchResult
 {
     private function __construct(
@@ -27,8 +24,7 @@ final readonly class DispatchResult
     }
 
     /**
-     * Content-addressed dedup: identical (licence, source text, voiceFamily) already produced an asset, so no
-     * synthesis runs — the existing asset id is handed back for the caller (CMS) to reuse.
+     * Content-addressed dedup: same licence+text+family already has an asset; hands back its id.
      */
     public static function duplicate(string $originAssetId): self
     {
@@ -40,12 +36,6 @@ final readonly class DispatchResult
         return new self(DispatchStatus::AlreadyPending);
     }
 
-    /**
-     * Returns the target asset id:
-     * - Pending: the freshly reserved asset id (the shell created at dispatch)
-     * - Duplicate: the existing active asset id
-     * - AlreadyPending: null — a concurrent dispatch owns the media attach, this duplicate is a no-op
-     */
     public function getAssetId(): ?string
     {
         return match ($this->status) {

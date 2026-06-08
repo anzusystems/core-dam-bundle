@@ -7,11 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\CustomFilter;
 use AnzuSystems\CommonBundle\ApiFilter\CustomFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 
-/**
- * Scopes a {@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest} listing to one ext system. The
- * request stores its ext system as a denormalised scalar column ({@see
- * \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest::$extSystemId}), so it filters on `t.extSystemId`.
- */
+/** Filters TtsNarrationRequest listing by denormalised extSystemId scalar column. */
 final class TtsNarrationRequestExtSystemFilter implements CustomFilterInterface
 {
     public const string EXT_SYSTEM = 'extSystem';

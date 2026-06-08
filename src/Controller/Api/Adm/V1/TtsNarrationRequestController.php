@@ -43,10 +43,6 @@ final class TtsNarrationRequestController extends AbstractApiController
     ) {
     }
 
-    /**
-     * Lists narration requests of an asset licence; authorized on the licence. The CMS polls its article's
-     * narration progress here, narrowing to the article's asset via the `asset` api-params filter.
-     */
     #[Route('/licence/{assetLicence}', name: 'get_list_by_licence', methods: [Request::METHOD_GET])]
     #[OAParameterPath('assetLicence'), OAResponseList(TtsNarrationRequest::class)]
     public function getListByLicence(ApiParams $apiParams, AssetLicence $assetLicence): JsonResponse
@@ -56,9 +52,6 @@ final class TtsNarrationRequestController extends AbstractApiController
         return $this->okResponse($this->requestDecorator->findByLicence($apiParams, $assetLicence));
     }
 
-    /**
-     * Lists narration requests of an ext system (DAM admin overview); authorized on the ext system.
-     */
     #[Route('/ext-system/{extSystem}', name: 'get_list_by_ext_system', methods: [Request::METHOD_GET])]
     #[OAParameterPath('extSystem'), OAResponseList(TtsNarrationRequest::class)]
     public function getListByExtSystem(ApiParams $apiParams, ExtSystem $extSystem): JsonResponse
@@ -90,7 +83,6 @@ final class TtsNarrationRequestController extends AbstractApiController
 
         $result = $this->dispatchNew->synthesize($dto);
 
-        // Per DispatchResult contract: Duplicate → 200 hands back the deduped asset id (don't drop it).
         return $this->getResponse(
             SynthesizeResponseDto::fromResult($result),
             match ($result->status) {

@@ -13,9 +13,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-/**
- * Per-call API key lets one `tts.elevenlabs.api.client` instance serve multiple ExtSystem tenants.
- */
 final readonly class ElevenlabsClient
 {
     public const string HEADER_X_API_KEY = 'xi-api-key';
@@ -35,7 +32,6 @@ final readonly class ElevenlabsClient
     public function synthesize(string $externalVoiceId, string $apiKey, ElevenlabsSynthesizeRequestDto $request): ElevenlabsResponse
     {
         try {
-            // Null-skipping: an unset `previous_request_ids` is omitted rather than sent as null.
             /** @var array<string, mixed> $body */
             $body = $this->serializer->toArray($request, (new SerializationContext())->setSerializeNulls(false));
             $response = $this->ttsElevenlabsApiClient->request(
@@ -59,8 +55,6 @@ final readonly class ElevenlabsClient
     }
 
     /**
-     * Free-tier keys see only a subset — exactly the voices that won't return 402.
-     *
      * @throws TtsProviderException
      */
     public function listVoices(string $apiKey): HttpClientResponse

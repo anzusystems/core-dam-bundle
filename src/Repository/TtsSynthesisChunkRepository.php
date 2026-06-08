@@ -20,9 +20,7 @@ use Doctrine\DBAL\LockMode;
 final class TtsSynthesisChunkRepository extends AbstractAnzuRepository
 {
     /**
-     * Pessimistic-write lock for handler-side claim transitions (Pending → Processing).
-     * Pub/Sub redelivery may bring the same chunk message twice; both workers serialise on
-     * this row so only one wins the claim.
+     * Pessimistic-write lock for Pending → Processing claim; serialises Pub/Sub redelivery races.
      */
     public function findForUpdate(string $id): ?TtsSynthesisChunk
     {
@@ -30,8 +28,7 @@ final class TtsSynthesisChunkRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Lowest-ordinal Pending chunk for a request — the sequential dispatcher looks this up after
-     * marking its own chunk Done to dispatch the next one (null = all chunks done → assemble).
+     * Lowest-ordinal Pending chunk; null means all chunks done → assemble.
      */
     public function findNextPending(string $requestId): ?TtsSynthesisChunk
     {
@@ -65,8 +62,7 @@ final class TtsSynthesisChunkRepository extends AbstractAnzuRepository
     }
 
     /**
-     * The ≤{@see $limit} most recent Done chunks before {@see $beforeOrdinal}, oldest-first — the
-     * ElevenLabs `previous_request_ids` chain for the chunk about to be synthesised.
+     * Up to $limit Done chunks before $beforeOrdinal, oldest-first — ElevenLabs previous_request_ids chain.
      *
      * @return list<string>
      */
@@ -133,45 +129,19 @@ final class TtsSynthesisChunkRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Cron sweeper input: chunks stuck Pending despite the request being live (worker never picked
-     * up the message, or chain dispatch was missed). Threshold computed by the caller.
-     *
-     * @return Collection<int, TtsSynthesisChunk>
+     * MAX modifiedAt across chunks; null for single-chunk inline (no rows). Stall baseline for cleanup cron.
      */
-    public function findStuckPending(DateTimeImmutable $threshold, int $limit): Collection
+    public function findLastChunkActivity(string $requestId): ?DateTimeImmutable
     {
-        return new ArrayCollection(
-            $this->createQueryBuilder('c')
-                ->where('c.status = :pending')
-                ->andWhere('c.modifiedAt < :threshold')
-                ->setParameter('pending', TtsChunkStatus::Pending)
-                ->setParameter('threshold', $threshold)
-                ->orderBy('c.modifiedAt', 'ASC')
-                ->setMaxResults($limit)
-                ->getQuery()
-                ->getResult()
-        );
-    }
+        $max = $this->createQueryBuilder('c')
+            ->select('MAX(c.modifiedAt)')
+            ->where('IDENTITY(c.request) = :rid')
+            ->setParameter('rid', $requestId)
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
 
-    /**
-     * Cron sweeper input: chunks claimed but never finished (worker crashed mid-synth). Caller picks
-     * a generous threshold — false positives steal work from a still-live worker.
-     *
-     * @return Collection<int, TtsSynthesisChunk>
-     */
-    public function findStuckProcessing(DateTimeImmutable $threshold, int $limit): Collection
-    {
-        return new ArrayCollection(
-            $this->createQueryBuilder('c')
-                ->where('c.status = :processing')
-                ->andWhere('c.startedAt < :threshold')
-                ->setParameter('processing', TtsChunkStatus::Processing)
-                ->setParameter('threshold', $threshold)
-                ->orderBy('c.startedAt', 'ASC')
-                ->setMaxResults($limit)
-                ->getQuery()
-                ->getResult()
-        );
+        return null !== $max ? new DateTimeImmutable((string) $max) : null;
     }
 
     protected function getEntityClass(): string

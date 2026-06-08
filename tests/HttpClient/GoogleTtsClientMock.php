@@ -10,11 +10,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\Response;
 
-/**
- * Mocks the Google Cloud Text-to-Speech HTTP API. `POST /v1/text:synthesize` returns a JSON body with
- * base64-encoded bytes of a real sample MP3 ({@see tests/data/Files/audiob}), matching Google's
- * `audioContent` contract so the provider's base64 decode + concat pipeline runs for real.
- */
+/** Mocks Google TTS API; returns base64-encoded sample MP3 in `audioContent` so the pipeline runs for real. */
 final class GoogleTtsClientMock
 {
     private const string SAMPLE_MP3 = 'audiob';

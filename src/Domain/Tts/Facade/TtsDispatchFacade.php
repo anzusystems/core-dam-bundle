@@ -27,10 +27,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * Idempotent on (licence, sourceTextHash, voiceFamilySlug) — short-circuits on existing active asset or
- * in-flight Initial request before paying the voice/provider precheck cost.
- */
+/** Idempotent on (licence, sourceTextHash, voiceFamilySlug) — skips provider precheck on existing/in-flight. */
 final readonly class TtsDispatchFacade
 {
     public function __construct(
@@ -46,8 +43,7 @@ final readonly class TtsDispatchFacade
     }
 
     /**
-     * @param bool $enqueue When false the Messenger message is not dispatched — caller runs the
-     *                      orchestrator itself (sync test command).
+     * @param bool $enqueue false = caller runs the orchestrator synchronously (test command).
      *
      * @throws ValidationException
      */
@@ -61,10 +57,8 @@ final readonly class TtsDispatchFacade
 
         $voice = $this->resolveVoiceOrThrowValidation($dto->getVoiceFamilySlug(), $extSystem);
 
-        // Must match TtsAudioCreationInput's hash (sha256 of source text).
         $sourceTextHash = hash('sha256', $dto->getText());
 
-        // Same (licence, text, voice) already produced an asset — reuse it (status: duplicate), don't re-synthesize.
         $duplicate = $this->findExistingForContent($sourceTextHash, $voice, $licence);
         if (null !== $duplicate) {
             return $duplicate;
@@ -98,9 +92,7 @@ final readonly class TtsDispatchFacade
     }
 
     /**
-     * Tenant-config failures (missing API key, unregistered storage) surface under `extSystem` —
-     * the broken thing is tenant config, not the caller's licence. Raw provider message is
-     * forwarded so the admin sees an actionable cause.
+     * Tenant-config failures (missing key, unregistered storage) surface under extSystem field.
      *
      * @throws ValidationException
      */
@@ -133,9 +125,7 @@ final readonly class TtsDispatchFacade
             $this->requestManager->create(request: $request, flush: false);
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException) {
-            // A concurrent Initial dispatch already reserved this (licence, sourceTextHash, voiceFamilySlug)
-            // and attaches the media on its own Pending result — this duplicate is a no-op.
-            // Do NOT query via the EntityManager here: it is closed after a flush exception.
+            // Concurrent dispatch won the unique slot; EM is closed after flush exception — no query here.
             return DispatchResult::alreadyPending();
         }
 
@@ -144,9 +134,7 @@ final readonly class TtsDispatchFacade
 
     private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, string $initialIdempotencyKey): TtsNarrationRequest
     {
-        // Reserve a stable asset id by creating the file-less audio shell up front: the CMS placeholder media
-        // (created from the dispatch response) and the audio attached on completion then share one id, and the
-        // success callback targets the media CMS already holds. Rolled back with the request on a unique clash.
+        // Shell asset reserves the stable id shared by the CMS placeholder and the final audio; rolled back on unique clash.
         $shellAsset = $this->assetFactory->createAudioShell($licence);
 
         $request = (new TtsNarrationRequest())

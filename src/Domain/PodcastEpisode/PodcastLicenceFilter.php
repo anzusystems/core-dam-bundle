@@ -10,11 +10,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-/**
- * Keeps only the podcasts whose licence matches the asset's licence; licence-mismatched podcasts are
- * logged and skipped so membership sync never aborts. Shared by the podcast-membership facade and the
- * TTS orchestrator (initial/regen creation).
- */
+/** Filters podcasts to those whose licence matches the asset's; logs and skips mismatches. */
 final readonly class PodcastLicenceFilter
 {
     public function __construct(

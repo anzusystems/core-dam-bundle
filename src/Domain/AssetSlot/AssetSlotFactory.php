@@ -50,14 +50,8 @@ readonly class AssetSlotFactory
     }
 
     /**
-     * Points the asset's named slot at {@see $newFile}, returning the file it previously held (or null
-     * if the slot did not exist yet — in which case a fresh relation is created like {@see createRelation}).
-     *
-     * The previous file is left attached to the asset (its `asset` FK is untouched, so the required
-     * relation invariant holds) but detached from the slot — TTS regeneration uses this to keep the old
-     * audio (and its public-bucket CDN URL) alive while the new file gets a new slot/URL. The caller owns
-     * the previous file's lifecycle from here (e.g. {@see AssetFile::setExpireAt()} for grace cleanup).
-     *
+     * Swap the named slot to a new file; returns the displaced file (or null if slot was vacant).
+     * The old file stays asset-attached so its CDN URL remains alive until the caller expires it.
      * Caller owns the surrounding transaction/flush.
      */
     public function replaceSlotFile(Asset $asset, AssetFile $newFile, string $slotName): ?AssetFile
@@ -75,7 +69,6 @@ readonly class AssetSlotFactory
         $previousFile = $this->currentSlotFile($slot);
         $previousFile?->getSlots()->removeElement($slot);
 
-        // addSlot() also points the slot back at the new file (owning side); setAsset keeps the required FK.
         $newFile->addSlot($slot);
         $newFile->setAsset($asset);
 

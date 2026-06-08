@@ -35,8 +35,6 @@ final class VoiceFamilyFacade
     }
 
     /**
-     * Validates the existing entity post-copy — it carries the immutable slug/extSystem the payload omits.
-     *
      * @throws ValidationException
      */
     public function update(VoiceFamily $voiceFamily, VoiceFamily $newVoiceFamily): VoiceFamily
@@ -49,8 +47,6 @@ final class VoiceFamilyFacade
     }
 
     /**
-     * Surfaces a translatable error instead of a raw FK violation when TtsAssets still reference the family.
-     *
      * @throws DependencyExistsException
      */
     public function delete(VoiceFamily $voiceFamily): bool

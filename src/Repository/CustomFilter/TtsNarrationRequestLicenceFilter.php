@@ -7,10 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\CustomFilter;
 use AnzuSystems\CommonBundle\ApiFilter\CustomFilterInterface;
 use Doctrine\ORM\QueryBuilder;
 
-/**
- * Scopes a {@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest} listing to one asset licence
- * ({@see \AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest::$assetLicence} FK relation).
- */
+/** Filters TtsNarrationRequest listing by assetLicence FK. */
 final class TtsNarrationRequestLicenceFilter implements CustomFilterInterface
 {
     public const string LICENCE = 'licence';

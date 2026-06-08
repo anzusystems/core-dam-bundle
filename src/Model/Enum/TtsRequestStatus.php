@@ -19,16 +19,9 @@ enum TtsRequestStatus: string implements EnumInterface
 
     public const TtsRequestStatus Default = self::Waiting;
 
-    /**
-     * Statuses that can still be cancelled (haven't reached a terminal state). Synthesis runs in the
-     * Processing window (provider HTTP + in-memory chunking + ffmpeg concat), so the cancel flow
-     * blocks at Processing at the latest.
-     */
+    /** Statuses eligible for cancellation (cancel blocks at Processing at the latest). */
     public const array CANCELLABLE_STATUSES = [self::Waiting, self::Processing];
 
-    /**
-     * Terminal statuses — a request that reached any of these must never transition again (stops a
-     * post-completion error from flipping a Done request to Failed).
-     */
+    /** Terminal statuses — no further transitions allowed. */
     public const array TERMINAL_STATUSES = [self::Done, self::Failed, self::Cancelled];
 }

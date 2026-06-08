@@ -31,8 +31,6 @@ final class VoiceFacade
     }
 
     /**
-     * Validates the existing entity post-copy — it carries the immutable voiceFamily/discriminator the payload omits.
-     *
      * @throws ValidationException
      */
     public function update(Voice $voice, Voice $newVoice): Voice

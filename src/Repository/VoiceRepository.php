@@ -40,8 +40,7 @@ final class VoiceRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Any active voice in the family — the auto-mode fallback when no voice is flagged primary, so a
-     * single-voice family is usable without the admin having to mark one as main. Primary wins ties.
+     * Any active voice; primary wins ties — fallback when no voice is flagged main.
      */
     public function findOneActiveByFamily(VoiceFamily $family): ?Voice
     {

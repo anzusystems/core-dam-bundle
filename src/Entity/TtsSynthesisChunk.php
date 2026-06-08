@@ -15,13 +15,7 @@ use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
-/**
- * One synthesis unit of a multi-chunk TTS request. The text slice is fixed at plan time (stored on the
- * row, not re-derived) so the chunk knows from the start which part it owns. Each chunk → one provider
- * HTTP call → MP3 persisted at `mp3StoragePath` in the per-extSystem chunk storage → ffmpeg-concat'd at
- * assemble time. Sequential-only (ElevenLabs `previous_request_ids` chain via `externalRequestId`).
- * Atomic Pending → Processing claim prevents double-synth under Pub/Sub redelivery.
- */
+/** One synthesis unit of a multi-chunk TTS request; Pending→Processing claim is atomic to prevent double-synth. */
 #[ORM\Entity(repositoryClass: TtsSynthesisChunkRepository::class)]
 #[ORM\Table(name: 'tts_synthesis_chunk')]
 #[ORM\UniqueConstraint(name: 'UNIQ_tts_chunk_request_ordinal', fields: ['request', 'ordinal'])]
@@ -45,18 +39,16 @@ final class TtsSynthesisChunk implements UuidIdentifiableInterface, TimeTracking
     #[Serialize]
     private TtsChunkStatus $status;
 
-    // Text slice fixed at plan time — the exact string this chunk synthesizes.
+    // Text slice fixed at plan time.
     #[ORM\Column(type: Types::TEXT)]
     private string $sourceText;
 
-    // ElevenLabs `request-id` of this chunk's response — threaded into later chunks' previous_request_ids.
+    // ElevenLabs request-id — threaded into later chunks' previous_request_ids.
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $externalRequestId;
 
     /**
-     * Relative path within the per-extSystem chunk storage (resolved via
-     * {@see \AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider::getFileSystemByStorageName}).
-     * Set when status flips to Done.
+     * Relative path in per-extSystem chunk storage; set when status flips to Done.
      */
     #[ORM\Column(type: Types::STRING, length: 512, nullable: true)]
     private ?string $mp3StoragePath;

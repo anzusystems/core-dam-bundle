@@ -21,7 +21,7 @@ final class ExtSystemTtsSettings
     private TtsActiveProviderMode $activeProviderMode = TtsActiveProviderMode::Default;
 
     /**
-     * Keyword auto-applied to every TTS asset of this ext-system (e.g. "podcast synthetic audio"). GUID, no FK.
+     * Auto-applied keyword GUID for every TTS asset of this ext-system; no FK.
      */
     #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
     #[Serialize]
