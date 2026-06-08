@@ -176,7 +176,8 @@ final class TtsCleanupStuckCommand extends Command
         $count = 0;
         foreach ($this->requestRepository->findStuckWaiting($staleBefore, self::BATCH_LIMIT) as $request) {
             $requestId = (string) $request->getId();
-            $pastHardCap = $request->getCreatedAt() < $hardCapBefore;
+            // Waiting age is tracked by modifiedAt (startedAt is only set at Processing) — same field findStuckWaiting filters on.
+            $pastHardCap = $request->getModifiedAt() < $hardCapBefore;
 
             if (false === $dryRun && $pastHardCap) {
                 $this->requestFailer->fail($request, 'Stuck in waiting beyond hard cap (dispatch lost).');

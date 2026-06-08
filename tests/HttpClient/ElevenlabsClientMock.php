@@ -19,18 +19,34 @@ final class ElevenlabsClientMock
 {
     private const string SAMPLE_MP3 = 'audioa';
 
+    /**
+     * Sentinel: any synthesize whose source text contains this marker makes the provider return 500, so the
+     * failure path (chunk fails → request fails + reserved asset cleaned up) can be tested deterministically.
+     */
+    public const string FORCE_FAIL_MARKER = 'TTS_FORCE_FAIL';
+
     public function __invoke(): MockHttpClient
     {
         return new MockHttpClient(
-            fn (string $method, string $url, array $options = []): MockResponse => $this->getResponse($url)
+            fn (string $method, string $url, array $options = []): MockResponse => $this->getResponse($url, $options)
         );
     }
 
-    private function getResponse(string $url): MockResponse
+    /**
+     * @param array<string, mixed> $options
+     */
+    private function getResponse(string $url, array $options): MockResponse
     {
         $path = UrlHelper::parseUrl($url)->getPath();
 
         if (str_starts_with($path, '/v1/text-to-speech/')) {
+            if (str_contains((string) ($options['body'] ?? ''), self::FORCE_FAIL_MARKER)) {
+                return new MockResponse(
+                    (string) json_encode(['detail' => ['status' => 'mock_forced_failure']]),
+                    ['http_code' => Response::HTTP_INTERNAL_SERVER_ERROR],
+                );
+            }
+
             return new MockResponse($this->sampleMp3(), [
                 'http_code' => Response::HTTP_OK,
                 'response_headers' => [

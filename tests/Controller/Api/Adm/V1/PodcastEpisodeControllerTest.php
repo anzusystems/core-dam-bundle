@@ -11,10 +11,10 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AudioFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures as BaseImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\PodcastEpisodeFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Tests\ApiClient;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
@@ -177,22 +177,28 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
             'podcasts' => [PodcastFixtures::PODCAST_1],
         ]);
         $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
-
-        $this->entityManager->clear();
-        $asset = $this->entityManager->find(Asset::class, $assetId);
-        $podcastIds = array_map(
-            static fn (PodcastEpisode $episode): string => (string) $episode->getPodcast()->getId(),
-            $this->entityManager->getRepository(PodcastEpisode::class)->findBy(['asset' => $asset]),
-        );
-        $this->assertSame([PodcastFixtures::PODCAST_1], $podcastIds);
+        $this->assertSame([PodcastFixtures::PODCAST_1], $this->fetchMembershipPodcastIds($client, $assetId));
 
         // Full-replace to empty removes membership.
         $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), ['podcasts' => []]);
         $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+        $this->assertSame([], $this->fetchMembershipPodcastIds($client, $assetId));
+    }
 
-        $this->entityManager->clear();
-        $asset = $this->entityManager->find(Asset::class, $assetId);
-        $this->assertCount(0, $this->entityManager->getRepository(PodcastEpisode::class)->findBy(['asset' => $asset]));
+    /**
+     * Reads the asset's current podcast membership through the API (no direct DB access).
+     *
+     * @return list<string>
+     */
+    private function fetchMembershipPodcastIds(ApiClient $client, string $assetId): array
+    {
+        $response = $client->get(PodcastEpisodeUrl::getListByAsset($assetId));
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        return array_values(array_map(
+            static fn (array $episode): string => (string) $episode['podcast'],
+            json_decode($response->getContent(), true)['data'],
+        ));
     }
 
     public static function podcastEpisodePayloadDataProvider(): array

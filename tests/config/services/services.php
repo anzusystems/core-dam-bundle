@@ -22,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImagePositionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceFamilyManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config as TtsConfig;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Facade\TtsDispatchFacade;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
@@ -34,6 +35,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsNarrationRequestFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\BaseClient;
@@ -90,6 +92,12 @@ return static function (ContainerConfigurator $configurator): void {
 
     $services->set(AssetLicenceGroupFixtures::class)
         ->arg('$assetLicenceGroupManager', service(AssetLicenceGroupManager::class))
+        ->call('setEntityManager', [service(EntityManagerInterface::class)])
+        ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
+
+    $services->set(TtsNarrationRequestFixtures::class)
+        ->arg('$dispatchFacade', service(TtsDispatchFacade::class))
+        ->arg('$assetLicenceRepository', service(AssetLicenceRepository::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 

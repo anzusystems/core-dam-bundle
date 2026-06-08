@@ -8,12 +8,13 @@ use AnzuSystems\CoreDamBundle\Command\TtsCleanupStuckCommand;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
-use DateTimeImmutable;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsNarrationRequestFixtures;
 use Symfony\Component\Console\Tester\CommandTester;
 
 /**
- * The cron recovers a request abandoned in Waiting (dispatch/plan message lost): once it is older than the
- * threshold, {@see TtsCleanupStuckCommand} fails it so the idempotency key frees up for a fresh dispatch.
+ * The cron reconciles TTS requests stranded by a lost dispatch message (the {@see TtsNarrationRequestFixtures}
+ * seed the stuck state). The test only runs the command and reads the resulting state back — it never mutates
+ * the DB itself. Sync messenger transport means a resumed request runs its synthesis inline and completes.
  */
 final class TtsCleanupStuckCommandTest extends AbstractTtsFunctionalTestCase
 {
@@ -27,26 +28,46 @@ final class TtsCleanupStuckCommandTest extends AbstractTtsFunctionalTestCase
         $this->command = $this->getService(TtsCleanupStuckCommand::class);
     }
 
-    public function testStuckWaitingRequestIsFailed(): void
+    public function testStuckWaitingPastHardCapIsFailed(): void
     {
-        $requestId = (string) $this->dispatchWaitingRequest('A short narration that gets stuck.')->getId();
+        $requestId = $this->requireStuckWaitingId(TtsNarrationRequestFixtures::FAIL_TEXT);
 
-        // Backdate it past the cleanup threshold (the worker never claimed it).
-        $this->entityManager->createQuery(
-            'UPDATE ' . TtsNarrationRequest::class . ' r SET r.modifiedAt = :old WHERE r.id = :id'
-        )
-            ->setParameter('old', new DateTimeImmutable('-2 hours'))
-            ->setParameter('id', $requestId)
-            ->execute();
-
-        $exitCode = (new CommandTester($this->command))->execute(['--older-than' => '1h']);
-        self::assertSame(0, $exitCode);
+        (new CommandTester($this->command))->execute(['--older-than' => '1h']);
 
         $reloaded = $this->requestRepo->find($requestId);
         self::assertInstanceOf(TtsNarrationRequest::class, $reloaded);
         self::assertTrue(
             $reloaded->getStatus()->is(TtsRequestStatus::Failed),
-            'A stuck-waiting request must be failed by the cleanup cron.',
+            'A request stuck in waiting past the hard cap must be failed by the cleanup cron.',
         );
+    }
+
+    public function testStuckWaitingWithinHardCapIsResumedToCompletion(): void
+    {
+        $requestId = $this->requireStuckWaitingId(TtsNarrationRequestFixtures::RESUME_TEXT);
+
+        (new CommandTester($this->command))->execute(['--older-than' => '1m', '--hard-cap' => '1h']);
+
+        $reloaded = $this->requestRepo->find($requestId);
+        self::assertInstanceOf(TtsNarrationRequest::class, $reloaded);
+        self::assertTrue(
+            $reloaded->getStatus()->is(TtsRequestStatus::Done),
+            'A recoverable stuck request must be resumed and run to completion (sync transport + mocked provider).',
+        );
+    }
+
+    /**
+     * Reads the seeded stuck request and asserts the precondition (still Waiting) before the cron runs.
+     */
+    private function requireStuckWaitingId(string $sourceText): string
+    {
+        $request = $this->requestRepo->findOneBy(['sourceText' => $sourceText]);
+        self::assertInstanceOf(TtsNarrationRequest::class, $request);
+        self::assertTrue(
+            $request->getStatus()->is(TtsRequestStatus::Waiting),
+            'Precondition: the fixture request must start stuck in waiting.',
+        );
+
+        return (string) $request->getId();
     }
 }
