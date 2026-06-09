@@ -24,6 +24,17 @@ final class VoiceFamilyRepository extends AbstractAnzuRepository
         ]);
     }
 
+    public function findOneActiveByExtSystem(ExtSystem $extSystem): ?VoiceFamily
+    {
+        return $this->findOneBy(
+            [
+                'extSystem' => $extSystem,
+                'active' => true,
+            ],
+            ['id' => 'ASC'],
+        );
+    }
+
     /**
      * @return VoiceFamily[]
      */

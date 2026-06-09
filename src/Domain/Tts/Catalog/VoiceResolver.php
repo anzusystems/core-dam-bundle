@@ -29,8 +29,7 @@ final readonly class VoiceResolver
      */
     public function resolve(?string $familySlug, ExtSystem $extSystem): Voice
     {
-        $targetSlug = $familySlug ?? $this->config->getSystemDefaultFamilySlug();
-        $family = $this->resolveFamily($targetSlug, $extSystem);
+        $family = $this->resolveFamily($familySlug, $extSystem);
         $mode = $extSystem->getTtsSettings()->getActiveProviderMode();
 
         return $this->resolveVoice($family, $mode, $extSystem);
@@ -39,14 +38,27 @@ final readonly class VoiceResolver
     /**
      * @throws TtsProviderException if no active family resolves
      */
-    private function resolveFamily(string $targetSlug, ExtSystem $extSystem): VoiceFamily
+    private function resolveFamily(?string $familySlug, ExtSystem $extSystem): VoiceFamily
     {
-        $family = $this->familyRepo->findOneBySlug($targetSlug, $extSystem);
-        $defaultSlug = $this->config->getSystemDefaultFamilySlug();
+        // Explicit slug must resolve to an active family — never silently substitute another voice.
+        if (null !== $familySlug) {
+            $family = $this->familyRepo->findOneBySlug($familySlug, $extSystem);
+            if (null === $family || false === $family->isActive()) {
+                throw new TtsProviderException(sprintf(
+                    'Requested VoiceFamily "%s" is missing or inactive for ext system "%s".',
+                    $familySlug,
+                    $extSystem->getSlug(),
+                ));
+            }
 
-        if ((null === $family || false === $family->isActive()) && $targetSlug !== $defaultSlug) {
-            $family = $this->resolveExtSystemDefaultFamily($extSystem) ?? $this->familyRepo->findOneBySlug($defaultSlug, $extSystem);
+            return $family;
         }
+
+        // No requested family → resolve from DAM config: ext-system default, default slug, then any active family.
+        $defaultSlug = $this->config->getSystemDefaultFamilySlug();
+        $family = $this->resolveExtSystemDefaultFamily($extSystem)
+            ?? $this->familyRepo->findOneBySlug($defaultSlug, $extSystem)
+            ?? $this->familyRepo->findOneActiveByExtSystem($extSystem);
 
         if (null === $family || false === $family->isActive()) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'voiceResolver.defaultFamilyMissing', [
@@ -55,9 +67,8 @@ final readonly class VoiceResolver
             ]);
 
             throw new TtsProviderException(sprintf(
-                'No active VoiceFamily resolved for ext system "%s" (requested slug "%s", default "%s").',
+                'No active VoiceFamily resolved for ext system "%s" (default "%s").',
                 $extSystem->getSlug(),
-                $targetSlug,
                 $defaultSlug,
             ));
         }

@@ -42,11 +42,10 @@ final class VoiceResolverTest extends CoreDamKernelTestCase
         self::assertTrue($voice->isActive());
     }
 
-    public function testUnknownSlugFallsBackToSystemDefault(): void
+    public function testUnknownRequestedSlugThrows(): void
     {
-        $voice = $this->resolver->resolve('does-not-exist', $this->cms);
-
-        self::assertSame(TtsVoiceFixtures::DEFAULT_FAMILY_SLUG, $voice->getVoiceFamily()->getSlug());
+        $this->expectException(TtsProviderException::class);
+        $this->resolver->resolve('does-not-exist', $this->cms);
     }
 
     public function testForcedProviderWithoutMatchingVoiceThrows(): void
