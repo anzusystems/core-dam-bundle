@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
@@ -25,7 +24,7 @@ final readonly class TtsAudioCreationInput
     ) {
     }
 
-    public static function forInitialRequest(
+    public static function fromRequest(
         TtsNarrationRequest $request,
         AdapterFile $audioFile,
         VoiceFamily $family,
@@ -42,28 +41,6 @@ final readonly class TtsAudioCreationInput
             sourceTextSnapshot: $sourceText,
             title: $request->getTitle(),
             description: $request->getDescription(),
-        );
-    }
-
-    /**
-     * Re-synthesises the same source text from the stable {@see TtsAsset} with a possibly different voice.
-     */
-    public static function forRegenerate(
-        TtsNarrationRequest $request,
-        TtsAsset $stableTts,
-        AdapterFile $audioFile,
-        VoiceFamily $family,
-        Voice $voice,
-        AssetLicence $licence,
-    ): self {
-        return new self(
-            audioFile: $audioFile,
-            family: $family,
-            voice: $voice,
-            licence: $licence,
-            sourceTextHash: $stableTts->getSourceTextHash(),
-            sourceTextSnapshot: $stableTts->getSourceTextSnapshot(),
-            title: $request->getTitle(),
         );
     }
 }

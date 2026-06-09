@@ -89,6 +89,35 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         );
     }
 
+    public function testRegenerateViaSysDispatchUpdatesSnapshotAndHash(): void
+    {
+        $initialText = 'Initial narration text for regeneration test.';
+        $asset = $this->dispatchAndProcess($initialText);
+        $assetId = (string) $asset->getId();
+
+        $initialTts = $this->ttsAssetRepo->findByAsset($asset);
+        self::assertNotNull($initialTts);
+        self::assertSame(hash('sha256', $initialText), $initialTts->getSourceTextHash());
+
+        $newText = 'Completely new narration text replacing the old one for this asset.';
+        $regenDto = $this->buildSynthesizeDto($newText)->setRegenerateAssetId($assetId);
+
+        $result = $this->dispatchFacade->synthesize($regenDto, enqueue: false);
+        self::assertNotNull($result->narrationRequest, 'Regen dispatch must produce a request.');
+        self::assertSame($assetId, $result->getAssetId(), 'Regen must reuse the stable asset id.');
+
+        $this->drivePipeline((string) $result->narrationRequest->getId());
+
+        $regenAsset = $this->assetRepo->find($assetId);
+        self::assertInstanceOf(Asset::class, $regenAsset);
+
+        $regenTts = $this->ttsAssetRepo->findByAsset($regenAsset);
+        self::assertNotNull($regenTts);
+        self::assertTrue($regenTts->getStatus()->is(TtsAudioStatus::Active), 'TtsAsset must be Active after regen.');
+        self::assertSame($newText, $regenTts->getSourceTextSnapshot(), 'Snapshot must reflect new text.');
+        self::assertSame(hash('sha256', $newText), $regenTts->getSourceTextHash(), 'Hash must match new text.');
+    }
+
     private function dispatchAndProcess(string $text): Asset
     {
         $result = $this->dispatchFacade->synthesize($this->buildSynthesizeDto($text), enqueue: false);

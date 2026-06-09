@@ -266,10 +266,7 @@ final readonly class TtsRequestOrchestrator
 
     private function resolveSourceText(TtsNarrationRequest $request): string
     {
-        return match ($request->getMode()) {
-            TtsRequestMode::Initial => (string) $request->getSourceText(),
-            TtsRequestMode::Regenerate => $this->ttsAssetLocker->requireFor($this->resolveTargetAsset($request))->getSourceTextSnapshot(),
-        };
+        return (string) $request->getSourceText();
     }
 
     /**
@@ -297,7 +294,7 @@ final readonly class TtsRequestOrchestrator
         $family = $voice->getVoiceFamily();
         $sourceText = (string) $request->getSourceText();
 
-        $input = TtsAudioCreationInput::forInitialRequest($request, $master, $family, $voice, $licence, $sourceText);
+        $input = TtsAudioCreationInput::fromRequest($request, $master, $family, $voice, $licence, $sourceText);
 
         $result = $this->persistInTransaction($input, $shellAsset, static function (TtsAudioCreationResult $created): void {
             $created->asset->getAssetFlags()->setTtsAudio(true);
@@ -312,9 +309,7 @@ final readonly class TtsRequestOrchestrator
 
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
         $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family, $orphanExpireAt): void {
-            $this->syncFamilyKeywords($result->asset, $family);
-            $this->applyInitialMetadata($result->asset, $request, $extSystem);
-            $this->syncPodcastMembership($request, $result->asset);
+            $this->enrichAssetFromRequest($result->asset, $request, $extSystem, $family);
 
             $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile, expireAt: $orphanExpireAt);
             $this->attachPreviewSlot($result->asset, $preview);
@@ -333,9 +328,11 @@ final readonly class TtsRequestOrchestrator
         $stableAsset = $this->resolveTargetAsset($request);
         $stableTts = $this->ttsAssetLocker->requireFor($stableAsset);
         $licence = $request->getLicence();
+        $extSystem = $licence->getExtSystem();
         $family = $voice->getVoiceFamily();
+        $sourceText = (string) $request->getSourceText();
 
-        $input = TtsAudioCreationInput::forRegenerate($request, $stableTts, $master, $family, $voice, $licence);
+        $input = TtsAudioCreationInput::fromRequest($request, $master, $family, $voice, $licence, $sourceText);
 
         // Safety expiry on unslotted files; AssetSwap::promote() clears it when they go live.
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
@@ -371,15 +368,22 @@ final readonly class TtsRequestOrchestrator
         // Swap is point of no return — commit Done so best-effort enrichment can't flip it to Failed.
         $this->requestManager->markDone($request);
 
-        $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $family): void {
-            $this->syncFamilyKeywords($stableAsset, $family);
-            if ($this->ensureAutoKeyword($stableAsset, $stableAsset->getExtSystem())) {
-                $this->entityManager->flush();
-            }
+        $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $stableTts, $request, $extSystem, $family, $sourceText): void {
+            $stableTts->setSourceTextSnapshot($sourceText)->setSourceTextHash(hash('sha256', $sourceText));
+            $stableAsset->getTexts()->setDisplayTitle($request->getTitle() ?? $stableAsset->getTexts()->getDisplayTitle());
+            $this->enrichAssetFromRequest($stableAsset, $request, $extSystem, $family);
+            $this->assetManager->updateExisting($stableAsset);
             $this->indexManager->index($stableAsset);
         });
 
         $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$stableAsset]));
+    }
+
+    private function enrichAssetFromRequest(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem, VoiceFamily $family): void
+    {
+        $this->syncFamilyKeywords($asset, $family);
+        $this->applyInitialMetadata($asset, $request, $extSystem);
+        $this->syncPodcastMembership($request, $asset);
     }
 
     /**

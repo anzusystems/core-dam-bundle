@@ -10,18 +10,17 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,6 +38,8 @@ final readonly class TtsDispatchFacade
         private MessageBusInterface $messageBus,
         private AssetFactory $assetFactory,
         private Validator $validator,
+        private TtsRegenerationFacade $regenerationFacade,
+        private TtsNarrationRequestFactory $requestFactory,
     ) {
     }
 
@@ -51,6 +52,10 @@ final readonly class TtsDispatchFacade
     {
         App::throwOnReadOnlyMode();
         $this->validator->validate($dto);
+
+        if (null !== $dto->getRegenerateAssetId()) {
+            return $this->regenerationFacade->regenerate($dto, $enqueue);
+        }
 
         $licence = $dto->getLicence();
         $extSystem = $licence->getExtSystem();
@@ -137,20 +142,6 @@ final readonly class TtsDispatchFacade
         // Shell asset reserves the stable id shared by the CMS placeholder and the final audio; rolled back on unique clash.
         $shellAsset = $this->assetFactory->createAudioShell($licence);
 
-        $request = (new TtsNarrationRequest())
-            ->setMode(TtsRequestMode::Initial)
-            ->setVoiceFamilySlug($dto->getVoiceFamilySlug())
-            ->setTitle($dto->getTitle())
-            ->setDescription($dto->getDescription())
-            ->setKeywords($dto->getKeywords())
-            ->setAuthors($dto->getAuthors())
-            ->setExtSystemId($licence->getExtSystem()->getId())
-            ->setAssetLicence($licence)
-            ->setInitialIdempotencyKey($initialIdempotencyKey)
-            ->setAssetId((string) $shellAsset->getId())
-            ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray())
-            ->setSourceText($dto->getText());
-
-        return $request;
+        return $this->requestFactory->createInitial($dto, $licence, (string) $shellAsset->getId(), $initialIdempotencyKey);
     }
 }

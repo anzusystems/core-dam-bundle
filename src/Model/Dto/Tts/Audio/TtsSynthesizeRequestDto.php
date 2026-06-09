@@ -61,6 +61,10 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     #[Assert\All([new Assert\Length(max: 255)])]
     private array $authors = [];
 
+    #[Serialize]
+    #[Assert\Length(max: 36, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private ?string $regenerateAssetId = null;
+
     // Ext system is derived from this; caller is authorized on it.
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
@@ -179,6 +183,18 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     public function setAuthors(array $authors): self
     {
         $this->authors = $authors;
+
+        return $this;
+    }
+
+    public function getRegenerateAssetId(): ?string
+    {
+        return $this->regenerateAssetId;
+    }
+
+    public function setRegenerateAssetId(?string $regenerateAssetId): self
+    {
+        $this->regenerateAssetId = $regenerateAssetId;
 
         return $this;
     }
