@@ -229,16 +229,28 @@ final readonly class TtsRequestOrchestrator
         return TtsResumeOutcome::Finalized;
     }
 
-    /**
-     * Re-plan a chunkless Processing request (worker died before persisting) only if the asset has no audio yet.
-     */
     private function recoverChunkless(TtsNarrationRequest $request): TtsResumeOutcome
     {
         $asset = $this->assetRepo->find((string) $request->getAssetId());
-        if (null === $asset || $this->assetHasAudio($asset)) {
+        if (null === $asset) {
             return TtsResumeOutcome::NoChunks;
         }
 
+        // Regen's stable asset always keeps old audio; re-dispatch resumes the swap (or fails cleanly, old kept).
+        if ($request->getMode()->is(TtsRequestMode::Regenerate)) {
+            return $this->redispatchChunkless($request);
+        }
+
+        if (false === $this->assetHasAudio($asset)) {
+            return $this->redispatchChunkless($request);
+        }
+
+        // Initial with materialised audio is ambiguous (maybe half-finished) — don't auto-finish.
+        return TtsResumeOutcome::NoChunks;
+    }
+
+    private function redispatchChunkless(TtsNarrationRequest $request): TtsResumeOutcome
+    {
         $this->requestManager->markWaiting($request);
         $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $request->getId()));
 
