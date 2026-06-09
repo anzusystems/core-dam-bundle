@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Podcast;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\RssFeed\Channel;
@@ -99,8 +100,7 @@ final class PodcastRssReader
     }
 
     /**
-     * Streams <item> nodes one at a time (constant memory); buffers only the lightweight DTOs to keep
-     * the feed's reverse-chronological order without ever holding the whole feed DOM.
+     * Streams items one at a time (no whole-feed DOM); buffers only the light DTOs to keep reverse order.
      *
      * @throws SerializerException
      * @throws Exception
@@ -142,6 +142,10 @@ final class PodcastRssReader
      */
     private function openReader(): XMLReader
     {
+        if (App::EMPTY_STRING === $this->content) {
+            throw new InvalidArgumentException(message: 'Invalid XML content');
+        }
+
         $reader = XMLReader::XML($this->content);
         if (false === $reader) {
             throw new InvalidArgumentException(message: 'Invalid XML content');
