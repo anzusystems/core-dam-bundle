@@ -50,7 +50,7 @@ final readonly class ElevenlabsClient
                 requestId: $response->getHeaders(false)[self::HEADER_REQUEST_ID][0] ?? null,
             );
         } catch (ExceptionInterface $e) {
-            throw new TtsProviderException(sprintf('ElevenLabs request failed: %s', $e->getMessage()), 0, $e);
+            throw TtsProviderException::transient(sprintf('ElevenLabs request failed: %s', $e->getMessage()), $e);
         }
     }
 
@@ -72,7 +72,7 @@ final readonly class ElevenlabsClient
 
             return new HttpClientResponse(content: $response->getContent(false), statusCode: $response->getStatusCode());
         } catch (ExceptionInterface $e) {
-            throw new TtsProviderException(sprintf('ElevenLabs /v1/voices request failed: %s', $e->getMessage()), 0, $e);
+            throw TtsProviderException::transient(sprintf('ElevenLabs /v1/voices request failed: %s', $e->getMessage()), $e);
         }
     }
 }

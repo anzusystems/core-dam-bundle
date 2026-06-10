@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLifecycle;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsReservedAssetRemover;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
@@ -23,7 +24,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -40,6 +40,7 @@ final readonly class TtsCancellationFacade
         private TtsAuditLogger $auditLogger,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $messageBus,
+        private TtsLocker $ttsLocker,
     ) {
     }
 
@@ -73,43 +74,45 @@ final readonly class TtsCancellationFacade
 
     private function cancelInitial(TtsNarrationRequest $request, ?string $userId): bool
     {
-        $callbackData = $this->entityManager->wrapInTransaction(
+        // Cleanup runs unlocked: once Cancelled is committed under the request lock, every
+        // contender (worker finalize, failer) bails on its own terminal guard.
+        $callbackData = $this->ttsLocker->withRequestLock(
+            $request,
             function () use ($request, $userId): ?CancelledCallbackData {
-                $locked = $this->requestRepo->find((string) $request->getId(), LockMode::PESSIMISTIC_WRITE);
-                if (null === $locked || false === $locked->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
+                if (false === $request->getStatus()->in(TtsRequestStatus::CANCELLABLE_STATUSES)) {
                     throw new ImmutableAudioNarrationException(sprintf('Request "%s" no longer cancellable.', (string) $request->getId()));
                 }
 
-                $this->requestManager->markCancelled($locked);
-                $this->auditLogger->logInitialCancelled((string) $locked->getId(), $userId);
+                $this->requestManager->markCancelled($request, flush: true);
+                $this->auditLogger->logInitialCancelled((string) $request->getId(), $userId);
 
-                $assetId = $locked->getAssetId();
-                $callbackData = null !== $assetId
-                    ? new CancelledCallbackData($locked->getExtSystemId(), $assetId)
+                $assetId = $request->getAssetId();
+
+                return null !== $assetId
+                    ? new CancelledCallbackData($request->getExtSystemId(), $assetId)
                     : null;
-
-                $this->entityManager->flush();
-
-                return $callbackData;
-            }
+            },
         );
 
         if (null !== $callbackData) {
             $this->dispatchCancelledCallback($callbackData);
+            $this->reservedAssetRemover->remove($callbackData->assetId, (string) $request->getId());
         }
-
-        $this->reservedAssetRemover->remove((string) $request->getAssetId(), (string) $request->getId());
 
         return true;
     }
 
     private function cancelRegenerate(string $stableAssetId, ?string $userId): bool
     {
-        $this->entityManager->wrapInTransaction(fn () => $this->requestStop($stableAssetId));
+        // Shares the asset lock with AssetSwap::promote() — the swap either committed before
+        // phase 1 (cancel is rejected) or runs after phase 2 and aborts.
+        $outcome = $this->ttsLocker->withAssetLock($stableAssetId, function () use ($stableAssetId, $userId): RegenCancelOutcome {
+            $this->entityManager->wrapInTransaction(fn () => $this->requestStop($stableAssetId));
 
-        $outcome = $this->entityManager->wrapInTransaction(
-            fn (): RegenCancelOutcome => $this->finalizeRegen($stableAssetId, $userId)
-        );
+            return $this->entityManager->wrapInTransaction(
+                fn (): RegenCancelOutcome => $this->finalizeRegen($stableAssetId, $userId)
+            );
+        });
 
         if (null !== $outcome->callbackData) {
             $this->dispatchCancelledCallback($outcome->callbackData);

@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsRequestFailer;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsSynthesisChunkManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
+use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsChunkStatus;
@@ -50,8 +51,36 @@ final readonly class TtsSynthChunkHandler
                 'ordinal' => $chunk->getOrdinal(),
             ], exception: $e);
 
+            // Transient provider trouble: re-arm + rethrow for transport redelivery with backoff;
+            // repeated failure is bounded by the cleanup-stuck cron's hard cap.
+            if ($e instanceof TtsProviderException && $e->isTransient()) {
+                $this->rearmForRetry($chunk);
+
+                throw $e;
+            }
+
             $this->markChunkFailed($chunk, $e->getMessage());
             $this->requestFailer->fail($request, $e->getMessage());
+        }
+    }
+
+    /**
+     * Best-effort Processing → Pending; when it fails the chunk stays Processing and the
+     * cleanup-stuck cron re-arms it after the stale window.
+     */
+    private function rearmForRetry(TtsSynthesisChunk $chunk): void
+    {
+        if ($chunk->getStatus()->isNot(TtsChunkStatus::Processing)) {
+            return;
+        }
+
+        try {
+            $this->chunkManager->markPending($chunk);
+        } catch (Throwable $rearmEx) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'chunkHandler.rearmFailed', [
+                'chunkId' => (string) $chunk->getId(),
+                'error' => $rearmEx->getMessage(),
+            ]);
         }
     }
 
@@ -89,8 +118,12 @@ final readonly class TtsSynthChunkHandler
 
         try {
             $this->chunkManager->markFailed($chunk, $reason);
-        } catch (Throwable) {
+        } catch (Throwable $markEx) {
             // Best-effort observability; the request-level failure is the source of truth.
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'chunkHandler.markFailedFailed', [
+                'chunkId' => (string) $chunk->getId(),
+                'error' => $markEx->getMessage(),
+            ]);
         }
     }
 }

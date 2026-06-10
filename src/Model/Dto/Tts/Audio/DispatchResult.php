@@ -31,9 +31,12 @@ final readonly class DispatchResult
         return new self(DispatchStatus::Duplicate, existingAssetId: $originAssetId);
     }
 
-    public static function alreadyPending(): self
+    /**
+     * Same content already in flight — carries its asset id so the caller can attach and await completion.
+     */
+    public static function alreadyPending(?string $assetId): self
     {
-        return new self(DispatchStatus::AlreadyPending);
+        return new self(DispatchStatus::AlreadyPending, assetId: $assetId);
     }
 
     public function getAssetId(): ?string

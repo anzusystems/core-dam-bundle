@@ -45,7 +45,7 @@ final readonly class GoogleTtsClient
 
             return new HttpClientResponse(content: $response->getContent(false), statusCode: $response->getStatusCode());
         } catch (ExceptionInterface $e) {
-            throw new TtsProviderException(sprintf('Google TTS request failed: %s', $e->getMessage()), 0, $e);
+            throw TtsProviderException::transient(sprintf('Google TTS request failed: %s', $e->getMessage()), $e);
         }
     }
 }

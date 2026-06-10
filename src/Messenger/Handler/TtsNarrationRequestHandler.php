@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsRequestFailer;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsRequestOrchestrator;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
@@ -27,6 +29,7 @@ final readonly class TtsNarrationRequestHandler
         private TtsRequestFailer $requestFailer,
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
+        private TtsLocker $ttsLocker,
     ) {
     }
 
@@ -46,9 +49,37 @@ final readonly class TtsNarrationRequestHandler
                 'mode' => $request->getMode()->value,
             ], exception: $e);
 
-            // Never rethrow — retrying a terminal request is wrong; dispatch a fresh one instead.
+            // Transient provider trouble: release the claim + rethrow for transport redelivery;
+            // bounded by the cleanup-stuck cron's hard cap.
+            if ($e instanceof TtsProviderException && $e->isTransient()) {
+                if ($this->rearmForRedelivery($request)) {
+                    throw $e;
+                }
+
+                // Request went terminal meanwhile (e.g. cancelled) — nothing to retry or fail.
+                return;
+            }
+
+            // Permanent failure — never rethrow a terminal request; dispatch a fresh one instead.
             $this->requestFailer->fail($request, $e->getMessage());
         }
+    }
+
+    /**
+     * Guarded Processing → Waiting under the request lock — a cancel that won during the synth call
+     * must not be resurrected as claimable.
+     */
+    private function rearmForRedelivery(TtsNarrationRequest $request): bool
+    {
+        return $this->ttsLocker->withRequestLock($request, function () use ($request): bool {
+            if ($request->getStatus()->isNot(TtsRequestStatus::Processing)) {
+                return false;
+            }
+
+            $this->requestManager->markWaiting($request);
+
+            return true;
+        });
     }
 
     /**

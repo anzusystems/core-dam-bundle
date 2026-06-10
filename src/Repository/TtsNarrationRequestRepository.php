@@ -22,6 +22,14 @@ use Doctrine\DBAL\LockMode;
 final class TtsNarrationRequestRepository extends AbstractAnzuRepository
 {
     /**
+     * In-flight initial request holding the unique idempotency slot (the key is cleared on terminal).
+     */
+    public function findInFlightByIdempotencyKey(string $idempotencyKey): ?TtsNarrationRequest
+    {
+        return $this->findOneBy(['initialIdempotencyKey' => $idempotencyKey]);
+    }
+
+    /**
      * At most one in-flight Regenerate per stable Asset (enforced by TtsAssetLocker).
      */
     public function findActiveRegenForStable(string $stableAssetId): ?TtsNarrationRequest

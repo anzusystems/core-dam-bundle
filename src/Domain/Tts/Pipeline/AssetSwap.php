@@ -7,32 +7,34 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLocker;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
+use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
-use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
-use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use DateTimeImmutable;
-use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 
 /** Atomic regen promote: slots new audio, demotes old with grace expireAt; aborts on concurrent cancel. */
 final readonly class AssetSwap
 {
     public function __construct(
-        private TtsAssetRepository $ttsAssetRepo,
-        private TtsNarrationRequestRepository $requestRepo,
+        private TtsAssetLocker $assetLocker,
         private AssetSlotFactory $assetSlotFactory,
         private TtsAssetManager $ttsAssetManager,
+        private TtsNarrationRequestManager $requestManager,
         private TtsAuditLogger $auditLogger,
         private Config $config,
         private EntityManagerInterface $entityManager,
+        private TtsLocker $ttsLocker,
     ) {
     }
 
@@ -43,45 +45,70 @@ final readonly class AssetSwap
         string $stableAssetId,
         AudioFile $newMaster,
         ?AudioFile $newPreview,
-        string $requestId,
+        TtsNarrationRequest $request,
         Voice $voice,
         VoiceFamily $family,
     ): void {
-        $this->entityManager->wrapInTransaction(
-            function () use ($stableAssetId, $newMaster, $newPreview, $requestId, $voice, $family): void {
-                $stableTts = $this->lockAndValidate($stableAssetId, $requestId);
-                $stableAsset = $stableTts->getAsset();
-
-                $expireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
-
-                $demoted = array_values(array_filter([
-                    $this->demoteAndReplace($stableAsset, $newMaster, $this->config->getMasterSlotName(), $expireAt),
-                    null !== $newPreview ? $this->demoteAndReplace($stableAsset, $newPreview, $this->config->getPreviewSlotName(), $expireAt) : null,
-                ]));
-
-                $stableTts
-                    ->setVoiceFamily($family)
-                    ->setProvider($voice->getDiscriminator())
-                    ->setExternalVoiceId($voice->getExternalVoiceId())
-                ;
-                $this->ttsAssetManager->markActive($stableTts);
-
-                $newIds = array_values(array_filter([
-                    (string) $newMaster->getId(),
-                    null !== $newPreview ? (string) $newPreview->getId() : null,
-                ]));
-                $this->auditLogger->logSwapped(
-                    assetId: $stableAssetId,
-                    requestId: $requestId,
-                    oldAudioFileIds: $demoted,
-                    newAudioFileIds: $newIds,
-                    voiceFamilySlug: $family->getSlug(),
-                    sourceTextHash: $stableTts->getSourceTextHash(),
+        // Asset lock pairs with the two-phase regen cancel; request lock pairs with the failer's
+        // terminal guard. Ordering asset → request (cancel takes asset only, failer request only).
+        $this->ttsLocker->withAssetLock(
+            $stableAssetId,
+            function () use ($stableAssetId, $newMaster, $newPreview, $request, $voice, $family): void {
+                $this->ttsLocker->withRequestLock(
+                    $request,
+                    function () use ($stableAssetId, $newMaster, $newPreview, $request, $voice, $family): void {
+                        $this->entityManager->wrapInTransaction(
+                            fn () => $this->swap($stableAssetId, $newMaster, $newPreview, $request, $voice, $family)
+                        );
+                    },
                 );
-
-                $this->entityManager->flush();
-            }
+            },
         );
+    }
+
+    private function swap(
+        string $stableAssetId,
+        AudioFile $newMaster,
+        ?AudioFile $newPreview,
+        TtsNarrationRequest $request,
+        Voice $voice,
+        VoiceFamily $family,
+    ): void {
+        $stableTts = $this->lockAndValidate($stableAssetId, $request);
+        $stableAsset = $stableTts->getAsset();
+
+        $expireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+
+        $demoted = array_values(array_filter([
+            $this->demoteAndReplace($stableAsset, $newMaster, $this->config->getMasterSlotName(), $expireAt),
+            null !== $newPreview ? $this->demoteAndReplace($stableAsset, $newPreview, $this->config->getPreviewSlotName(), $expireAt) : null,
+        ]));
+
+        $stableTts
+            ->setVoiceFamily($family)
+            ->setProvider($voice->getDiscriminator())
+            ->setExternalVoiceId($voice->getExternalVoiceId())
+        ;
+        $this->ttsAssetManager->markActive($stableTts);
+
+        // Terminal Done committed atomically with the swap — a failure/cancel callback can never
+        // follow a promoted swap.
+        $this->requestManager->markDone($request, flush: false);
+
+        $newIds = array_values(array_filter([
+            (string) $newMaster->getId(),
+            null !== $newPreview ? (string) $newPreview->getId() : null,
+        ]));
+        $this->auditLogger->logSwapped(
+            assetId: $stableAssetId,
+            requestId: (string) $request->getId(),
+            oldAudioFileIds: $demoted,
+            newAudioFileIds: $newIds,
+            voiceFamilySlug: $family->getSlug(),
+            sourceTextHash: $stableTts->getSourceTextHash(),
+        );
+
+        $this->entityManager->flush();
     }
 
     /**
@@ -103,25 +130,24 @@ final readonly class AssetSwap
     }
 
     /**
+     * Row state is current: the locker's locked read re-hydrates (HINT_REFRESH) and the request was
+     * refreshed by the surrounding withRequestLock().
+     *
      * @throws RegenCancelledException
      */
-    private function lockAndValidate(string $stableAssetId, string $requestId): TtsAsset
+    private function lockAndValidate(string $stableAssetId, TtsNarrationRequest $request): TtsAsset
     {
-        $stableTts = $this->ttsAssetRepo->findByAssetIdJoined($stableAssetId, LockMode::PESSIMISTIC_WRITE);
-        if (null === $stableTts) {
-            throw new RegenCancelledException(sprintf('Stable asset "%s" is not a TTS asset (or does not exist).', $stableAssetId));
-        }
+        $stableTts = $this->assetLocker->lock($stableAssetId);
 
-        $request = $this->requestRepo->find($requestId);
         $currentStatus = $stableTts->getStatus();
 
-        if ($currentStatus->isNot(TtsAudioStatus::Superseding) || $request?->isCancelRequested()) {
+        if ($currentStatus->isNot(TtsAudioStatus::Superseding) || $request->isCancelRequested()) {
             throw new RegenCancelledException(
                 sprintf(
                     'Swap aborted for asset "%s": status="%s", cancelRequested=%s.',
                     $stableAssetId,
                     $currentStatus->value,
-                    $request?->isCancelRequested() ? 'true' : 'false',
+                    $request->isCancelRequested() ? 'true' : 'false',
                 )
             );
         }

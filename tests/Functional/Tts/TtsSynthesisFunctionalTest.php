@@ -4,13 +4,19 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Functional\Tts;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsSynthesisChunkManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
+use AnzuSystems\CoreDamBundle\Entity\TtsSynthesisChunk;
+use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsNarrationRequestHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\TtsSynthChunkHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\DispatchStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
@@ -43,7 +49,7 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Provider 500 → request marked Failed, reserved asset dropped.
+     * Permanent provider error (4xx) → request marked Failed, reserved asset dropped.
      */
     public function testFailedSynthesisMarksRequestFailedAndCleansUpAsset(): void
     {
@@ -67,6 +73,109 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
             $this->assetRepo->find($reservedAssetId),
             'A failed initial synthesis must drop its reserved asset.',
         );
+    }
+
+    /**
+     * Second dispatch of content that is still in flight → AlreadyPending carrying the in-flight
+     * asset id (the caller attaches it and waits for the completion callback).
+     */
+    public function testSecondDispatchOfInFlightContentReturnsAlreadyPendingWithAssetId(): void
+    {
+        $text = 'Identical narration text dispatched twice while the first is still in flight.';
+        $first = $this->dispatchFacade->synthesize($this->buildSynthesizeDto($text), enqueue: false);
+        self::assertNotNull($first->narrationRequest, 'First dispatch should produce a request.');
+
+        $second = $this->dispatchFacade->synthesize($this->buildSynthesizeDto($text), enqueue: false);
+        self::assertTrue(
+            $second->status->is(DispatchStatus::AlreadyPending),
+            'Second dispatch of in-flight content must report AlreadyPending.',
+        );
+        self::assertSame(
+            $first->getAssetId(),
+            $second->getAssetId(),
+            'AlreadyPending must carry the in-flight asset id.',
+        );
+        self::assertNull($second->narrationRequest, 'AlreadyPending must not create a second request.');
+    }
+
+    /**
+     * Transient provider error (5xx) on the single-chunk inline path → claim released back to
+     * Waiting, exception rethrown for transport redelivery, reserved asset kept.
+     */
+    public function testTransientProviderErrorReleasesClaimForRedelivery(): void
+    {
+        $result = $this->dispatchFacade->synthesize(
+            $this->buildSynthesizeDto(ElevenlabsClientMock::FORCE_TRANSIENT_FAIL_MARKER . ' a narration that hits an outage.'),
+            enqueue: false,
+        );
+        self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
+        $requestId = (string) $result->narrationRequest->getId();
+        $reservedAssetId = (string) $result->getAssetId();
+
+        $thrown = null;
+
+        try {
+            ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
+        } catch (TtsProviderException $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown, 'A transient provider error must be rethrown for transport redelivery.');
+        self::assertTrue($thrown->isTransient());
+
+        $request = $this->requestRepo->find($requestId);
+        self::assertInstanceOf(TtsNarrationRequest::class, $request);
+        self::assertTrue(
+            $request->getStatus()->is(TtsRequestStatus::Waiting),
+            'A transient failure must release the claim back to Waiting.',
+        );
+        self::assertInstanceOf(
+            Asset::class,
+            $this->assetRepo->find($reservedAssetId),
+            'The reserved asset must survive a transient failure.',
+        );
+    }
+
+    /**
+     * Transient provider error on a chunk → chunk re-armed to Pending, request stays Processing,
+     * exception rethrown for transport redelivery. The chunk is seeded directly — the sync test
+     * transport would otherwise drive the whole chunk chain inline within plan().
+     */
+    public function testTransientChunkErrorRearmsChunkForRetry(): void
+    {
+        $request = $this->dispatchWaitingRequest('Chunked narration hitting a transient provider failure.');
+        $requestId = (string) $request->getId();
+
+        $this->getService(TtsNarrationRequestManager::class)->markProcessing($request);
+        $chunk = $this->getService(TtsSynthesisChunkManager::class)->create(
+            (new TtsSynthesisChunk())
+                ->setRequest($request)
+                ->setOrdinal(App::ZERO)
+                ->setSourceText(ElevenlabsClientMock::FORCE_TRANSIENT_FAIL_MARKER . ' zlyhajúca veta.'),
+        );
+        $chunkId = (string) $chunk->getId();
+
+        $thrown = null;
+
+        try {
+            ($this->chunkHandler)(new TtsSynthChunkMessage($chunkId));
+        } catch (TtsProviderException $e) {
+            $thrown = $e;
+        }
+
+        self::assertNotNull($thrown, 'A transient chunk error must be rethrown for transport redelivery.');
+        self::assertTrue($thrown->isTransient());
+
+        $reloaded = $this->requestRepo->find($requestId);
+        self::assertInstanceOf(TtsNarrationRequest::class, $reloaded);
+        self::assertTrue(
+            $reloaded->getStatus()->is(TtsRequestStatus::Processing),
+            'The request must stay Processing across a transient chunk failure.',
+        );
+
+        $rearmed = $this->chunkRepo->findNextPending($requestId);
+        self::assertNotNull($rearmed, 'A transient chunk failure must re-arm the chunk to Pending.');
+        self::assertSame($chunkId, (string) $rearmed->getId());
     }
 
     public function testMultiChunkConcatMatchesExpectedDuration(): void

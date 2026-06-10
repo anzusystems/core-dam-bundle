@@ -18,6 +18,7 @@ use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAudioFileRemover;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsChunkCleaner;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsSynthesisChunkManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TextChunker;
@@ -93,6 +94,7 @@ final readonly class TtsRequestOrchestrator
         private MessageBusInterface $messageBus,
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
+        private TtsLocker $ttsLocker,
     ) {
     }
 
@@ -317,7 +319,9 @@ final readonly class TtsRequestOrchestrator
         $this->routeFacade->makePublic($result->masterAudio, $result->masterRoute);
 
         // Commit Done now so best-effort enrichment below can't flip it to Failed.
-        $this->requestManager->markDone($request);
+        if (false === $this->markDoneUnlessCancelled($request)) {
+            return;
+        }
 
         $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
         $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family, $orphanExpireAt): void {
@@ -362,12 +366,12 @@ final readonly class TtsRequestOrchestrator
 
             $newPreview = $this->previewMedia->generate($built->masterAudio, $built->masterTmpFile, expireAt: $orphanExpireAt);
 
-            // Atomic repoint; old files demoted with grace expireAt.
+            // Atomic repoint (incl. terminal Done); old files demoted with grace expireAt.
             $this->assetSwap->promote(
                 (string) $stableAsset->getId(),
                 $built->masterAudio,
                 $newPreview,
-                (string) $request->getId(),
+                $request,
                 $voice,
                 $family,
             );
@@ -376,9 +380,6 @@ final readonly class TtsRequestOrchestrator
 
             throw $e;
         }
-
-        // Swap is point of no return — commit Done so best-effort enrichment can't flip it to Failed.
-        $this->requestManager->markDone($request);
 
         $this->bestEffort('processRegenerate.enrichmentFailed', $request, $stableAsset, function () use ($stableAsset, $stableTts, $request, $extSystem, $family, $sourceText): void {
             $stableTts->setSourceTextSnapshot($sourceText)->setSourceTextHash(hash('sha256', $sourceText));
@@ -499,6 +500,28 @@ final readonly class TtsRequestOrchestrator
         $asset->addKeyword($autoKeyword);
 
         return true;
+    }
+
+    /**
+     * Terminal Done for the initial flow under the request lock; false when a concurrent cancel won
+     * the race (its remover owns the reserved asset — caller must skip enrichment and announcements).
+     */
+    private function markDoneUnlessCancelled(TtsNarrationRequest $request): bool
+    {
+        return $this->ttsLocker->withRequestLock($request, function () use ($request): bool {
+            if ($request->getStatus()->isNot(TtsRequestStatus::Processing)) {
+                $this->logger->warning(DamLogger::NAMESPACE_TTS, 'processInitial.finalizeSkipped', [
+                    'requestId' => (string) $request->getId(),
+                    'status' => $request->getStatus()->value,
+                ]);
+
+                return false;
+            }
+
+            $this->requestManager->markDone($request);
+
+            return true;
+        });
     }
 
     /**

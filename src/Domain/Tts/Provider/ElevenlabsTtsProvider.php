@@ -86,7 +86,7 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
         $body = (string) $response->getContent();
         $bodyExcerpt = '' === $body ? '<empty>' : StringHelper::parseLength($body, self::ERROR_BODY_EXCERPT_LIMIT);
 
-        throw new TtsProviderException(sprintf(
+        throw TtsProviderException::fromHttpStatus($response->getStatusCode(), sprintf(
             'ElevenLabs API returned HTTP %d. Body: %s',
             $response->getStatusCode(),
             $bodyExcerpt,

@@ -13,6 +13,7 @@ use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\Query;
 
 /**
  * @extends AbstractAnzuRepository<TtsAsset>
@@ -29,6 +30,8 @@ final class TtsAssetRepository extends AbstractAnzuRepository
 
     /**
      * JOIN-fetch TtsAsset + Asset by Asset id; optional pessimistic write lock for mutate paths.
+     * Locked reads re-hydrate (HINT_REFRESH) — mutate decisions must see row state, not a stale
+     * identity-map snapshot from earlier in the worker run.
      */
     public function findByAssetIdJoined(string $assetId, ?LockMode $lockMode = null): ?TtsAsset
     {
@@ -41,6 +44,7 @@ final class TtsAssetRepository extends AbstractAnzuRepository
         ;
         if (null !== $lockMode) {
             $query->setLockMode($lockMode);
+            $query->setHint(Query::HINT_REFRESH, true);
         }
 
         return $query->getOneOrNullResult();

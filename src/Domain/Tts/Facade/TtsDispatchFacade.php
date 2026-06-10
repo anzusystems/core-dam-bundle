@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Catalog\VoiceResolver;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsIdempotencyKey;
+use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsLocker;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsNarrationRequestManager;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Provider\TtsProviderContainer;
@@ -22,15 +23,16 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\DispatchResult;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\TtsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/** Idempotent on (licence, sourceTextHash, voiceFamilySlug) — skips provider precheck on existing/in-flight. */
+/** Idempotent on (licence, sourceTextHash, voiceFamilySlug) — skips provider precheck on existing content. */
 final readonly class TtsDispatchFacade
 {
     public function __construct(
         private TtsAssetRepository $ttsAssetRepo,
+        private TtsNarrationRequestRepository $requestRepo,
         private TtsNarrationRequestManager $requestManager,
         private VoiceResolver $voiceResolver,
         private TtsProviderContainer $providerContainer,
@@ -40,6 +42,7 @@ final readonly class TtsDispatchFacade
         private Validator $validator,
         private TtsRegenerationFacade $regenerationFacade,
         private TtsNarrationRequestFactory $requestFactory,
+        private TtsLocker $ttsLocker,
     ) {
     }
 
@@ -73,8 +76,25 @@ final readonly class TtsDispatchFacade
 
         $initialIdempotencyKey = TtsIdempotencyKey::forInitial($licence, $sourceTextHash, $dto->getVoiceFamilySlug());
 
-        $result = $this->entityManager->wrapInTransaction(
-            fn (): DispatchResult => $this->persistOrAlreadyPending($this->buildInitialRequest($dto, $licence, $initialIdempotencyKey)),
+        // The unique idempotency-key constraint is only a DB backstop — concurrency is handled here.
+        $result = $this->ttsLocker->withDispatchLock(
+            $initialIdempotencyKey,
+            function () use ($dto, $licence, $initialIdempotencyKey): DispatchResult {
+                $inFlight = $this->requestRepo->findInFlightByIdempotencyKey($initialIdempotencyKey);
+                if (null !== $inFlight) {
+                    return DispatchResult::alreadyPending($inFlight->getAssetId());
+                }
+
+                return $this->entityManager->wrapInTransaction(
+                    function () use ($dto, $licence, $initialIdempotencyKey): DispatchResult {
+                        $request = $this->buildInitialRequest($dto, $licence, $initialIdempotencyKey);
+                        $this->requestManager->create(request: $request, flush: false);
+                        $this->entityManager->flush();
+
+                        return DispatchResult::pending((string) $request->getAssetId(), $request);
+                    },
+                );
+            },
         );
 
         if ($enqueue && null !== $result->narrationRequest) {
@@ -124,22 +144,9 @@ final readonly class TtsDispatchFacade
         return DispatchResult::duplicate((string) $existing->getAsset()->getId());
     }
 
-    private function persistOrAlreadyPending(TtsNarrationRequest $request): DispatchResult
-    {
-        try {
-            $this->requestManager->create(request: $request, flush: false);
-            $this->entityManager->flush();
-        } catch (UniqueConstraintViolationException) {
-            // Concurrent dispatch won the unique slot; EM is closed after flush exception — no query here.
-            return DispatchResult::alreadyPending();
-        }
-
-        return DispatchResult::pending((string) $request->getAssetId(), $request);
-    }
-
     private function buildInitialRequest(TtsSynthesizeRequestDto $dto, AssetLicence $licence, string $initialIdempotencyKey): TtsNarrationRequest
     {
-        // Shell asset reserves the stable id shared by the CMS placeholder and the final audio; rolled back on unique clash.
+        // Shell asset reserves the stable id shared by the CMS placeholder and the final audio.
         $shellAsset = $this->assetFactory->createAudioShell($licence);
 
         return $this->requestFactory->createInitial($dto, $licence, (string) $shellAsset->getId(), $initialIdempotencyKey);

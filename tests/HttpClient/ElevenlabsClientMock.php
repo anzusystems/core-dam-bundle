@@ -14,9 +14,15 @@ use Symfony\Component\HttpFoundation\Response;
 final class ElevenlabsClientMock
 {
     /**
-     * Text containing this marker forces the provider to return 500, enabling failure-path testing.
+     * Text containing this marker forces the provider to return 400 (permanent failure path).
      */
     public const string FORCE_FAIL_MARKER = 'TTS_FORCE_FAIL';
+
+    /**
+     * Text containing this marker forces the provider to return 500 (transient failure path —
+     * the chunk is re-armed and the exception rethrown for transport redelivery).
+     */
+    public const string FORCE_TRANSIENT_FAIL_MARKER = 'TTS_FORCE_TRANSIENT_FAIL';
     private const string SAMPLE_MP3 = 'audioa';
 
     public function __invoke(): MockHttpClient
@@ -34,10 +40,17 @@ final class ElevenlabsClientMock
         $path = UrlHelper::parseUrl($url)->getPath();
 
         if (str_starts_with($path, '/v1/text-to-speech/')) {
-            if (str_contains((string) ($options['body'] ?? ''), self::FORCE_FAIL_MARKER)) {
+            $body = (string) ($options['body'] ?? '');
+            if (str_contains($body, self::FORCE_TRANSIENT_FAIL_MARKER)) {
+                return new MockResponse(
+                    (string) json_encode(['detail' => ['status' => 'mock_forced_transient_failure']]),
+                    ['http_code' => Response::HTTP_INTERNAL_SERVER_ERROR],
+                );
+            }
+            if (str_contains($body, self::FORCE_FAIL_MARKER)) {
                 return new MockResponse(
                     (string) json_encode(['detail' => ['status' => 'mock_forced_failure']]),
-                    ['http_code' => Response::HTTP_INTERNAL_SERVER_ERROR],
+                    ['http_code' => Response::HTTP_BAD_REQUEST],
                 );
             }
 

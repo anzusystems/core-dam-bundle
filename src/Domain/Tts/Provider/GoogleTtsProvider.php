@@ -86,7 +86,10 @@ final class GoogleTtsProvider extends AbstractTtsProvider
     private function extractAudio(HttpClientResponse $response): string
     {
         if ($response->hasError()) {
-            throw new TtsProviderException(sprintf('Google TTS API returned HTTP %d.', $response->getStatusCode()));
+            throw TtsProviderException::fromHttpStatus(
+                $response->getStatusCode(),
+                sprintf('Google TTS API returned HTTP %d.', $response->getStatusCode()),
+            );
         }
 
         try {
@@ -130,11 +133,11 @@ final class GoogleTtsProvider extends AbstractTtsProvider
         try {
             $token = $this->authClientProvider->getClient($extSystem->getSlug())->fetchAccessTokenWithAssertion();
         } catch (GoogleException $e) {
-            throw new TtsProviderException(sprintf(
+            throw TtsProviderException::transient(sprintf(
                 'Google TTS token fetch failed for ExtSystem "%s": %s',
                 $extSystem->getSlug(),
                 $e->getMessage(),
-            ), 0, $e);
+            ), $e);
         }
 
         if (false === isset($token[self::RESPONSE_KEY_ACCESS_TOKEN])) {
