@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\Decorator;
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
 use AnzuSystems\CoreDamBundle\ApiFilter\AssetTypeApiParams;
-use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\ExtSystemApiParams;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomAssetTypeFilter;
@@ -31,7 +31,7 @@ final class DistributionCategorySelectAdmRepositoryDecorator
         ?AssetType $type = null,
     ): ApiResponseList {
         $customFilters = [new CustomExtSystemFilter()];
-        $apiParams = ExySystemApiParams::applyCustomFilter($apiParams, $extSystem);
+        $apiParams = ExtSystemApiParams::applyCustomFilter($apiParams, $extSystem);
         if ($type instanceof AssetType) {
             $customFilters[] = new CustomAssetTypeFilter();
             $apiParams = AssetTypeApiParams::applyCustomFilter($apiParams, $type);

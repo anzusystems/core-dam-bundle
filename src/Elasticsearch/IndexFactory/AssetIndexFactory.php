@@ -67,6 +67,7 @@ final class AssetIndexFactory implements IndexFactoryInterface
             'distributedInServices' => array_values($entity->getAssetFileProperties()->getDistributesInServices()),
             'slotNames' => array_values($entity->getAssetFileProperties()->getSlotNames()),
             'fromRss' => $entity->getAssetFileProperties()->isFromRss(),
+            'ttsAudio' => $entity->getAssetFlags()->isTtsAudio(),
             'pixelSize' => $entity->getAssetFileProperties()->getWidth() * $entity->getAssetFileProperties()->getHeight(),
             'width' => $entity->getAssetFileProperties()->getWidth(),
             'height' => $entity->getAssetFileProperties()->getHeight(),

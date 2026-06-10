@@ -67,6 +67,9 @@ final class AssetLicenceAwareVoter extends AbstractVoter
             DamPermissions::DAM_REGION_OF_INTEREST_UPDATE,
             DamPermissions::DAM_REGION_OF_INTEREST_DELETE,
             DamPermissions::DAM_ASSET_LICENCE_READ,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_READ,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_CANCEL,
+            DamPermissions::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,
         ];
     }
 }

@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\Decorator;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
-use AnzuSystems\CoreDamBundle\ApiFilter\ExySystemApiParams;
+use AnzuSystems\CoreDamBundle\ApiFilter\ExtSystemApiParams;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
 use AnzuSystems\CoreDamBundle\Repository\CustomFilter\CustomExtSystemFilter;
@@ -27,7 +27,7 @@ final readonly class AuthorCleanPhraseRepositoryDecorator
         ExtSystem $extSystem,
     ): ApiResponseList {
         $customFilters = [new CustomExtSystemFilter()];
-        $apiParams = ExySystemApiParams::applyCustomFilter($apiParams, $extSystem);
+        $apiParams = ExtSystemApiParams::applyCustomFilter($apiParams, $extSystem);
 
         return $this->authorCleanPhraseRepository->findByApiParams(
             apiParams: $apiParams,

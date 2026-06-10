@@ -479,6 +479,25 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                     'Accept-Version' => 'v1',
                                 ],
                             ],
+                            'tts.elevenlabs.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::TTS_ELEVENLABS_API_HOST] ?? SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT,
+                                // Generous ceilings: TTS synthesis can take 5–40 s per chunk.
+                                'timeout' => 60,
+                                'max_duration' => 300,
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'Accept' => 'audio/mpeg',
+                                ],
+                            ],
+                            'tts.google.api.client' => [
+                                'base_uri' => $configSettings[SettingsConfiguration::TTS_GOOGLE_API_HOST] ?? SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT,
+                                'timeout' => 60,
+                                'max_duration' => 300,
+                                'headers' => [
+                                    'Content-Type' => 'application/json',
+                                    'Accept' => 'application/json',
+                                ],
+                            ],
                         ],
                     ],
                 ]);
@@ -720,7 +739,8 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
     {
         foreach ($this->processedConfig['ext_systems'] as $extSystemSlug => $extSystemConfig) {
             foreach ($extSystemConfig as $assetType => $assetExtSystemConfig) {
-                if (AssetType::Image->toString() === $assetType) {
+                // ext-systems may omit `image:` (Symfony auto-defaults an empty block without domain keys).
+                if (AssetType::Image->toString() === $assetType && isset($assetExtSystemConfig[ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY])) {
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_NAME_KEY] = $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::ADMIN_DOMAIN_KEY];
                     $this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY] = $this->getDomain($this->processedConfig['ext_systems'][$extSystemSlug][$assetType][ExtSystemImageTypeConfiguration::PUBLIC_DOMAIN_KEY]);

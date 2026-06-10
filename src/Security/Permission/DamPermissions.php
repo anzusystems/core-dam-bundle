@@ -164,6 +164,32 @@ class DamPermissions
     public const string DAM_PUBLIC_EXPORT_DELETE = 'dam_publicExport_delete';
     public const string DAM_PUBLIC_EXPORT_UI = 'dam_publicExport_ui';
 
+    // TTS — VoiceFamily
+    public const string DAM_TTS_VOICE_FAMILY_READ = 'dam_ttsVoiceFamily_read';
+    public const string DAM_TTS_VOICE_FAMILY_CREATE = 'dam_ttsVoiceFamily_create';
+    public const string DAM_TTS_VOICE_FAMILY_UPDATE = 'dam_ttsVoiceFamily_update';
+    public const string DAM_TTS_VOICE_FAMILY_DELETE = 'dam_ttsVoiceFamily_delete';
+    public const string DAM_TTS_VOICE_FAMILY_UI = 'dam_ttsVoiceFamily_ui';
+
+    // TTS — Voice
+    public const string DAM_TTS_VOICE_READ = 'dam_ttsVoice_read';
+    public const string DAM_TTS_VOICE_CREATE = 'dam_ttsVoice_create';
+    public const string DAM_TTS_VOICE_UPDATE = 'dam_ttsVoice_update';
+    public const string DAM_TTS_VOICE_DELETE = 'dam_ttsVoice_delete';
+    public const string DAM_TTS_VOICE_UI = 'dam_ttsVoice_ui';
+
+    // TTS — TtsAsset
+    public const string DAM_TTS_ASSET_READ = 'dam_ttsAsset_read';
+    public const string DAM_TTS_ASSET_UNPUBLISH = 'dam_ttsAsset_unpublish';
+    public const string DAM_TTS_ASSET_REGENERATE = 'dam_ttsAsset_regenerate';
+    public const string DAM_TTS_ASSET_UI = 'dam_ttsAsset_ui';
+
+    // TTS — TtsNarrationRequest
+    public const string DAM_TTS_NARRATION_REQUEST_READ = 'dam_ttsNarrationRequest_read';
+    public const string DAM_TTS_NARRATION_REQUEST_SYNTHESIZE = 'dam_ttsNarrationRequest_synthesize';
+    public const string DAM_TTS_NARRATION_REQUEST_CANCEL = 'dam_ttsNarrationRequest_cancel';
+    public const string DAM_TTS_NARRATION_REQUEST_UI = 'dam_ttsNarrationRequest_ui';
+
     public const array ALL = [
         self::DAM_ASSET_CREATE,
         self::DAM_ASSET_UPDATE,
@@ -270,6 +296,24 @@ class DamPermissions
         self::DAM_PUBLIC_EXPORT_READ,
         self::DAM_PUBLIC_EXPORT_DELETE,
         self::DAM_PUBLIC_EXPORT_UI,
+        self::DAM_TTS_VOICE_FAMILY_READ,
+        self::DAM_TTS_VOICE_FAMILY_CREATE,
+        self::DAM_TTS_VOICE_FAMILY_UPDATE,
+        self::DAM_TTS_VOICE_FAMILY_DELETE,
+        self::DAM_TTS_VOICE_FAMILY_UI,
+        self::DAM_TTS_VOICE_READ,
+        self::DAM_TTS_VOICE_CREATE,
+        self::DAM_TTS_VOICE_UPDATE,
+        self::DAM_TTS_VOICE_DELETE,
+        self::DAM_TTS_VOICE_UI,
+        self::DAM_TTS_ASSET_READ,
+        self::DAM_TTS_ASSET_UNPUBLISH,
+        self::DAM_TTS_ASSET_REGENERATE,
+        self::DAM_TTS_ASSET_UI,
+        self::DAM_TTS_NARRATION_REQUEST_READ,
+        self::DAM_TTS_NARRATION_REQUEST_SYNTHESIZE,
+        self::DAM_TTS_NARRATION_REQUEST_CANCEL,
+        self::DAM_TTS_NARRATION_REQUEST_UI,
     ];
 
     public static function default(int $defaultGrant = Grant::DENY): array

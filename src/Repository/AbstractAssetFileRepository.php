@@ -54,26 +54,43 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
     }
 
     /**
+     * @param string|null $excludeAssetId skip files belonging to this asset — a file is never a duplicate of
+     *                                     its own asset (e.g. a TTS regen whose new audio is byte-identical to
+     *                                     the asset's current master)
+     *
      * @throws NonUniqueResultException
      */
-    public function findProcessedByChecksumAndLicence(string $checksum, AssetLicence $licence): ?AssetFile
+    public function findProcessedByChecksumAndLicence(string $checksum, AssetLicence $licence, ?string $excludeAssetId = null): ?AssetFile
     {
-        return $this->createQueryBuilder('entity')
+        $qb = $this->createQueryBuilder('entity')
             ->where('entity.assetAttributes.checksum = :checksum')
             ->andWhere('entity.assetAttributes.status = :status')
             ->andWhere('IDENTITY(entity.licence) = :licenceId')
             ->setParameter('checksum', $checksum, Types::STRING)
             ->setParameter('status', AssetFileProcessStatus::Processed)
             ->setParameter('licenceId', $licence->getId())
+        ;
+        if (null !== $excludeAssetId) {
+            $qb->andWhere('IDENTITY(entity.asset) != :excludeAssetId')
+                ->setParameter('excludeAssetId', $excludeAssetId);
+        }
+
+        return $qb
             ->getQuery()
             ->setMaxResults(1)
             ->getOneOrNullResult();
     }
 
+    /**
+     * QB for the asset's *live* files. Grace-demoted files (expireAt set — detached from their slot during a
+     * TTS regen swap but still FK-attached until the reaper runs) are excluded, so an FK-based enumeration can
+     * never resurface a superseded file as current. See {@see AssetSlotFactory::replaceSlotFile()}.
+     */
     public function getByAssetIdQb(string $assetId): QueryBuilder
     {
         return $this->createQueryBuilder('entity')
             ->andWhere('IDENTITY(entity.asset) = :assetId')
+            ->andWhere('entity.expireAt IS NULL')
             ->setParameter('assetId', $assetId);
     }
 

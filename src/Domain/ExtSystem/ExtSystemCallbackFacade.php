@@ -8,6 +8,8 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\DependencyInjection\Attribute\AutowireLocator;
@@ -22,6 +24,7 @@ final class ExtSystemCallbackFacade
         #[AutowireLocator(ExtSystemCallbackInterface::class, indexAttribute: 'key')]
         ServiceLocator $extSystemCallbackLocator,
         private readonly DamLogger $logger,
+        private readonly ExtSystemRepository $extSystemRepository,
     ) {
         $this->extSystemCallbackLocator = $extSystemCallbackLocator;
     }
@@ -69,6 +72,11 @@ final class ExtSystemCallbackFacade
         return $processed;
     }
 
+    public function notifyAssetChanged(Asset $asset): bool
+    {
+        return $this->notifyAssetsChanged(new ArrayCollection([$asset]));
+    }
+
     /**
      * @param Collection<array-key, ImageFile> $images
      */
@@ -100,6 +108,36 @@ final class ExtSystemCallbackFacade
         }
 
         return $processed;
+    }
+
+    public function notifyMediaStatus(
+        int $extSystemId,
+        string $assetId,
+        MediaStatusType $status,
+        ?string $failureReason,
+    ): void {
+        $extSystem = $this->extSystemRepository->find($extSystemId);
+        if (null === $extSystem) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.extSystemNotFound', [
+                'extSystemId' => $extSystemId,
+                'assetId' => $assetId,
+            ]);
+
+            return;
+        }
+
+        $callback = $this->getCallback($extSystem->getSlug());
+        if (null === $callback) {
+            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.noCallbackRegistered', [
+                'extSystemId' => $extSystemId,
+                'slug' => $extSystem->getSlug(),
+                'assetId' => $assetId,
+            ]);
+
+            return;
+        }
+
+        $callback->notifyMediaStatus($assetId, $status, $failureReason);
     }
 
     private function getCallback(string $slug): ?ExtSystemCallbackInterface

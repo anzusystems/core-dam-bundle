@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetCustomFormProvidableInterfa
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\DBALIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -46,6 +47,7 @@ class Asset implements
     UuidIdentifiableInterface,
     UserTrackingInterface,
     ExtSystemIndexableInterface,
+    ExtSystemInterface,
     NotifiableInterface,
     AssetCustomFormProvidableInterface,
     AssetLicenceInterface,
@@ -316,6 +318,13 @@ class Asset implements
         return $this;
     }
 
+    public function removeKeywordById(string $keywordId): self
+    {
+        $this->keywords->remove($keywordId);
+
+        return $this;
+    }
+
     /**
      * @return list<string>
      */
@@ -373,6 +382,13 @@ class Asset implements
     {
         $this->episodes->add($episode);
         $episode->setAsset($this);
+
+        return $this;
+    }
+
+    public function removeEpisode(PodcastEpisode $episode): self
+    {
+        $this->episodes->removeElement($episode);
 
         return $this;
     }

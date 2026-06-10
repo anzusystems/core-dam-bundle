@@ -26,6 +26,12 @@ final class ExtSystemManager extends AbstractManager
         $extSystem
             ->setName($newExtSystem->getName())
             ->setSlug($newExtSystem->getSlug())
+            ->setTtsFreeAudioEpilogAsset($newExtSystem->getTtsFreeAudioEpilogAsset())
+        ;
+        $extSystem->getTtsSettings()
+            ->setDefaultVoiceFamilyId($newExtSystem->getTtsSettings()->getDefaultVoiceFamilyId())
+            ->setActiveProviderMode($newExtSystem->getTtsSettings()->getActiveProviderMode())
+            ->setAutoKeywordId($newExtSystem->getTtsSettings()->getAutoKeywordId())
         ;
         /** @psalm-suppress InvalidArgument */
         $this->colUpdate(

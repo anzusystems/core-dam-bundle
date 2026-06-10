@@ -18,7 +18,7 @@ class PodcastEpisodeManager extends AbstractManager
 
     public function __construct(
         private readonly PodcastEpisodeRepository $repository,
-        private readonly ImagePreviewManager $imagePreviewManager
+        private readonly ImagePreviewManager $imagePreviewManager,
     ) {
     }
 
@@ -52,6 +52,8 @@ class PodcastEpisodeManager extends AbstractManager
         }
         $fromAsset->setEpisodes(new ArrayCollection());
 
+        $this->trackModification($fromAsset);
+        $this->trackModification($toAsset);
         $this->flush($flush);
     }
 

@@ -33,6 +33,8 @@ final readonly class KeywordProvider
             return $keyword;
         }
 
+        // No ES indexing here — the caller bulk-indexes the created keywords/authors one level up
+        // ({@see \AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade}, TtsRequestOrchestrator).
         return $this->keywordManager->create(
             keyword: (new Keyword())
                 ->setExtSystem($extSystem)

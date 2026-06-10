@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguratio
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemDocumentTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemVideoTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\NotificationsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsChunkConfiguration;
@@ -202,6 +203,16 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('https://cdn.jwplayer.com')
                     ->isRequired()
                 ->end()
+                ->scalarNode(SettingsConfiguration::TTS_ELEVENLABS_API_HOST)
+                    ->defaultValue(SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT)
+                    ->isRequired()
+                    ->info('Base URL of the ElevenLabs TTS API. Override only for testing against a mock.')
+                ->end()
+                ->scalarNode(SettingsConfiguration::TTS_GOOGLE_API_HOST)
+                    ->defaultValue(SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT)
+                    ->isRequired()
+                    ->info('Base URL of the Google Cloud Text-to-Speech API. Override only for testing against a mock.')
+                ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
                     ->isRequired()
                 ->end()
@@ -319,6 +330,7 @@ class Configuration implements ConfigurationInterface
                         ->defaultTrue()
                     ->end()
                     ->append($this->addExtSystemAssetExternalProvidersSection())
+                    ->append($this->addExtSystemTtsSection())
                     ->append($this->addFileExtSystemSection(AssetType::Image))
                     ->append($this->addFileExtSystemSection(AssetType::Audio))
                     ->append($this->addFileExtSystemSection(AssetType::Document))
@@ -335,6 +347,26 @@ class Configuration implements ConfigurationInterface
                 ->children()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::TITLE_KEY)->end()
                     ->scalarNode(ExtSystemAssetExternalProviderConfiguration::IMPORT_AUTHOR_ID)->end()
+                ->end()
+            ->end();
+    }
+
+    private function addExtSystemTtsSection(): NodeDefinition
+    {
+        return (new TreeBuilder(ExtSystemTtsConfiguration::KEY))->getRootNode()
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode(ExtSystemTtsConfiguration::ELEVENLABS_API_KEY)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem ElevenLabs API key; empty disables the ElevenLabs provider for this ExtSystem.')
+                ->end()
+                ->scalarNode(ExtSystemTtsConfiguration::GOOGLE_CREDENTIALS_PATH)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem path to the Google service-account JSON key; empty disables the Google provider.')
+                ->end()
+                ->scalarNode(ExtSystemTtsConfiguration::CHUNK_STORAGE_NAME_KEY)
+                    ->defaultValue('')
+                    ->info('Per-ExtSystem named storage (must exist in `anzu_systems_core_dam.storages`) used to persist per-chunk MP3 blobs during multi-chunk synthesis. Empty disables TTS for this ExtSystem — provider precheck fails fast.')
                 ->end()
             ->end();
     }
@@ -440,6 +472,7 @@ class Configuration implements ConfigurationInterface
             ;
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_RSS_MAP_KEY));
             $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::PODCAST_EPISODE_ENTITY_MAP_KEY));
+            $config->append($this::addTextMapperConfiguration(ExtSystemAudioTypeConfiguration::TTS_METADATA_MAP_KEY));
         }
 
         if ($type->is(AssetType::Document)) {

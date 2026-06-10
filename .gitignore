@@ -48,3 +48,4 @@ xdebug.log
 
 # Docker
 docker-compose.override*.yml
+.claude

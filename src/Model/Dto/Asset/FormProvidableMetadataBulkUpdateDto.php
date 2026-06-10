@@ -29,6 +29,9 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     private bool $described;
 
     #[Serialize]
+    private bool $ttsAudio;
+
+    #[Serialize]
     private bool $mainFileSingleUse;
 
     #[Serialize]
@@ -56,6 +59,7 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
         return (new self())
             ->setAsset($asset)
             ->setDescribed($asset->getAssetFlags()->isDescribed())
+            ->setTtsAudio($asset->getAssetFlags()->isTtsAudio())
             ->setCustomData($asset->getMetadata()->getCustomData())
             ->setMainFileSingleUse((bool) $asset->getMainFile()?->getFlags()->isSingleUse())
             ->setMainFileOverrideInternal((bool) $asset->getMainFile()?->getFlags()->isOverrideInternal())
@@ -109,6 +113,23 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     public function isDescribedUndefined(): bool
     {
         return false === isset($this->described);
+    }
+
+    public function isTtsAudio(): bool
+    {
+        return $this->ttsAudio;
+    }
+
+    public function setTtsAudio(bool $ttsAudio): self
+    {
+        $this->ttsAudio = $ttsAudio;
+
+        return $this;
+    }
+
+    public function isTtsAudioUndefined(): bool
+    {
+        return false === isset($this->ttsAudio);
     }
 
     /**

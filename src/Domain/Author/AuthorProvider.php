@@ -18,7 +18,7 @@ final readonly class AuthorProvider
     ) {
     }
 
-    public function provideByTitle(string $title, ExtSystem $extSystem): ?Author
+    public function provideByTitle(string $title, ExtSystem $extSystem, bool $flush = true): ?Author
     {
         $title = StringHelper::parseString(input: $title, length: Author::NAME_MAX_LENGTH);
         if (empty($title)) {
@@ -34,10 +34,13 @@ final readonly class AuthorProvider
             return $author;
         }
 
+        // No ES indexing here — the caller bulk-indexes the created keywords/authors one level up
+        // ({@see \AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade}, TtsRequestOrchestrator).
         return $this->authorManager->create(
             author: (new Author())
                 ->setExtSystem($extSystem)
                 ->setName($title),
+            flush: $flush,
         );
     }
 

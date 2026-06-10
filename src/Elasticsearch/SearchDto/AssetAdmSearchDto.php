@@ -103,6 +103,9 @@ class AssetAdmSearchDto extends AbstractSearchDto
     #[Serialize]
     protected ?bool $fromRss = null;
 
+    #[Serialize]
+    protected ?bool $ttsAudio = null;
+
     #[Serialize(handler: ArrayStringHandler::class)]
     #[Assert\Count(max: 20, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     protected array $slotNames = [];
@@ -605,6 +608,18 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setFromRss(?bool $fromRss): self
     {
         $this->fromRss = $fromRss;
+
+        return $this;
+    }
+
+    public function isTtsAudio(): ?bool
+    {
+        return $this->ttsAudio;
+    }
+
+    public function setTtsAudio(?bool $ttsAudio): self
+    {
+        $this->ttsAudio = $ttsAudio;
 
         return $this;
     }

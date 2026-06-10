@@ -54,6 +54,14 @@ final readonly class AssetFactory
         return $asset;
     }
 
+    /**
+     * Create a file-less audio Asset shell to reserve a stable id at TTS dispatch. Caller owns the flush.
+     */
+    public function createAudioShell(AssetLicence $assetLicence): Asset
+    {
+        return $this->assetManager->create($this->initAsset(AssetType::Audio, $assetLicence), false);
+    }
+
     private function createForImageFile(
         ImageFile $imageFile,
         AssetLicence $assetLicence,

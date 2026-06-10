@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 
@@ -28,4 +29,13 @@ interface ExtSystemCallbackInterface
      * @param Collection<array-key, ImageFile> $collection
      */
     public function notifyImagesChanged(Collection $collection): void;
+
+    /**
+     * Out-of-band media status callback (e.g. generation failure); extend via {@see MediaStatusType}.
+     */
+    public function notifyMediaStatus(
+        string $assetId,
+        MediaStatusType $status,
+        ?string $failureReason,
+    ): void;
 }

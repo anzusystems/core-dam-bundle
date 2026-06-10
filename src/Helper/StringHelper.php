@@ -48,6 +48,19 @@ final class StringHelper
         return $input;
     }
 
+    /**
+     * RFC 7515 §2 base64url: `+/` → `-_`, padding stripped.
+     */
+    public static function base64UrlEncode(string $bytes): string
+    {
+        return strtr(rtrim(base64_encode($bytes), '='), '+/', '-_');
+    }
+
+    public static function base64UrlRandom(int $bytes): string
+    {
+        return self::base64UrlEncode(random_bytes($bytes));
+    }
+
     public static function parseString(
         string $input,
         ?int $length = null,

@@ -24,10 +24,12 @@ final class DamLogger
     public const string NAMESPACE_DISTRIBUTION = 'Distribution';
     public const string NAMESPACE_ASSET_EXTERNAL_PROVIDER = 'AssetExternalProvider';
     public const string NAMESPACE_PODCAST_RSS_IMPORT = 'PodcastRssImport';
+    public const string NAMESPACE_PODCAST_MEMBERSHIP = 'PodcastMembership';
     public const string NAMESPACE_VISP = 'Visp';
     public const string NAMESPACE_ASSET_FILE_PROCESS = 'AssetFileProcess';
     public const string NAMESPACE_ASSET_FILE_DOWNLOAD = 'AssetFileDownload';
     public const string NAMESPACE_JOB = 'Job';
+    public const string NAMESPACE_TTS = 'Tts';
 
     public function __construct(
         private readonly LoggerInterface $journalLogger,

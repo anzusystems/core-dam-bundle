@@ -64,7 +64,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
                 entity.attributes_asset_type, entity.attributes_status,
                 entity.asset_flags_described, entity.asset_flags_visible, entity.asset_flags_generated_by_system,
                 entity.asset_file_properties_slot_names, entity.asset_file_properties_distributes_in_services,
-                entity.asset_file_properties_from_rss, entity.asset_file_properties_width, entity.asset_file_properties_height,
+                entity.asset_file_properties_from_rss, entity.asset_flags_tts_audio, entity.asset_file_properties_width, entity.asset_file_properties_height,
                 entity.created_at, entity.modified_at,
                 entity.created_by_id, entity.licence_id,
                 asf.asset_attributes_origin_file_name, asf.asset_attributes_mime_type, asf.asset_attributes_size,

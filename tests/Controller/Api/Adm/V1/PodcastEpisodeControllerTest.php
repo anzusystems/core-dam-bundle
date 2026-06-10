@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
@@ -15,6 +14,7 @@ use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Tests\ApiClient;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
@@ -102,7 +102,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         $client = $this->getApiClient(User::ID_ADMIN);
 
         if ($assetFileId) {
-            $assetFile = $this->entityManager->find(AssetFile::class,$assetFileId);
+            $assetFile = $this->entityManager->find(AssetFile::class, $assetFileId);
             $payload['asset'] = $assetFile->getAsset()->getId();
         }
 
@@ -128,7 +128,7 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
                         ValidationException::ERROR_FIELD_EMPTY,
                     ],
                 ],
-                null
+                null,
             ],
             [
                 [
@@ -140,11 +140,11 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
                 [
                     'asset' => [
                         ValidationException::ERROR_FIELD_INVALID,
-                        'error_invalid_licence'
+                        'error_invalid_licence',
                     ],
                 ],
-                ImageFixtures::IMAGE_ID_1
-            ]
+                ImageFixtures::IMAGE_ID_1,
+            ],
         ];
     }
 
@@ -166,15 +166,21 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
         );
     }
 
-    private function assertSamePodcast(array $expectedPayload, PodcastEpisode $newPodcast): void
+    public function testSetMembershipByAsset(): void
     {
-        $this->assertSame($expectedPayload['texts']['title'], $newPodcast->getTexts()->getTitle());
-        $this->assertSame($expectedPayload['texts']['description'], $newPodcast->getTexts()->getDescription());
-        $this->assertSame($expectedPayload['attributes']['seasonNumber'], $newPodcast->getAttributes()->getSeasonNumber());
-        $this->assertSame($expectedPayload['attributes']['episodeNumber'], $newPodcast->getAttributes()->getEpisodeNumber());
-        $this->assertSame($expectedPayload['dates']['publicationDate'], $newPodcast->getDates()->getPublicationDate()->format(App::DATE_TIME_API_FORMAT));
-        $this->assertSame($expectedPayload['podcast'], (string) $newPodcast->getPodcast()->getId());
-        $this->assertSame($expectedPayload['imagePreview']['imageFile'], (string) $newPodcast->getImagePreview()->getImageFile()->getId());
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $asset = $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1)->getAsset();
+        $assetId = (string) $asset->getId();
+
+        $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), [
+            'podcasts' => [PodcastFixtures::PODCAST_1],
+        ]);
+        $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+        $this->assertSame([PodcastFixtures::PODCAST_1], $this->fetchMembershipPodcastIds($client, $assetId));
+
+        $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), ['podcasts' => []]);
+        $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
+        $this->assertSame([], $this->fetchMembershipPodcastIds($client, $assetId));
     }
 
     public static function podcastEpisodePayloadDataProvider(): array
@@ -191,14 +197,39 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
                         'episodeNumber' => 2,
                     ],
                     'dates' => [
-                        'publicationDate'=> App::getAppDate()->format(App::DATE_TIME_API_FORMAT),
+                        'publicationDate' => App::getAppDate()->format(App::DATE_TIME_API_FORMAT),
                     ],
                     'imagePreview' => [
-                        'imageFile' => BaseImageFixtures::IMAGE_ID_1_1
+                        'imageFile' => BaseImageFixtures::IMAGE_ID_1_1,
                     ],
-                    'podcast' => PodcastFixtures::PODCAST_1
-                ]
-            ]
+                    'podcast' => PodcastFixtures::PODCAST_1,
+                ],
+            ],
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function fetchMembershipPodcastIds(ApiClient $client, string $assetId): array
+    {
+        $response = $client->get(PodcastEpisodeUrl::getListByAsset($assetId));
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        return array_values(array_map(
+            static fn (array $episode): string => (string) $episode['podcast'],
+            json_decode($response->getContent(), true)['data'],
+        ));
+    }
+
+    private function assertSamePodcast(array $expectedPayload, PodcastEpisode $newPodcast): void
+    {
+        $this->assertSame($expectedPayload['texts']['title'], $newPodcast->getTexts()->getTitle());
+        $this->assertSame($expectedPayload['texts']['description'], $newPodcast->getTexts()->getDescription());
+        $this->assertSame($expectedPayload['attributes']['seasonNumber'], $newPodcast->getAttributes()->getSeasonNumber());
+        $this->assertSame($expectedPayload['attributes']['episodeNumber'], $newPodcast->getAttributes()->getEpisodeNumber());
+        $this->assertSame($expectedPayload['dates']['publicationDate'], $newPodcast->getDates()->getPublicationDate()->format(App::DATE_TIME_API_FORMAT));
+        $this->assertSame($expectedPayload['podcast'], (string) $newPodcast->getPodcast()->getId());
+        $this->assertSame($expectedPayload['imagePreview']['imageFile'], (string) $newPodcast->getImagePreview()->getImageFile()->getId());
     }
 }

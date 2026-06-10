@@ -14,8 +14,10 @@ use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemFlags;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\ExtSystemTtsSettings;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use AnzuSystems\SerializerBundle\Metadata\ContainerParam;
@@ -68,11 +70,22 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
     #[Serialize]
     private ExtSystemFlags $flags;
 
+    #[ORM\Embedded]
+    #[Serialize]
+    private ExtSystemTtsSettings $ttsSettings;
+
+    #[ORM\ManyToOne(targetEntity: Asset::class)]
+    #[ORM\JoinColumn(name: 'tts_free_audio_epilog_asset_id', referencedColumnName: 'id', nullable: true)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
+    private ?Asset $ttsFreeAudioEpilogAsset = null;
+
     public function __construct()
     {
         $this->setName('');
         $this->setSlug('');
         $this->setFlags(new ExtSystemFlags());
+        $this->setTtsSettings(new ExtSystemTtsSettings());
         $this->setLicences(new ArrayCollection());
         $this->setAdminUsers(new ArrayCollection());
     }
@@ -151,8 +164,34 @@ class ExtSystem implements IdentifiableInterface, UserTrackingInterface, TimeTra
         return $this->flags;
     }
 
-    public function setFlags(ExtSystemFlags $flags): void
+    public function setFlags(ExtSystemFlags $flags): self
     {
         $this->flags = $flags;
+
+        return $this;
+    }
+
+    public function getTtsSettings(): ExtSystemTtsSettings
+    {
+        return $this->ttsSettings;
+    }
+
+    public function setTtsSettings(ExtSystemTtsSettings $ttsSettings): self
+    {
+        $this->ttsSettings = $ttsSettings;
+
+        return $this;
+    }
+
+    public function getTtsFreeAudioEpilogAsset(): ?Asset
+    {
+        return $this->ttsFreeAudioEpilogAsset;
+    }
+
+    public function setTtsFreeAudioEpilogAsset(?Asset $ttsFreeAudioEpilogAsset): self
+    {
+        $this->ttsFreeAudioEpilogAsset = $ttsFreeAudioEpilogAsset;
+
+        return $this;
     }
 }

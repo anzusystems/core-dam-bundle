@@ -35,6 +35,11 @@ abstract class AbstractApiController extends AbstractAnzuApiController
         );
     }
 
+    protected function conflictResponse(): JsonResponse
+    {
+        return new JsonResponse(null, JsonResponse::HTTP_CONFLICT);
+    }
+
     protected function denyAccessUnlessGranted(
         mixed $attribute,
         mixed $subject = null,

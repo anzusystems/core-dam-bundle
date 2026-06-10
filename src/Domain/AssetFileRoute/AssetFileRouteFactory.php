@@ -55,6 +55,14 @@ final class AssetFileRouteFactory extends AbstractManager
         );
     }
 
+    /**
+     * Persist a pre-built route without uniqueness check (TTS uses random slugs). Caller owns the flush.
+     */
+    public function createPrebuiltAudioRoute(AudioFile $audioFile, string $slug, string $path): AssetFileRoute
+    {
+        return $this->wireMainRoute($audioFile, $slug, $path, RouteMode::StorageCopy);
+    }
+
     private function createFileRoute(AssetFile $assetFile, string $slug, string $path): AssetFileRoute
     {
         $existingRoute = $this->assetFileRouteRepository->findOneByUriPath($path);
@@ -62,6 +70,11 @@ final class AssetFileRouteFactory extends AbstractManager
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
+        return $this->wireMainRoute($assetFile, $slug, $path, $this->getMode($assetFile));
+    }
+
+    private function wireMainRoute(AssetFile $assetFile, string $slug, string $path, RouteMode $mode): AssetFileRoute
+    {
         $route = (new AssetFileRoute())
             ->setUri(
                 (new RouteUri())
@@ -70,7 +83,7 @@ final class AssetFileRouteFactory extends AbstractManager
                     ->setPath($path)
             )
             ->setStatus(RouteStatus::Active)
-            ->setMode($this->getMode($assetFile))
+            ->setMode($mode)
         ;
         $route->setTargetAssetFile($assetFile);
         $assetFile->getRoutes()->add($route);

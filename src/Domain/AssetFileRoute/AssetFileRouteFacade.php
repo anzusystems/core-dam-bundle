@@ -105,7 +105,22 @@ final class AssetFileRouteFacade extends AbstractManager
         return $assetFile;
     }
 
-    private function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
+    /**
+     * Dispatch purge events for all routes of the given AssetFiles (bytes changed in place, e.g. TTS regen).
+     *
+     * @param iterable<AssetFile> $assetFiles
+     */
+    public function dispatchRoutePurgeForAssetFiles(iterable $assetFiles): void
+    {
+        foreach ($this->assetFileRouteRepository->findByTargets($assetFiles) as $route) {
+            $this->dispatcher->dispatch($this->createEvent($route));
+        }
+    }
+
+    /**
+     * Write public-storage copy (StorageCopy mode), flush+commit, dispatch CDN/cache event.
+     */
+    public function makePublic(AssetFile $assetFile, AssetFileRoute $route): AssetFileRoute
     {
         $this->assetFileRouteManager->beginTransaction();
 

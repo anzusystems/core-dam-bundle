@@ -25,6 +25,9 @@ class AssetFlags
     #[ORM\Column(type: Types::BOOLEAN)]
     private bool $autoDeleteUnprocessed;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $ttsAudio;
+
     public function __construct()
     {
         $this->setVisible(true);
@@ -32,6 +35,7 @@ class AssetFlags
         $this->setAutoDeleteUnprocessed(true);
         $this->setAutocompletedMetadata(false);
         $this->setGeneratedBySystem(false);
+        $this->setTtsAudio(false);
     }
 
     public function isGeneratedBySystem(): bool
@@ -106,6 +110,18 @@ class AssetFlags
     public function setAutocompletedMetadata(bool $autocompletedMetadata): self
     {
         $this->autocompletedMetadata = $autocompletedMetadata;
+
+        return $this;
+    }
+
+    public function isTtsAudio(): bool
+    {
+        return $this->ttsAudio;
+    }
+
+    public function setTtsAudio(bool $ttsAudio): self
+    {
+        $this->ttsAudio = $ttsAudio;
 
         return $this;
     }

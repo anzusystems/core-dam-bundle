@@ -49,6 +49,36 @@ readonly class AssetSlotFactory
         return $this->manager->create($assetSlot, $flush);
     }
 
+    /**
+     * Swap the named slot to a new file; returns the displaced file (or null if slot was vacant).
+     * The old file stays asset-attached so its CDN URL remains alive until the caller expires it.
+     * Caller owns the surrounding transaction/flush.
+     */
+    public function replaceSlotFile(Asset $asset, AssetFile $newFile, string $slotName): ?AssetFile
+    {
+        $slot = $asset->getSlots()->findFirst(
+            static fn (mixed $key, AssetSlot $candidate): bool => $candidate->getName() === $slotName
+        );
+
+        if (false === $slot instanceof AssetSlot) {
+            $this->createRelation($asset, $newFile, $slotName, false);
+
+            return null;
+        }
+
+        $previousFile = $this->currentSlotFile($slot);
+        $previousFile?->getSlots()->removeElement($slot);
+
+        $newFile->addSlot($slot);
+        $newFile->setAsset($asset);
+
+        if ($slot->getFlags()->isMain()) {
+            $asset->setMainFile($newFile);
+        }
+
+        return $previousFile;
+    }
+
     public function getSlotName(
         ExtSystemAssetTypeConfiguration $configuration,
         ?string $slotName = null
@@ -75,5 +105,13 @@ readonly class AssetSlotFactory
         $assetSlot->getFlags()->setDefault($configuration->getSlots()->getDefault() === $actualSlotName);
 
         return $assetSlot;
+    }
+
+    private function currentSlotFile(AssetSlot $slot): ?AssetFile
+    {
+        return $slot->getImage()
+            ?? $slot->getAudio()
+            ?? $slot->getVideo()
+            ?? $slot->getDocument();
     }
 }

@@ -179,6 +179,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         if (false === (null === $searchDto->isFromRss())) {
             $filter[] = ['terms' => ['fromRss' => [$searchDto->isFromRss()]]];
         }
+        if (false === (null === $searchDto->isTtsAudio())) {
+            $filter[] = ['terms' => ['ttsAudio' => [$searchDto->isTtsAudio()]]];
+        }
         if (false === empty($searchDto->getDistributedInServices())) {
             $filter[] = ['terms' => ['distributedInServices' => $searchDto->getDistributedInServices()]];
         }

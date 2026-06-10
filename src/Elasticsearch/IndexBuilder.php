@@ -67,6 +67,13 @@ final class IndexBuilder
             $config->setCurrentExtSystemSlug($extSystem->getSlug());
             $config->setLastProcessedId(null);
 
+            $fullIndexName = $this->indexSettings->getFullIndexNameByConfig($config);
+            // Skip ext-systems that do not own this index (e.g. TTS-only ext-system has no image
+            // index → indexDefinitions array has no `core_dam_image_<slug>` entry).
+            if (false === isset($this->indexDefinitions[$fullIndexName])) {
+                continue;
+            }
+
             if ($config->isDrop()) {
                 $this->dropAndCreateIndex($config);
             }

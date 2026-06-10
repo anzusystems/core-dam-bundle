@@ -49,6 +49,7 @@ final class AudioStatusFacade extends AbstractAssetFileStatusFacade
         return $this->audioFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
+            excludeAssetId: $assetFile->getAsset()->getId(),
         );
     }
 }

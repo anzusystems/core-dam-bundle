@@ -12,11 +12,13 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
 {
     public const string PODCAST_EPISODE_RSS_MAP_KEY = 'podcast_episode_rss_map';
     public const string PODCAST_EPISODE_ENTITY_MAP_KEY = 'podcast_episode_entity_map';
+    public const string TTS_METADATA_MAP_KEY = 'tts_metadata_map';
     public const string AUDIO_PUBLIC_STORAGE = 'public_storage';
     public const string PUBLIC_DOMAIN_NAME = 'public_domain_name';
 
     private array $podcastEpisodeRssMap;
     private array $podcastEpisodeEntityMap;
+    private array $ttsMetadataMap;
     private string $publicStorage;
     private string $publicDomain;
 
@@ -24,6 +26,12 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     {
         return parent::getFromArrayConfiguration($config)
             ->setPublicStorage($config[self::AUDIO_PUBLIC_STORAGE] ?? '')
+            ->setTtsMetadataMap(
+                array_map(
+                    fn (array $mapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($mapConfig),
+                    $config[self::TTS_METADATA_MAP_KEY] ?? []
+                )
+            )
             ->setPodcastEpisodeRssMap(
                 array_map(
                     fn (array $episodeMapConfig): TextsWriterConfiguration => TextsWriterConfiguration::getFromArrayConfiguration($episodeMapConfig),
@@ -91,6 +99,21 @@ final class ExtSystemAudioTypeConfiguration extends ExtSystemAssetTypeConfigurat
     public function setPodcastEpisodeEntityMap(array $podcastEpisodeEntityMap): self
     {
         $this->podcastEpisodeEntityMap = $podcastEpisodeEntityMap;
+
+        return $this;
+    }
+
+    /**
+     * @return array<int, TextsWriterConfiguration>
+     */
+    public function getTtsMetadataMap(): array
+    {
+        return $this->ttsMetadataMap;
+    }
+
+    public function setTtsMetadataMap(array $ttsMetadataMap): self
+    {
+        $this->ttsMetadataMap = $ttsMetadataMap;
 
         return $this;
     }

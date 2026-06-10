@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AnzuSystems\CoreDamBundle\Repository\CustomFilter;
+
+use AnzuSystems\CommonBundle\ApiFilter\CustomFilterInterface;
+use Doctrine\ORM\QueryBuilder;
+
+/** Filters TtsNarrationRequest listing by assetLicence FK. */
+final class TtsNarrationRequestLicenceFilter implements CustomFilterInterface
+{
+    public const string LICENCE = 'licence';
+
+    public function apply(QueryBuilder $dqb, string $field, string | int $value): QueryBuilder
+    {
+        if (self::LICENCE === $field) {
+            $dqb->andWhere('IDENTITY(t.assetLicence) = :licenceId')
+                ->setParameter('licenceId', $value);
+        }
+
+        return $dqb;
+    }
+}

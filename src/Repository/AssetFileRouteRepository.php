@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 
 /**
@@ -27,6 +28,24 @@ final class AssetFileRouteRepository extends AbstractAnzuRepository
             'targetAssetFile' => $assetId,
             'uri.main' => true,
         ]);
+    }
+
+    /**
+     * @param iterable<AssetFile> $targets
+     *
+     * @return list<AssetFileRoute>
+     */
+    public function findByTargets(iterable $targets): array
+    {
+        $ids = [];
+        foreach ($targets as $target) {
+            $ids[] = (string) $target->getId();
+        }
+        if ([] === $ids) {
+            return [];
+        }
+
+        return $this->findBy(['targetAssetFile' => $ids]);
     }
 
     protected function getEntityClass(): string
