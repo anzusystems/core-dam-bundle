@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -35,6 +36,7 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
      */
     #[Serialize(handler: EntityIdHandler::class, type: Podcast::class)]
     #[Assert\Valid]
+    #[AppAssert\EqualExtSystemCollection]
     private Collection $podcasts;
 
     #[Serialize]
