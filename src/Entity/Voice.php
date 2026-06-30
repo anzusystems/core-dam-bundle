@@ -94,6 +94,16 @@ abstract class Voice implements UuidIdentifiableInterface, TimeTrackingInterface
         return $this;
     }
 
+    /**
+     * Whether this voice's model supports request stitching (previous_request_ids).
+     * Default false; ElevenlabsVoice overrides per model. Google is stateless and never stitches,
+     * so callers can skip fetching chain request-ids entirely for voices that return false.
+     */
+    public function supportsRequestStitching(): bool
+    {
+        return false;
+    }
+
     public function isMain(): bool
     {
         return $this->main;

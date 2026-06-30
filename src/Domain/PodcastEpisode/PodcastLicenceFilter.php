@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-/** Filters podcasts to those in the asset's ext system; logs and skips mismatches. */
+/** Keeps only podcasts in the asset's ext system; logs the rest. */
 final readonly class PodcastLicenceFilter
 {
     public function __construct(

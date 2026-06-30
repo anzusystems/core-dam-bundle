@@ -21,11 +21,8 @@ final class ElevenlabsVoice extends Voice
     public const float SIMILARITY_BOOST_DEFAULT = 0.75;
 
     /**
-     * ElevenLabs models that support request stitching (previous_request_ids / next_request_ids).
-     * Allowlist by design: a model NOT listed (e.g. eleven_v3, a future eleven_v4) is synthesized
-     * WITHOUT stitching instead of failing with HTTP 400 — so a new or incompatible model never breaks
-     * synthesis, it only loses cross-chunk prosody continuity. Add a model here once it's confirmed to
-     * support stitching.
+     * Allowlist of ElevenLabs models that support request stitching. Unlisted models (e.g. eleven_v3)
+     * synthesize without previous_request_ids instead of failing with HTTP 400. Add a model once confirmed.
      *
      * @var list<string>
      */

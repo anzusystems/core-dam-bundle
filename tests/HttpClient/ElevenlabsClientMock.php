@@ -25,6 +25,13 @@ final class ElevenlabsClientMock
     public const string FORCE_TRANSIENT_FAIL_MARKER = 'TTS_FORCE_TRANSIENT_FAIL';
     private const string SAMPLE_MP3 = 'audioa';
 
+    /**
+     * Decoded text-to-speech request payloads, captured for assertions (e.g. previous_request_ids gating).
+     *
+     * @var list<array<string, mixed>>
+     */
+    public array $sentBodies = [];
+
     public function __invoke(): MockHttpClient
     {
         return new MockHttpClient(
@@ -41,6 +48,10 @@ final class ElevenlabsClientMock
 
         if (str_starts_with($path, '/v1/text-to-speech/')) {
             $body = (string) ($options['body'] ?? '');
+            $decoded = json_decode($body, true);
+            if (is_array($decoded)) {
+                $this->sentBodies[] = $decoded;
+            }
             if (str_contains($body, self::FORCE_TRANSIENT_FAIL_MARKER)) {
                 return new MockResponse(
                     (string) json_encode(['detail' => ['status' => 'mock_forced_transient_failure']]),
