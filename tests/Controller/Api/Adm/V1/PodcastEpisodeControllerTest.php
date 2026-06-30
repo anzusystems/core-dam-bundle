@@ -17,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Tests\ApiClient;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AudioFixtures as TestAudioFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\PodcastEpisodeUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -141,62 +140,12 @@ final class PodcastEpisodeControllerTest extends AbstractApiController
                 [
                     'asset' => [
                         ValidationException::ERROR_FIELD_INVALID,
-                        'error_invalid_ext_system',
+                        'error_invalid_licence',
                     ],
                 ],
                 ImageFixtures::IMAGE_ID_1,
             ],
         ];
-    }
-
-    /**
-     * Cross-licence: a podcast in DEFAULT_LICENCE_ID and an audio in FIRST_SYS_SECONDARY_LICENCE are
-     * different licences of the SAME (CMS) ext system, so the episode must be created. The episode licence
-     * tracks the podcast, not the asset.
-     *
-     * @throws SerializerException
-     */
-    public function testCreateWithAssetOfAnotherLicenceSameExtSystem(): void
-    {
-        $client = $this->getApiClient(User::ID_ADMIN);
-        $asset = $this->entityManager->find(AudioFile::class, TestAudioFixtures::AUDIO_CROSS_LICENCE_ID)->getAsset();
-
-        $payload = [
-            'texts' => ['title' => 'cross licence', 'description' => 'Description'],
-            'attributes' => ['seasonNumber' => 1, 'episodeNumber' => 9],
-            'dates' => ['publicationDate' => App::getAppDate()->format(App::DATE_TIME_API_FORMAT)],
-            'podcast' => PodcastFixtures::PODCAST_1,
-            'asset' => (string) $asset->getId(),
-        ];
-
-        $response = $client->post(PodcastEpisodeUrl::createPath(), $payload);
-        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
-
-        $created = $this->serializer->deserialize($response->getContent(), PodcastEpisode::class);
-        $entity = $this->entityManager->find(PodcastEpisode::class, $created->getId());
-
-        $this->assertSame(PodcastFixtures::PODCAST_1, (string) $entity->getPodcast()->getId());
-        $this->assertNotSame(
-            (string) $entity->getPodcast()->getLicence()->getId(),
-            (string) $asset->getLicence()->getId(),
-        );
-        $this->assertSame(
-            (string) $entity->getPodcast()->getLicence()->getId(),
-            (string) $entity->getLicence()->getId(),
-        );
-    }
-
-    public function testSetMembershipByAssetCrossLicenceSameExtSystem(): void
-    {
-        $client = $this->getApiClient(User::ID_ADMIN);
-        $asset = $this->entityManager->find(AudioFile::class, TestAudioFixtures::AUDIO_CROSS_LICENCE_ID)->getAsset();
-        $assetId = (string) $asset->getId();
-
-        $response = $client->put(PodcastEpisodeUrl::setMembershipByAsset($assetId), [
-            'podcasts' => [PodcastFixtures::PODCAST_1],
-        ]);
-        $this->assertSame(Response::HTTP_NO_CONTENT, $response->getStatusCode());
-        $this->assertSame([PodcastFixtures::PODCAST_1], $this->fetchMembershipPodcastIds($client, $assetId));
     }
 
     /**

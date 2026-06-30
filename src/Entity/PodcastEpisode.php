@@ -71,7 +71,7 @@ class PodcastEpisode implements
     #[ORM\ManyToOne(targetEntity: Asset::class, inversedBy: 'episodes')]
     #[Serialize(handler: EntityIdHandler::class)]
     #[AppAssert\AssetProperties(assetType: AssetType::Audio)]
-    #[AppAssert\EqualExtSystem]
+    #[AppAssert\EqualLicence]
     private ?Asset $asset;
 
     #[Serialize]

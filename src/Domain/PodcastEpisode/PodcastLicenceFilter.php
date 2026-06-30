@@ -10,7 +10,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
-/** Keeps only podcasts in the asset's ext system; logs the rest. */
+/** Filters podcasts to those whose licence matches the asset's; logs and skips mismatches. */
 final readonly class PodcastLicenceFilter
 {
     public function __construct(
@@ -27,17 +27,17 @@ final readonly class PodcastLicenceFilter
     {
         $desired = new ArrayCollection();
         foreach ($podcasts as $podcast) {
-            if ($podcast->getExtSystem()->is($asset->getExtSystem())) {
+            if ($podcast->getLicence()->is($asset->getLicence())) {
                 $desired->add($podcast);
 
                 continue;
             }
 
-            $this->logger->warning(DamLogger::NAMESPACE_PODCAST_MEMBERSHIP, 'podcastMembership.extSystemMismatch', [
+            $this->logger->warning(DamLogger::NAMESPACE_PODCAST_MEMBERSHIP, 'podcastMembership.licenceMismatch', [
                 'podcastId' => (string) $podcast->getId(),
                 'assetId' => (string) $asset->getId(),
-                'podcastExtSystemId' => (string) $podcast->getExtSystem()->getId(),
-                'assetExtSystemId' => (string) $asset->getExtSystem()->getId(),
+                'podcastLicenceId' => (string) $podcast->getLicence()->getId(),
+                'assetLicenceId' => (string) $asset->getLicence()->getId(),
             ]);
         }
 

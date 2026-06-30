@@ -147,10 +147,6 @@ final class PodcastEpisodeController extends AbstractApiController
         if ($podcastEpisode->getAsset()) {
             $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $podcastEpisode->getAsset());
         }
-        $newAsset = $newPodcastEpisode->getAsset();
-        if (null !== $newAsset && $newAsset !== $podcastEpisode->getAsset()) {
-            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_UPDATE, $newAsset);
-        }
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $podcastEpisode);
 
         return $this->okResponse(

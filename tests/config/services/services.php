@@ -12,8 +12,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
-use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
-use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
 use AnzuSystems\CoreDamBundle\Domain\DistributionCategory\DistributionCategoryManager;
@@ -31,7 +29,6 @@ use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceGroupFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AudioFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\CustomFormElementFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
@@ -135,15 +132,6 @@ return static function (ContainerConfigurator $configurator): void {
         ->arg('$facadeProvider', service(AssetFileStatusFacadeProvider::class))
         ->arg('$assetSlotFactory', service(AssetSlotFactory::class))
         ->arg('$assetFilePositionFacade', service(ImagePositionFacade::class))
-        ->call('setEntityManager', [service(EntityManagerInterface::class)])
-        ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
-
-    $services->set(AudioFixtures::class)
-        ->arg('$audioFactory', service(AudioFactory::class))
-        ->arg('$audioManager', service(AudioManager::class))
-        ->arg('$licenceRepository', service(AssetLicenceRepository::class))
-        ->arg('$fileSystemProvider', service(FileSystemProvider::class))
-        ->arg('$facadeProvider', service(AssetFileStatusFacadeProvider::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 

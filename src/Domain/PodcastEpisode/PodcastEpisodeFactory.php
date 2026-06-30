@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
-use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
 use Doctrine\Common\Collections\Collection;
 
@@ -32,12 +31,6 @@ final class PodcastEpisodeFactory extends AbstractManager
         bool $flush = true,
         bool $inheritFromAsset = false,
     ): PodcastEpisode {
-        // Hard cross-licence invariant: an asset may only join podcasts of the same ext system.
-        // Guard here (the chokepoint for all membership creation) before addEpisode() mutates the relation.
-        if ($podcast->getExtSystem()->isNot($asset->getExtSystem())) {
-            throw (new ValidationException())->addFormattedError('asset', ValidationException::ERROR_INVALID_EXT_SYSTEM);
-        }
-
         // addEpisode() keeps the in-memory episode collection in sync for event consumers.
         $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
         $asset->addEpisode($podcastEpisode);
