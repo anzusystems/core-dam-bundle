@@ -20,6 +20,26 @@ final class ElevenlabsVoice extends Voice
     public const float STABILITY_DEFAULT = 0.5;
     public const float SIMILARITY_BOOST_DEFAULT = 0.75;
 
+    /**
+     * ElevenLabs models that support request stitching (previous_request_ids / next_request_ids).
+     * Allowlist by design: a model NOT listed (e.g. eleven_v3, a future eleven_v4) is synthesized
+     * WITHOUT stitching instead of failing with HTTP 400 — so a new or incompatible model never breaks
+     * synthesis, it only loses cross-chunk prosody continuity. Add a model here once it's confirmed to
+     * support stitching.
+     *
+     * @var list<string>
+     */
+    public const array MODELS_WITH_REQUEST_STITCHING = [
+        'eleven_multilingual_v2',
+        'eleven_multilingual_v1',
+        'eleven_monolingual_v1',
+        'eleven_turbo_v2',
+        'eleven_turbo_v2_5',
+        'eleven_flash_v2',
+        'eleven_flash_v2_5',
+        'eleven_english_sts_v2',
+    ];
+
     #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => self::MODEL_DEFAULT])]
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
@@ -52,6 +72,11 @@ final class ElevenlabsVoice extends Voice
         $this->modelId = $modelId;
 
         return $this;
+    }
+
+    public function supportsRequestStitching(): bool
+    {
+        return in_array($this->modelId, self::MODELS_WITH_REQUEST_STITCHING, true);
     }
 
     public function getStability(): float

@@ -104,7 +104,9 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
         $request->getVoiceSettings()
             ->setStability($voice->getStability())
             ->setSimilarityBoost($voice->getSimilarityBoost());
-        if ([] !== $previousRequestIds) {
+        // Only send previous_request_ids for models that support request stitching; models like
+        // eleven_v3 reject it with HTTP 400. Unsupported models simply synthesize without stitching.
+        if ([] !== $previousRequestIds && $voice->supportsRequestStitching()) {
             $request->setPreviousRequestIds($previousRequestIds);
         }
 
