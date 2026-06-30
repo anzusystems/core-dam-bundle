@@ -142,11 +142,17 @@ final readonly class TtsRequestOrchestrator
         $voice = $this->voiceResolver->resolve($request->getVoiceFamilySlug(), $extSystem);
         $provider = $this->providerContainer->forDiscriminator($voice->getDiscriminator());
 
+        // Only fetch the previous-chunk request-id chain for voices whose model supports stitching;
+        // models like eleven_v3 and the stateless Google provider would discard it, so the query is wasted.
+        $previousRequestIds = $voice->supportsRequestStitching()
+            ? $this->chunkRepo->findChainRequestIds($requestId, $chunk->getOrdinal(), self::CHAIN_LIMIT)
+            : [];
+
         $result = $provider->synthesizeChunk(
             $chunk->getSourceText(),
             $voice,
             $extSystem,
-            $this->chunkRepo->findChainRequestIds($requestId, $chunk->getOrdinal(), self::CHAIN_LIMIT),
+            $previousRequestIds,
         );
         $path = $this->chunkStorage->write($extSystem, $requestId, $chunk->getOrdinal(), $result->bytes);
 
