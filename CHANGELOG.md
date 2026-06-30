@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## [1.46.1](https://github.com/anzusystems/core-dam-bundle/compare/1.46.0...1.46.1) (2026-06-30)
+
+### Fixes
+* Gate ElevenLabs request stitching behind a per-model allowlist (`MODELS_WITH_REQUEST_STITCHING`); models not on the list synthesize without `previous_request_ids` instead of failing with HTTP 400 (e.g. `eleven_v3`, future `eleven_v4`)
+* Lift `supportsRequestStitching()` to the `Voice` base so `TtsRequestOrchestrator` skips the previous-request-id chain query for non-stitching voices (incl. Google TTS)
+
 ## [1.40.0](https://github.com/anzusystems/core-dam-bundle/compare/1.39.0...1.40.0) (2025-09-22)
 
 ### Features
