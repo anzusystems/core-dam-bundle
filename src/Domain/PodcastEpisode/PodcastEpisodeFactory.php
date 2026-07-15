@@ -38,14 +38,13 @@ final class PodcastEpisodeFactory extends AbstractManager
         bool $flush = true,
         bool $inheritFromAsset = false,
     ): PodcastEpisode {
-        // addEpisode() keeps the in-memory episode collection in sync for event consumers.
-        $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
-        $asset->addEpisode($podcastEpisode);
-        if ($inheritFromAsset) {
-            $this->applyAssetDefaults($podcastEpisode, $asset);
-        }
-
-        return $this->manager->create($podcastEpisode, $flush);
+        return $this->createEpisode(
+            asset: $asset,
+            podcast: $podcast,
+            flush: $flush,
+            inheritFromAsset: $inheritFromAsset,
+            inheritedImage: $inheritFromAsset ? $this->resolveInheritedImageFile($asset) : null,
+        );
     }
 
     /**
@@ -64,8 +63,16 @@ final class PodcastEpisodeFactory extends AbstractManager
             $desiredByPodcastId[(string) $podcast->getId()] = $podcast;
         }
 
+        $inheritedImage = $inheritFromAsset ? $this->resolveInheritedImageFile($asset) : null;
+
         foreach (array_diff_key($desiredByPodcastId, $currentByPodcastId) as $podcast) {
-            $this->createEpisodeWithAsset($asset, $podcast, false, $inheritFromAsset);
+            $this->createEpisode(
+                asset: $asset,
+                podcast: $podcast,
+                flush: false,
+                inheritFromAsset: $inheritFromAsset,
+                inheritedImage: $inheritedImage,
+            );
         }
 
         foreach (array_diff_key($currentByPodcastId, $desiredByPodcastId) as $episode) {
@@ -89,7 +96,24 @@ final class PodcastEpisodeFactory extends AbstractManager
         $this->flush($flush);
     }
 
-    private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset): void
+    private function createEpisode(
+        Asset $asset,
+        Podcast $podcast,
+        bool $flush,
+        bool $inheritFromAsset,
+        ?ImageFile $inheritedImage,
+    ): PodcastEpisode {
+        // addEpisode() keeps the in-memory episode collection in sync for event consumers.
+        $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
+        $asset->addEpisode($podcastEpisode);
+        if ($inheritFromAsset) {
+            $this->applyAssetDefaults($podcastEpisode, $asset, $inheritedImage);
+        }
+
+        return $this->manager->create($podcastEpisode, $flush);
+    }
+
+    private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset, ?ImageFile $inheritedImage): void
     {
         $config = $this->extSystemConfigurationProvider->getAudioExtSystemConfiguration(
             $asset->getLicence()->getExtSystem()->getSlug()
@@ -99,7 +123,7 @@ final class PodcastEpisodeFactory extends AbstractManager
         $lastEpisode = $this->repository->findOneLastByPodcast($episode->getPodcast());
         $episode->getAttributes()->setEpisodeNumber(($lastEpisode?->getAttributes()->getEpisodeNumber() ?? App::ZERO) + 1);
 
-        $this->seedFromAsset($episode, $asset, $this->resolveInheritedImageFile($asset));
+        $this->seedFromAsset($episode, $asset, $inheritedImage);
     }
 
     private function seedFromAsset(PodcastEpisode $episode, Asset $asset, ?ImageFile $inheritedImage): bool
