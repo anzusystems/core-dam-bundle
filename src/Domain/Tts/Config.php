@@ -14,10 +14,7 @@ final readonly class Config
     public const float NORMALIZATION_TRUE_PEAK_DBTP = -1.5;
     public const float NORMALIZATION_LRA = 11.0;
 
-    /**
-     * Sane band for the mastering target. Guards a misconfigured deploy: an unreplaced `#{TTS_TARGET_LUFS}#`
-     * token casts to 0.0, which would master to a deafening 0 LUFS — fail loudly instead.
-     */
+    // Unreplaced `#{TTS_TARGET_LUFS}#` casts to 0.0 → master at a deafening 0 LUFS; fail loudly instead.
     public const float TARGET_LUFS_MIN = -30.0;
     public const float TARGET_LUFS_MAX = -10.0;
 

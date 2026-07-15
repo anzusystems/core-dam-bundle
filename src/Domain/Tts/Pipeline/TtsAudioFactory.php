@@ -138,6 +138,7 @@ final readonly class TtsAudioFactory
             ->setExternalVoiceId($input->voice->getExternalVoiceId())
             ->setSourceTextHash($input->sourceTextHash)
             ->setSourceTextSnapshot($input->sourceTextSnapshot)
+            ->setMainImageFileId($input->mainImageFileId)
             ->setStatus(TtsAudioStatus::Active);
     }
 

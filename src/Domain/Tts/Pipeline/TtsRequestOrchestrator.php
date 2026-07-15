@@ -362,6 +362,10 @@ final readonly class TtsRequestOrchestrator
             $this->attachPreviewSlot($result->asset, $preview);
         });
 
+        $this->bestEffort('processInitial.episodeReconcileFailed', $request, $result->asset, function () use ($result): void {
+            $this->episodeFactory->reconcileEpisodesFromAsset($result->asset);
+        });
+
         $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
             $this->assetManager->updateExisting($result->asset);
             $this->indexManager->index($result->asset);
@@ -418,6 +422,10 @@ final readonly class TtsRequestOrchestrator
             $this->enrichAssetFromRequest($stableAsset, $request, $extSystem, $family);
             $this->assetManager->updateExisting($stableAsset);
             $this->indexManager->index($stableAsset);
+        });
+
+        $this->bestEffort('processRegenerate.episodeReconcileFailed', $request, $stableAsset, function () use ($stableAsset): void {
+            $this->episodeFactory->reconcileEpisodesFromAsset($stableAsset);
         });
 
         $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$stableAsset]));

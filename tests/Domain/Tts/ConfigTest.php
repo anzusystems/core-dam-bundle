@@ -16,9 +16,6 @@ final class ConfigTest extends TestCase
         self::assertSame(-18.0, self::config(enabled: true, targetLufs: -18.0)->getTargetLufs());
     }
 
-    /**
-     * Disabled means the target is unused — a garbage value must not break the app.
-     */
     public function testDisabledExposesNullAndIgnoresTarget(): void
     {
         self::assertNull(self::config(enabled: false, targetLufs: 0.0)->getTargetLufs());

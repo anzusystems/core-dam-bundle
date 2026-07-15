@@ -36,7 +36,6 @@ final class FfmpegNormalizeLoudnessTest extends CoreDamKernelTestCase
         self::assertGreaterThanOrEqual($bitrateKbps - 24, $actualKbps);
         self::assertLessThanOrEqual($bitrateKbps + 24, $actualKbps);
 
-        // Sample is ~-21.7 LUFS; single-pass loudnorm targeting -18 lands ~-19, a no-op would stay near -21.7.
         $lufs = self::measureIntegratedLufs($path);
         self::assertGreaterThanOrEqual(-20.5, $lufs, 'Loudness was not normalized toward the target.');
         self::assertLessThanOrEqual(-15.5, $lufs);

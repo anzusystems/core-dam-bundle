@@ -40,6 +40,7 @@ final readonly class TtsNarrationRequestFactory
             ->setExtSystemId($licence->getExtSystem()->getId())
             ->setAssetLicence($licence)
             ->setPodcastIds($dto->getPodcasts()->map(static fn (Podcast $podcast): string => (string) $podcast->getId())->toArray())
+            ->setMainImageFileId($dto->getMainImageFileId())
             ->setSourceText($dto->getText());
     }
 }

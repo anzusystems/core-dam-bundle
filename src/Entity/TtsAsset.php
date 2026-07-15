@@ -63,6 +63,10 @@ final class TtsAsset implements TimeTrackingInterface
     #[Serialize]
     private ?string $failureReason = null;
 
+    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[Serialize]
+    private ?string $mainImageFileId = null;
+
     /**
      * @internal Use {@see \AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline\TtsAudioFactory}.
      */
@@ -169,4 +173,15 @@ final class TtsAsset implements TimeTrackingInterface
         return $this;
     }
 
+    public function getMainImageFileId(): ?string
+    {
+        return $this->mainImageFileId;
+    }
+
+    public function setMainImageFileId(?string $mainImageFileId): self
+    {
+        $this->mainImageFileId = $mainImageFileId;
+
+        return $this;
+    }
 }
