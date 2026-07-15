@@ -37,6 +37,15 @@ final class ImageFileRepository extends AbstractAssetFileRepository
         return new ArrayCollection($result);
     }
 
+    public function findProcessedByIdAndLicence(string $id, AssetLicence $licence): ?ImageFile
+    {
+        return $this->findOneBy([
+            'id' => $id,
+            'licence' => $licence,
+            'assetAttributes.status' => AssetFileProcessStatus::Processed,
+        ]);
+    }
+
     public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
     {
         return $this->findOneBy([

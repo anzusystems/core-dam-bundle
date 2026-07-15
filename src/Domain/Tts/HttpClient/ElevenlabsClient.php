@@ -29,7 +29,7 @@ final readonly class ElevenlabsClient
     /**
      * @throws TtsProviderException
      */
-    public function synthesize(string $externalVoiceId, string $apiKey, ElevenlabsSynthesizeRequestDto $request): ElevenlabsResponse
+    public function synthesize(string $externalVoiceId, string $apiKey, string $outputFormat, ElevenlabsSynthesizeRequestDto $request): ElevenlabsResponse
     {
         try {
             /** @var array<string, mixed> $body */
@@ -40,6 +40,9 @@ final readonly class ElevenlabsClient
                 [
                     'headers' => [
                         self::HEADER_X_API_KEY => $apiKey,
+                    ],
+                    'query' => [
+                        'output_format' => $outputFormat,
                     ],
                     'json' => $body,
                 ],

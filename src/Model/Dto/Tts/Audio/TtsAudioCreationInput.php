@@ -21,6 +21,7 @@ final readonly class TtsAudioCreationInput
         public string $sourceTextSnapshot,
         public ?string $title = null,
         public ?string $description = null,
+        public ?string $mainImageFileId = null,
     ) {
     }
 
@@ -41,6 +42,7 @@ final readonly class TtsAudioCreationInput
             sourceTextSnapshot: $sourceText,
             title: $request->getTitle(),
             description: $request->getDescription(),
+            mainImageFileId: $request->getMainImageFileId(),
         );
     }
 }

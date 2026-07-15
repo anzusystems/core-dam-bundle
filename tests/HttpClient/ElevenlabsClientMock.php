@@ -32,6 +32,11 @@ final class ElevenlabsClientMock
      */
     public array $sentBodies = [];
 
+    /**
+     * @var list<array<string, string>>
+     */
+    public array $sentQueries = [];
+
     public function __invoke(): MockHttpClient
     {
         return new MockHttpClient(
@@ -52,6 +57,9 @@ final class ElevenlabsClientMock
             if (is_array($decoded)) {
                 $this->sentBodies[] = $decoded;
             }
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            /** @var array<string, string> $query */
+            $this->sentQueries[] = $query;
             if (str_contains($body, self::FORCE_TRANSIENT_FAIL_MARKER)) {
                 return new MockResponse(
                     (string) json_encode(['detail' => ['status' => 'mock_forced_transient_failure']]),

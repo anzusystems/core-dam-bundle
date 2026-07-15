@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Audio\AudioStatusFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastEpisodeFactory;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\PodcastLicenceFilter;
@@ -36,6 +37,7 @@ use AnzuSystems\CoreDamBundle\Entity\VoiceFamily;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\RegenCancelledException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsNarrationRequestMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\TtsSynthChunkMessage;
@@ -95,6 +97,8 @@ final readonly class TtsRequestOrchestrator
         private DamLogger $logger,
         private EntityManagerInterface $entityManager,
         private TtsLocker $ttsLocker,
+        private FfmpegService $ffmpegService,
+        private ExtSystemConfigurationProvider $extSystemConfigProvider,
     ) {
     }
 
@@ -278,10 +282,31 @@ final readonly class TtsRequestOrchestrator
 
     private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
     {
+        $master = $this->normalizeMaster($request, $master);
         match ($request->getMode()) {
             TtsRequestMode::Initial => $this->finalizeInitial($request, $master, $voice),
             TtsRequestMode::Regenerate => $this->finalizeRegenerate($request, $master, $voice),
         };
+    }
+
+    private function normalizeMaster(TtsNarrationRequest $request, AdapterFile $master): AdapterFile
+    {
+        $targetLufs = $this->config->getTargetLufs();
+        if (null === $targetLufs) {
+            return $master;
+        }
+
+        $ttsConfig = $this->extSystemConfigProvider->getTtsExtSystemConfiguration(
+            $request->getLicence()->getExtSystem()->getSlug()
+        );
+
+        return $this->ffmpegService->normalizeLoudness(
+            $master,
+            $targetLufs,
+            Config::NORMALIZATION_TRUE_PEAK_DBTP,
+            Config::NORMALIZATION_LRA,
+            $ttsConfig->getOutputBitrateKbps(),
+        );
     }
 
     private function resolveSourceText(TtsNarrationRequest $request): string
@@ -335,6 +360,10 @@ final readonly class TtsRequestOrchestrator
 
             $preview = $this->previewMedia->generate($result->masterAudio, $result->masterTmpFile, expireAt: $orphanExpireAt);
             $this->attachPreviewSlot($result->asset, $preview);
+        });
+
+        $this->bestEffort('processInitial.episodeReconcileFailed', $request, $result->asset, function () use ($result): void {
+            $this->episodeFactory->reconcileEpisodesFromAsset($result->asset);
         });
 
         $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
@@ -393,6 +422,10 @@ final readonly class TtsRequestOrchestrator
             $this->enrichAssetFromRequest($stableAsset, $request, $extSystem, $family);
             $this->assetManager->updateExisting($stableAsset);
             $this->indexManager->index($stableAsset);
+        });
+
+        $this->bestEffort('processRegenerate.episodeReconcileFailed', $request, $stableAsset, function () use ($stableAsset): void {
+            $this->episodeFactory->reconcileEpisodesFromAsset($stableAsset);
         });
 
         $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$stableAsset]));

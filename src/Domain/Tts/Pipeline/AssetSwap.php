@@ -88,6 +88,7 @@ final readonly class AssetSwap
             ->setVoiceFamily($family)
             ->setProvider($voice->getDiscriminator())
             ->setExternalVoiceId($voice->getExternalVoiceId())
+            ->setMainImageFileId($request->getMainImageFileId())
         ;
         $this->ttsAssetManager->markActive($stableTts);
 

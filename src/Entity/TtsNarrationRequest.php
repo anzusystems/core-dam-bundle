@@ -110,6 +110,10 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     #[Serialize]
     private array $podcastIds = [];
 
+    #[ORM\Column(type: Types::GUID, length: 36, nullable: true)]
+    #[Serialize]
+    private ?string $mainImageFileId = null;
+
     /**
      * Nullified at terminal status; audit copy lives on {@see TtsAsset::$sourceTextSnapshot}.
      */
@@ -354,6 +358,18 @@ final class TtsNarrationRequest implements UuidIdentifiableInterface, TimeTracki
     public function setPodcastIds(array $podcastIds): self
     {
         $this->podcastIds = $podcastIds;
+
+        return $this;
+    }
+
+    public function getMainImageFileId(): ?string
+    {
+        return $this->mainImageFileId;
+    }
+
+    public function setMainImageFileId(?string $mainImageFileId): self
+    {
+        $this->mainImageFileId = $mainImageFileId;
 
         return $this;
     }

@@ -8,11 +8,15 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetTextsWriter;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\PodcastEpisodeRepository;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use Doctrine\Common\Collections\Collection;
 
 final class PodcastEpisodeFactory extends AbstractManager
@@ -22,6 +26,9 @@ final class PodcastEpisodeFactory extends AbstractManager
         private readonly PodcastEpisodeRepository $repository,
         private readonly AssetTextsWriter $assetTextsWriter,
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private readonly TtsAssetRepository $ttsAssetRepository,
+        private readonly ImageFileRepository $imageFileRepository,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
     ) {
     }
 
@@ -31,14 +38,13 @@ final class PodcastEpisodeFactory extends AbstractManager
         bool $flush = true,
         bool $inheritFromAsset = false,
     ): PodcastEpisode {
-        // addEpisode() keeps the in-memory episode collection in sync for event consumers.
-        $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
-        $asset->addEpisode($podcastEpisode);
-        if ($inheritFromAsset) {
-            $this->applyAssetDefaults($podcastEpisode, $asset);
-        }
-
-        return $this->manager->create($podcastEpisode, $flush);
+        return $this->createEpisode(
+            asset: $asset,
+            podcast: $podcast,
+            flush: $flush,
+            inheritFromAsset: $inheritFromAsset,
+            inheritedImage: $inheritFromAsset ? $this->resolveInheritedImageFile($asset) : null,
+        );
     }
 
     /**
@@ -57,8 +63,16 @@ final class PodcastEpisodeFactory extends AbstractManager
             $desiredByPodcastId[(string) $podcast->getId()] = $podcast;
         }
 
+        $inheritedImage = $inheritFromAsset ? $this->resolveInheritedImageFile($asset) : null;
+
         foreach (array_diff_key($desiredByPodcastId, $currentByPodcastId) as $podcast) {
-            $this->createEpisodeWithAsset($asset, $podcast, false, $inheritFromAsset);
+            $this->createEpisode(
+                asset: $asset,
+                podcast: $podcast,
+                flush: false,
+                inheritFromAsset: $inheritFromAsset,
+                inheritedImage: $inheritedImage,
+            );
         }
 
         foreach (array_diff_key($currentByPodcastId, $desiredByPodcastId) as $episode) {
@@ -69,21 +83,79 @@ final class PodcastEpisodeFactory extends AbstractManager
         $this->flush($flush);
     }
 
-    /**
-     * Seed episode from asset: texts via entity map, next episode number, audio duration.
-     */
-    private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset): void
+    public function reconcileEpisodesFromAsset(Asset $asset, bool $flush = true): void
+    {
+        $inheritedImage = $this->resolveInheritedImageFile($asset);
+
+        foreach ($asset->getEpisodes() as $episode) {
+            if ($this->seedFromAsset($episode, $asset, $inheritedImage)) {
+                $this->manager->updateExisting($episode, flush: false);
+            }
+        }
+
+        $this->flush($flush);
+    }
+
+    private function createEpisode(
+        Asset $asset,
+        Podcast $podcast,
+        bool $flush,
+        bool $inheritFromAsset,
+        ?ImageFile $inheritedImage,
+    ): PodcastEpisode {
+        // addEpisode() keeps the in-memory episode collection in sync for event consumers.
+        $podcastEpisode = (new PodcastEpisode())->setPodcast($podcast);
+        $asset->addEpisode($podcastEpisode);
+        if ($inheritFromAsset) {
+            $this->applyAssetDefaults($podcastEpisode, $asset, $inheritedImage);
+        }
+
+        return $this->manager->create($podcastEpisode, $flush);
+    }
+
+    private function applyAssetDefaults(PodcastEpisode $episode, Asset $asset, ?ImageFile $inheritedImage): void
     {
         $config = $this->extSystemConfigurationProvider->getAudioExtSystemConfiguration(
             $asset->getLicence()->getExtSystem()->getSlug()
         );
         $this->assetTextsWriter->writeValues($asset, $episode, $config->getPodcastEpisodeEntityMap());
 
-        $mainFile = $asset->getMainFile();
         $lastEpisode = $this->repository->findOneLastByPodcast($episode->getPodcast());
-        $episode->getAttributes()
-            ->setEpisodeNumber(($lastEpisode?->getAttributes()->getEpisodeNumber() ?? App::ZERO) + 1)
-            ->setDuration($mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO)
-        ;
+        $episode->getAttributes()->setEpisodeNumber(($lastEpisode?->getAttributes()->getEpisodeNumber() ?? App::ZERO) + 1);
+
+        $this->seedFromAsset($episode, $asset, $inheritedImage);
+    }
+
+    private function seedFromAsset(PodcastEpisode $episode, Asset $asset, ?ImageFile $inheritedImage): bool
+    {
+        $changed = false;
+
+        $duration = $this->resolveAudioDuration($asset);
+        if (App::ZERO !== $duration && App::ZERO === $episode->getAttributes()->getDuration()) {
+            $episode->getAttributes()->setDuration($duration);
+            $changed = true;
+        }
+        if (null !== $inheritedImage && null === $episode->getImagePreview()) {
+            $episode->setImagePreview($this->imagePreviewFactory->createFromImageFile(imageFile: $inheritedImage, flush: false));
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    private function resolveAudioDuration(Asset $asset): int
+    {
+        $mainFile = $asset->getMainFile();
+
+        return $mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO;
+    }
+
+    private function resolveInheritedImageFile(Asset $asset): ?ImageFile
+    {
+        $imageFileId = $this->ttsAssetRepository->findByAsset($asset)?->getMainImageFileId();
+
+        return null === $imageFileId
+            ? null
+            : $this->imageFileRepository->findProcessedByIdAndLicence($imageFileId, $asset->getLicence());
     }
 }

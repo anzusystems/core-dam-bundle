@@ -44,6 +44,20 @@ final class ElevenlabsModelStitchingTest extends CoreDamKernelTestCase
         );
     }
 
+    public function testSendsOutputFormatQueryParam(): void
+    {
+        [$voice, $extSystem] = $this->resolveDefaultElevenlabsVoice();
+        $mock = $this->getService(ElevenlabsClientMock::class);
+        $mock->sentQueries = [];
+
+        $this->getService(ElevenlabsTtsProvider::class)
+            ->synthesizeChunk('A short narration chunk.', $voice, $extSystem, []);
+
+        $query = $mock->sentQueries[0] ?? null;
+        self::assertIsArray($query, 'The provider must have called the ElevenLabs client.');
+        self::assertSame('mp3_44100_128', $query['output_format'] ?? null);
+    }
+
     /**
      * @return array{ElevenlabsVoice, ExtSystem}
      */

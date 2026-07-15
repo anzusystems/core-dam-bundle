@@ -65,6 +65,10 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     #[Assert\Length(max: 36, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $regenerateAssetId = null;
 
+    #[Serialize]
+    #[Assert\Length(max: 36, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private ?string $mainImageFileId = null;
+
     // Ext system is derived from this; caller is authorized on it.
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
@@ -195,6 +199,18 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     public function setRegenerateAssetId(?string $regenerateAssetId): self
     {
         $this->regenerateAssetId = $regenerateAssetId;
+
+        return $this;
+    }
+
+    public function getMainImageFileId(): ?string
+    {
+        return $this->mainImageFileId;
+    }
+
+    public function setMainImageFileId(?string $mainImageFileId): self
+    {
+        $this->mainImageFileId = $mainImageFileId;
 
         return $this;
     }
