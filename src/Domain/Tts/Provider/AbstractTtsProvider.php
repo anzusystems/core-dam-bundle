@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 
-/** Shared TTS-provider base: dispatch-time chunk-storage config check. */
 abstract class AbstractTtsProvider implements TtsProviderInterface
 {
     public function __construct(
@@ -21,9 +20,12 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
     /**
      * @throws TtsProviderException
      */
-    protected function assertChunkStorageConfigured(ExtSystem $extSystem): void
+    protected function assertTtsConfiguration(ExtSystem $extSystem): void
     {
-        $storageName = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug())->chunkStorageName;
+        $config = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug());
+        $config->getOutputBitrateKbps();
+
+        $storageName = $config->chunkStorageName;
         if ('' === $storageName) {
             throw new TtsProviderException(sprintf('No TTS chunk storage configured for ExtSystem "%s".', $extSystem->getSlug()));
         }

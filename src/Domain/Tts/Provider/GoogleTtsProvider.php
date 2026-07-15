@@ -60,7 +60,7 @@ final class GoogleTtsProvider extends AbstractTtsProvider
 
         // getClient() parses the service-account keyfile (no HTTP) and caches the client per ExtSystem.
         $this->authClientProvider->getClient($extSystem->getSlug());
-        $this->assertChunkStorageConfigured($extSystem);
+        $this->assertTtsConfiguration($extSystem);
     }
 
     /**

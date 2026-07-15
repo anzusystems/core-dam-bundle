@@ -9,13 +9,23 @@ final readonly class Config
 {
     public const string PREVIEW_STORAGE_PREFIX = 'tts/preview/';
 
+    public const float NORMALIZATION_TRUE_PEAK_DBTP = -1.5;
+    public const float NORMALIZATION_LRA = 11.0;
+
     public function __construct(
         private string $systemDefaultFamilySlug,
         private int $chunkSizeChars,
         private string $masterSlotName,
         private string $previewSlotName,
         private int $audioRetentionGraceSeconds,
+        private bool $loudnessNormalizationEnabled,
+        private float $targetLufs,
     ) {
+    }
+
+    public function getTargetLufs(): ?float
+    {
+        return $this->loudnessNormalizationEnabled ? $this->targetLufs : null;
     }
 
     public function getSystemDefaultFamilySlug(): string

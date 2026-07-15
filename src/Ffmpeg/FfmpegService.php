@@ -124,27 +124,13 @@ final class FfmpegService
      */
     public function clipAudio(File $source, int $startSeconds, int $durationSeconds): AdapterFile
     {
-        $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
-        $relativePath = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
-        $outAbsPath = $tmpFs->extendPath($relativePath);
-
-        try {
-            FFMpeg::create()->getFFMpegDriver()->command([
-                '-y',
-                '-ss', (string) $startSeconds,
-                '-i', $source->getRealPath(),
-                '-t', (string) $durationSeconds,
-                '-c', 'copy',
-                $outAbsPath,
-            ]);
-        } catch (Throwable $exception) {
-            throw new FfmpegException($exception->getMessage(), $exception);
-        }
-
-        return AdapterFile::createFromBaseFile(
-            file: new File($outAbsPath),
-            filesystem: $tmpFs,
-        );
+        return $this->runToTmpMp3([
+            '-y',
+            '-ss', (string) $startSeconds,
+            '-i', $source->getRealPath(),
+            '-t', (string) $durationSeconds,
+            '-c', 'copy',
+        ]);
     }
 
     /**
@@ -161,34 +147,38 @@ final class FfmpegService
         }
 
         $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
-        $outRel = $tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3);
-        $outAbsPath = $tmpFs->extendPath($outRel);
 
         // Escape only `\` and `'` as required by the concat demuxer format.
         $listLines = array_map(
             static fn (File $part): string => "file '" . str_replace(['\\', "'"], ['\\\\', "'\\''"], $part->getRealPath()) . "'",
             $parts,
         );
-        $listRel = $tmpFs->writeTmpFileFromBytes(implode("\n", $listLines), 'txt');
-        $listAbsPath = $tmpFs->extendPath($listRel);
+        $listAbsPath = $tmpFs->extendPath($tmpFs->writeTmpFileFromBytes(implode("\n", $listLines), 'txt'));
 
-        try {
-            FFMpeg::create()->getFFMpegDriver()->command([
-                '-y',
-                '-f', 'concat',
-                '-safe', '0',
-                '-i', $listAbsPath,
-                '-c', 'copy',
-                $outAbsPath,
-            ]);
-        } catch (Throwable $exception) {
-            throw new FfmpegException($exception->getMessage(), $exception);
-        }
+        return $this->runToTmpMp3([
+            '-y',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', $listAbsPath,
+            '-c', 'copy',
+        ]);
+    }
 
-        return AdapterFile::createFromBaseFile(
-            file: new File($outAbsPath),
-            filesystem: $tmpFs,
-        );
+    /**
+     * `-ar 44100` is mandatory: loudnorm works internally at 192 kHz, which libmp3lame cannot encode.
+     *
+     * @throws FfmpegException
+     */
+    public function normalizeLoudness(File $source, float $targetLufs, float $targetTruePeak, float $targetLra, int $bitrateKbps): AdapterFile
+    {
+        return $this->runToTmpMp3([
+            '-y',
+            '-i', $source->getRealPath(),
+            '-af', sprintf('loudnorm=I=%s:TP=%s:LRA=%s', $targetLufs, $targetTruePeak, $targetLra),
+            '-c:a', 'libmp3lame',
+            '-b:a', $bitrateKbps . 'k',
+            '-ar', '44100',
+        ]);
     }
 
     public function getFistVideoTrack(string $filePath): ?Stream
@@ -197,6 +187,29 @@ final class FfmpegService
             ->streams($filePath)
             ->videos()
             ->first();
+    }
+
+    /**
+     * @param list<string> $command
+     *
+     * @throws FfmpegException
+     */
+    private function runToTmpMp3(array $command): AdapterFile
+    {
+        $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
+        $outAbsPath = $tmpFs->extendPath($tmpFs->getTmpFileName(self::AUDIO_EXTENSION_MP3));
+        $command[] = $outAbsPath;
+
+        try {
+            FFMpeg::create()->getFFMpegDriver()->command($command);
+        } catch (Throwable $exception) {
+            throw new FfmpegException($exception->getMessage(), $exception);
+        }
+
+        return AdapterFile::createFromBaseFile(
+            file: new File($outAbsPath),
+            filesystem: $tmpFs,
+        );
     }
 
     private function getFistAudioTrack(string $filePath): ?Stream

@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\Voice;
 use AnzuSystems\CoreDamBundle\Exception\TtsProviderException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemTtsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Provider\ElevenlabsSynthesizeRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\TtsChunkSynthesisResult;
 use AnzuSystems\CoreDamBundle\Model\Enum\VoiceDiscriminator;
@@ -54,8 +55,8 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
     {
         $voice instanceof ElevenlabsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', ElevenlabsVoice::class, $voice::class));
 
-        $this->resolveApiKey($extSystem);
-        $this->assertChunkStorageConfigured($extSystem);
+        $this->resolveConfig($extSystem);
+        $this->assertTtsConfiguration($extSystem);
     }
 
     /**
@@ -67,9 +68,11 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
     {
         $voice instanceof ElevenlabsVoice || throw new TtsProviderException(sprintf('Expected %s, got %s.', ElevenlabsVoice::class, $voice::class));
 
+        $config = $this->resolveConfig($extSystem);
         $result = $this->client->synthesize(
             $voice->getExternalVoiceId(),
-            $this->resolveApiKey($extSystem),
+            $config->elevenlabsApiKey,
+            $config->outputFormat,
             $this->buildRequest($text, $previousRequestIds, $voice),
         );
         $this->assertSuccess($result->http);
@@ -116,13 +119,13 @@ final class ElevenlabsTtsProvider extends AbstractTtsProvider
     /**
      * @throws TtsProviderException
      */
-    private function resolveApiKey(ExtSystem $extSystem): string
+    private function resolveConfig(ExtSystem $extSystem): ExtSystemTtsConfiguration
     {
-        $apiKey = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug())->elevenlabsApiKey;
-        if ('' === $apiKey) {
+        $config = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug());
+        if ('' === $config->elevenlabsApiKey) {
             throw new TtsProviderException(sprintf('No ElevenLabs API key configured for ExtSystem "%s".', $extSystem->getSlug()));
         }
 
-        return $apiKey;
+        return $config;
     }
 }

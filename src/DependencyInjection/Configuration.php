@@ -368,6 +368,10 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue('')
                     ->info('Per-ExtSystem named storage (must exist in `anzu_systems_core_dam.storages`) used to persist per-chunk MP3 blobs during multi-chunk synthesis. Empty disables TTS for this ExtSystem — provider precheck fails fast.')
                 ->end()
+                ->scalarNode(ExtSystemTtsConfiguration::OUTPUT_FORMAT_KEY)
+                    ->defaultValue(ExtSystemTtsConfiguration::DEFAULT_OUTPUT_FORMAT)
+                    ->info('ElevenLabs output_format (e.g. mp3_44100_128 or mp3_44100_192; 192k needs a Creator+ tier). Also drives the normalized master MP3 bitrate for all providers of this ExtSystem. Wire from an env per environment.')
+                ->end()
             ->end();
     }
 
