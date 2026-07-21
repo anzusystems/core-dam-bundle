@@ -257,8 +257,9 @@ final readonly class TtsRequestOrchestrator
             return $this->redispatchChunkless($request);
         }
 
-        // Initial with materialised audio is ambiguous (maybe half-finished) — don't auto-finish.
-        return TtsResumeOutcome::NoChunks;
+        $this->markDoneUnlessCancelled($request);
+
+        return TtsResumeOutcome::Finalized;
     }
 
     private function redispatchChunkless(TtsNarrationRequest $request): TtsResumeOutcome

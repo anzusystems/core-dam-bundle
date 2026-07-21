@@ -16,6 +16,10 @@ final class ImageHelper
 
     public static function getAspectRatio(int $width, int $height): float
     {
+        if (0 === $height) {
+            return 0.0;
+        }
+
         return $width / $height;
     }
 

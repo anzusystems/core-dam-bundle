@@ -109,14 +109,14 @@ final class IndexDefinitionFactory
             'unique_on_pos',
         ];
         if ($this->indexSettings->hasElasticLanguageDictionary($language)) {
-            $langFilters += [
+            $langFilters = array_merge($langFilters, [
                 'lang_syn',
                 'lang_stop',
                 'lang_hunspell',
-            ];
-            $exactStopFilters += [
+            ]);
+            $exactStopFilters = array_merge($exactStopFilters, [
                 'lang_stop',
-            ];
+            ]);
         }
 
         return array_merge([
