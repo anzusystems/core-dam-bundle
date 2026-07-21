@@ -30,17 +30,20 @@ final readonly class UrlFileFactory
     private HttpClientInterface $safeClient;
 
     /**
-     * @param list<string> $urlFileTrustedDomains Domain patterns: ".sme.sk" matches sme.sk and *.sme.sk, "sme.local" matches exactly
+     * @var list<string>
      */
+    private array $urlFileTrustedDomains;
+
     public function __construct(
         private FileSystemProvider $fileSystemProvider,
         HttpClientInterface $client,
         private DamLogger $damLogger,
         private LoggerInterface $appLogger,
-        private array $urlFileTrustedDomains = [],
+        string $urlFileTrustedDomains = '',
     ) {
         $this->trustedClient = $client;
         $this->safeClient = new NoPrivateNetworkHttpClient($client);
+        $this->urlFileTrustedDomains = array_filter(array_map('trim', explode(',', $urlFileTrustedDomains)));
     }
 
     /**
