@@ -29,6 +29,7 @@ final class IndexDefinitionFactory
                 $defs[$fullIndexName] = [
                     'settings' => [
                         'analysis' => [
+                            'char_filter' => $this->getCharFilters(),
                             'filter' => $this->getFilters($language),
                             'analyzer' => $this->getAnalyzers($language),
                         ],
@@ -68,6 +69,16 @@ final class IndexDefinitionFactory
                 'synonyms_path' => 'synonyms/synonyms_' . $language->toString() . '.txt',
             ],
         ], $this->getDefaultFilters());
+    }
+
+    private function getCharFilters(): array
+    {
+        return [
+            'underscore_to_space' => [
+                'type' => 'mapping',
+                'mappings' => ['_ => \\u0020'],
+            ],
+        ];
     }
 
     private function getDefaultFilters(): array
@@ -138,6 +149,18 @@ final class IndexDefinitionFactory
                 'tokenizer' => 'standard',
                 'filter' => ['lowercase', 'asciifolding', 'edgegrams', 'unique_on_pos'],
                 'char_filter' => ['html_strip'],
+            ],
+            'author_exact_stop' => [
+                'type' => 'custom',
+                'tokenizer' => 'standard',
+                'filter' => ['lowercase', 'asciifolding', 'unique_on_pos'],
+                'char_filter' => ['html_strip', 'underscore_to_space'],
+            ],
+            'author_edgegrams' => [
+                'type' => 'custom',
+                'tokenizer' => 'standard',
+                'filter' => ['lowercase', 'asciifolding', 'edgegrams', 'unique_on_pos'],
+                'char_filter' => ['html_strip', 'underscore_to_space'],
             ],
         ];
     }

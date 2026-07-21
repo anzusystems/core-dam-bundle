@@ -7,7 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\Author;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
 
@@ -18,14 +20,20 @@ final class AuthorFacade
 
     public function __construct(
         private readonly AuthorManager $authorManager,
+        private readonly AuthorRepository $authorRepository,
     ) {
     }
 
     /**
      * @throws ValidationException
+     * @throws AuthorExistsException
      */
     public function create(Author $author): Author
     {
+        $existingAuthor = $this->authorRepository->findOneByNameAndExtSystem($author->getName(), $author->getExtSystem());
+        if ($existingAuthor) {
+            throw new AuthorExistsException($existingAuthor);
+        }
         $this->validator->validate($author);
 
         try {

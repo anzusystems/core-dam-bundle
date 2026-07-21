@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\ElasticSearch;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AuthorAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -74,7 +75,11 @@ final class AuthorController extends AbstractApiController
         App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CREATE, $author);
 
-        $author = $this->authorFacade->create($author);
+        try {
+            $author = $this->authorFacade->create($author);
+        } catch (AuthorExistsException $exception) {
+            return $this->okResponse($exception->getExistingAuthor());
+        }
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
 
         return $this->createdResponse($author);

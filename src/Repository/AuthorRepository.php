@@ -15,6 +15,14 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
  */
 final class AuthorRepository extends AbstractAnzuRepository
 {
+    public function findOneByNameAndExtSystem(string $name, ExtSystem $extSystem): ?Author
+    {
+        return $this->findOneBy([
+            'name' => $name,
+            'extSystem' => $extSystem,
+        ]);
+    }
+
     /**
      * @return list<string>
      */
