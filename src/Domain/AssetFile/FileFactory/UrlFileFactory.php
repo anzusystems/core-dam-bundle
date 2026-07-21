@@ -6,11 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
 use Symfony\Component\HttpClient\Response\StreamWrapper;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,13 +24,23 @@ final readonly class UrlFileFactory
 {
     private const int TIMEOUT = 600;
     private const int MAX_DURATION = 600;
+    private const string HTTPS_SCHEME = 'https';
 
+    private HttpClientInterface $trustedClient;
+    private HttpClientInterface $safeClient;
+
+    /**
+     * @param list<string> $urlFileTrustedDomains Domain patterns: ".sme.sk" matches sme.sk and *.sme.sk, "sme.local" matches exactly
+     */
     public function __construct(
         private FileSystemProvider $fileSystemProvider,
-        private HttpClientInterface $client,
+        HttpClientInterface $client,
         private DamLogger $damLogger,
         private LoggerInterface $appLogger,
+        private array $urlFileTrustedDomains = [],
     ) {
+        $this->trustedClient = $client;
+        $this->safeClient = new NoPrivateNetworkHttpClient($client);
     }
 
     /**
@@ -36,14 +49,26 @@ final readonly class UrlFileFactory
      */
     public function downloadFile(string $url): AdapterFile
     {
+        $trusted = $this->isTrustedDomain($url);
+
+        if (false === $trusted && self::HTTPS_SCHEME !== parse_url($url, PHP_URL_SCHEME)) {
+            throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+        }
+
+        $options = [
+            'timeout' => self::TIMEOUT,
+            'max_duration' => self::MAX_DURATION,
+        ];
+        if (false === $trusted) {
+            $options['max_redirects'] = 0;
+        }
+
         try {
-            $response = $this->client->request(
+            $client = $trusted ? $this->trustedClient : $this->safeClient;
+            $response = $client->request(
                 method: Request::METHOD_GET,
                 url: $url,
-                options: [
-                    'timeout' => self::TIMEOUT,
-                    'max_duration' => self::MAX_DURATION,
-                ]
+                options: $options,
             );
 
             if (Response::HTTP_BAD_REQUEST <= $response->getStatusCode()) {
@@ -67,5 +92,28 @@ final readonly class UrlFileFactory
 
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }
+    }
+
+    private function isTrustedDomain(string $url): bool
+    {
+        try {
+            $host = strtolower(UrlHelper::parseUrl($url)->getHost());
+        } catch (InvalidArgumentException) {
+            return false;
+        }
+
+        foreach ($this->urlFileTrustedDomains as $domain) {
+            $domain = strtolower($domain);
+            if (str_starts_with($domain, '.')) {
+                $bare = ltrim($domain, '.');
+                if ($host === $bare || str_ends_with($host, $domain)) {
+                    return true;
+                }
+            } elseif ($host === $domain) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

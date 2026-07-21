@@ -66,6 +66,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$colorSet', param('anzu_systems.dam_bundle.color_set'))
         ->bind('$exiftoolBin', param('kernel.project_dir') . '/vendor/phpexiftool/exiftool/exiftool')
         ->bind('$userEntityClass', param('anzu_systems.dam_bundle.settings.user_entity_class'))
+        ->bind('$urlFileTrustedDomains', param('anzu_systems.dam_bundle.url_file_trusted_domains'))
     ;
 
     $services
