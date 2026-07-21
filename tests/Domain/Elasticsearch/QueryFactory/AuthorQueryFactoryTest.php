@@ -4,35 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Elasticsearch\QueryFactory;
 
-use AnzuSystems\CommonBundle\Domain\Job\JobProcessor;
-use AnzuSystems\CommonBundle\Entity\Job;
-use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
-use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
-use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
-use AnzuSystems\Contracts\Entity\AnzuUser;
-use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
-use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobPodcastSynchronizerProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastRssReader;
-use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AssetQueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AuthorQueryFactory;
-use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AuthorAdmSearchDto;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
-use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
-use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
-use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
-use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
-use DateTimeInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
@@ -67,13 +42,12 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'match_all' => new stdClass()
+                                'match_all' => new stdClass(),
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
@@ -84,21 +58,27 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
+                                'bool' => [
+                                    'must' => [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'name^3',
+                                                'name.edgegrams',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
+                                    'should' => [
+                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                                    ],
+                                ],
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
@@ -109,21 +89,27 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
+                                'bool' => [
+                                    'must' => [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'name^3',
+                                                'name.edgegrams',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
+                                    'should' => [
+                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                                    ],
+                                ],
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
                     '_score' => 'desc',
                 ],
@@ -134,21 +120,27 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
+                                'bool' => [
+                                    'must' => [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'name^3',
+                                                'name.edgegrams',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
+                                    'should' => [
+                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                                    ],
+                                ],
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
                     'id' => 'desc',
                 ],
@@ -159,24 +151,30 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
+                                'bool' => [
+                                    'must' => [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'name^3',
+                                                'name.edgegrams',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
+                                    'should' => [
+                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                                    ],
+                                ],
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
-                    'reviewed' => 'desc',
                     '_score' => 'desc',
+                    'id' => 'desc',
                 ],
             ],
             'no_order_no_fulltext' => [
@@ -185,13 +183,12 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'match_all' => new stdClass()
+                                'match_all' => new stdClass(),
                             ],
                             'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                            'must_not' => [],
+                        ],
+                    ],
                 'expectedSort' => [
                     'reviewed' => 'desc',
                     'id' => 'desc',
