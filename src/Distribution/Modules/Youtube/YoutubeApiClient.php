@@ -182,6 +182,7 @@ final class YoutubeApiClient
         $client->setDefer(true);
 
         $youtubeService = new Google_Service_YouTube($client);
+        $handle = null;
 
         try {
             $insertRequest = $youtubeService->videos->insert(
@@ -213,9 +214,6 @@ final class YoutubeApiClient
                 }
             }
 
-            fclose($handle);
-            $client->setDefer(false);
-
             return null;
         } catch (Google_Service_Exception $exception) {
             $this->damLogger->error(
@@ -236,6 +234,11 @@ final class YoutubeApiClient
                 exception: $exception
             );
             $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+            $client->setDefer(false);
         }
 
         return null;

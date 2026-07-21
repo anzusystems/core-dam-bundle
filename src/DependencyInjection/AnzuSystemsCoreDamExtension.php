@@ -298,6 +298,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $assetDeleteTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '60s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -329,6 +330,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $assetFileMetadataProcessTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '120s',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -388,6 +390,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $assetPropertyRefreshTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '60s',
                                 ],
                             ],
                         ],
@@ -415,6 +418,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                                         'application' => $applicationName,
                                         'name' => $assetCopyTopic,
                                     ],
+                                    'ackDeadlineSeconds' => '120s',
                                 ],
                             ],
                         ],

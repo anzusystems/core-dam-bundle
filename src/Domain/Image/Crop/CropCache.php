@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
 use League\Flysystem\FilesystemException;
+use League\Flysystem\UnableToReadFile;
 
 final readonly class CropCache
 {
@@ -18,14 +19,15 @@ final readonly class CropCache
     ) {
     }
 
-    /**
-     * @throws FilesystemException
-     */
-    public function isStored(ImageFile $image, ImageCropDto $imageCrop): bool
+    public function tryGet(ImageFile $image, ImageCropDto $imageCrop): ?string
     {
-        return $this->fileSystemProvider
-            ->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug())
-            ->fileExists($this->getPath($image, $imageCrop));
+        try {
+            return $this->fileSystemProvider
+                ->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug())
+                ->read($this->getPath($image, $imageCrop));
+        } catch (UnableToReadFile) {
+            return null;
+        }
     }
 
     /**
@@ -38,18 +40,6 @@ final readonly class CropCache
             ->write(
                 $this->getPath($image, $imageCrop),
                 $content
-            );
-    }
-
-    /**
-     * @throws FilesystemException
-     */
-    public function get(ImageFile $image, ImageCropDto $imageCrop): string
-    {
-        return $this->fileSystemProvider
-            ->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug())
-            ->read(
-                $this->getPath($image, $imageCrop),
             );
     }
 

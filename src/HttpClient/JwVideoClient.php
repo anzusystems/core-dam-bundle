@@ -207,13 +207,17 @@ final class JwVideoClient
 
             $handle = fopen($file->getRealPath(), 'rb');
 
-            foreach ($listData->getParts() as $part) {
-                $chunk = fread($handle, self::CHUNK_SIZE);
+            try {
+                foreach ($listData->getParts() as $part) {
+                    $chunk = fread($handle, self::CHUNK_SIZE);
 
-                $this->uploadFile($part->getLink(), $chunk);
+                    $this->uploadFile($part->getLink(), $chunk);
+                }
+            } finally {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
             }
-
-            fclose($handle);
 
             $response = $this->client->request(
                 Request::METHOD_PUT,

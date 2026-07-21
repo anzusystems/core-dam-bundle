@@ -36,9 +36,7 @@ class AssetFileCounter
      */
     public function resetUploadedSize(AssetFile $assetFile): void
     {
-        $item = $this->coreDamBundleCounterCache->getItem($this->getKey($assetFile));
-        $item->set($this->getUploadedSizeFromCacheItem($item, $assetFile));
-        $this->coreDamBundleCounterCache->save($item);
+        $this->coreDamBundleCounterCache->deleteItem($this->getKey($assetFile));
     }
 
     /**

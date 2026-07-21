@@ -104,7 +104,7 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
                 ->join('entity.asset', 'asset')
                 ->andWhere('entity.assetAttributes.status in (:statuses)')
                 ->andWhere('entity.createdAt < :createdAtUntil')
-                ->andWhere('asset.mainFile != entity')
+                ->andWhere('asset.mainFile IS NULL OR asset.mainFile != entity')
                 ->setParameter('statuses', [AssetFileProcessStatus::Duplicate, AssetFileProcessStatus::Failed])
                 ->setParameter('createdAtUntil', $createdAtUntil->format(DATE_ATOM))
                 ->setMaxResults($limit)

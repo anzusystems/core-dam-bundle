@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
@@ -17,6 +18,9 @@ final class AuthorFacade
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+    use ResourceLockerAwareTrait;
+
+    private const string LOCK_PREFIX = 'author_create_';
 
     public function __construct(
         private readonly AuthorManager $authorManager,
@@ -30,24 +34,31 @@ final class AuthorFacade
      */
     public function create(Author $author): Author
     {
-        $existingAuthor = $this->authorRepository->findOneByNameAndExtSystem($author->getName(), $author->getExtSystem());
-        if ($existingAuthor) {
-            throw new AuthorExistsException($existingAuthor);
-        }
-        $this->validator->validate($author);
+        $lockName = self::LOCK_PREFIX . $author->getName() . '_' . (string) $author->getExtSystem()->getId();
+        $this->resourceLocker->lock($lockName);
 
         try {
-            $this->authorManager->beginTransaction();
-            $this->authorManager->create($author);
-            $this->indexManager->index($author);
-            $this->authorManager->commit();
-        } catch (Throwable $exception) {
-            $this->authorManager->rollback();
+            $existingAuthor = $this->authorRepository->findOneByNameAndExtSystem($author->getName(), $author->getExtSystem());
+            if ($existingAuthor) {
+                throw new AuthorExistsException($existingAuthor);
+            }
+            $this->validator->validate($author);
 
-            throw new RuntimeException('author_create_failed', 0, $exception);
+            try {
+                $this->authorManager->beginTransaction();
+                $this->authorManager->create($author);
+                $this->indexManager->index($author);
+                $this->authorManager->commit();
+            } catch (Throwable $exception) {
+                $this->authorManager->rollback();
+
+                throw new RuntimeException('author_create_failed', 0, $exception);
+            }
+
+            return $author;
+        } finally {
+            $this->resourceLocker->unLock($lockName);
         }
-
-        return $author;
     }
 
     /**

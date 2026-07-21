@@ -260,11 +260,18 @@ final class VispImageManipulator extends AbstractImageManipulator
         }
     }
 
+    private static bool $initialized = false;
+
     private function disableCache(): void
     {
+        if (self::$initialized) {
+            return;
+        }
+
         Config::CacheSetMax(0);
         Config::CacheSetMaxFiles(0);
         Config::CacheSetMaxMem(0);
         Config::ConcurrencySet(1);
+        self::$initialized = true;
     }
 }

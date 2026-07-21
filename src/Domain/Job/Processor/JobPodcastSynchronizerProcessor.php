@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
@@ -21,6 +22,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
+use Throwable;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
@@ -32,6 +34,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         private readonly PodcastImportIterator $importIterator,
         private readonly PodcastRepository $podcastRepository,
         private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly DamLogger $damLogger,
         private int $bulkSize = self::BULK_SIZE,
         private ?DateTimeImmutable $minImportFrom = null
     ) {
@@ -125,25 +128,40 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 
         /** @var PodcastImportIteratorDto $importDto */
         foreach ($generator as $importDto) {
-            if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
-                $this->rssImportManager->syncPodcast(
-                    podcast: $importDto->getPodcast(),
-                    channel: $importDto->getChannel()
-                );
-            }
-
-            $lastImportedDto = $importDto;
-            $episodeImportDto = $this->episodeRssImportManager->importEpisode(
-                $importDto->getPodcast(),
-                $importDto->getItem()
-            );
-
-            if ($episodeImportDto->isNewlyImported()) {
-                $asset = $episodeImportDto->getEpisode()->getAsset();
-                if ($asset instanceof Asset) {
-                    $newlyImportedAssets[] = $asset;
+            try {
+                if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
+                    $this->rssImportManager->syncPodcast(
+                        podcast: $importDto->getPodcast(),
+                        channel: $importDto->getChannel()
+                    );
                 }
-                $imported++;
+
+                $lastImportedDto = $importDto;
+                $episodeImportDto = $this->episodeRssImportManager->importEpisode(
+                    $importDto->getPodcast(),
+                    $importDto->getItem()
+                );
+
+                if ($episodeImportDto->isNewlyImported()) {
+                    $asset = $episodeImportDto->getEpisode()->getAsset();
+                    if ($asset instanceof Asset) {
+                        $newlyImportedAssets[] = $asset;
+                    }
+                    $imported++;
+                }
+            } catch (Throwable $exception) {
+                $lastImportedDto = $importDto;
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                    sprintf('Episode import failed for podcast (%s)', (string) $importDto->getPodcast()->getId()),
+                    exception: $exception,
+                );
+
+                if (false === $this->entityManager->isOpen()) {
+                    break;
+                }
+
+                continue;
             }
 
             if ($this->bulkSize === $imported) {

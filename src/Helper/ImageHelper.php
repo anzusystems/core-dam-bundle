@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Helper;
 
 use AnzuSystems\CommonBundle\Helper\MathHelper;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\ImageAttributes;
 
 final class ImageHelper
@@ -16,7 +17,7 @@ final class ImageHelper
 
     public static function getAspectRatio(int $width, int $height): float
     {
-        if (0 === $height) {
+        if (App::ZERO === $height) {
             return 0.0;
         }
 

@@ -42,7 +42,14 @@ final class ChunkFileManager extends ChunkManager
         }
 
         $stream = fopen((string) $file->getRealPath(), 'rb+');
-        $fileSystem->writeStream($path->getRelativePath(), $stream);
+
+        try {
+            $fileSystem->writeStream($path->getRelativePath(), $stream);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
+        }
     }
 
     /**

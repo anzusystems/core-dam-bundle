@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\AssetSlotUsedException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetExternalProvider\UploadAssetFromExternalProviderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
@@ -57,6 +58,13 @@ abstract class AbstractAssetFileFacade
     protected AssetFileRepository $assetFileRepository;
     protected ConfigurationProvider $configurationProvider;
     protected AssetFileManagerProvider $assetFileManagerProvider;
+    protected DamLogger $damLogger;
+
+    #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
+    }
 
     #[Required]
     public function setAssetFileManagerProvider(AssetFileManagerProvider $assetFileManagerProvider): void
@@ -178,13 +186,29 @@ abstract class AbstractAssetFileFacade
     {
         $dateTime = App::getAppDate()->modify(self::DUPLICATE_FILES_DELETE_MODIFIER);
         $assetFiles = $this->getRepository()->findToDelete($dateTime, self::DUPLICATE_FILES_DELETE_LIMIT);
+        $deleted = 0;
 
         foreach ($assetFiles as $files) {
-            /** @psalm-suppress InvalidArgument */
-            $this->delete($files);
+            try {
+                /** @psalm-suppress InvalidArgument */
+                $this->delete($files);
+                $deleted++;
+            } catch (Throwable $exception) {
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                    sprintf('Failed to delete asset file (%s)', (string) $files->getId()),
+                    exception: $exception,
+                );
+
+                if (false === $this->getManager()->getEntityManager()->isOpen()) {
+                    break;
+                }
+
+                continue;
+            }
         }
 
-        return $assetFiles->count();
+        return $deleted;
     }
 
     /**
