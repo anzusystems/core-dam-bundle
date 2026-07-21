@@ -201,7 +201,7 @@ abstract class AbstractAssetFileFacade
                 );
 
                 if (false === $this->getManager()->getEntityManager()->isOpen()) {
-                    break;
+                    throw $exception;
                 }
 
                 continue;

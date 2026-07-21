@@ -158,7 +158,9 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
                 );
 
                 if (false === $this->entityManager->isOpen()) {
-                    break;
+                    $this->finishFail($job, $exception);
+
+                    return;
                 }
 
                 continue;
