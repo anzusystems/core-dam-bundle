@@ -36,7 +36,7 @@ anzu_systems_core_dam:
     jw_player_cdn_api_client_host: 'https://cdn.jwplayer.com'
     tts_elevenlabs_api_host: 'https://api.elevenlabs.io'
     tts_google_api_host: 'https://texttospeech.googleapis.com'
-    url_file_trusted_domains: ''
+    url_file_trusted_domains: '.sme.localhost,.anzusystems.localhost'
     image_chunk_config:
       min_size: 5000
       max_size: 70000
