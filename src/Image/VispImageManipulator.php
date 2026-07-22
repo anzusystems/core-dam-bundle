@@ -29,6 +29,8 @@ final class VispImageManipulator extends AbstractImageManipulator
     private ?Image $image = null;
     private int $quality;
 
+    private static bool $initialized = false;
+
     public function __construct(
         FilterProcessorStack $filterProcessorStack,
         private readonly FileSystemProvider $fileSystemProvider,
@@ -259,8 +261,6 @@ final class VispImageManipulator extends AbstractImageManipulator
             throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_CLOSED);
         }
     }
-
-    private static bool $initialized = false;
 
     private function disableCache(): void
     {

@@ -10,7 +10,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\ORM\EntityManagerInterface;
-use Error;
 use Throwable;
 
 /** Hard-removes TTS audio files: CDN purge → file row → stashed master bytes. Per-file transactions; stash flushed once. */
@@ -48,13 +47,7 @@ final readonly class TtsAudioFileRemover
     private function removeOne(AudioFile $audioFile): bool
     {
         $audioFileId = (string) $audioFile->getId();
-
-        try {
-            $assetId = (string) $audioFile->getAsset()->getId();
-        } catch (Error) {
-            $assetId = 'orphaned';
-        }
-
+        $assetId = $audioFile->hasAsset() ? (string) $audioFile->getAsset()->getId() : 'orphaned';
         $expireAt = $audioFile->getExpireAt()?->format('c');
 
         try {

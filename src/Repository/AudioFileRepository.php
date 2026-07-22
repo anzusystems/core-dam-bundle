@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -39,6 +40,23 @@ final class AudioFileRepository extends AbstractAssetFileRepository
                 ->getResult()
         );
     }
+
+    /**
+     * @return Collection<int, AudioFile>
+     */
+    public function findDetachedByAsset(Asset $asset): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->leftJoin('entity.slots', 'slot')
+                ->andWhere('entity.asset = :asset')
+                ->andWhere('slot.id IS NULL')
+                ->setParameter('asset', $asset)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     protected function getEntityClass(): string
     {
         return AudioFile::class;

@@ -9,7 +9,9 @@ use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManagerProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
@@ -20,6 +22,7 @@ use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
@@ -47,6 +50,7 @@ class AssetFacade
         private readonly AssetFileDeleteEventDispatcher $assetFileDeleteEventDispatcher,
         private readonly AssetRepository $assetRepository,
         private readonly ExtSystemRepository $extSystemRepository,
+        private readonly AudioFileRepository $audioFileRepository,
     ) {
     }
 
@@ -194,20 +198,29 @@ class AssetFacade
         $this->assetManager->removeSibling($asset, false);
 
         foreach ($asset->getSlots() as $slot) {
-            $assetFile = $slot->getAssetFile();
-            $this->assetFileDeleteEventDispatcher->addEvent(
-                (string) $assetFile->getId(),
-                $deleteId,
-                $assetFile,
-                $asset->getAttributes()->getAssetType(),
-                $deleteBy,
-            );
-            $manager = $this->assetFileManagerProvider->getManager($assetFile);
-            $manager->delete($assetFile, false);
+            $this->deleteAssetFile($slot->getAssetFile(), $asset, $deleteId, $deleteBy);
         }
+
+        // Superseded TTS audio keeps the asset FK but no slot; without this the `SET NULL` FK leaves a publicly routable orphan.
+        foreach ($this->audioFileRepository->findDetachedByAsset($asset) as $audioFile) {
+            $this->deleteAssetFile($audioFile, $asset, $deleteId, $deleteBy);
+        }
+
         $this->assetEventDispatcher->addEvent($deleteId, $asset, $deleteBy);
 
         $this->assetManager->delete($asset);
         $this->fileStash->emptyAll();
+    }
+
+    private function deleteAssetFile(AssetFile $assetFile, Asset $asset, string $deleteId, DamUser $deleteBy): void
+    {
+        $this->assetFileDeleteEventDispatcher->addEvent(
+            (string) $assetFile->getId(),
+            $deleteId,
+            $assetFile,
+            $asset->getAttributes()->getAssetType(),
+            $deleteBy,
+        );
+        $this->assetFileManagerProvider->getManager($assetFile)->delete($assetFile, false);
     }
 }
