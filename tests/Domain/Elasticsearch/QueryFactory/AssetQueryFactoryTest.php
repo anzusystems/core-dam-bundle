@@ -93,7 +93,8 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                                 'custom_data_headline'
                                             ],
                                             'type' => 'most_fields',
-                                            'tie_breaker' => 0.3
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true
                                         ]
                                     ],
                                     'filter' => [],
@@ -134,7 +135,8 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_headline'
                                     ],
                                     'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
+                                    'tie_breaker' => 0.3,
+                                    'lenient' => true
                                 ]
                             ],
                             'filter' => [],
@@ -161,7 +163,8 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_headline'
                                     ],
                                     'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
+                                    'tie_breaker' => 0.3,
+                                    'lenient' => true
                                 ]
                             ],
                             'filter' => [],
@@ -188,7 +191,8 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_headline'
                                     ],
                                     'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
+                                    'tie_breaker' => 0.3,
+                                    'lenient' => true
                                 ]
                             ],
                             'filter' => [],

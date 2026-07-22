@@ -38,6 +38,28 @@ final class BaseClient extends AbstractFileMock
             );
         }
 
+        if ('/v2/uploads/jw-upload-id/parts' === $url->getPath()) {
+            return new MockResponse(
+                json_encode([
+                    'parts' => [
+                        ['upload_link' => 'https://api.jw.com/jw-upload-link'],
+                    ],
+                ]),
+                [
+                    'http_code' => Response::HTTP_OK,
+                ]
+            );
+        }
+
+        if ('/v2/uploads/jw-upload-id/complete' === $url->getPath()) {
+            return new MockResponse(
+                '',
+                [
+                    'http_code' => Response::HTTP_OK,
+                ]
+            );
+        }
+
         return new MockResponse(
            '',
             [
