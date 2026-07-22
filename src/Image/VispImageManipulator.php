@@ -26,6 +26,12 @@ final class VispImageManipulator extends AbstractImageManipulator
     private const int BIN_SIZE = 256;
     private const int DEFAULT_QUALITY = 100;
 
+    /** libvips ForeignKeep bitmask; ICC only, so GPS/EXIF/XMP/IPTC are dropped but colours stay intact. */
+    private const int KEEP_ICC_ONLY = 8;
+
+    /** `keep` replaced `strip` in libvips 8.15. Older builds reject it, newer ones accept `strip` and ignore it. */
+    private const string KEEP_MIN_LIBVIPS_VERSION = '8.15';
+
     private ?Image $image = null;
     private int $quality;
 
@@ -138,12 +144,13 @@ final class VispImageManipulator extends AbstractImageManipulator
         $this->clean($clean);
     }
 
+    // Crop path only; originals and resizes go through writeToFile() and keep their metadata.
     public function getContent(string $extension, bool $clean = true): string
     {
         $this->ensureImage();
 
         try {
-            $content = $this->image->writeToBuffer('.' . $extension, ['Q' => $this->quality]);
+            $content = $this->image->writeToBuffer('.' . $extension, $this->getStripSaveOptions());
             $this->clean($clean);
 
             return $content;
@@ -262,6 +269,18 @@ final class VispImageManipulator extends AbstractImageManipulator
         }
     }
 
+    // Pre-8.15 libvips rejects `keep` (each crop would 500) — skip strip there; CDN strips public output anyway.
+    private function getStripSaveOptions(): array
+    {
+        $options = ['Q' => $this->quality];
+
+        if (version_compare(Config::version(), self::KEEP_MIN_LIBVIPS_VERSION, '>=')) {
+            $options['keep'] = self::KEEP_ICC_ONLY;
+        }
+
+        return $options;
+    }
+
     private function disableCache(): void
     {
         if (self::$initialized) {
@@ -271,7 +290,6 @@ final class VispImageManipulator extends AbstractImageManipulator
         Config::CacheSetMax(0);
         Config::CacheSetMaxFiles(0);
         Config::CacheSetMaxMem(0);
-        Config::ConcurrencySet(1);
         self::$initialized = true;
     }
 }

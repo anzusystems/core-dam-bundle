@@ -96,6 +96,7 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
         return $this->videoFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
+            excludeAssetId: $assetFile->getAsset()->getId(),
         );
     }
 

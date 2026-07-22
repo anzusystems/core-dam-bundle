@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Distribution;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
+use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingFailedException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use League\Flysystem\FilesystemException;
@@ -15,6 +17,8 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDistributionModule implements DistributionModuleInterface
 {
+    private const string REMOTE_PROCESS_WAIT_THRESHOLD = '+1 hour';
+
     protected AssetFileRepository $assetFileRepository;
     protected FileSystemProvider $fileSystemProvider;
     protected DistributionConfigurationProvider $distributionConfigurationProvider;
@@ -50,6 +54,17 @@ abstract class AbstractDistributionModule implements DistributionModuleInterface
     public static function supportsDistributionResourceName(): string
     {
         return Distribution::getResourceName();
+    }
+
+    /**
+     * @throws RemoteProcessingFailedException when the remote side processes longer than the threshold
+     */
+    protected function throwWhenRemoteProcessingExpired(Distribution $distribution): void
+    {
+        $waitUntil = $distribution->getModifiedAt()->modify(self::REMOTE_PROCESS_WAIT_THRESHOLD);
+        if ($waitUntil < App::getAppDate()) {
+            throw new RemoteProcessingFailedException(message: 'Remote processing too long.');
+        }
     }
 
     /**

@@ -34,7 +34,8 @@ final class AuthorFacade
      */
     public function create(Author $author): Author
     {
-        $lockName = self::LOCK_PREFIX . $author->getName() . '_' . (string) $author->getExtSystem()->getId();
+        // Lowercased: the DB unique check is collation case-insensitive, the Redis lock key must match that.
+        $lockName = self::LOCK_PREFIX . mb_strtolower($author->getName()) . '_' . (string) $author->getExtSystem()->getId();
         $this->resourceLocker->lock($lockName);
 
         try {

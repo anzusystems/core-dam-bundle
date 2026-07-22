@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Exiftool;
 
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\Process\Process;
@@ -12,6 +13,7 @@ use Symfony\Component\Process\Process;
 final class Exiftool
 {
     private const array PNG_CLEAR = ['-png:all=', '-overwrite_original'];
+    private const array READ_TAGS = ['-json', '-charset', 'utf8'];
     private const float DEFAULT_TIMEOUT = 15.0;
 
     public function __construct(
@@ -26,7 +28,7 @@ final class Exiftool
     public function getTags(string $filePath): array
     {
         try {
-            return $this->parseOutput($this->execute($filePath));
+            return $this->parseOutput($this->execute($filePath, self::READ_TAGS));
         } catch (RuntimeException $exception) {
             $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), exception: $exception);
 
@@ -73,31 +75,54 @@ final class Exiftool
         return $process->getOutput();
     }
 
+    // Error tag arrives as JSON on read paths, colon format on write paths run without -json.
     private function getErrorFromOutput(string $output): string
     {
-        $tags = $this->parseOutput($output);
+        $error = $this->decodeTags($output)['Error'] ?? null;
+        if (is_string($error)) {
+            return $error;
+        }
 
-        return isset($tags['Error'])
-            ? (string) $tags['Error']
-            : '';
+        foreach (explode(PHP_EOL, $output) as $line) {
+            $pair = explode(':', $line, 2);
+            if ('Error' === trim($pair[0]) && isset($pair[1])) {
+                return trim($pair[1]);
+            }
+        }
+
+        return '';
     }
 
+    /**
+     * @throws RuntimeException when the output is not parsable, so a failed extract is not reported as "no tags"
+     */
     private function parseOutput(string $output): array
     {
-        $tags = explode(PHP_EOL, $output);
-        $tagList = [];
+        $decoded = $this->decodeTags($output)
+            ?? throw new RuntimeException('Exiftool returned unparsable output');
 
-        foreach ($tags as $tag) {
-            $tagPair = explode(':', $tag, 2);
-            if (false === isset($tagPair[1])) {
+        $tagList = [];
+        foreach ($decoded as $tagName => $tagValue) {
+            if (is_scalar($tagValue)) {
+                $tagList[$tagName] = StringHelper::repairDoubleEncodedUtf8(trim((string) $tagValue));
+
                 continue;
             }
-
-            $tagName = preg_replace('/\s+/', '', trim($tagPair[0]));
-            $tagValue = trim($tagPair[1]);
-            $tagList[$tagName] = $tagValue;
+            // List tags (Keywords, Subject) come back as JSON arrays; keep the flat form consumers already expect.
+            if (is_array($tagValue)) {
+                $tagList[$tagName] = StringHelper::repairDoubleEncodedUtf8(implode(', ', array_filter($tagValue, 'is_scalar')));
+            }
         }
 
         return $tagList;
+    }
+
+    private function decodeTags(string $output): ?array
+    {
+        $decoded = json_decode($output, true);
+
+        return is_array($decoded) && is_array($decoded[0] ?? null)
+            ? $decoded[0]
+            : null;
     }
 }
