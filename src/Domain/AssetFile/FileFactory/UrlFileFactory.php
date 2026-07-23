@@ -41,9 +41,11 @@ final readonly class UrlFileFactory
         private DamLogger $damLogger,
         private LoggerInterface $appLogger,
         string $urlFileTrustedDomains = '',
+        bool $urlFileAllowPrivateNetworks = false,
     ) {
-        // Trust-list entries skip the private-network guard and follow redirects — keep the list short and reviewed.
-        $this->trustedClient = $client;
+        // Trust only relaxes https-only and allows capped redirects; the private-network guard stays on
+        // every redirect hop. The dev-only flag lifts it so local domains (sme.local → 127.0.0.1) work.
+        $this->trustedClient = $urlFileAllowPrivateNetworks ? $client : new NoPrivateNetworkHttpClient($client);
         $this->safeClient = new NoPrivateNetworkHttpClient($client);
         $this->urlFileTrustedDomains = array_filter(array_map(
             static fn (string $domain): string => strtolower(trim($domain)),

@@ -583,6 +583,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $container->setParameter('anzu_systems.dam_bundle.crop_allow_list', $this->processedConfig['image_settings']['crop_allow_list']);
         $container->setParameter('anzu_systems.dam_bundle.settings.user_entity_class', $this->processedConfig['settings'][SettingsConfiguration::USER_ENTITY_CLASS]);
         $container->setParameter('anzu_systems.dam_bundle.url_file_trusted_domains', $this->processedConfig['settings'][SettingsConfiguration::URL_FILE_TRUSTED_DOMAINS_KEY]);
+        $container->setParameter('anzu_systems.dam_bundle.url_file_allow_private_networks', $this->processedConfig['settings'][SettingsConfiguration::URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY]);
 
         $tagGroups = [];
         foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $name => $allowList) {

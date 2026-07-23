@@ -14,33 +14,53 @@ use Psr\Log\NullLogger;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+// IP literals throughout: NoPrivateNetworkHttpClient blocks unresolvable hosts and literals need no DNS.
 final class UrlFileFactoryTest extends CoreDamKernelTestCase
 {
-    private const string TRUSTED_DOMAINS = '.sme.sk, trusted.example';
+    private const string TRUSTED_DOMAINS = '.sme.sk, trusted.example, 8.8.4.4, 127.0.0.1';
 
     /**
      * @var list<array{url: string, options: array}>
      */
     private array $requests = [];
 
-    public function testTrustedExactMatchDownloadsOverHttp(): void
+    // The guard wrapper follows redirects itself (per-hop IP check), so the cap is asserted in dev mode below.
+    public function testTrustedPublicIpDownloadsOverHttpThroughTheGuard(): void
     {
-        $file = $this->factory()->downloadFile('http://trusted.example/audio.mp3');
+        $file = $this->factory()->downloadFile('http://8.8.4.4/audio.mp3');
 
         self::assertFileExists((string) $file->getRealPath());
+        self::assertCount(1, $this->requests);
+    }
+
+    public function testTrustedPrivateIpBlockedByDefault(): void
+    {
+        $this->expectException(AssetFileProcessFailed::class);
+
+        try {
+            $this->factory()->downloadFile('https://127.0.0.1/a.mp3');
+        } finally {
+            self::assertCount(0, $this->requests);
+        }
+    }
+
+    public function testDevFlagAllowsPrivateNetworkForTrustedAndCapsRedirects(): void
+    {
+        $this->factory(allowPrivateNetworks: true)->downloadFile('http://127.0.0.1/a.mp3');
+
         self::assertCount(1, $this->requests);
         self::assertSame(UrlFileFactory::TRUSTED_MAX_REDIRECTS, $this->requests[0]['options']['max_redirects']);
     }
 
+    // Matcher logic only — hostnames don't resolve, so the raw dev-mode client keeps this deterministic.
     public function testTrustedWildcardMatchesSubdomainAndBareDomain(): void
     {
-        $this->factory()->downloadFile('http://audio.sme.sk/a.mp3');
-        $this->factory()->downloadFile('http://sme.sk/b.mp3');
+        $this->factory(allowPrivateNetworks: true)->downloadFile('http://audio.sme.sk/a.mp3');
+        $this->factory(allowPrivateNetworks: true)->downloadFile('http://sme.sk/b.mp3');
 
         self::assertCount(2, $this->requests);
     }
 
-    // Public IP literals: NoPrivateNetworkHttpClient blocks unresolvable hosts, and literals need no DNS.
     public function testUntrustedHttpsGetsZeroRedirects(): void
     {
         $this->factory()->downloadFile('https://8.8.8.8/a.mp3');
@@ -67,7 +87,7 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
     public static function provideRejectedUrls(): iterable
     {
         yield 'untrusted http' => ['http://evil.example/a.mp3'];
-        yield 'untrusted private ip' => ['https://127.0.0.1/a.mp3'];
+        yield 'untrusted private ip' => ['https://10.0.0.5/a.mp3'];
         yield 'suffix without dot boundary' => ['http://evilsme.sk/a.mp3'];
         yield 'trusted domain as subdomain of attacker' => ['http://sme.sk.evil.example/a.mp3'];
         yield 'trusted domain in userinfo' => ['http://trusted.example@evil.example/a.mp3'];
@@ -88,7 +108,7 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
         $this->factory(new MockResponse('', ['http_code' => 404]))->downloadFile('https://8.8.8.8/a.mp3');
     }
 
-    private function factory(?MockResponse $response = null): UrlFileFactory
+    private function factory(?MockResponse $response = null, bool $allowPrivateNetworks = false): UrlFileFactory
     {
         $client = new MockHttpClient(function (string $method, string $url, array $options) use ($response): MockResponse {
             $this->requests[] = ['url' => $url, 'options' => $options];
@@ -102,6 +122,7 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
             damLogger: $this->getService(DamLogger::class),
             appLogger: new NullLogger(),
             urlFileTrustedDomains: self::TRUSTED_DOMAINS,
+            urlFileAllowPrivateNetworks: $allowPrivateNetworks,
         );
     }
 }
