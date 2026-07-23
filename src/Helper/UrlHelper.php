@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Helper;
 
 use AnzuSystems\CoreDamBundle\Model\ValueObject\Url;
+use InvalidArgumentException;
 use Symfony\Component\Routing\Requirement\Requirement;
 
 final class UrlHelper
@@ -44,8 +45,11 @@ final class UrlHelper
 
     public static function parseUrl(string $url): Url
     {
-        return Url::createFromArray(
-            parse_url($url)
-        );
+        $parsedUrl = parse_url($url);
+        if (false === $parsedUrl) {
+            throw new InvalidArgumentException(sprintf('Malformed url (%s)', $url));
+        }
+
+        return Url::createFromArray($parsedUrl);
     }
 }

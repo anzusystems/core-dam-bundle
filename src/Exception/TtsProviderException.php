@@ -36,4 +36,17 @@ final class TtsProviderException extends AnzuException
     {
         return $this->transient;
     }
+
+    // Sync transports wrap handler throws (possibly nested) — walk the previous chain to the root cause.
+    public static function findTransient(?Throwable $exception): ?self
+    {
+        while (null !== $exception) {
+            if ($exception instanceof self) {
+                return $exception->isTransient() ? $exception : null;
+            }
+            $exception = $exception->getPrevious();
+        }
+
+        return null;
+    }
 }

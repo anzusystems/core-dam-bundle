@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\ElevenlabsClientMock;
+use Throwable;
 
 /** End-to-end TTS pipeline: dispatch → chunk → ElevenLabs mock → concat → assert duration. */
 final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
@@ -99,8 +100,9 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Transient provider error (5xx) on the single-chunk inline path → claim released back to
-     * Waiting, exception rethrown for transport redelivery, reserved asset kept.
+     * Transient provider error on a fresh request (sync transport drives the chunk inline) → claim
+     * released back to Waiting, rethrown for redelivery, reserved asset kept, chunk re-armed.
+     * A second delivery must reuse the existing chunk instead of creating duplicates.
      */
     public function testTransientProviderErrorReleasesClaimForRedelivery(): void
     {
@@ -112,15 +114,7 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         $requestId = (string) $result->narrationRequest->getId();
         $reservedAssetId = (string) $result->getAssetId();
 
-        $thrown = null;
-
-        try {
-            ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
-        } catch (TtsProviderException $e) {
-            $thrown = $e;
-        }
-
-        self::assertNotNull($thrown, 'A transient provider error must be rethrown for transport redelivery.');
+        $thrown = $this->deliverExpectingTransient($requestId);
         self::assertTrue($thrown->isTransient());
 
         $request = $this->requestRepo->find($requestId);
@@ -134,6 +128,31 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
             $this->assetRepo->find($reservedAssetId),
             'The reserved asset must survive a transient failure.',
         );
+
+        $chunks = $this->chunkRepo->findAllByRequest($requestId);
+        self::assertCount(1, $chunks, 'The chunk must persist for a billing-free retry.');
+
+        $this->deliverExpectingTransient($requestId);
+        self::assertCount(
+            1,
+            $this->chunkRepo->findAllByRequest($requestId),
+            'Redelivery must reuse the existing chunk, never duplicate it.',
+        );
+    }
+
+    private function deliverExpectingTransient(string $requestId): TtsProviderException
+    {
+        try {
+            ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
+        } catch (Throwable $e) {
+            // The sync test transport wraps the chunk handler's throw; production delivers it bare.
+            $root = TtsProviderException::findTransient($e);
+            self::assertInstanceOf(TtsProviderException::class, $root);
+
+            return $root;
+        }
+
+        self::fail('A transient provider error must be rethrown for transport redelivery.');
     }
 
     /**

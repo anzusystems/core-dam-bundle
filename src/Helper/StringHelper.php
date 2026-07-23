@@ -61,8 +61,7 @@ final class StringHelper
         return self::base64UrlEncode(random_bytes($bytes));
     }
 
-    // Latin-1 misdecode maps bytes 1:1 ("TlaÄovÃ¡" → "Tlačová"), so it is losslessly reversible;
-    // genuinely single-encoded text fails the round-trip or UTF-8 check and stays untouched.
+    // Latin-1 misdecode is byte-lossless ("TlaÄovÃ¡" → "Tlačová"); single-encoded text fails the round-trip and stays untouched.
     public static function repairDoubleEncodedUtf8(string $input): string
     {
         $raw = mb_convert_encoding($input, 'ISO-8859-1', 'UTF-8');

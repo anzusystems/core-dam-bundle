@@ -287,11 +287,10 @@ abstract class AbstractAssetFileFacade
         }
 
         $this->getManager()->beginTransaction();
+        $deleteId = $assetFile->getId();
+        $asset = $assetFile->getAsset();
 
         try {
-            $deleteId = $assetFile->getId();
-            $asset = $assetFile->getAsset();
-
             if ($assetFile === $asset->getMainFile()) {
                 $asset->setMainFile(null);
             }
@@ -304,9 +303,18 @@ abstract class AbstractAssetFileFacade
 
             $this->assetManager->updateExisting($asset);
             $this->indexManager->index($asset);
-            $this->fileDeleteStash->emptyAll();
             $this->getManager()->commit();
+        } catch (Throwable $exception) {
+            if ($this->getManager()->isTransactionActive()) {
+                $this->getManager()->rollback();
+            }
 
+            throw new RuntimeException('asset_file_delete_failed', 0, $exception);
+        }
+
+        // Committed — storage cleanup and listeners run after, and must not report the delete as failed.
+        try {
+            $this->fileDeleteStash->emptyAll();
             $this->assetFileDeleteEventDispatcher->dispatchFileDelete(
                 (string) $deleteId,
                 (string) $asset->getId(),
@@ -315,11 +323,11 @@ abstract class AbstractAssetFileFacade
                 $assetFile->getModifiedBy()
             );
         } catch (Throwable $exception) {
-            if ($this->getManager()->isTransactionActive()) {
-                $this->getManager()->rollback();
-            }
-
-            throw new RuntimeException('asset_file_delete_failed', 0, $exception);
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                sprintf('Post-delete cleanup failed for asset file (%s)', (string) $deleteId),
+                exception: $exception,
+            );
         }
     }
 

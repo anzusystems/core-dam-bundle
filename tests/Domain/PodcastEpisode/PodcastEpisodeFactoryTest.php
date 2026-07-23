@@ -25,11 +25,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/**
- * Covers ticket #86101 bod 2: a TTS asset carries the caller's main image and every podcast episode of
- * that asset inherits it as its cover — whether the episode is created at TTS finalize or by a later
- * membership change. An image that cannot be safely used must be skipped, never fail the episode.
- */
+// #86101: episodes inherit the TTS asset's main image as cover; an unusable image is skipped, never fatal.
 final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
 {
     private PodcastEpisodeFactory $factory;
@@ -53,10 +49,7 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
         self::assertSame((string) $image->getId(), (string) $imagePreview->getImageFile()->getId());
     }
 
-    /**
-     * The guard must degrade to "no cover", never to an exception — a bad image id is the caller's
-     * problem, not a reason to fail the narration's podcast membership.
-     */
+    // A bad image id degrades to "no cover", never to an exception.
     #[DataProvider('provideSkippedCovers')]
     public function testEpisodeGetsNoCoverWhenImageIsUnusable(?string $mainImageFileId): void
     {
@@ -138,17 +131,14 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
         $image = $this->processedImageInLicence($asset->getLicence());
         $this->giveTtsAsset($asset, (string) $image->getId());
         $episode = $this->addToPodcast($asset, inheritFromAsset: false);
-        $episode->getAttributes()->setEpisodeNumber(42);
+        $this->giveEpisodeNumber($episode, 42);
 
         $this->factory->reconcileEpisodesFromAsset($asset);
 
         self::assertSame(42, $episode->getAttributes()->getEpisodeNumber());
     }
 
-    /**
-     * The audio fixture asset already carries episodes, so the test drives creation directly and asserts
-     * on the returned episode rather than guessing which one it made.
-     */
+    // The audio fixture already carries episodes — assert on the returned episode, not a guessed one.
     private function addToPodcast(Asset $asset, bool $inheritFromAsset = true): PodcastEpisode
     {
         $podcast = $this->entityManager->find(Podcast::class, PodcastFixtures::PODCAST_1);
@@ -163,6 +153,11 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
         self::assertInstanceOf(AudioFile::class, $audio);
 
         return $audio->getAsset();
+    }
+
+    private function giveEpisodeNumber(PodcastEpisode $episode, int $episodeNumber): void
+    {
+        $episode->getAttributes()->setEpisodeNumber($episodeNumber);
     }
 
     private function giveTtsAsset(Asset $asset, ?string $mainImageFileId): TtsAsset
@@ -182,10 +177,7 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
         return $this->getService(TtsAssetManager::class)->create($ttsAsset, flush: true);
     }
 
-    /**
-     * Fixture image licences don't line up with the audio fixture's, so the test pins the licence itself
-     * instead of depending on fixture alignment.
-     */
+    // Fixture image licences don't match the audio fixture's — pin the licence explicitly.
     private function processedImageInLicence(AssetLicence $licence): ImageFile
     {
         $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);

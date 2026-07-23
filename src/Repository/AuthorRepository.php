@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
  */
 final class AuthorRepository extends AbstractAnzuRepository
 {
+    // Narrower than the DB unique key on purpose — identifier is never populated today; extend when it is.
     public function findOneByNameAndExtSystem(string $name, ExtSystem $extSystem): ?Author
     {
         return $this->findOneBy([

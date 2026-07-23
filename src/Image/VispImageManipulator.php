@@ -290,6 +290,7 @@ final class VispImageManipulator extends AbstractImageManipulator
         Config::CacheSetMax(0);
         Config::CacheSetMaxFiles(0);
         Config::CacheSetMaxMem(0);
+        // No ConcurrencySet: thread count is deployment policy — cap via VIPS_CONCURRENCY env in the pod spec.
         self::$initialized = true;
     }
 }

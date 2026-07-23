@@ -26,6 +26,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
+use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use DateTimeImmutable;
 
 /** Builds AudioFile + route + TtsAsset from provider output; caller owns the transaction. */
@@ -41,6 +42,7 @@ final readonly class TtsAudioFactory
         private AssetFileRouteFactory $routeFactory,
         private Config $config,
         private TtsAssetManager $ttsAssetManager,
+        private TtsAssetRepository $ttsAssetRepository,
         private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private AssetTextsWriter $assetTextsWriter,
     ) {
@@ -48,6 +50,7 @@ final readonly class TtsAudioFactory
 
     /**
      * Attach master audio onto the pre-created shell asset and create its TtsAsset.
+     * Idempotent re-run (crashed finalize): the stale master is replaced, its row reaped via expireAt.
      */
     public function create(TtsAudioCreationInput $input, Asset $asset): TtsAudioCreationResult
     {
@@ -56,20 +59,19 @@ final readonly class TtsAudioFactory
         $audioFile = $this->buildAudioFile($input);
         $this->assetFileManager->create($audioFile, flush: false);
 
-        $this->assetSlotFactory->createRelation(
-            asset: $asset,
-            assetFile: $audioFile,
-            slotName: $this->config->getMasterSlotName(),
-            flush: false,
-        );
+        $previousMaster = $this->assetSlotFactory->replaceSlotFile($asset, $audioFile, $this->config->getMasterSlotName());
+        if ($previousMaster instanceof AudioFile) {
+            $previousMaster->setExpireAt($this->config->getAudioRetentionExpireAt());
+        }
         $asset->getTexts()->setDisplayTitle($this->resolveDisplayName($input, $now));
         $this->writeCustomMetadata($asset, $input);
         $this->assetManager->updateExisting($asset, flush: false, trackModification: false);
 
         $masterRoute = $this->attachStableRoute($audioFile);
 
-        $ttsAsset = $this->buildTtsAsset($asset, $input);
-        $this->ttsAssetManager->create($ttsAsset);
+        $ttsAsset = $this->ttsAssetRepository->findByAsset($asset)
+            ?? $this->ttsAssetManager->create(new TtsAsset($asset));
+        $this->applyTtsAssetFields($ttsAsset, $input);
 
         return new TtsAudioCreationResult($asset, $audioFile, $ttsAsset, $input->audioFile, $masterRoute);
     }
@@ -130,9 +132,9 @@ final readonly class TtsAudioFactory
         return $this->routeFactory->createPrebuiltAudioRoute($audioFile, $routeSlug, $routePath);
     }
 
-    private function buildTtsAsset(Asset $asset, TtsAudioCreationInput $input): TtsAsset
+    private function applyTtsAssetFields(TtsAsset $ttsAsset, TtsAudioCreationInput $input): void
     {
-        return (new TtsAsset($asset))
+        $ttsAsset
             ->setVoiceFamily($input->family)
             ->setProvider($input->voice->getDiscriminator())
             ->setExternalVoiceId($input->voice->getExternalVoiceId())

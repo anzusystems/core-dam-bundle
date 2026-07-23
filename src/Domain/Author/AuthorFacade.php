@@ -51,7 +51,9 @@ final class AuthorFacade
                 $this->indexManager->index($author);
                 $this->authorManager->commit();
             } catch (Throwable $exception) {
-                $this->authorManager->rollback();
+                if ($this->authorManager->isTransactionActive()) {
+                    $this->authorManager->rollback();
+                }
 
                 throw new RuntimeException('author_create_failed', 0, $exception);
             }

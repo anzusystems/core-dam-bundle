@@ -101,7 +101,7 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
     {
         return new ArrayCollection(
             $this->createQueryBuilder('entity')
-                ->join('entity.asset', 'asset')
+                ->leftJoin('entity.asset', 'asset')
                 ->andWhere('entity.assetAttributes.status in (:statuses)')
                 ->andWhere('entity.createdAt < :createdAtUntil')
                 ->andWhere('asset.mainFile IS NULL OR asset.mainFile != entity')

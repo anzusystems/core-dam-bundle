@@ -150,6 +150,7 @@ final class IndexDefinitionFactory
                 'filter' => ['lowercase', 'asciifolding', 'edgegrams', 'unique_on_pos'],
                 'char_filter' => ['html_strip'],
             ],
+            // Intentionally no lang_stop, unlike exact_stop — stopword removal would eat person-name particles.
             'author_exact_stop' => [
                 'type' => 'custom',
                 'tokenizer' => 'standard',

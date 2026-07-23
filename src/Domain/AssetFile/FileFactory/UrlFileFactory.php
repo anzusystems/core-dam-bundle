@@ -24,6 +24,7 @@ final readonly class UrlFileFactory
 {
     private const int TIMEOUT = 600;
     private const int MAX_DURATION = 600;
+    public const int TRUSTED_MAX_REDIRECTS = 5;
     private const string HTTPS_SCHEME = 'https';
 
     private HttpClientInterface $trustedClient;
@@ -41,9 +42,13 @@ final readonly class UrlFileFactory
         private LoggerInterface $appLogger,
         string $urlFileTrustedDomains = '',
     ) {
+        // Trust-list entries skip the private-network guard and follow redirects — keep the list short and reviewed.
         $this->trustedClient = $client;
         $this->safeClient = new NoPrivateNetworkHttpClient($client);
-        $this->urlFileTrustedDomains = array_filter(array_map('trim', explode(',', $urlFileTrustedDomains)));
+        $this->urlFileTrustedDomains = array_filter(array_map(
+            static fn (string $domain): string => strtolower(trim($domain)),
+            explode(',', $urlFileTrustedDomains),
+        ));
     }
 
     /**
@@ -52,19 +57,22 @@ final readonly class UrlFileFactory
      */
     public function downloadFile(string $url): AdapterFile
     {
-        $trusted = $this->isTrustedDomain($url);
+        try {
+            $parsedUrl = UrlHelper::parseUrl($url);
+        } catch (InvalidArgumentException) {
+            throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+        }
 
-        if (false === $trusted && self::HTTPS_SCHEME !== parse_url($url, PHP_URL_SCHEME)) {
+        $trusted = $this->isTrustedDomain(strtolower($parsedUrl->getHost()));
+        if (false === $trusted && self::HTTPS_SCHEME !== strtolower($parsedUrl->getScheme())) {
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }
 
         $options = [
             'timeout' => self::TIMEOUT,
             'max_duration' => self::MAX_DURATION,
+            'max_redirects' => $trusted ? self::TRUSTED_MAX_REDIRECTS : 0,
         ];
-        if (false === $trusted) {
-            $options['max_redirects'] = 0;
-        }
 
         try {
             $client = $trusted ? $this->trustedClient : $this->safeClient;
@@ -97,22 +105,13 @@ final readonly class UrlFileFactory
         }
     }
 
-    private function isTrustedDomain(string $url): bool
+    private function isTrustedDomain(string $host): bool
     {
-        try {
-            $host = strtolower(UrlHelper::parseUrl($url)->getHost());
-        } catch (InvalidArgumentException) {
-            return false;
-        }
-
         foreach ($this->urlFileTrustedDomains as $domain) {
-            $domain = strtolower($domain);
-            if (str_starts_with($domain, '.')) {
-                $bare = ltrim($domain, '.');
-                if ($host === $bare || str_ends_with($host, $domain)) {
-                    return true;
-                }
-            } elseif ($host === $domain) {
+            if ($host === ltrim($domain, '.')) {
+                return true;
+            }
+            if (str_starts_with($domain, '.') && str_ends_with($host, $domain)) {
                 return true;
             }
         }

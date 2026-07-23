@@ -11,9 +11,20 @@ use PHPUnit\Framework\TestCase;
 
 final class ConfigTest extends TestCase
 {
-    public function testEnabledExposesTargetLufs(): void
+    #[DataProvider('provideAcceptedTargets')]
+    public function testEnabledExposesTargetLufs(float $targetLufs): void
     {
-        self::assertSame(-18.0, self::config(enabled: true, targetLufs: -18.0)->getTargetLufs());
+        self::assertSame($targetLufs, self::config(enabled: true, targetLufs: $targetLufs)->getTargetLufs());
+    }
+
+    /**
+     * @return iterable<string, array{float}>
+     */
+    public static function provideAcceptedTargets(): iterable
+    {
+        yield 'typical podcast level' => [-18.0];
+        yield 'quiet boundary is inclusive' => [Config::TARGET_LUFS_MIN];
+        yield 'loud boundary is inclusive' => [Config::TARGET_LUFS_MAX];
     }
 
     public function testDisabledExposesNullAndIgnoresTarget(): void
@@ -37,6 +48,8 @@ final class ConfigTest extends TestCase
         yield 'unreplaced deploy token cast to 0.0 → deafening master' => [0.0];
         yield 'far too loud' => [-2.0];
         yield 'far too quiet' => [-40.0];
+        yield 'just past the loud boundary' => [Config::TARGET_LUFS_MAX + 0.01];
+        yield 'just past the quiet boundary' => [Config::TARGET_LUFS_MIN - 0.01];
     }
 
     private static function config(bool $enabled, float $targetLufs): Config

@@ -23,7 +23,7 @@ abstract class AbstractTtsProvider implements TtsProviderInterface
     protected function assertTtsConfiguration(ExtSystem $extSystem): void
     {
         $config = $this->extSystemConfigProvider->getTtsExtSystemConfiguration($extSystem->getSlug());
-        $config->getOutputBitrateKbps();
+        $config->getOutputBitrateKbps(); // throws on unsupported output_format
 
         $storageName = $config->chunkStorageName;
         if ('' === $storageName) {

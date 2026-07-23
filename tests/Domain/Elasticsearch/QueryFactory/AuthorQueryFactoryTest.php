@@ -38,140 +38,35 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
         return [
             'test_score_date_no_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setOrder(['score_date' => 'asc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'match_all' => new stdClass(),
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedMatchAllQuery(),
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
             ],
             'test_score_date' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['score_date' => 'asc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'bool' => [
-                                    'must' => [
-                                        'multi_match' => [
-                                            'query' => 'test',
-                                            'fields' => [
-                                                'name^3',
-                                                'name.edgegrams',
-                                            ],
-                                            'type' => 'most_fields',
-                                            'tie_breaker' => 0.3,
-                                        ],
-                                    ],
-                                    'should' => [
-                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
-                                    ],
-                                ],
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
             ],
             'test_score_best' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['score_best' => 'desc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'bool' => [
-                                    'must' => [
-                                        'multi_match' => [
-                                            'query' => 'test',
-                                            'fields' => [
-                                                'name^3',
-                                                'name.edgegrams',
-                                            ],
-                                            'type' => 'most_fields',
-                                            'tie_breaker' => 0.3,
-                                        ],
-                                    ],
-                                    'should' => [
-                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
-                                    ],
-                                ],
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     '_score' => 'desc',
                 ],
             ],
             'test_id' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['id' => 'desc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'bool' => [
-                                    'must' => [
-                                        'multi_match' => [
-                                            'query' => 'test',
-                                            'fields' => [
-                                                'name^3',
-                                                'name.edgegrams',
-                                            ],
-                                            'type' => 'most_fields',
-                                            'tie_breaker' => 0.3,
-                                        ],
-                                    ],
-                                    'should' => [
-                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
-                                    ],
-                                ],
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     'id' => 'desc',
                 ],
             ],
             'no_order_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test'),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'bool' => [
-                                    'must' => [
-                                        'multi_match' => [
-                                            'query' => 'test',
-                                            'fields' => [
-                                                'name^3',
-                                                'name.edgegrams',
-                                            ],
-                                            'type' => 'most_fields',
-                                            'tie_breaker' => 0.3,
-                                        ],
-                                    ],
-                                    'should' => [
-                                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
-                                    ],
-                                ],
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     '_score' => 'desc',
                     'id' => 'desc',
@@ -179,20 +74,52 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
             ],
             'no_order_no_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto()),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'match_all' => new stdClass(),
-                            ],
-                            'filter' => [],
-                            'must_not' => [],
-                        ],
-                    ],
+                'expectedQuery' => self::expectedMatchAllQuery(),
                 'expectedSort' => [
                     'reviewed' => 'desc',
                     'id' => 'desc',
                 ],
+            ],
+        ];
+    }
+
+    private static function expectedFulltextQuery(): array
+    {
+        return [
+            'bool' => [
+                'must' => [
+                    'bool' => [
+                        'must' => [
+                            'multi_match' => [
+                                'query' => 'test',
+                                'fields' => [
+                                    'name^3',
+                                    'name.edgegrams',
+                                ],
+                                'type' => 'most_fields',
+                                'tie_breaker' => 0.3,
+                            ],
+                        ],
+                        'should' => [
+                            ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                        ],
+                    ],
+                ],
+                'filter' => [],
+                'must_not' => [],
+            ],
+        ];
+    }
+
+    private static function expectedMatchAllQuery(): array
+    {
+        return [
+            'bool' => [
+                'must' => [
+                    'match_all' => new stdClass(),
+                ],
+                'filter' => [],
+                'must_not' => [],
             ],
         ];
     }

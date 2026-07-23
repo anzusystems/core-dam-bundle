@@ -90,6 +90,6 @@ final class AssetMetadataProcessor
     // No HTML escaping: values go to JSON/ES only, never raw HTML; escaping here double-encoded & and '.
     private function parseValue(string $value): string
     {
-        return StringHelper::parseLength(strip_tags($value), self::MAX_VALUE_LENGTH);
+        return StringHelper::parseString($value, self::MAX_VALUE_LENGTH);
     }
 }

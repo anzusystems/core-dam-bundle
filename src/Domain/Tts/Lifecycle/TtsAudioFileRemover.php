@@ -53,7 +53,7 @@ final readonly class TtsAudioFileRemover
         try {
             $this->entityManager->wrapInTransaction(function () use ($audioFile): void {
                 $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
-                $this->assetFileManager->delete($audioFile, false);
+                $this->assetFileManager->delete($audioFile, flush: false);
                 $this->entityManager->flush();
             });
 

@@ -46,7 +46,7 @@ final readonly class TtsReservedAssetRemover
             }
             $this->audioFileRemover->remove(...$audioFiles);
 
-            $this->assetManager->delete($asset, true);
+            $this->assetManager->delete($asset, flush: true);
         } catch (Throwable $deleteEx) {
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'reservedAssetRemover.deleteFailed', [
                 'requestId' => $requestId,

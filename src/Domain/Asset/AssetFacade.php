@@ -18,9 +18,11 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\DependencyExistsException;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
@@ -51,6 +53,7 @@ class AssetFacade
         private readonly AssetRepository $assetRepository,
         private readonly ExtSystemRepository $extSystemRepository,
         private readonly AudioFileRepository $audioFileRepository,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -138,23 +141,32 @@ class AssetFacade
     {
         $this->assertDeletable($asset);
         $this->assetManager->beginTransaction();
+        $deleteId = (string) $asset->getId();
 
         try {
-            $deleteId = (string) $asset->getId();
-
             $this->deleteWithFiles($asset);
             $this->indexManager->delete($asset, $deleteId);
 
             $this->assetManager->commit();
-
-            $this->assetFileDeleteEventDispatcher->dispatchAll();
-            $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $exception) {
             if ($this->assetManager->isTransactionActive()) {
                 $this->assetManager->rollback();
             }
 
             throw new RuntimeException('asset_delete_failed', 0, $exception);
+        }
+
+        // Committed — storage cleanup and events run after, and must not report the delete as failed.
+        try {
+            $this->fileStash->emptyAll();
+            $this->assetFileDeleteEventDispatcher->dispatchAll();
+            $this->assetEventDispatcher->dispatchAll();
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                sprintf('Post-delete cleanup failed for asset (%s)', $deleteId),
+                exception: $exception,
+            );
         }
     }
 
@@ -168,6 +180,7 @@ class AssetFacade
         if ($assets->isEmpty()) {
             return 0;
         }
+        // No emptyAll here: the caller wraps the batch in one transaction and empties the stash after commit.
         foreach ($assets as $asset) {
             $this->assertDeletable($asset);
             $deletedId = (string) $asset->getId();
@@ -202,14 +215,15 @@ class AssetFacade
         }
 
         // Superseded TTS audio keeps the asset FK but no slot; without this the `SET NULL` FK leaves a publicly routable orphan.
-        foreach ($this->audioFileRepository->findDetachedByAsset($asset) as $audioFile) {
-            $this->deleteAssetFile($audioFile, $asset, $deleteId, $deleteBy);
+        if ($asset->getAttributes()->getAssetType()->is(AssetType::Audio)) {
+            foreach ($this->audioFileRepository->findDetachedByAsset($asset) as $audioFile) {
+                $this->deleteAssetFile($audioFile, $asset, $deleteId, $deleteBy);
+            }
         }
 
         $this->assetEventDispatcher->addEvent($deleteId, $asset, $deleteBy);
 
         $this->assetManager->delete($asset);
-        $this->fileStash->emptyAll();
     }
 
     private function deleteAssetFile(AssetFile $assetFile, Asset $asset, string $deleteId, DamUser $deleteBy): void
@@ -221,6 +235,6 @@ class AssetFacade
             $asset->getAttributes()->getAssetType(),
             $deleteBy,
         );
-        $this->assetFileManagerProvider->getManager($assetFile)->delete($assetFile, false);
+        $this->assetFileManagerProvider->getManager($assetFile)->delete($assetFile, flush: false);
     }
 }

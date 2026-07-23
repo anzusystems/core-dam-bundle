@@ -66,6 +66,7 @@ final class TtsSynthesizeRequestDto implements ExtSystemInterface, AssetLicenceI
     private ?string $regenerateAssetId = null;
 
     #[Serialize]
+    #[Assert\Uuid(message: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Length(max: 36, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $mainImageFileId = null;
 

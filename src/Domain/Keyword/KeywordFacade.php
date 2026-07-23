@@ -51,7 +51,9 @@ final class KeywordFacade
                 $this->indexManager->index($keyword);
                 $this->keywordManager->commit();
             } catch (Throwable $exception) {
-                $this->keywordManager->rollback();
+                if ($this->keywordManager->isTransactionActive()) {
+                    $this->keywordManager->rollback();
+                }
 
                 throw new RuntimeException('keyword_create_failed', 0, $exception);
             }
