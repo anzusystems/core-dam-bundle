@@ -15,7 +15,7 @@ final class AbstractDistributionModuleTest extends TestCase
 {
     public function testFreshRemoteProcessingKeepsWaiting(): void
     {
-        $distribution = (new YoutubeDistribution())->setModifiedAt(App::getAppDate()->modify('-30 minutes'));
+        $distribution = (new YoutubeDistribution())->setModifiedAt(App::getAppDate()->modify('-2 hours'));
 
         self::module()->exposedThrowWhenRemoteProcessingExpired($distribution);
         $this->addToAssertionCount(1);
@@ -23,7 +23,7 @@ final class AbstractDistributionModuleTest extends TestCase
 
     public function testExpiredRemoteProcessingFails(): void
     {
-        $distribution = (new YoutubeDistribution())->setModifiedAt(App::getAppDate()->modify('-2 hours'));
+        $distribution = (new YoutubeDistribution())->setModifiedAt(App::getAppDate()->modify('-4 hours'));
 
         $this->expectException(RemoteProcessingFailedException::class);
 

@@ -17,7 +17,7 @@ use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractDistributionModule implements DistributionModuleInterface
 {
-    private const string REMOTE_PROCESS_WAIT_THRESHOLD = '+1 hour';
+    private const string REMOTE_PROCESS_WAIT_THRESHOLD = '+3 hours';
 
     protected AssetFileRepository $assetFileRepository;
     protected FileSystemProvider $fileSystemProvider;
