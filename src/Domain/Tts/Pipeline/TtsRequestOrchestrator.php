@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
@@ -256,7 +255,6 @@ final readonly class TtsRequestOrchestrator
         return TtsResumeOutcome::Redispatched;
     }
 
-
     private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
     {
         $master = $this->normalizeMaster($request, $master);
@@ -342,7 +340,9 @@ final readonly class TtsRequestOrchestrator
         $this->finishTail('processInitial', $request, $result->asset);
     }
 
-    /** Shared post-Done tail: reconcile episodes, refresh index, announce — every step idempotent. */
+    /**
+     * Shared post-Done tail: reconcile episodes, refresh index, announce — every step idempotent.
+     */
     private function finishTail(string $logPrefix, TtsNarrationRequest $request, Asset $asset): void
     {
         $this->bestEffort($logPrefix . '.episodeReconcileFailed', $request, $asset, function () use ($asset): void {

@@ -53,7 +53,9 @@ class AudioFile extends AssetFile
         return $this;
     }
 
-    /** False once the asset row is gone — the FK is `SET NULL`, leaving this typed property uninitialized. */
+    /**
+     * False once the asset row is gone — the FK is `SET NULL`, leaving this typed property uninitialized.
+     */
     public function hasAsset(): bool
     {
         return isset($this->asset);

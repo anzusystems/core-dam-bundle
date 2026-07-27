@@ -28,7 +28,6 @@ final class VispImageManipulator extends AbstractImageManipulator
 
     private ?Image $image = null;
     private int $quality;
-
     private static bool $initialized = false;
 
     public function __construct(
