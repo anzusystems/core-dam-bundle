@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\Math;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use FFMpeg\Coordinate\TimeCode;
+use FFMpeg\Driver\FFMpegDriver;
 use FFMpeg\Exception\RuntimeException;
 use FFMpeg\FFMpeg;
 use FFMpeg\FFProbe;
@@ -19,12 +20,14 @@ use FFMpeg\FFProbe\DataMapping\Stream;
 use FFMpeg\Media\Frame;
 use FFMpeg\Media\Video as FFMpegVideo;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\Process\Process;
 use Throwable;
 
 final class FfmpegService
 {
     public const string FRAME_EXTENSION = 'jpeg';
     public const string AUDIO_EXTENSION_MP3 = 'mp3';
+    private const float MEASURE_TIMEOUT_SECONDS = 300.0;
 
     public function __construct(
         private readonly Exiftool $exiftool,
@@ -165,16 +168,30 @@ final class FfmpegService
     }
 
     /**
+     * Two-pass loudnorm (linear=true): the one-pass dynamic mode audibly warbles speech.
      * `-ar 44100` is mandatory: loudnorm works internally at 192 kHz, which libmp3lame cannot encode.
      *
      * @throws FfmpegException
      */
     public function normalizeLoudness(File $source, float $targetLufs, float $targetTruePeak, float $targetLra, int $bitrateKbps): AdapterFile
     {
+        $measured = $this->measureLoudness($source, $targetLufs, $targetTruePeak, $targetLra);
+
         return $this->runToTmpMp3([
             '-y',
             '-i', $source->getRealPath(),
-            '-af', sprintf('loudnorm=I=%s:TP=%s:LRA=%s', $targetLufs, $targetTruePeak, $targetLra),
+            '-af', sprintf(
+                // %.6f: plain %s would render tiny floats in scientific notation and break the filter syntax.
+                'loudnorm=I=%s:TP=%s:LRA=%s:measured_I=%.6f:measured_TP=%.6f:measured_LRA=%.6f:measured_thresh=%.6f:offset=%.6f:linear=true',
+                $targetLufs,
+                $targetTruePeak,
+                $targetLra,
+                $measured['input_i'],
+                $measured['input_tp'],
+                $measured['input_lra'],
+                $measured['input_thresh'],
+                $measured['target_offset'],
+            ),
             '-c:a', 'libmp3lame',
             '-b:a', $bitrateKbps . 'k',
             '-ar', '44100',
@@ -187,6 +204,49 @@ final class FfmpegService
             ->streams($filePath)
             ->videos()
             ->first();
+    }
+
+    /**
+     * @return array{input_i: float, input_tp: float, input_lra: float, input_thresh: float, target_offset: float}
+     *
+     * @throws FfmpegException
+     */
+    private function measureLoudness(File $source, float $targetLufs, float $targetTruePeak, float $targetLra): array
+    {
+        // Raw Process: the ffmpeg driver's command() returns stdout only, the loudnorm report is on stderr.
+        $process = new Process([
+            FFMpegDriver::create()->getProcessBuilderFactory()->getBinary(),
+            '-hide_banner', '-nostats',
+            '-i', $source->getRealPath(),
+            '-af', sprintf('loudnorm=I=%s:TP=%s:LRA=%s:print_format=json', $targetLufs, $targetTruePeak, $targetLra),
+            '-f', 'null', '-',
+        ]);
+        $process->setTimeout(self::MEASURE_TIMEOUT_SECONDS);
+
+        try {
+            $process->run();
+        } catch (Throwable $exception) {
+            throw new FfmpegException($exception->getMessage(), $exception);
+        }
+
+        // The loudnorm report is a flat JSON block on stderr, followed by ffmpeg's closing summary lines.
+        $stderr = $process->getErrorOutput();
+        $jsonStart = strrpos($stderr, '{');
+        $jsonEnd = false === $jsonStart ? false : strpos($stderr, '}', $jsonStart);
+        if (false === $process->isSuccessful() || false === $jsonStart || false === $jsonEnd) {
+            throw new FfmpegException('Loudness measurement pass failed: ' . trim(substr($stderr, -200)));
+        }
+
+        $report = json_decode(substr($stderr, $jsonStart, $jsonEnd - $jsonStart + 1), true);
+        $measured = [];
+        foreach (['input_i', 'input_tp', 'input_lra', 'input_thresh', 'target_offset'] as $key) {
+            if (false === is_numeric($report[$key] ?? null)) {
+                throw new FfmpegException(sprintf('Loudness measurement returned non-numeric "%s".', $key));
+            }
+            $measured[$key] = (float) $report[$key];
+        }
+
+        return $measured;
     }
 
     /**
