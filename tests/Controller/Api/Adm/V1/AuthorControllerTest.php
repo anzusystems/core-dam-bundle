@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AuthorUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Closure;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -123,7 +124,8 @@ final class AuthorControllerTest extends AbstractApiController
     /**
      * @throws SerializerException
      */
-    public function testCreateDuplicateReturnsExisting(): void
+    #[DataProvider('duplicateNameProvider')]
+    public function testCreateDuplicateReturnsExisting(Closure $nameTransform): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
         $existingAuthor = self::getContainer()
@@ -131,7 +133,7 @@ final class AuthorControllerTest extends AbstractApiController
             ->find(AuthorFixtures::AUTHOR_1);
 
         $response = $client->post(AuthorUrl::createPath(), [
-            'name' => $existingAuthor->getName(),
+            'name' => $nameTransform($existingAuthor->getName()),
             'extSystem' => ExtSystemFixtures::ID_CMS,
         ]);
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
@@ -141,6 +143,16 @@ final class AuthorControllerTest extends AbstractApiController
             Author::class
         );
         $this->assertSame($existingAuthor->getId(), $author->getId());
+    }
+
+    /**
+     * @return iterable<string, array{Closure(string): string}>
+     */
+    public static function duplicateNameProvider(): iterable
+    {
+        yield 'same case' => [static fn (string $name): string => $name];
+        // The duplicate check relies on a case-insensitive DB collation — pin that assumption.
+        yield 'different case' => [static fn (string $name): string => mb_strtoupper($name)];
     }
 
     /**

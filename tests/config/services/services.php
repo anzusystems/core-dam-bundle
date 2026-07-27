@@ -60,15 +60,13 @@ return static function (ContainerConfigurator $configurator): void {
     // wire literal test values here so the bundle test kernel can compile. Slot names must exist
     // in the test audio file_slots (free/paid/bonus).
     $services->set(TtsConfig::class)
-        ->args([
-            'sme_default_male',
-            4_800,
-            'paid',
-            'free',
-            86_400,
-            false,
-            -18.0,
-        ]);
+        ->arg('$systemDefaultFamilySlug', 'sme_default_male')
+        ->arg('$chunkSizeChars', 4_800)
+        ->arg('$masterSlotName', 'paid')
+        ->arg('$previewSlotName', 'free')
+        ->arg('$audioRetentionGraceSeconds', 86_400)
+        ->arg('$loudnessNormalizationEnabled', false)
+        ->arg('$targetLufs', -18.0);
 
     $services->set(SystemUserFixtures::class)
         ->arg('$userManager', service(UserManager::class))

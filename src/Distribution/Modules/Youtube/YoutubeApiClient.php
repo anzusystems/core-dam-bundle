@@ -204,6 +204,9 @@ final class YoutubeApiClient
             $media->setFileSize($file->getSize());
 
             $handle = fopen($file->getRealPath(), 'rb');
+            if (false === $handle) {
+                throw new RuntimeException(sprintf('Failed to open file for upload (%s)', $file->getRealPath()));
+            }
 
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, self::CHUNK_SIZE);

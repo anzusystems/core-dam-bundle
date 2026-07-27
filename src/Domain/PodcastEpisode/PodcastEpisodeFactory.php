@@ -133,7 +133,7 @@ final class PodcastEpisodeFactory extends AbstractManager
 
         $mainFile = $asset->getMainFile();
         $duration = $mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO;
-        if (App::ZERO !== $duration && App::ZERO === $episode->getAttributes()->getDuration()) {
+        if (App::ZERO !== $duration && $duration !== $episode->getAttributes()->getDuration()) {
             $episode->getAttributes()->setDuration($duration);
             $changed = true;
         }

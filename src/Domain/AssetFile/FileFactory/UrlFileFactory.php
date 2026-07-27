@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory;
 
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -22,9 +23,10 @@ use Throwable;
 
 final readonly class UrlFileFactory
 {
+    public const int TRUSTED_MAX_REDIRECTS = 5;
+    public const int MAX_DOWNLOAD_BYTES = 2_147_483_648;
     private const int TIMEOUT = 600;
     private const int MAX_DURATION = 600;
-    public const int TRUSTED_MAX_REDIRECTS = 5;
     private const string HTTPS_SCHEME = 'https';
 
     private HttpClientInterface $trustedClient;
@@ -47,10 +49,10 @@ final readonly class UrlFileFactory
         // every redirect hop. The dev-only flag lifts it so local domains (sme.local → 127.0.0.1) work.
         $this->trustedClient = $urlFileAllowPrivateNetworks ? $client : new NoPrivateNetworkHttpClient($client);
         $this->safeClient = new NoPrivateNetworkHttpClient($client);
-        $this->urlFileTrustedDomains = array_filter(array_map(
+        $this->urlFileTrustedDomains = array_values(array_filter(array_map(
             static fn (string $domain): string => strtolower(trim($domain)),
             explode(',', $urlFileTrustedDomains),
-        ));
+        )));
     }
 
     /**
@@ -62,18 +64,26 @@ final readonly class UrlFileFactory
         try {
             $parsedUrl = UrlHelper::parseUrl($url);
         } catch (InvalidArgumentException) {
-            throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+            throw $this->rejectDownload('malformed_url');
         }
 
         $trusted = $this->isTrustedDomain(strtolower($parsedUrl->getHost()));
         if (false === $trusted && self::HTTPS_SCHEME !== strtolower($parsedUrl->getScheme())) {
-            throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+            throw $this->rejectDownload('untrusted_non_https', $parsedUrl->getHost(), $parsedUrl->getScheme());
         }
+
+        // Loggable form without userinfo credentials and query tokens.
+        $safeUrl = sprintf('%s://%s%s', $parsedUrl->getScheme(), $parsedUrl->getHost(), $parsedUrl->getPath());
 
         $options = [
             'timeout' => self::TIMEOUT,
             'max_duration' => self::MAX_DURATION,
             'max_redirects' => $trusted ? self::TRUSTED_MAX_REDIRECTS : 0,
+            'on_progress' => static function (int $dlNow, int $dlSize): void {
+                if ($dlNow > self::MAX_DOWNLOAD_BYTES || $dlSize > self::MAX_DOWNLOAD_BYTES) {
+                    throw new RuntimeException(sprintf('download_size_exceeded (max %d bytes)', self::MAX_DOWNLOAD_BYTES));
+                }
+            },
         ];
 
         try {
@@ -97,7 +107,7 @@ final readonly class UrlFileFactory
                 DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
                 sprintf(
                     'Failed To download file from url (%s). Failed message (%s)',
-                    $url,
+                    $safeUrl,
                     $e->getMessage()
                 )
             );
@@ -105,6 +115,17 @@ final readonly class UrlFileFactory
 
             throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
         }
+    }
+
+    private function rejectDownload(string $reason, string $host = '', string $scheme = ''): AssetFileProcessFailed
+    {
+        // Host+scheme only — the full url may carry userinfo credentials.
+        $this->damLogger->warning(
+            DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
+            sprintf('Url download rejected (%s) host (%s) scheme (%s)', $reason, $host, $scheme),
+        );
+
+        return new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
     }
 
     private function isTrustedDomain(string $host): bool

@@ -206,6 +206,9 @@ final class JwVideoClient
             $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
 
             $handle = fopen($file->getRealPath(), 'rb');
+            if (false === $handle) {
+                throw new RuntimeException(sprintf('Failed to open file for upload (%s)', $file->getRealPath()));
+            }
 
             try {
                 foreach ($listData->getParts() as $part) {

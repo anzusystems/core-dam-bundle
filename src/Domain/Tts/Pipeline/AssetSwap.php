@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
@@ -88,7 +87,7 @@ final readonly class AssetSwap
             ->setVoiceFamily($family)
             ->setProvider($voice->getDiscriminator())
             ->setExternalVoiceId($voice->getExternalVoiceId())
-            ->setMainImageFileId($request->getMainImageFileId())
+            ->setMainImageFileId($request->getMainImageFileId() ?? $stableTts->getMainImageFileId())
         ;
         $this->ttsAssetManager->markActive($stableTts);
 

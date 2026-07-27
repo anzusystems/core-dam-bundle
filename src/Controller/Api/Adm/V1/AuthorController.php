@@ -67,6 +67,7 @@ final class AuthorController extends AbstractApiController
      *
      * @throws ValidationException
      * @throws AppReadOnlyModeException
+     * @throws AuthorExistsException
      */
     #[Route(path: '', name: 'create', methods: [Request::METHOD_POST])]
     #[OARequest(Author::class), OAResponse(Author::class), OAResponseValidation]

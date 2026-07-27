@@ -34,11 +34,7 @@ final class AudioFileRepositoryTest extends CoreDamKernelTestCase
         self::assertInstanceOf(AudioFile::class, $audio);
         $asset = $audio->getAsset();
 
-        foreach ($audio->getSlots() as $slot) {
-            $slot->setAudio(null);
-            $audio->getSlots()->removeElement($slot);
-        }
-        $this->entityManager->flush();
+        $this->detachAudioFromSlots($audio);
 
         $detached = $this->repository->findDetachedByAsset($asset);
         self::assertCount(1, $detached);
@@ -59,6 +55,26 @@ final class AudioFileRepositoryTest extends CoreDamKernelTestCase
         self::assertSame('', $audio->getAssetAttributes()->getFilePath());
 
         $asset = $audio->getAsset();
+        $this->stripSlotsAndMainFile($audio);
+
+        $this->getService(AssetFacade::class)->delete($asset);
+        $this->entityManager->clear();
+
+        self::assertNull($this->repository->find(AudioFixtures::AUDIO_ID_2));
+    }
+
+    private function detachAudioFromSlots(AudioFile $audio): void
+    {
+        foreach ($audio->getSlots() as $slot) {
+            $slot->setAudio(null);
+            $audio->getSlots()->removeElement($slot);
+        }
+        $this->entityManager->flush();
+    }
+
+    private function stripSlotsAndMainFile(AudioFile $audio): void
+    {
+        $asset = $audio->getAsset();
         foreach ($audio->getSlots() as $slot) {
             $asset->getSlots()->removeElement($slot);
             $audio->getSlots()->removeElement($slot);
@@ -66,10 +82,5 @@ final class AudioFileRepositoryTest extends CoreDamKernelTestCase
         }
         $asset->setMainFile(null);
         $this->entityManager->flush();
-
-        $this->getService(AssetFacade::class)->delete($asset);
-        $this->entityManager->clear();
-
-        self::assertNull($this->repository->find(AudioFixtures::AUDIO_ID_2));
     }
 }

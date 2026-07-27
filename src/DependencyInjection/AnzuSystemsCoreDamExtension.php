@@ -37,6 +37,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Doctrine\DBAL\Types\Types;
 use Exception;
 use League\Flysystem\GoogleCloudStorage\GoogleCloudStorageAdapter;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -584,6 +585,11 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $container->setParameter('anzu_systems.dam_bundle.settings.user_entity_class', $this->processedConfig['settings'][SettingsConfiguration::USER_ENTITY_CLASS]);
         $container->setParameter('anzu_systems.dam_bundle.url_file_trusted_domains', $this->processedConfig['settings'][SettingsConfiguration::URL_FILE_TRUSTED_DOMAINS_KEY]);
         $container->setParameter('anzu_systems.dam_bundle.url_file_allow_private_networks', $this->processedConfig['settings'][SettingsConfiguration::URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY]);
+        if ('prod' === $container->getParameter('kernel.environment')
+            && true === $this->processedConfig['settings'][SettingsConfiguration::URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY]
+        ) {
+            throw new InvalidConfigurationException('url_file_allow_private_networks is a dev-only escape hatch and must not be enabled in prod');
+        }
 
         $tagGroups = [];
         foreach ($this->processedConfig['image_settings']['crop_allow_list'] as $name => $allowList) {

@@ -77,9 +77,11 @@ final class AuthorFacade
             $this->indexManager->index($author);
             $this->authorManager->commit();
         } catch (Throwable $exception) {
-            $this->authorManager->rollback();
+            if ($this->authorManager->isTransactionActive()) {
+                $this->authorManager->rollback();
+            }
 
-            throw new RuntimeException('author_create_failed', 0, $exception);
+            throw new RuntimeException('author_update_failed', 0, $exception);
         }
 
         return $author;
@@ -94,9 +96,11 @@ final class AuthorFacade
             $this->indexManager->delete($author, $deletedId);
             $this->authorManager->commit();
         } catch (Throwable $exception) {
-            $this->authorManager->rollback();
+            if ($this->authorManager->isTransactionActive()) {
+                $this->authorManager->rollback();
+            }
 
-            throw new RuntimeException('keyword_delete_failed', 0, $exception);
+            throw new RuntimeException('author_delete_failed', 0, $exception);
         }
 
         return true;

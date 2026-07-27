@@ -125,6 +125,26 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
         self::assertSame($ownCover, $episode->getImagePreview(), 'Fill-if-empty must leave a set cover untouched.');
     }
 
+    public function testReconcileResyncsDurationAfterAudioChange(): void
+    {
+        $asset = $this->audioAsset();
+        $this->giveTtsAsset($asset, null);
+        $episode = $this->addToPodcast($asset);
+        $originalDuration = $episode->getAttributes()->getDuration();
+        self::assertGreaterThan(0, $originalDuration);
+
+        // Regenerate scenario: the master audio was replaced by one with a different length.
+        $this->giveAudioDuration($asset, $originalDuration + 40);
+
+        $this->factory->reconcileEpisodesFromAsset($asset);
+
+        self::assertSame(
+            $originalDuration + 40,
+            $episode->getAttributes()->getDuration(),
+            'A changed master audio length must resync the episode duration.',
+        );
+    }
+
     public function testReconcileLeavesEpisodeNumberUntouched(): void
     {
         $asset = $this->audioAsset();
@@ -158,6 +178,15 @@ final class PodcastEpisodeFactoryTest extends CoreDamKernelTestCase
     private function giveEpisodeNumber(PodcastEpisode $episode, int $episodeNumber): void
     {
         $episode->getAttributes()->setEpisodeNumber($episodeNumber);
+    }
+
+    private function giveAudioDuration(Asset $asset, int $duration): void
+    {
+        $mainFile = $asset->getMainFile();
+        self::assertInstanceOf(AudioFile::class, $mainFile);
+
+        $mainFile->getAttributes()->setDuration($duration);
+        $this->entityManager->flush();
     }
 
     private function giveTtsAsset(Asset $asset, ?string $mainImageFileId): TtsAsset

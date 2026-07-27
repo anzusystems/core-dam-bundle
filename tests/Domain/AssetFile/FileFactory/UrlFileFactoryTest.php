@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile\FileFactory;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileFactory\UrlFileFactory;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -99,6 +100,18 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
         $this->factory()->downloadFile('HTTPS://8.8.8.8/a.mp3');
 
         self::assertCount(1, $this->requests);
+    }
+
+    public function testDownloadSizeCapAbortsOversizedTransfer(): void
+    {
+        $this->factory()->downloadFile('https://8.8.8.8/a.mp3');
+
+        $onProgress = $this->requests[0]['options']['on_progress'];
+        self::assertIsCallable($onProgress);
+        $onProgress(1_024, UrlFileFactory::MAX_DOWNLOAD_BYTES, []);
+
+        $this->expectException(RuntimeException::class);
+        $onProgress(1_024, UrlFileFactory::MAX_DOWNLOAD_BYTES + 1, []);
     }
 
     public function testErrorStatusFails(): void
