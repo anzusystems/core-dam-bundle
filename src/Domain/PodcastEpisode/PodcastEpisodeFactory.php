@@ -63,9 +63,10 @@ final class PodcastEpisodeFactory extends AbstractManager
             $desiredByPodcastId[(string) $podcast->getId()] = $podcast;
         }
 
-        $inheritedImage = $inheritFromAsset ? $this->resolveInheritedImageFile($asset) : null;
+        $toCreate = array_diff_key($desiredByPodcastId, $currentByPodcastId);
+        $inheritedImage = $inheritFromAsset && [] !== $toCreate ? $this->resolveInheritedImageFile($asset) : null;
 
-        foreach (array_diff_key($desiredByPodcastId, $currentByPodcastId) as $podcast) {
+        foreach ($toCreate as $podcast) {
             $this->createEpisode(
                 asset: $asset,
                 podcast: $podcast,
@@ -77,7 +78,7 @@ final class PodcastEpisodeFactory extends AbstractManager
 
         foreach (array_diff_key($currentByPodcastId, $desiredByPodcastId) as $episode) {
             $asset->removeEpisode($episode);
-            $this->manager->delete($episode, false);
+            $this->manager->delete($episode, flush: false);
         }
 
         $this->flush($flush);
@@ -130,8 +131,9 @@ final class PodcastEpisodeFactory extends AbstractManager
     {
         $changed = false;
 
-        $duration = $this->resolveAudioDuration($asset);
-        if (App::ZERO !== $duration && App::ZERO === $episode->getAttributes()->getDuration()) {
+        $mainFile = $asset->getMainFile();
+        $duration = $mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO;
+        if (App::ZERO !== $duration && $duration !== $episode->getAttributes()->getDuration()) {
             $episode->getAttributes()->setDuration($duration);
             $changed = true;
         }
@@ -141,13 +143,6 @@ final class PodcastEpisodeFactory extends AbstractManager
         }
 
         return $changed;
-    }
-
-    private function resolveAudioDuration(Asset $asset): int
-    {
-        $mainFile = $asset->getMainFile();
-
-        return $mainFile instanceof AudioFile ? $mainFile->getAttributes()->getDuration() : App::ZERO;
     }
 
     private function resolveInheritedImageFile(Asset $asset): ?ImageFile

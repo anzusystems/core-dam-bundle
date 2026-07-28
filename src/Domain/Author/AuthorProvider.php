@@ -25,10 +25,7 @@ final readonly class AuthorProvider
             return null;
         }
 
-        $author = $this->repository->findOneBy([
-            'name' => $title,
-            'extSystem' => $extSystem,
-        ]);
+        $author = $this->repository->findOneByNameAndExtSystem($title, $extSystem);
 
         if ($author instanceof Author) {
             return $author;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Config;
 use AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle\TtsAssetLocker;
@@ -77,7 +76,7 @@ final readonly class AssetSwap
         $stableTts = $this->lockAndValidate($stableAssetId, $request);
         $stableAsset = $stableTts->getAsset();
 
-        $expireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+        $expireAt = $this->config->getAudioRetentionExpireAt();
 
         $demoted = array_values(array_filter([
             $this->demoteAndReplace($stableAsset, $newMaster, $this->config->getMasterSlotName(), $expireAt),
@@ -88,7 +87,7 @@ final readonly class AssetSwap
             ->setVoiceFamily($family)
             ->setProvider($voice->getDiscriminator())
             ->setExternalVoiceId($voice->getExternalVoiceId())
-            ->setMainImageFileId($request->getMainImageFileId())
+            ->setMainImageFileId($request->getMainImageFileId() ?? $stableTts->getMainImageFileId())
         ;
         $this->ttsAssetManager->markActive($stableTts);
 

@@ -18,11 +18,13 @@ use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use Throwable;
 
 final class JobUserDataDeleteProcessor extends AbstractJobProcessor
 {
     use EntityManagerAwareTrait;
+    use FileStashAwareTrait;
 
     private const int ASSET_BULK_SIZE = 10;
 
@@ -81,6 +83,7 @@ final class JobUserDataDeleteProcessor extends AbstractJobProcessor
             $this->finishProcessCycle($job, $removedCount, $assets->last() ?: null);
             $this->entityManager->commit();
 
+            $this->fileStash->emptyAll();
             $this->assetFileDeleteEventDispatcher->dispatchAll();
             $this->assetEventDispatcher->dispatchAll();
         } catch (Throwable $throwable) {

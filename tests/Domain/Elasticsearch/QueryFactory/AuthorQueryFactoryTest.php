@@ -4,35 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Elasticsearch\QueryFactory;
 
-use AnzuSystems\CommonBundle\Domain\Job\JobProcessor;
-use AnzuSystems\CommonBundle\Entity\Job;
-use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
-use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
-use AnzuSystems\CommonBundle\Tests\AnzuKernelTestCase;
-use AnzuSystems\Contracts\Entity\AnzuUser;
-use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\DataFixtures\PodcastFixtures;
-use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobPodcastSynchronizerProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
-use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastRssReader;
-use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AssetQueryFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AuthorQueryFactory;
-use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AuthorAdmSearchDto;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
-use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
-use AnzuSystems\CoreDamBundle\Repository\PodcastRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
-use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
-use AnzuSystems\CoreDamBundle\Tests\HttpClient\RssPodcastMock;
-use DateTimeInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use stdClass;
 
@@ -63,139 +38,88 @@ final class AuthorQueryFactoryTest extends CoreDamKernelTestCase
         return [
             'test_score_date_no_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setOrder(['score_date' => 'asc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'match_all' => new stdClass()
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedMatchAllQuery(),
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
             ],
             'test_score_date' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['score_date' => 'asc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
-                                    ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     'id' => 'asc',
                 ],
             ],
             'test_score_best' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['score_best' => 'desc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
-                                    ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     '_score' => 'desc',
                 ],
             ],
             'test_id' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test')->setOrder(['id' => 'desc']),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
-                                    ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
                     'id' => 'desc',
                 ],
             ],
             'no_order_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto())->setText('test'),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'name^3',
-                                        'name.edgegrams',
-                                    ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3
-                                ]
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedFulltextQuery(),
                 'expectedSort' => [
-                    'reviewed' => 'desc',
                     '_score' => 'desc',
+                    'id' => 'desc',
                 ],
             ],
             'no_order_no_fulltext' => [
                 'searchDto' => (new AuthorAdmSearchDto()),
-                'expectedQuery' =>
-                    [
-                        'bool' => [
-                            'must' => [
-                                'match_all' => new stdClass()
-                            ],
-                            'filter' => [],
-                            'must_not' => []
-                        ]
-                    ]
-                ,
+                'expectedQuery' => self::expectedMatchAllQuery(),
                 'expectedSort' => [
                     'reviewed' => 'desc',
                     'id' => 'desc',
                 ],
+            ],
+        ];
+    }
+
+    private static function expectedFulltextQuery(): array
+    {
+        return [
+            'bool' => [
+                'must' => [
+                    'bool' => [
+                        'must' => [
+                            'multi_match' => [
+                                'query' => 'test',
+                                'fields' => [
+                                    'name^3',
+                                    'name.edgegrams',
+                                ],
+                                'type' => 'most_fields',
+                                'tie_breaker' => 0.3,
+                            ],
+                        ],
+                        'should' => [
+                            ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
+                        ],
+                    ],
+                ],
+                'filter' => [],
+                'must_not' => [],
+            ],
+        ];
+    }
+
+    private static function expectedMatchAllQuery(): array
+    {
+        return [
+            'bool' => [
+                'must' => [
+                    'match_all' => new stdClass(),
+                ],
+                'filter' => [],
+                'must_not' => [],
             ],
         ];
     }

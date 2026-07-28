@@ -40,8 +40,11 @@ final class CropProcessor
      */
     public function applyCrop(ImageFile $image, ImageCropDto $imageCrop): string
     {
-        if ($this->configurationProvider->isCropCacheEnabled() && $this->cropCache->isStored($image, $imageCrop)) {
-            return $this->cropCache->get($image, $imageCrop);
+        if ($this->configurationProvider->isCropCacheEnabled()) {
+            $cached = $this->cropCache->tryGet($image, $imageCrop);
+            if (null !== $cached) {
+                return $cached;
+            }
         }
 
         $optimalResize = $this->getOptimalResize($image, $imageCrop);

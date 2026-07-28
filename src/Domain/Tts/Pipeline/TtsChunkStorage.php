@@ -65,17 +65,6 @@ final readonly class TtsChunkStorage
     }
 
     /**
-     * @throws FilesystemException
-     */
-    public function writeTmpMaster(string $bytes): AdapterFile
-    {
-        $tmpFs = $this->fileSystemProvider->getTmpFileSystem();
-        $rel = $tmpFs->writeTmpFileFromBytes($bytes, FfmpegService::AUDIO_EXTENSION_MP3);
-
-        return new AdapterFile(path: $tmpFs->extendPath($rel), adapterPath: $rel, filesystem: $tmpFs);
-    }
-
-    /**
      * @param list<string> $paths
      *
      * @throws TtsProviderException

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 
-use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataAutocomplete;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataProcessor;
@@ -21,7 +20,6 @@ final readonly class MetadataProcessor
         private AssetMetadataAutocomplete $assetMetadataAutocomplete,
         private AssetFileEventDispatcher $dispatcher,
         private AssetFileManager $assetFileManager,
-        private ResourceLocker $resourceLocker,
     ) {
     }
 
@@ -42,7 +40,6 @@ final readonly class MetadataProcessor
             assetFile: $assetFile,
             trackModification: false
         );
-        $this->resourceLocker->unLock(AssetMetadataProcessor::DATA_SUGGESTER_LOCK_NAME);
         $this->dispatcher->dispatchMetadataProcessed($assetFile);
 
         return $assetFile;

@@ -36,6 +36,7 @@ final class DocumentStatusFacade extends AbstractAssetFileStatusFacade
         return $this->documentFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
+            excludeAssetId: $assetFile->getAsset()->getId(),
         );
     }
 }

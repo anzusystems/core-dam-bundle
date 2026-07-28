@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Keyword;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Exception\KeywordExistsException;
@@ -17,6 +18,9 @@ final class KeywordFacade
 {
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
+    use ResourceLockerAwareTrait;
+
+    private const string LOCK_PREFIX = 'keyword_create_';
 
     public function __construct(
         private readonly KeywordManager $keywordManager,
@@ -30,24 +34,34 @@ final class KeywordFacade
      */
     public function create(Keyword $keyword): Keyword
     {
-        $existingKeyword = $this->keywordRepository->findOneByNameAndExtSystem($keyword->getName(), $keyword->getExtSystem());
-        if ($existingKeyword) {
-            throw new KeywordExistsException($existingKeyword);
-        }
-        $this->validator->validate($keyword);
+        // Lowercased: the DB unique check is collation case-insensitive, the Redis lock key must match that.
+        $lockName = self::LOCK_PREFIX . mb_strtolower($keyword->getName()) . '_' . (string) $keyword->getExtSystem()->getId();
+        $this->resourceLocker->lock($lockName);
 
         try {
-            $this->keywordManager->beginTransaction();
-            $this->keywordManager->create($keyword);
-            $this->indexManager->index($keyword);
-            $this->keywordManager->commit();
-        } catch (Throwable $exception) {
-            $this->keywordManager->rollback();
+            $existingKeyword = $this->keywordRepository->findOneByNameAndExtSystem($keyword->getName(), $keyword->getExtSystem());
+            if ($existingKeyword) {
+                throw new KeywordExistsException($existingKeyword);
+            }
+            $this->validator->validate($keyword);
 
-            throw new RuntimeException('keyword_create_failed', 0, $exception);
+            try {
+                $this->keywordManager->beginTransaction();
+                $this->keywordManager->create($keyword);
+                $this->indexManager->index($keyword);
+                $this->keywordManager->commit();
+            } catch (Throwable $exception) {
+                if ($this->keywordManager->isTransactionActive()) {
+                    $this->keywordManager->rollback();
+                }
+
+                throw new RuntimeException('keyword_create_failed', 0, $exception);
+            }
+
+            return $keyword;
+        } finally {
+            $this->resourceLocker->unLock($lockName);
         }
-
-        return $keyword;
     }
 
     /**

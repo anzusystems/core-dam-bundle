@@ -52,8 +52,9 @@ final readonly class TtsSynthChunkHandler
             ], exception: $e);
 
             // Transient provider trouble: re-arm + rethrow for transport redelivery with backoff;
-            // repeated failure is bounded by the cleanup-stuck cron's hard cap.
-            if ($e instanceof TtsProviderException && $e->isTransient()) {
+            // repeated failure is bounded by the cleanup-stuck cron's hard cap. findTransient also
+            // unwraps a sync transport's wrapping of the next chunk's inline dispatch.
+            if (null !== TtsProviderException::findTransient($e)) {
                 $this->rearmForRetry($chunk);
 
                 throw $e;

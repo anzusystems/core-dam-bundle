@@ -49,17 +49,15 @@ final class ElevenlabsClientMock
      */
     private function getResponse(string $url, array $options): MockResponse
     {
-        $path = UrlHelper::parseUrl($url)->getPath();
+        $parsedUrl = UrlHelper::parseUrl($url);
 
-        if (str_starts_with($path, '/v1/text-to-speech/')) {
+        if (str_starts_with($parsedUrl->getPath(), '/v1/text-to-speech/')) {
             $body = (string) ($options['body'] ?? '');
             $decoded = json_decode($body, true);
             if (is_array($decoded)) {
                 $this->sentBodies[] = $decoded;
             }
-            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
-            /** @var array<string, string> $query */
-            $this->sentQueries[] = $query;
+            $this->sentQueries[] = $parsedUrl->getQueryParams();
             if (str_contains($body, self::FORCE_TRANSIENT_FAIL_MARKER)) {
                 return new MockResponse(
                     (string) json_encode(['detail' => ['status' => 'mock_forced_transient_failure']]),
@@ -82,7 +80,7 @@ final class ElevenlabsClientMock
             ]);
         }
 
-        if ('/v1/voices' === $path) {
+        if ('/v1/voices' === $parsedUrl->getPath()) {
             return new MockResponse(
                 (string) json_encode(['voices' => [['voice_id' => 'test-elevenlabs-voice', 'name' => 'Mock Voice']]]),
                 ['http_code' => Response::HTTP_OK],

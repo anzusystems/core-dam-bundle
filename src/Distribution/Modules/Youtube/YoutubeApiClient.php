@@ -182,6 +182,7 @@ final class YoutubeApiClient
         $client->setDefer(true);
 
         $youtubeService = new Google_Service_YouTube($client);
+        $handle = null;
 
         try {
             $insertRequest = $youtubeService->videos->insert(
@@ -203,6 +204,9 @@ final class YoutubeApiClient
             $media->setFileSize($file->getSize());
 
             $handle = fopen($file->getRealPath(), 'rb');
+            if (false === $handle) {
+                throw new RuntimeException(sprintf('Failed to open file for upload (%s)', $file->getRealPath()));
+            }
 
             while (!$status && !feof($handle)) {
                 $chunk = fread($handle, self::CHUNK_SIZE);
@@ -212,9 +216,6 @@ final class YoutubeApiClient
                     return $this->videoFactory->createYoutubeVideoDto($status);
                 }
             }
-
-            fclose($handle);
-            $client->setDefer(false);
 
             return null;
         } catch (Google_Service_Exception $exception) {
@@ -236,6 +237,11 @@ final class YoutubeApiClient
                 exception: $exception
             );
             $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+            $client->setDefer(false);
         }
 
         return null;

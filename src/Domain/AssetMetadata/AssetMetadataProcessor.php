@@ -9,13 +9,16 @@ use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion\DataSuggesterInter
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
 final class AssetMetadataProcessor
 {
-    public const string DATA_SUGGESTER_LOCK_NAME = 'lock_suggester';
+    private const string DATA_SUGGESTER_LOCK_PREFIX = 'lock_suggester_';
+
+    private const int MAX_VALUE_LENGTH = 5_000;
 
     /**
      * @var iterable<DataSuggesterInterface>
@@ -50,15 +53,26 @@ final class AssetMetadataProcessor
         $assetFile->getMetadata()->setExifData($metadata);
         $assetFile->getFlags()->setProcessedMetadata(true);
 
-        if ($this->resourceLocker->lock(self::DATA_SUGGESTER_LOCK_NAME)) {
+        $this->runSuggesters($assetFile, $metadata);
+
+        return $assetFile;
+    }
+
+    // Per-asset scope; author/keyword creation has its own per-name lock in the facades.
+    private function runSuggesters(AssetFile $assetFile, array $metadata): void
+    {
+        $lockName = self::DATA_SUGGESTER_LOCK_PREFIX . (string) $assetFile->getAsset()->getId();
+        $this->resourceLocker->lock($lockName);
+
+        try {
             foreach ($this->dataSuggesters as $dataSuggester) {
                 if ($dataSuggester->supports($assetFile)) {
                     $dataSuggester->suggest($assetFile, $metadata);
                 }
             }
+        } finally {
+            $this->resourceLocker->unLock($lockName);
         }
-
-        return $assetFile;
     }
 
     private function provideCommonMetadata(array $rawMetadata, array $allowedMetadataList): array
@@ -73,8 +87,9 @@ final class AssetMetadataProcessor
         return $metadata;
     }
 
+    // No HTML escaping: values go to JSON/ES only, never raw HTML; escaping here double-encoded & and '.
     private function parseValue(string $value): string
     {
-        return htmlspecialchars(strip_tags($value), ENT_SUBSTITUTE);
+        return StringHelper::parseString($value, self::MAX_VALUE_LENGTH);
     }
 }

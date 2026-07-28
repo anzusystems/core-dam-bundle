@@ -28,6 +28,7 @@ final class VispImageManipulator extends AbstractImageManipulator
 
     private ?Image $image = null;
     private int $quality;
+    private static bool $initialized = false;
 
     public function __construct(
         FilterProcessorStack $filterProcessorStack,
@@ -262,9 +263,14 @@ final class VispImageManipulator extends AbstractImageManipulator
 
     private function disableCache(): void
     {
+        if (self::$initialized) {
+            return;
+        }
+
         Config::CacheSetMax(0);
         Config::CacheSetMaxFiles(0);
         Config::CacheSetMaxMem(0);
-        Config::ConcurrencySet(1);
+        // No ConcurrencySet: thread count is deployment policy — cap via VIPS_CONCURRENCY env in the pod spec.
+        self::$initialized = true;
     }
 }

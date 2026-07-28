@@ -93,6 +93,8 @@ final class DistributionBroker
 
             $distribution->setFailReason(DistributionFailReason::Unknown);
             $this->distributionStatusFacade->toFailed($distribution);
+
+            return;
         }
 
         if ($module instanceof RemoteProcessingDistributionModuleInterface) {

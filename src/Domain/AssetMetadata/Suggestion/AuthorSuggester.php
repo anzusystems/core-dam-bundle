@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcesso
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
@@ -85,6 +86,9 @@ final class AuthorSuggester extends AbstractSuggester
 
         try {
             $this->authorFacade->create($author);
+            $ids[] = (string) $author->getId();
+        } catch (AuthorExistsException $exception) {
+            $ids[] = (string) $exception->getExistingAuthor()->getId();
         } catch (Throwable $exception) {
             $this->damLogger->info(DamLogger::NAMESPACE_ASSET_FILE_PROCESS, 'Cannot create author: ' . $name . ' ' . $exception->getMessage());
         }

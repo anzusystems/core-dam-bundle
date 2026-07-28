@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use DateTimeImmutable;
 
 /** App-level TTS config; slot names are per-app because each ext-system's file_slots whitelist must match. */
 final readonly class Config
@@ -68,5 +70,10 @@ final readonly class Config
     public function getAudioRetentionGraceSeconds(): int
     {
         return $this->audioRetentionGraceSeconds;
+    }
+
+    public function getAudioRetentionExpireAt(): DateTimeImmutable
+    {
+        return App::getAppDate()->modify(sprintf('+%d seconds', $this->audioRetentionGraceSeconds));
     }
 }

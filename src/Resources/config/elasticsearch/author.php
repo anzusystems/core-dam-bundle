@@ -24,11 +24,12 @@ return static function (ContainerConfigurator $configurator): void {
                 ],
                 'name' => [
                     'type' => 'text',
-                    'analyzer' => 'exact_stop',
+                    'analyzer' => 'author_exact_stop',
                     'fields' => [
                         'edgegrams' => [
                             'type' => 'text',
-                            'analyzer' => 'edgegrams',
+                            'analyzer' => 'author_edgegrams',
+                            'search_analyzer' => 'author_exact_stop',
                         ],
                     ],
                 ],

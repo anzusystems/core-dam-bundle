@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Tts\Pipeline;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
@@ -103,7 +102,7 @@ final readonly class TtsRequestOrchestrator
     }
 
     /**
-     * Resolve voice, chunk text, synthesise inline (single chunk) or fan-out per-chunk messages.
+     * Resolve voice, chunk text, persist chunks (durable blobs), dispatch the first chunk message.
      */
     public function plan(TtsNarrationRequest $request): void
     {
@@ -121,15 +120,12 @@ final readonly class TtsRequestOrchestrator
             throw new RuntimeException(sprintf('TTS source text produced no chunks (request "%s").', (string) $request->getId()));
         }
 
-        if (1 === count($chunks)) {
-            $result = $provider->synthesizeChunk($chunks[0], $voice, $extSystem, []);
-            $this->finalizeByMode($request, $this->chunkStorage->writeTmpMaster($result->bytes), $voice);
-
-            return;
+        // Even a single chunk goes through durable storage — recovery re-concats instead of re-billing.
+        $requestId = (string) $request->getId();
+        if (0 === $this->chunkRepo->count(['request' => $requestId])) {
+            $this->createChunks($request, $chunks);
         }
-
-        $this->createChunks($request, $chunks);
-        $first = $this->chunkRepo->findNextPending((string) $request->getId());
+        $first = $this->chunkRepo->findNextPending($requestId);
         if (null !== $first) {
             $this->messageBus->dispatch(new TtsSynthChunkMessage((string) $first->getId()));
         }
@@ -243,22 +239,12 @@ final readonly class TtsRequestOrchestrator
 
     private function recoverChunkless(TtsNarrationRequest $request): TtsResumeOutcome
     {
-        $asset = $this->assetRepo->find((string) $request->getAssetId());
-        if (null === $asset) {
+        if (null === $this->assetRepo->find((string) $request->getAssetId())) {
             return TtsResumeOutcome::NoChunks;
         }
 
-        // Regen's stable asset always keeps old audio; re-dispatch resumes the swap (or fails cleanly, old kept).
-        if ($request->getMode()->is(TtsRequestMode::Regenerate)) {
-            return $this->redispatchChunkless($request);
-        }
-
-        if (false === $this->assetHasAudio($asset)) {
-            return $this->redispatchChunkless($request);
-        }
-
-        // Initial with materialised audio is ambiguous (maybe half-finished) — don't auto-finish.
-        return TtsResumeOutcome::NoChunks;
+        // No chunks = plan() never completed — re-run it; a finalize crash leaves Done chunks for resumeStalled.
+        return $this->redispatchChunkless($request);
     }
 
     private function redispatchChunkless(TtsNarrationRequest $request): TtsResumeOutcome
@@ -267,17 +253,6 @@ final readonly class TtsRequestOrchestrator
         $this->messageBus->dispatch(new TtsNarrationRequestMessage((string) $request->getId()));
 
         return TtsResumeOutcome::Redispatched;
-    }
-
-    private function assetHasAudio(Asset $asset): bool
-    {
-        foreach ($asset->getSlots() as $slot) {
-            if (null !== $slot->getAudio()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function finalizeByMode(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
@@ -354,7 +329,7 @@ final readonly class TtsRequestOrchestrator
             return;
         }
 
-        $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+        $orphanExpireAt = $this->config->getAudioRetentionExpireAt();
         $this->bestEffort('processInitial.enrichmentFailed', $request, $result->asset, function () use ($result, $request, $extSystem, $family, $orphanExpireAt): void {
             $this->enrichAssetFromRequest($result->asset, $request, $extSystem, $family);
 
@@ -362,16 +337,24 @@ final readonly class TtsRequestOrchestrator
             $this->attachPreviewSlot($result->asset, $preview);
         });
 
-        $this->bestEffort('processInitial.episodeReconcileFailed', $request, $result->asset, function () use ($result): void {
-            $this->episodeFactory->reconcileEpisodesFromAsset($result->asset);
+        $this->finishTail('processInitial', $request, $result->asset);
+    }
+
+    /**
+     * Shared post-Done tail: reconcile episodes, refresh index, announce — every step idempotent.
+     */
+    private function finishTail(string $logPrefix, TtsNarrationRequest $request, Asset $asset): void
+    {
+        $this->bestEffort($logPrefix . '.episodeReconcileFailed', $request, $asset, function () use ($asset): void {
+            $this->episodeFactory->reconcileEpisodesFromAsset($asset);
         });
 
-        $this->bestEffort('processInitial.refreshIndexFailed', $request, $result->asset, function () use ($result): void {
-            $this->assetManager->updateExisting($result->asset);
-            $this->indexManager->index($result->asset);
+        $this->bestEffort($logPrefix . '.refreshIndexFailed', $request, $asset, function () use ($asset): void {
+            $this->assetManager->updateExisting($asset);
+            $this->indexManager->index($asset);
         });
 
-        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$result->asset]));
+        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$asset]));
     }
 
     private function finalizeRegenerate(TtsNarrationRequest $request, AdapterFile $master, Voice $voice): void
@@ -386,7 +369,7 @@ final readonly class TtsRequestOrchestrator
         $input = TtsAudioCreationInput::fromRequest($request, $master, $family, $voice, $licence, $sourceText);
 
         // Safety expiry on unslotted files; AssetSwap::promote() clears it when they go live.
-        $orphanExpireAt = App::getAppDate()->modify(sprintf('+%d seconds', $this->config->getAudioRetentionGraceSeconds()));
+        $orphanExpireAt = $this->config->getAudioRetentionExpireAt();
 
         // Build + publish new master/preview without slotting — failure leaves old narration intact.
         $built = $this->entityManager->wrapInTransaction(
@@ -420,15 +403,9 @@ final readonly class TtsRequestOrchestrator
             $stableTts->setSourceTextSnapshot($sourceText)->setSourceTextHash(hash('sha256', $sourceText));
             $stableAsset->getTexts()->setDisplayTitle($request->getTitle() ?? $stableAsset->getTexts()->getDisplayTitle());
             $this->enrichAssetFromRequest($stableAsset, $request, $extSystem, $family);
-            $this->assetManager->updateExisting($stableAsset);
-            $this->indexManager->index($stableAsset);
         });
 
-        $this->bestEffort('processRegenerate.episodeReconcileFailed', $request, $stableAsset, function () use ($stableAsset): void {
-            $this->episodeFactory->reconcileEpisodesFromAsset($stableAsset);
-        });
-
-        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$stableAsset]));
+        $this->finishTail('processRegenerate', $request, $stableAsset);
     }
 
     private function enrichAssetFromRequest(Asset $asset, TtsNarrationRequest $request, ExtSystem $extSystem, VoiceFamily $family): void

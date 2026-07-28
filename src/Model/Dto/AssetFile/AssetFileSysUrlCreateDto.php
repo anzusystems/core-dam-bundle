@@ -13,6 +13,7 @@ final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
     #[Serialize]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
     private string $url = '';
 
     #[Serialize]

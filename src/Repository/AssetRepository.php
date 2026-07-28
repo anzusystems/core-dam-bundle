@@ -27,6 +27,25 @@ use Doctrine\ORM\QueryBuilder;
 final class AssetRepository extends AbstractAnzuRepository
 {
     /**
+     * `mainFile` is a JOINED-inheritance root Doctrine cannot proxy — join-fetch avoids one query per row.
+     *
+     * @return ArrayCollection<int|string, Asset>
+     */
+    public function getAllByIdIndexed(int | string ...$id): ArrayCollection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity', 'entity.id')
+                ->leftJoin('entity.mainFile', 'mainFile')
+                ->addSelect('mainFile')
+                ->where('entity.id IN (:ids)')
+                ->setParameter('ids', $id)
+                ->orderBy('FIELD(entity.id, :ids)')
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    /**
      * @return Collection<array-key, Asset>
      */
     public function findByIds(array $ids): Collection

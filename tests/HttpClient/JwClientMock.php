@@ -26,7 +26,9 @@ final class JwClientMock
             return new MockResponse(
                 json_encode([
                     'id' => '123jw',
-                    'upload_link' => 'https://api.jw.com/jw-upload-link'
+                    'upload_link' => 'https://api.jw.com/jw-upload-link',
+                    'upload_token' => 'jw-upload-token',
+                    'upload_id' => 'jw-upload-id'
                 ]),
                 [
                     'http_code' => Response::HTTP_OK,

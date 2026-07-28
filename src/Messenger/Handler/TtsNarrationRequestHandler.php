@@ -51,7 +51,7 @@ final readonly class TtsNarrationRequestHandler
 
             // Transient provider trouble: release the claim + rethrow for transport redelivery;
             // bounded by the cleanup-stuck cron's hard cap.
-            if ($e instanceof TtsProviderException && $e->isTransient()) {
+            if (null !== TtsProviderException::findTransient($e)) {
                 if ($this->rearmForRedelivery($request)) {
                     throw $e;
                 }

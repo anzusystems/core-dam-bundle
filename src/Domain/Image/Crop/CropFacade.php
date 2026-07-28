@@ -103,8 +103,9 @@ final readonly class CropFacade
     {
         $allowList = $this->allowListConfiguration->getListByDomain($image->getExtSystem()->getSlug());
 
+        // Quality 0 is a request, not an absent value — treating it as absent let `-q0` skip the allow-list.
         if (
-            $cropDto->getQuality() &&
+            null !== $cropDto->getQuality() &&
             false === in_array($cropDto->getQuality(), $allowList->getQualityAllowList(), true)
         ) {
             throw new InvalidCropException();

@@ -118,6 +118,8 @@ final class YoutubeDistributionModule extends AbstractDistributionModule impleme
             return;
         }
 
+        $this->throwWhenRemoteProcessingExpired($distribution);
+
         throw new RemoteProcessingWaitingException();
     }
 

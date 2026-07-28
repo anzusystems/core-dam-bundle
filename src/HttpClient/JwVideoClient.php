@@ -206,14 +206,21 @@ final class JwVideoClient
             $listData = $this->serializer->deserialize($response->getContent(), VideoUploadLinks::class);
 
             $handle = fopen($file->getRealPath(), 'rb');
-
-            foreach ($listData->getParts() as $part) {
-                $chunk = fread($handle, self::CHUNK_SIZE);
-
-                $this->uploadFile($part->getLink(), $chunk);
+            if (false === $handle) {
+                throw new RuntimeException(sprintf('Failed to open file for upload (%s)', $file->getRealPath()));
             }
 
-            fclose($handle);
+            try {
+                foreach ($listData->getParts() as $part) {
+                    $chunk = fread($handle, self::CHUNK_SIZE);
+
+                    $this->uploadFile($part->getLink(), $chunk);
+                }
+            } finally {
+                if (is_resource($handle)) {
+                    fclose($handle);
+                }
+            }
 
             $response = $this->client->request(
                 Request::METHOD_PUT,

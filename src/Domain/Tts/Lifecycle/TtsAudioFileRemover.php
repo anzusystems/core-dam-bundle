@@ -47,13 +47,13 @@ final readonly class TtsAudioFileRemover
     private function removeOne(AudioFile $audioFile): bool
     {
         $audioFileId = (string) $audioFile->getId();
-        $assetId = (string) $audioFile->getAsset()->getId();
+        $assetId = $audioFile->hasAsset() ? (string) $audioFile->getAsset()->getId() : 'orphaned';
         $expireAt = $audioFile->getExpireAt()?->format('c');
 
         try {
             $this->entityManager->wrapInTransaction(function () use ($audioFile): void {
                 $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
-                $this->assetFileManager->delete($audioFile, false);
+                $this->assetFileManager->delete($audioFile, flush: false);
                 $this->entityManager->flush();
             });
 

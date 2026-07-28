@@ -65,6 +65,7 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         return $this->imageFileRepository->findProcessedByChecksumAndLicence(
             checksum: $assetFile->getAssetAttributes()->getChecksum(),
             licence: $assetFile->getLicence(),
+            excludeAssetId: $assetFile->getAsset()->getId(),
         );
     }
 

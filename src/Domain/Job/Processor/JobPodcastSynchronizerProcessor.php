@@ -6,12 +6,14 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\PodcastImportIterator;
 use AnzuSystems\CoreDamBundle\Domain\Podcast\RssImportManager;
 use AnzuSystems\CoreDamBundle\Domain\PodcastEpisode\EpisodeRssImportManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\JobPodcastSynchronizer;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Podcast\PodcastImportIteratorDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastLastImportStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\PodcastSynchronizerPointer;
@@ -21,6 +23,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Generator;
+use Throwable;
 
 final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
 {
@@ -32,6 +35,7 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
         private readonly PodcastImportIterator $importIterator,
         private readonly PodcastRepository $podcastRepository,
         private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly DamLogger $damLogger,
         private int $bulkSize = self::BULK_SIZE,
         private ?DateTimeImmutable $minImportFrom = null
     ) {
@@ -119,31 +123,50 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
     {
         $lastImportedDto = null;
         $imported = 0;
+        $failed = 0;
 
         /** @var array<int, Asset> $newlyImportedAssets */
         $newlyImportedAssets = [];
 
         /** @var PodcastImportIteratorDto $importDto */
         foreach ($generator as $importDto) {
-            if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
-                $this->rssImportManager->syncPodcast(
-                    podcast: $importDto->getPodcast(),
-                    channel: $importDto->getChannel()
-                );
-            }
-
             $lastImportedDto = $importDto;
-            $episodeImportDto = $this->episodeRssImportManager->importEpisode(
-                $importDto->getPodcast(),
-                $importDto->getItem()
-            );
 
-            if ($episodeImportDto->isNewlyImported()) {
-                $asset = $episodeImportDto->getEpisode()->getAsset();
-                if ($asset instanceof Asset) {
-                    $newlyImportedAssets[] = $asset;
+            try {
+                if ($importDto->getPodcast()->getAttributes()->getLastImportStatus()->is(PodcastLastImportStatus::NotImported)) {
+                    $this->rssImportManager->syncPodcast(
+                        podcast: $importDto->getPodcast(),
+                        channel: $importDto->getChannel()
+                    );
                 }
-                $imported++;
+
+                $episodeImportDto = $this->episodeRssImportManager->importEpisode(
+                    $importDto->getPodcast(),
+                    $importDto->getItem()
+                );
+
+                if ($episodeImportDto->isNewlyImported()) {
+                    $asset = $episodeImportDto->getEpisode()->getAsset();
+                    if ($asset instanceof Asset) {
+                        $newlyImportedAssets[] = $asset;
+                    }
+                    $imported++;
+                }
+            } catch (Throwable $exception) {
+                ++$failed;
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                    sprintf('Episode import failed for podcast (%s)', (string) $importDto->getPodcast()->getId()),
+                    exception: $exception,
+                );
+
+                if (false === $this->entityManager->isOpen()) {
+                    // Flush committed iterations' AssetChangedEvent — an idempotent rerun never re-emits them.
+                    $this->dispatchNewlyImported($newlyImportedAssets);
+                    $this->finishFail($job, $exception);
+
+                    return;
+                }
             }
 
             if ($this->bulkSize === $imported) {
@@ -151,18 +174,42 @@ final class JobPodcastSynchronizerProcessor extends AbstractJobProcessor
             }
         }
 
-        $this->finishProcessCycle($lastImportedDto, $imported, $job);
+        $this->finishProcessCycle($lastImportedDto, $imported, $job, $failed);
+        $this->dispatchNewlyImported($newlyImportedAssets);
+    }
 
-        if (false === empty($newlyImportedAssets)) {
+    /**
+     * Swallows failures — subscribers touch lazy collections (throw on closed EM) and must never block finishFail().
+     *
+     * @param array<int, Asset> $newlyImportedAssets
+     */
+    private function dispatchNewlyImported(array $newlyImportedAssets): void
+    {
+        if ([] === $newlyImportedAssets) {
+            return;
+        }
+
+        try {
             $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection($newlyImportedAssets));
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_PODCAST_RSS_IMPORT,
+                sprintf('Asset changed dispatch failed for %d imported episodes', count($newlyImportedAssets)),
+                exception: $exception,
+            );
         }
     }
 
-    private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job): void
+    private function finishProcessCycle(?PodcastImportIteratorDto $dto, int $imported, JobPodcastSynchronizer $job, int $failed): void
     {
         if (null === $dto || $imported < $this->bulkSize) {
             $imported = (($this->getManagedJob($job)->getBatchProcessedIterationCount()) * $this->bulkSize) + $imported;
-            $this->getManagedJob($job)->setResult(sprintf('Podcast job finished. Imported %d episodes.', $imported));
+            // Failed episodes are skipped permanently (the pointer advances past them) — surface the count.
+            $this->getManagedJob($job)->setResult(sprintf(
+                'Podcast job finished. Imported %d episodes%s.',
+                $imported,
+                $failed > 0 ? sprintf(', %d failed (see logs)', $failed) : App::EMPTY_STRING,
+            ));
             $this->finishSuccess($job);
 
             return;

@@ -28,7 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 #[ORM\UniqueConstraint(fields: ['name', 'identifier', 'extSystem'])]
-#[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['identifier'])]
+#[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['name'])]
 #[AuthorCurrentAuthor]
 class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemIndexableInterface
 {

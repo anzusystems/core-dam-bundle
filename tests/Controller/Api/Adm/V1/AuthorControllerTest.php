@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AuthorUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Closure;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -61,7 +62,6 @@ final class AuthorControllerTest extends AbstractApiController
         $this->assertGreaterThan(0, count($author->getData()));
     }
 
-
     /**
      * @param array{name: string, extSystem: int, extId: string} $requestJson
      *
@@ -100,51 +100,59 @@ final class AuthorControllerTest extends AbstractApiController
         ];
     }
 
-    #[DataProvider('createFailureDataProvider')]
-    public function testCreateFailure(array $requestJson, array $validationErrors): void
+    public function testCreateValidationFailure(): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
 
-        $response = $client->post(AuthorUrl::createPath(), $requestJson);
+        $response = $client->post(AuthorUrl::createPath(), [
+            'name' => 'a',
+            'extSystem' => 0,
+        ]);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
 
         $content = json_decode($response->getContent(), true);
-        $this->assertValidationErrors($content, $validationErrors);
+        $this->assertValidationErrors($content, [
+            'name' => [
+                ValidationException::ERROR_FIELD_LENGTH_MIN,
+            ],
+            'extSystem' => [
+                ValidationException::ERROR_FIELD_EMPTY,
+            ],
+        ]);
     }
 
-    public static function createFailureDataProvider(): array
+    /**
+     * @throws SerializerException
+     */
+    #[DataProvider('duplicateNameProvider')]
+    public function testCreateDuplicateReturnsExisting(Closure $nameTransform): void
     {
+        $client = $this->getApiClient(User::ID_ADMIN);
         $existingAuthor = self::getContainer()
             ->get(AuthorRepository::class)
             ->find(AuthorFixtures::AUTHOR_1);
 
-        return [
-            [
-                'requestJson' => [
-                    'name' => 'a',
-                    'extSystem' => 0,
-                ],
-                'validationErrors' => [
-                    'name' => [
-                        ValidationException::ERROR_FIELD_LENGTH_MIN,
-                    ],
-                    'extSystem' => [
-                        ValidationException::ERROR_FIELD_EMPTY,
-                    ],
-                ],
-            ],
-            [
-                'requestJson' => [
-                    'name' => $existingAuthor->getName(),
-                    'extSystem' => ExtSystemFixtures::ID_CMS,
-                ],
-                'validationErrors' => [
-                    'identifier' => [
-                        ValidationException::ERROR_FIELD_UNIQUE,
-                    ]
-                ],
-            ],
-        ];
+        $response = $client->post(AuthorUrl::createPath(), [
+            'name' => $nameTransform($existingAuthor->getName()),
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+        ]);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $author = $this->serializer->deserialize(
+            $response->getContent(),
+            Author::class
+        );
+        $this->assertSame($existingAuthor->getId(), $author->getId());
+    }
+
+    /**
+     * @return iterable<string, array{Closure(string): string}>
+     */
+    public static function duplicateNameProvider(): iterable
+    {
+        yield 'same case' => [static fn (string $name): string => $name];
+        // The duplicate check relies on a case-insensitive DB collation — pin that assumption.
+        yield 'different case' => [static fn (string $name): string => mb_strtoupper($name)];
     }
 
     /**

@@ -140,6 +140,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
                     'fields' => $this->boostSearchFields($customDataFields),
                     'type' => 'most_fields',
                     'tie_breaker' => 0.3,
+                    'lenient' => true,
                 ],
             ];
         }

@@ -33,13 +33,20 @@ final class AuthorQueryFactory extends AbstractQueryFactory
     {
         if ($this->isFulltextSearch($searchDto)) {
             return [
-                'multi_match' => [
-                    'query' => $searchDto->getText(),
-                    'type' => 'most_fields',
-                    'tie_breaker' => 0.3,
-                    'fields' => [
-                        'name^3',
-                        'name.edgegrams',
+                'bool' => [
+                    'must' => [
+                        'multi_match' => [
+                            'query' => $searchDto->getText(),
+                            'type' => 'most_fields',
+                            'tie_breaker' => 0.3,
+                            'fields' => [
+                                'name^3',
+                                'name.edgegrams',
+                            ],
+                        ],
+                    ],
+                    'should' => [
+                        ['term' => ['reviewed' => ['value' => true, 'boost' => 5]]],
                     ],
                 ],
             ];
@@ -59,8 +66,8 @@ final class AuthorQueryFactory extends AbstractQueryFactory
     protected function getFulltextDefaultOrder(): array
     {
         return [
-            'reviewed' => 'desc',
             '_score' => 'desc',
+            'id' => 'desc',
         ];
     }
 

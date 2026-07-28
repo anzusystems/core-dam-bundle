@@ -29,6 +29,7 @@ final class IndexDefinitionFactory
                 $defs[$fullIndexName] = [
                     'settings' => [
                         'analysis' => [
+                            'char_filter' => $this->getCharFilters(),
                             'filter' => $this->getFilters($language),
                             'analyzer' => $this->getAnalyzers($language),
                         ],
@@ -70,6 +71,16 @@ final class IndexDefinitionFactory
         ], $this->getDefaultFilters());
     }
 
+    private function getCharFilters(): array
+    {
+        return [
+            'underscore_to_space' => [
+                'type' => 'mapping',
+                'mappings' => ['_ => \\u0020'],
+            ],
+        ];
+    }
+
     private function getDefaultFilters(): array
     {
         return [
@@ -98,14 +109,14 @@ final class IndexDefinitionFactory
             'unique_on_pos',
         ];
         if ($this->indexSettings->hasElasticLanguageDictionary($language)) {
-            $langFilters += [
+            $langFilters = array_merge($langFilters, [
                 'lang_syn',
                 'lang_stop',
                 'lang_hunspell',
-            ];
-            $exactStopFilters += [
+            ]);
+            $exactStopFilters = array_merge($exactStopFilters, [
                 'lang_stop',
-            ];
+            ]);
         }
 
         return array_merge([
@@ -138,6 +149,19 @@ final class IndexDefinitionFactory
                 'tokenizer' => 'standard',
                 'filter' => ['lowercase', 'asciifolding', 'edgegrams', 'unique_on_pos'],
                 'char_filter' => ['html_strip'],
+            ],
+            // Intentionally no lang_stop, unlike exact_stop — stopword removal would eat person-name particles.
+            'author_exact_stop' => [
+                'type' => 'custom',
+                'tokenizer' => 'standard',
+                'filter' => ['lowercase', 'asciifolding', 'unique_on_pos'],
+                'char_filter' => ['html_strip', 'underscore_to_space'],
+            ],
+            'author_edgegrams' => [
+                'type' => 'custom',
+                'tokenizer' => 'standard',
+                'filter' => ['lowercase', 'asciifolding', 'edgegrams', 'unique_on_pos'],
+                'char_filter' => ['html_strip', 'underscore_to_space'],
             ],
         ];
     }

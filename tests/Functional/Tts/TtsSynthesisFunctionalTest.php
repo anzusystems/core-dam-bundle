@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\ElevenlabsClientMock;
+use Throwable;
 
 /** End-to-end TTS pipeline: dispatch → chunk → ElevenLabs mock → concat → assert duration. */
 final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
@@ -99,8 +100,9 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
     }
 
     /**
-     * Transient provider error (5xx) on the single-chunk inline path → claim released back to
-     * Waiting, exception rethrown for transport redelivery, reserved asset kept.
+     * Transient provider error on a fresh request (sync transport drives the chunk inline) → claim
+     * released back to Waiting, rethrown for redelivery, reserved asset kept, chunk re-armed.
+     * A second delivery must reuse the existing chunk instead of creating duplicates.
      */
     public function testTransientProviderErrorReleasesClaimForRedelivery(): void
     {
@@ -112,15 +114,7 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         $requestId = (string) $result->narrationRequest->getId();
         $reservedAssetId = (string) $result->getAssetId();
 
-        $thrown = null;
-
-        try {
-            ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
-        } catch (TtsProviderException $e) {
-            $thrown = $e;
-        }
-
-        self::assertNotNull($thrown, 'A transient provider error must be rethrown for transport redelivery.');
+        $thrown = $this->deliverExpectingTransient($requestId);
         self::assertTrue($thrown->isTransient());
 
         $request = $this->requestRepo->find($requestId);
@@ -133,6 +127,16 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
             Asset::class,
             $this->assetRepo->find($reservedAssetId),
             'The reserved asset must survive a transient failure.',
+        );
+
+        $chunks = $this->chunkRepo->findAllByRequest($requestId);
+        self::assertCount(1, $chunks, 'The chunk must persist for a billing-free retry.');
+
+        $this->deliverExpectingTransient($requestId);
+        self::assertCount(
+            1,
+            $this->chunkRepo->findAllByRequest($requestId),
+            'Redelivery must reuse the existing chunk, never duplicate it.',
         );
     }
 
@@ -200,13 +204,15 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
 
     public function testRegenerateViaSysDispatchUpdatesSnapshotAndHash(): void
     {
+        $mainImageFileId = '018e0000-0000-7000-8000-000000000001';
         $initialText = 'Initial narration text for regeneration test.';
-        $asset = $this->dispatchAndProcess($initialText);
+        $asset = $this->dispatchAndProcess($initialText, $mainImageFileId);
         $assetId = (string) $asset->getId();
 
         $initialTts = $this->ttsAssetRepo->findByAsset($asset);
         self::assertNotNull($initialTts);
         self::assertSame(hash('sha256', $initialText), $initialTts->getSourceTextHash());
+        self::assertSame($mainImageFileId, $initialTts->getMainImageFileId());
 
         $newText = 'Completely new narration text replacing the old one for this asset.';
         $regenDto = $this->buildSynthesizeDto($newText)->setRegenerateAssetId($assetId);
@@ -225,11 +231,32 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         self::assertTrue($regenTts->getStatus()->is(TtsAudioStatus::Active), 'TtsAsset must be Active after regen.');
         self::assertSame($newText, $regenTts->getSourceTextSnapshot(), 'Snapshot must reflect new text.');
         self::assertSame(hash('sha256', $newText), $regenTts->getSourceTextHash(), 'Hash must match new text.');
+        self::assertSame(
+            $mainImageFileId,
+            $regenTts->getMainImageFileId(),
+            'Regen without mainImageFileId in the request must keep the previous value.',
+        );
     }
 
-    private function dispatchAndProcess(string $text): Asset
+    private function deliverExpectingTransient(string $requestId): TtsProviderException
     {
-        $result = $this->dispatchFacade->synthesize($this->buildSynthesizeDto($text), enqueue: false);
+        try {
+            ($this->planHandler)(new TtsNarrationRequestMessage($requestId));
+        } catch (Throwable $e) {
+            // The sync test transport wraps the chunk handler's throw; production delivers it bare.
+            $root = TtsProviderException::findTransient($e);
+            self::assertInstanceOf(TtsProviderException::class, $root);
+
+            return $root;
+        }
+
+        self::fail('A transient provider error must be rethrown for transport redelivery.');
+    }
+
+    private function dispatchAndProcess(string $text, ?string $mainImageFileId = null): Asset
+    {
+        $dto = $this->buildSynthesizeDto($text)->setMainImageFileId($mainImageFileId);
+        $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
 
         $this->drivePipeline((string) $result->narrationRequest->getId());

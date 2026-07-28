@@ -37,6 +37,8 @@ final class SettingsConfiguration
     public const string TTS_ELEVENLABS_API_HOST_DEFAULT = 'https://api.elevenlabs.io';
     public const string TTS_GOOGLE_API_HOST = 'tts_google_api_host';
     public const string TTS_GOOGLE_API_HOST_DEFAULT = 'https://texttospeech.googleapis.com';
+    public const string URL_FILE_TRUSTED_DOMAINS_KEY = 'url_file_trusted_domains';
+    public const string URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY = 'url_file_allow_private_networks';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,
