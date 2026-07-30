@@ -22,9 +22,9 @@ final class ColorType extends AbstractValueObjectType
 
         try {
             /**
-             * @var string $r
-             * @var string $g
-             * @var string $b
+             * @var non-empty-string $r
+             * @var non-empty-string $g
+             * @var non-empty-string $b
              *
              * @psalm-suppress PossiblyUndefinedArrayOffset
              */
