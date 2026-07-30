@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixes
+* Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
+* Fail url asset file download on any non-`2xx` status instead of writing an empty file
+
 ## [1.40.0](https://github.com/anzusystems/core-dam-bundle/compare/1.39.0...1.40.0) (2025-09-22)
 
 ### Features

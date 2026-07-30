@@ -50,7 +50,7 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
         $this->factory(allowPrivateNetworks: true)->downloadFile('http://127.0.0.1/a.mp3');
 
         self::assertCount(1, $this->requests);
-        self::assertSame(UrlFileFactory::TRUSTED_MAX_REDIRECTS, $this->requests[0]['options']['max_redirects']);
+        self::assertSame(UrlFileFactory::MAX_REDIRECTS, $this->requests[0]['options']['max_redirects']);
     }
 
     // Matcher logic only — hostnames don't resolve, so the raw dev-mode client keeps this deterministic.
@@ -62,12 +62,34 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
         self::assertCount(2, $this->requests);
     }
 
-    public function testUntrustedHttpsGetsZeroRedirects(): void
+    // Podcast enclosures (traffic.omny.fm → CDN) are untrusted redirect trackers; refusing to follow them
+    // wrote the empty 302 body as the audio file and the asset failed later on invalid_mime_type.
+    public function testUntrustedRedirectIsFollowedToThePayload(): void
     {
-        $this->factory()->downloadFile('https://8.8.8.8/a.mp3');
+        $file = $this->factory([
+            new MockResponse('', ['http_code' => 302, 'redirect_url' => 'https://8.8.4.4/final.mp3']),
+            new MockResponse('mp3-bytes', ['http_code' => 200]),
+        ])->downloadFile('https://8.8.8.8/a.mp3');
 
-        self::assertCount(1, $this->requests);
-        self::assertSame(0, $this->requests[0]['options']['max_redirects']);
+        self::assertCount(2, $this->requests);
+        self::assertSame('mp3-bytes', file_get_contents((string) $file->getRealPath()));
+    }
+
+    public function testUnfollowedRedirectFailsInsteadOfWritingEmptyFile(): void
+    {
+        $this->expectException(AssetFileProcessFailed::class);
+
+        $this->factory([new MockResponse('', ['http_code' => 302])])->downloadFile('https://8.8.8.8/a.mp3');
+    }
+
+    public function testUntrustedHttpsDowngradeOnRedirectIsRejected(): void
+    {
+        $this->expectException(AssetFileProcessFailed::class);
+
+        $this->factory([
+            new MockResponse('', ['http_code' => 302, 'redirect_url' => 'http://8.8.4.4/final.mp3']),
+            new MockResponse('mp3-bytes', ['http_code' => 200]),
+        ])->downloadFile('https://8.8.8.8/a.mp3');
     }
 
     #[DataProvider('provideRejectedUrls')]
@@ -118,15 +140,19 @@ final class UrlFileFactoryTest extends CoreDamKernelTestCase
     {
         $this->expectException(AssetFileProcessFailed::class);
 
-        $this->factory(new MockResponse('', ['http_code' => 404]))->downloadFile('https://8.8.8.8/a.mp3');
+        $this->factory([new MockResponse('', ['http_code' => 404])])->downloadFile('https://8.8.8.8/a.mp3');
     }
 
-    private function factory(?MockResponse $response = null, bool $allowPrivateNetworks = false): UrlFileFactory
+    /**
+     * @param list<MockResponse> $responses
+     */
+    private function factory(array $responses = [], bool $allowPrivateNetworks = false): UrlFileFactory
     {
-        $client = new MockHttpClient(function (string $method, string $url, array $options) use ($response): MockResponse {
+        $queue = $responses;
+        $client = new MockHttpClient(function (string $method, string $url, array $options) use (&$queue): MockResponse {
             $this->requests[] = ['url' => $url, 'options' => $options];
 
-            return $response ?? new MockResponse('mp3-bytes', ['http_code' => 200]);
+            return array_shift($queue) ?? new MockResponse('mp3-bytes', ['http_code' => 200]);
         });
 
         return new UrlFileFactory(

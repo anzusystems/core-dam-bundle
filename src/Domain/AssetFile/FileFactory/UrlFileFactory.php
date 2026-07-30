@@ -23,11 +23,12 @@ use Throwable;
 
 final readonly class UrlFileFactory
 {
-    public const int TRUSTED_MAX_REDIRECTS = 5;
+    public const int MAX_REDIRECTS = 5;
     public const int MAX_DOWNLOAD_BYTES = 2_147_483_648;
     private const int TIMEOUT = 600;
     private const int MAX_DURATION = 600;
     private const string HTTPS_SCHEME = 'https';
+    private const string HTTPS_PREFIX = self::HTTPS_SCHEME . '://';
 
     private HttpClientInterface $trustedClient;
     private HttpClientInterface $safeClient;
@@ -45,8 +46,8 @@ final readonly class UrlFileFactory
         string $urlFileTrustedDomains = '',
         bool $urlFileAllowPrivateNetworks = false,
     ) {
-        // Trust only relaxes https-only and allows capped redirects; the private-network guard stays on
-        // every redirect hop. The dev-only flag lifts it so local domains (sme.local → 127.0.0.1) work.
+        // Trust only relaxes the https-only rule; the private-network guard stays on every redirect hop.
+        // The dev-only flag lifts it so local domains (sme.local → 127.0.0.1) work.
         $this->trustedClient = $urlFileAllowPrivateNetworks ? $client : new NoPrivateNetworkHttpClient($client);
         $this->safeClient = new NoPrivateNetworkHttpClient($client);
         $this->urlFileTrustedDomains = array_values(array_filter(array_map(
@@ -78,10 +79,18 @@ final readonly class UrlFileFactory
         $options = [
             'timeout' => self::TIMEOUT,
             'max_duration' => self::MAX_DURATION,
-            'max_redirects' => $trusted ? self::TRUSTED_MAX_REDIRECTS : 0,
-            'on_progress' => static function (int $dlNow, int $dlSize): void {
+            // Podcast enclosures are redirect trackers (traffic.omny.fm → CDN), so untrusted hosts need a
+            // budget too; NoPrivateNetworkHttpClient re-resolves and re-checks the target IP on every hop.
+            'max_redirects' => self::MAX_REDIRECTS,
+            'on_progress' => static function (int $dlNow, int $dlSize, array $info) use ($trusted): void {
                 if ($dlNow > self::MAX_DOWNLOAD_BYTES || $dlSize > self::MAX_DOWNLOAD_BYTES) {
                     throw new RuntimeException(sprintf('download_size_exceeded (max %d bytes)', self::MAX_DOWNLOAD_BYTES));
+                }
+
+                // Keeps https-only true across hops — a redirect must not downgrade an untrusted download.
+                $hopUrl = $info['url'] ?? null;
+                if (false === $trusted && is_string($hopUrl) && false === str_starts_with(strtolower($hopUrl), self::HTTPS_PREFIX)) {
+                    throw new RuntimeException('untrusted_non_https_redirect');
                 }
             },
         ];
@@ -94,8 +103,11 @@ final readonly class UrlFileFactory
                 options: $options,
             );
 
-            if (Response::HTTP_BAD_REQUEST <= $response->getStatusCode()) {
-                throw new AssetFileProcessFailed(AssetFileFailedType::DownloadFailed);
+            $statusCode = $response->getStatusCode();
+            // Anything but 2xx has no payload — an unfollowed 3xx used to yield a 0-byte file that only
+            // surfaced later as an invalid_mime_type (application/x-empty) on the asset file.
+            if (Response::HTTP_OK > $statusCode || Response::HTTP_MULTIPLE_CHOICES <= $statusCode) {
+                throw new RuntimeException(sprintf('unexpected_status (%d)', $statusCode));
             }
 
             $fileSystem = $this->fileSystemProvider->getTmpFileSystem();
