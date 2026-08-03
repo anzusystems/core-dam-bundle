@@ -83,10 +83,8 @@ final class Exiftool
             return self::READ_TAGS;
         }
 
-        // IPTC:CodedCharacterSet is missing on most archival photos; reading with a fixed byte-passthrough
-        // charset (also exiftool's own default assumption for undeclared IPTC) lets getTags() detect the
-        // real per-value charset afterward instead of guessing one charset for the whole file. Files that
-        // DO declare a CodedCharacterSet (e.g. UTF8) still take priority over this override, unaffected.
+        // Byte-passthrough read for undeclared IPTC so normalizeIptcCharset() can detect the real
+        // per-value charset; a declared CodedCharacterSet still takes priority over this override.
         return [...self::READ_TAGS, '-charset', 'iptc=latin1'];
     }
 

@@ -108,9 +108,6 @@ final class ImageControllerTest extends AbstractApiController
     }
 
     /**
-     * Partial-success semantics: unauthorized items are skipped (and logged), never a 4xx —
-     * the CMS drops a whole batch permanently on any 4xx, so valid items must survive.
-     *
      * @param list<string> $itemDamIds
      * @param list<string> $expectedWrittenDamIds
      */

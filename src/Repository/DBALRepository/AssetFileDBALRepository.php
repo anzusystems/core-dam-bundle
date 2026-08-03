@@ -20,8 +20,8 @@ final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
     }
 
     /**
-     * Sets first_used_at only for rows where it is still NULL - the condition is enforced in the SQL
-     * itself so the write stays atomic under concurrent requests (write-once contract).
+     * Write-once: the IS NULL condition lives in the SQL itself so the write stays atomic under
+     * concurrent requests.
      *
      * @param array<string, DateTimeImmutable> $firstUsedAtByDamId
      */
