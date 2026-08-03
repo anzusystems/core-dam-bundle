@@ -10,6 +10,8 @@
 * Add `CollectionHelper::groupBy`
 
 ### Changes
+* **BC break**: raise minimum PHP version to `>=8.5`; base Docker image updated to `anzusystems/php:5.1.0-php85-cli-vipsffmpeg`
+* Add Symfony `^8.0` support alongside `^7.4` (dual compatibility); `symfony/http-kernel`, `symfony/dependency-injection` and `symfony/messenger` stay on the `7.4` line for now because `petitpress/gps-messenger-bundle` and `symfony/monolog-bundle` don't allow Symfony 8 yet
 * **BC break**: `ExtSystemCallbackInterface` gains a required `isImageFileUsedBulk()` method — every implementor must add it
 * **BC break**: `AssetFileManager::canBeRemoved()` is now `final` — override `canBeRemovedBulk()` instead
 * Usage checks on delete are now fail-closed (an unavailable or erroring callback is treated as used); the usage check is now also enforced in `AssetFacade::delete()`/`deleteBulk()`; `deleteUnfinishedUploads` skips assets in use instead of failing
