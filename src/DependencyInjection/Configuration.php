@@ -567,7 +567,7 @@ class Configuration implements ConfigurationInterface
     {
         return (new TreeBuilder('exif_metadata'))->getRootNode()
             ->children()
-                ->scalarNode('iptc_charset')
+                ->scalarNode('iptc_fallback_charset')
                     ->defaultNull()
                 ->end()
             ->end()

@@ -6,7 +6,7 @@
 * Add sys endpoint `POST /api/sys/v1/image/first-use` to write-once set `AssetFile::$firstUsedAt` — hosts need a migration for the new nullable `asset_file.first_used_at` column; the column ships unmapped until the host migration lands; partial-success semantics: unknown damIds and items in licences outside the caller's scope are skipped (skips logged as warning), never a 4xx
 * Add `JobAuthorNameReindex` job, automatically enqueued when an author is renamed via the adm update endpoint — hosts need a migration for the new `job_author_name_reindex` table (JOINED `Job` inheritance)
 * Add Elasticsearch asset mapping fields `authorNames` (fulltext, boosted) and `uploadedAt` (`epoch_second`, exposed as adm range filter `uploadedAtFrom`/`uploadedAtUntil`) — a full reindex is required to populate existing documents
-* Add `exif_metadata.iptc_charset` config option (default `null`, preserves previous behaviour)
+* Add `exif_metadata.iptc_fallback_charset` config option (default `null`, preserves previous behaviour): when set, undeclared IPTC values are auto-detected as UTF-8 per value, falling back to the configured charset only when the value isn't valid UTF-8
 * Add `CollectionHelper::groupBy`
 
 ### Changes
