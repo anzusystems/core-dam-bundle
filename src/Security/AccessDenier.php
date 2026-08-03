@@ -16,6 +16,15 @@ final class AccessDenier
     ) {
     }
 
+    public function isGranted(string $attribute, mixed $subject = null): bool
+    {
+        if (false === $this->configurationProvider->getSettings()->isAclCheckEnabled()) {
+            return true;
+        }
+
+        return $this->authorizationChecker->isGranted($attribute, $subject);
+    }
+
     /**
      * @throws AccessDeniedException
      */
@@ -24,11 +33,7 @@ final class AccessDenier
         mixed $subject = null,
         string $message = 'Access Denied.'
     ): void {
-        if (false === $this->configurationProvider->getSettings()->isAclCheckEnabled()) {
-            return;
-        }
-
-        if ($this->authorizationChecker->isGranted($attribute, $subject)) {
+        if ($this->isGranted($attribute, $subject)) {
             return;
         }
 

@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -21,6 +22,7 @@ class AssetFileAttributes
     private string $checksum;
 
     #[ORM\Column(type: Types::STRING, length: 36)]
+    #[Serialize]
     private string $originAssetId;
 
     #[ORM\Column(type: Types::STRING, length: 255)]

@@ -566,6 +566,11 @@ class Configuration implements ConfigurationInterface
     private function addExifMetadataSection(): NodeDefinition
     {
         return (new TreeBuilder('exif_metadata'))->getRootNode()
+            ->children()
+                ->scalarNode('iptc_charset')
+                    ->defaultNull()
+                ->end()
+            ->end()
             ->append($this->addSpecificMetadataSection('common_metadata'))
             ->append($this->addSpecificMetadataSection('image_metadata'))
         ;

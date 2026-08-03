@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
+use DateTimeImmutable;
 
 class AssetAdmListDto extends AbstractEntityDto
 {
@@ -130,5 +131,11 @@ class AssetAdmListDto extends AbstractEntityDto
     public function isMainFileOverrideInternal(): ?bool
     {
         return $this->asset->getMainFile()?->getFlags()->isOverrideInternal();
+    }
+
+    #[Serialize]
+    public function getUploadedAt(): DateTimeImmutable
+    {
+        return $this->asset->getDates()->getUploadedAt();
     }
 }

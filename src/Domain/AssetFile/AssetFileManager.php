@@ -60,9 +60,24 @@ class AssetFileManager extends AbstractManager
     /**
      * @param T $assetFile
      */
-    public function canBeRemoved(AssetFile $assetFile): bool
+    final public function canBeRemoved(AssetFile $assetFile): bool
     {
-        return true;
+        return $this->canBeRemovedBulk([$assetFile])[(string) $assetFile->getId()] ?? false;
+    }
+
+    /**
+     * @param iterable<T> $assetFiles
+     *
+     * @return array<string, bool> asset file id => can be removed
+     */
+    public function canBeRemovedBulk(iterable $assetFiles): array
+    {
+        $ids = [];
+        foreach ($assetFiles as $assetFile) {
+            $ids[] = (string) $assetFile->getId();
+        }
+
+        return array_fill_keys($ids, true);
     }
 
     /**

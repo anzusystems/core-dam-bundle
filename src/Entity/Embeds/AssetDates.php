@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -13,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 class AssetDates
 {
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Serialize]
     private DateTimeImmutable $uploadedAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]

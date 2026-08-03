@@ -46,6 +46,16 @@ return static function (ContainerConfigurator $configurator): void {
                         ],
                     ],
                 ],
+                'authorNames' => [
+                    'type' => 'text',
+                    'analyzer' => 'exact_stop',
+                    'fields' => [
+                        'lang' => [
+                            'type' => 'text',
+                            'analyzer' => 'lang',
+                        ],
+                    ],
+                ],
                 'fileIds' => [
                     'type' => 'keyword',
                 ],
@@ -75,6 +85,10 @@ return static function (ContainerConfigurator $configurator): void {
                     'format' => 'epoch_second',
                 ],
                 'modifiedAt' => [
+                    'type' => 'date',
+                    'format' => 'epoch_second',
+                ],
+                'uploadedAt' => [
                     'type' => 'date',
                     'format' => 'epoch_second',
                 ],

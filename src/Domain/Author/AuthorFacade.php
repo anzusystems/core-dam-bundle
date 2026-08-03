@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
+use AnzuSystems\CommonBundle\Domain\Job\JobFacade;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\JobAuthorNameReindex;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
@@ -25,6 +28,8 @@ final class AuthorFacade
     public function __construct(
         private readonly AuthorManager $authorManager,
         private readonly AuthorRepository $authorRepository,
+        private readonly JobFacade $jobFacade,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -71,6 +76,8 @@ final class AuthorFacade
     {
         $this->validator->validate($newAuthor, $author);
 
+        $originalName = $author->getName();
+
         try {
             $this->authorManager->beginTransaction();
             $this->authorManager->update($author, $newAuthor);
@@ -84,7 +91,25 @@ final class AuthorFacade
             throw new RuntimeException('author_update_failed', 0, $exception);
         }
 
+        if ($originalName !== $author->getName()) {
+            // Scope: adm update only. Other name-change flows (merge, clean-phrase tooling) are not wired to reindex.
+            $this->createAuthorNameReindexJob($author);
+        }
+
         return $author;
+    }
+
+    private function createAuthorNameReindexJob(Author $author): void
+    {
+        try {
+            $this->jobFacade->create((new JobAuthorNameReindex())->setAuthorId((string) $author->getId()));
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_JOB,
+                sprintf('Failed to create JobAuthorNameReindex for author (%s)', (string) $author->getId()),
+                exception: $exception,
+            );
+        }
     }
 
     public function delete(Author $author): bool

@@ -25,7 +25,12 @@ final class AssetQueryFactory extends AbstractQueryFactory
         StringIndexBuilder::CUSTOM_DESCRIPTION_KEY => [
             StringIndexBuilder::CUSTOM_DESCRIPTION_KEY . '.lang' => 1,
         ],
+        self::AUTHOR_NAMES_FIELD => [
+            self::AUTHOR_NAMES_FIELD => 2,
+            self::AUTHOR_NAMES_FIELD . '.lang' => 1,
+        ],
     ];
+    private const string AUTHOR_NAMES_FIELD = 'authorNames';
 
     private const string CUSTOM_SORT_DATE_FIELD = 'createdAt';
     private const string CUSTOM_SORT_DATE_DECAY_FUNCTION = 'exp';
@@ -137,7 +142,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
             return [
                 'multi_match' => [
                     'query' => $searchDto->getText(),
-                    'fields' => $this->boostSearchFields($customDataFields),
+                    'fields' => $this->boostSearchFields([...$customDataFields, self::AUTHOR_NAMES_FIELD]),
                     'type' => 'most_fields',
                     'tie_breaker' => 0.3,
                     'lenient' => true,
@@ -251,6 +256,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp(), 'epoch_second');
+        $this->applyRangeFilter($filter, 'uploadedAt', $searchDto->getUploadedAtFrom()?->getTimestamp(), $searchDto->getUploadedAtUntil()?->getTimestamp(), 'epoch_second');
 
         return $filter;
     }

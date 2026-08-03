@@ -30,6 +30,8 @@ final class DamLogger
     public const string NAMESPACE_ASSET_FILE_DOWNLOAD = 'AssetFileDownload';
     public const string NAMESPACE_JOB = 'Job';
     public const string NAMESPACE_TTS = 'Tts';
+    public const string NAMESPACE_EXT_SYSTEM_CALLBACK = 'ExtSystemCallback';
+    public const string NAMESPACE_ASSET_FILE_FIRST_USE = 'AssetFileFirstUse';
 
     public function __construct(
         private readonly LoggerInterface $journalLogger,

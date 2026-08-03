@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Features
+* Add sys endpoint `POST /api/sys/v1/image/first-use` to write-once set `AssetFile::$firstUsedAt` — hosts need a migration for the new nullable `asset_file.first_used_at` column; the column ships unmapped until the host migration lands; partial-success semantics: unknown damIds and items in licences outside the caller's scope are skipped (skips logged as warning), never a 4xx
+* Add `JobAuthorNameReindex` job, automatically enqueued when an author is renamed via the adm update endpoint — hosts need a migration for the new `job_author_name_reindex` table (JOINED `Job` inheritance)
+* Add Elasticsearch asset mapping fields `authorNames` (fulltext, boosted) and `uploadedAt` (`epoch_second`, exposed as adm range filter `uploadedAtFrom`/`uploadedAtUntil`) — a full reindex is required to populate existing documents
+* Add `exif_metadata.iptc_charset` config option (default `null`, preserves previous behaviour)
+* Add `CollectionHelper::groupBy`
+
+### Changes
+* **BC break**: `ExtSystemCallbackInterface` gains a required `isImageFileUsedBulk()` method — every implementor must add it
+* **BC break**: `AssetFileManager::canBeRemoved()` is now `final` — override `canBeRemovedBulk()` instead
+* Usage checks on delete are now fail-closed (an unavailable or erroring callback is treated as used); the usage check is now also enforced in `AssetFacade::delete()`/`deleteBulk()`; `deleteUnfinishedUploads` skips assets in use instead of failing
+* `AssetFileCopyBuilder` carries `flags.singleUse` and records `originAssetId` (source file id) on copies; `originAssetId` is now serialized
+* `AssetSysFactory::createFromDto()` accepts an optional service-level `$sourceStorageName` — storage override was removed from the sys DTO wire format
+
 ### Fixes
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file

@@ -90,7 +90,9 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                                 'custom_data_title^5',
                                                 'custom_data_title.edgegrams^1',
                                                 'custom_data_title.lang^1',
-                                                'custom_data_headline'
+                                                'custom_data_headline',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
                                             ],
                                             'type' => 'most_fields',
                                             'tie_breaker' => 0.3,
@@ -132,7 +134,9 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_title^5',
                                         'custom_data_title.edgegrams^1',
                                         'custom_data_title.lang^1',
-                                        'custom_data_headline'
+                                        'custom_data_headline',
+                                        'authorNames^2',
+                                        'authorNames.lang^1',
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,
@@ -160,7 +164,9 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_title^5',
                                         'custom_data_title.edgegrams^1',
                                         'custom_data_title.lang^1',
-                                        'custom_data_headline'
+                                        'custom_data_headline',
+                                        'authorNames^2',
+                                        'authorNames.lang^1',
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,
@@ -188,7 +194,9 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                         'custom_data_title^5',
                                         'custom_data_title.edgegrams^1',
                                         'custom_data_title.lang^1',
-                                        'custom_data_headline'
+                                        'custom_data_headline',
+                                        'authorNames^2',
+                                        'authorNames.lang^1',
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,

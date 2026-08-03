@@ -52,6 +52,7 @@ anzu_systems_core_dam:
     tmp_dir_path: '%kernel.project_dir%/var/mnt/data/tmp'
     fixtures_dir_path: '%kernel.project_dir%/var/mnt/data/fixtures'
   exif_metadata:
+    iptc_charset: cp1250
     common_metadata:
       Software: ~
       ExifVersion:

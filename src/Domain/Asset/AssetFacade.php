@@ -28,6 +28,7 @@ use AnzuSystems\CoreDamBundle\Repository\AudioFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\ReadableCollection;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -107,39 +108,25 @@ class AssetFacade
         $dateTime = App::getAppDate()->modify(self::UNFINISHED_UPLOADS_DELETE_MODIFIER);
         $assets = $this->assetRepository->findToDelete($dateTime, self::UNFINISHED_UPLOADS_DELETE_LIMIT);
 
-        foreach ($assets as $asset) {
-            $this->toDeleting($asset);
+        $deleted = 0;
+        foreach ($this->filterNotUsed($assets) as $asset) {
+            $this->transitionToDeleting($asset);
+            ++$deleted;
         }
 
-        return $assets->count();
+        return $deleted;
     }
 
     public function toDeleting(Asset $asset): void
     {
-        foreach ($asset->getSlots() as $slot) {
-            if (false === $this->assetFileManagerProvider->getManager($slot->getAssetFile())->canBeRemoved($slot->getAssetFile())) {
-                throw new ForbiddenOperationException(ForbiddenOperationException::FILE_IS_USED);
-            }
-        }
-        $this->assetManager->beginTransaction();
-
-        try {
-            $this->assetStatusManager->toDeleting($asset);
-            $this->assetManager->commit();
-
-            $this->messageBus->dispatch(new AssetChangeStateMessage($asset));
-        } catch (Throwable $exception) {
-            if ($this->assetManager->isTransactionActive()) {
-                $this->assetManager->rollback();
-            }
-
-            throw new RuntimeException('asset_deleting_failed', 0, $exception);
-        }
+        $this->assertNotUsed($asset);
+        $this->transitionToDeleting($asset);
     }
 
     public function delete(Asset $asset): void
     {
         $this->assertDeletable($asset);
+        $this->assertNotUsed($asset);
         $this->assetManager->beginTransaction();
         $deleteId = (string) $asset->getId();
 
@@ -174,12 +161,15 @@ class AssetFacade
      * @param ReadableCollection<int, Asset> $assets
      *
      * @throws FilesystemException
+     * @throws ForbiddenOperationException
      */
     public function deleteBulk(ReadableCollection $assets): int
     {
         if ($assets->isEmpty()) {
             return 0;
         }
+        $this->assertNotUsedBulk($assets);
+
         // No emptyAll here: the caller wraps the batch in one transaction and empties the stash after commit.
         foreach ($assets as $asset) {
             $this->assertDeletable($asset);
@@ -191,6 +181,24 @@ class AssetFacade
         return $assets->count();
     }
 
+    private function transitionToDeleting(Asset $asset): void
+    {
+        $this->assetManager->beginTransaction();
+
+        try {
+            $this->assetStatusManager->toDeleting($asset);
+            $this->assetManager->commit();
+
+            $this->messageBus->dispatch(new AssetChangeStateMessage($asset));
+        } catch (Throwable $exception) {
+            if ($this->assetManager->isTransactionActive()) {
+                $this->assetManager->rollback();
+            }
+
+            throw new RuntimeException('asset_deleting_failed', 0, $exception);
+        }
+    }
+
     /**
      * @throws DependencyExistsException
      */
@@ -198,6 +206,77 @@ class AssetFacade
     {
         if ($this->extSystemRepository->existsByTtsFreeAudioEpilogAsset($asset)) {
             throw (new DependencyExistsException())->addDependency(ExtSystem::class);
+        }
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
+    private function assertNotUsed(Asset $asset): void
+    {
+        $this->assertNotUsedBulk(new ArrayCollection([$asset]));
+    }
+
+    /**
+     * @param ReadableCollection<int, Asset> $assets
+     *
+     * @return list<AssetFile>
+     */
+    private function collectAssetFiles(ReadableCollection $assets): array
+    {
+        $assetFiles = [];
+        foreach ($assets as $asset) {
+            foreach ($asset->getSlots() as $slot) {
+                $assetFiles[] = $slot->getAssetFile();
+            }
+        }
+
+        return $assetFiles;
+    }
+
+    /**
+     * @param ReadableCollection<int, Asset> $assets
+     *
+     * @return list<Asset>
+     */
+    private function filterNotUsed(ReadableCollection $assets): array
+    {
+        $assetFiles = $this->collectAssetFiles($assets);
+        if ([] === $assetFiles) {
+            return array_values($assets->toArray());
+        }
+
+        $canBeRemovedMap = $this->assetFileManagerProvider->canBeRemovedBulk($assetFiles);
+        $notUsed = [];
+        foreach ($assets as $asset) {
+            foreach ($asset->getSlots() as $slot) {
+                if (false === ($canBeRemovedMap[(string) $slot->getAssetFile()->getId()] ?? false)) {
+                    continue 2;
+                }
+            }
+            $notUsed[] = $asset;
+        }
+
+        return $notUsed;
+    }
+
+    /**
+     * @param ReadableCollection<int, Asset> $assets
+     *
+     * @throws ForbiddenOperationException
+     */
+    private function assertNotUsedBulk(ReadableCollection $assets): void
+    {
+        $assetFiles = $this->collectAssetFiles($assets);
+        if ([] === $assetFiles) {
+            return;
+        }
+
+        $canBeRemovedMap = $this->assetFileManagerProvider->canBeRemovedBulk($assetFiles);
+        foreach ($assetFiles as $assetFile) {
+            if (false === ($canBeRemovedMap[(string) $assetFile->getId()] ?? false)) {
+                throw new ForbiddenOperationException(ForbiddenOperationException::FILE_IS_USED);
+            }
         }
     }
 

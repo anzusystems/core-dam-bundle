@@ -280,6 +280,9 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
             $copiedImage = $this->entityManager->find(ImageFile::class, $copyingItem['targetMainFile']);
             $this->assertNotSame($copiedImage->getAssetAttributes()->getFilePath(), $imageFile->getAssetAttributes()->getFilePath());
+            $this->assertTrue($imageFile->getFlags()->isSingleUse());
+            $this->assertSame($imageFile->getFlags()->isSingleUse(), $copiedImage->getFlags()->isSingleUse());
+            $this->assertSame((string) $imageFile->getId(), $copiedImage->getAssetAttributes()->getOriginAssetId());
             $this->assertCount($imageFile->getResizes()->count(), $copiedImage->getResizes());
             $this->assertCount($imageFile->getRegionsOfInterest()->count(), $copiedImage->getRegionsOfInterest());
             foreach ($imageFile->getAsset()->getSlots() as $slot) {

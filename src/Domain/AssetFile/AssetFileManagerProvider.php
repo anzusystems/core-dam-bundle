@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\Document\DocumentManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 
 class AssetFileManagerProvider extends AbstractManager
@@ -24,7 +25,32 @@ class AssetFileManagerProvider extends AbstractManager
 
     public function getManager(AssetFile $assetFile): AssetFileManager
     {
-        return match ($assetFile->getAssetType()) {
+        return $this->getManagerByType($assetFile->getAssetType());
+    }
+
+    /**
+     * @param iterable<AssetFile> $assetFiles
+     *
+     * @return array<string, bool> asset file id => can be removed
+     */
+    public function canBeRemovedBulk(iterable $assetFiles): array
+    {
+        $grouped = CollectionHelper::groupBy(
+            $assetFiles,
+            static fn (AssetFile $assetFile): string => $assetFile->getAssetType()->value,
+        );
+
+        $result = [];
+        foreach ($grouped as $type => $assetFilesOfType) {
+            $result += $this->getManagerByType(AssetType::from($type))->canBeRemovedBulk($assetFilesOfType);
+        }
+
+        return $result;
+    }
+
+    private function getManagerByType(AssetType $type): AssetFileManager
+    {
+        return match ($type) {
             AssetType::Image => $this->imageManager,
             AssetType::Video => $this->videoManager,
             AssetType::Audio => $this->audioManager,

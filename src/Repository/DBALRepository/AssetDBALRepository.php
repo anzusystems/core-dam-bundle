@@ -65,7 +65,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
                 entity.asset_flags_described, entity.asset_flags_visible, entity.asset_flags_generated_by_system,
                 entity.asset_file_properties_slot_names, entity.asset_file_properties_distributes_in_services,
                 entity.asset_file_properties_from_rss, entity.asset_flags_tts_audio, entity.asset_file_properties_width, entity.asset_file_properties_height,
-                entity.created_at, entity.modified_at,
+                entity.created_at, entity.modified_at, entity.dates_uploaded_at,
                 entity.created_by_id, entity.licence_id,
                 asf.asset_attributes_origin_file_name, asf.asset_attributes_mime_type, asf.asset_attributes_size,
                 image.image_attributes_rotation, image.image_attributes_most_dominant_color, image.image_attributes_width, image.image_attributes_height,
@@ -111,8 +111,10 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
 
             $data[$index]['created_at'] = DateTimeHelper::datetimeOrNull($item['created_at']);
             $data[$index]['modified_at'] = DateTimeHelper::datetimeOrNull($item['modified_at']);
+            $data[$index]['dates_uploaded_at'] = DateTimeHelper::datetimeOrNull($item['dates_uploaded_at']);
             $data[$index]['keyword_ids'] = $keywordMap[$item['id']]['ids'] ?? [];
             $data[$index]['author_ids'] = $authorMap[$item['id']]['ids'] ?? [];
+            $data[$index]['author_names'] = $authorMap[$item['id']]['names'] ?? [];
             $data[$index]['file_ids'] = $assetSlotMap[$item['id']]['ids'] ?? [];
             $data[$index]['image_attributes_most_dominant_color'] = is_string($item['image_attributes_most_dominant_color'])
                 ? Color::fromString($item['image_attributes_most_dominant_color'])

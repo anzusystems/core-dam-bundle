@@ -21,6 +21,13 @@ interface ExtSystemCallbackInterface
     public function isImageFileUsed(ImageFile $imageFile): bool;
 
     /**
+     * @param iterable<ImageFile> $imageFiles
+     *
+     * @return array<string, bool> image file id => used
+     */
+    public function isImageFileUsedBulk(iterable $imageFiles): array;
+
+    /**
      * @param Collection<array-key, Asset> $collection
      */
     public function notifyAssetsChanged(Collection $collection): void;

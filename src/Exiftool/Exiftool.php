@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Exiftool;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -19,6 +20,7 @@ final class Exiftool
     public function __construct(
         private readonly string $exiftoolBin,
         private readonly DamLogger $damLogger,
+        private readonly ?string $iptcCharset = null,
     ) {
     }
 
@@ -28,7 +30,7 @@ final class Exiftool
     public function getTags(string $filePath): array
     {
         try {
-            return $this->parseOutput($this->execute($filePath, self::READ_TAGS));
+            return $this->parseOutput($this->execute($filePath, $this->buildReadTags()));
         } catch (RuntimeException $exception) {
             $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), exception: $exception);
 
@@ -53,6 +55,21 @@ final class Exiftool
         $tags = $this->getTags($filePath);
 
         return isset($tags['Rotation']) ? (int) $tags['Rotation'] : 0;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function buildReadTags(): array
+    {
+        if (null === $this->iptcCharset || App::EMPTY_STRING === $this->iptcCharset) {
+            return self::READ_TAGS;
+        }
+
+        // IPTC:CodedCharacterSet is missing on most archival photos; exiftool then assumes latin-1 and mangles
+        // diacritics. Files that DO declare a CodedCharacterSet (e.g. UTF8) still take priority over this
+        // default, so they are unaffected.
+        return [...self::READ_TAGS, '-charset', 'iptc=' . $this->iptcCharset];
     }
 
     private function execute(string $filePath, array $command = []): string

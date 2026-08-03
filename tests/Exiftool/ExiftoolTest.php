@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 final class ExiftoolTest extends CoreDamKernelTestCase
 {
     private const string FIXTURE = __DIR__ . '/../data/Files/exifTags.jpg';
+    private const string IPTC_CP1250_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250Undeclared.jpg';
 
     private Exiftool $exiftool;
 
@@ -44,5 +45,18 @@ final class ExiftoolTest extends CoreDamKernelTestCase
     public function testUnreadableFileYieldsNoTags(): void
     {
         self::assertSame([], $this->exiftool->getTags(__DIR__ . '/does-not-exist.jpg'));
+    }
+
+    /**
+     * Fixture IPTC bytes are cp1250-encoded with no IPTC:CodedCharacterSet tag (the common case for
+     * archival photos). Without an assumed IPTC charset, exiftool falls back to latin-1 and mangles
+     * diacritics (e.g. "Žákovič" -> "Žákoviè").
+     */
+    public function testCp1250IptcWithoutDeclaredCharsetIsDecodedCorrectly(): void
+    {
+        $tags = $this->exiftool->getTags(self::IPTC_CP1250_UNDECLARED_FIXTURE);
+
+        self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
+        self::assertSame('Peter Žákovič', $tags['By-line'] ?? null);
     }
 }
