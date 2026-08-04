@@ -6,15 +6,28 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexSettings;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class IndexDefinitionFactory
 {
+    /**
+     * @var iterable<IndexDefinitionExtensionInterface>
+     */
+    private readonly iterable $indexDefinitionExtensions;
+
+    /**
+     * @param iterable<IndexDefinitionExtensionInterface> $indexDefinitionExtensions
+     */
     public function __construct(
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly CustomDataIndexDefinitionFactory $customDataIndexDefinitionFactory,
         private readonly IndexSettings $indexSettings,
+        #[AutowireIterator(tag: IndexDefinitionExtensionInterface::class)]
+        iterable $indexDefinitionExtensions = [],
     ) {
+        $this->indexDefinitionExtensions = $indexDefinitionExtensions;
     }
 
     public function buildIndexDefinitions(array $indexMappings): array
@@ -23,10 +36,12 @@ final class IndexDefinitionFactory
         $defs = [];
         foreach ($indexMappings as $resourceName => $mappings) {
             foreach ($this->extSystemConfigurationProvider->getExtSystemSlugs() as $slug) {
-                $definitions = $this->customDataIndexDefinitionFactory->getCustomDataDefinitions($slug);
+                $customDataDefinitions = Asset::getIndexName() === $resourceName
+                    ? $this->customDataIndexDefinitionFactory->getCustomDataDefinitions($slug)
+                    : [];
                 $fullIndexName = $this->indexSettings->getFullIndexNameBySlug($resourceName, $slug);
 
-                $defs[$fullIndexName] = [
+                $definition = [
                     'settings' => [
                         'analysis' => [
                             'char_filter' => $this->getCharFilters(),
@@ -37,10 +52,18 @@ final class IndexDefinitionFactory
                     'mappings' => [
                         'properties' => array_merge(
                             $mappings,
-                            $definitions
+                            $customDataDefinitions
                         ),
                     ],
                 ];
+
+                foreach ($this->indexDefinitionExtensions as $indexDefinitionExtension) {
+                    if ($indexDefinitionExtension->supports($resourceName, $slug)) {
+                        $definition = $indexDefinitionExtension->extend($resourceName, $slug, $definition);
+                    }
+                }
+
+                $defs[$fullIndexName] = $definition;
             }
         }
 

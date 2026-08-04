@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexBuilder;
+use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AssetFulltextQueryBuilderInterface;
+use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\DefaultAssetFulltextQueryBuilder;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNamGeneratorInterface;
@@ -82,6 +84,7 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(FileNameGeneratorInterface::class . ' $fileNameGenerator', FileNameGenerator::class);
     $services->set(DirectoryNamGeneratorInterface::class . ' $directoryNameGenerator', DirectoryNameGenerator::class);
     $services->set(SluggerInterface::class . ' $slugger', Slugger::class);
+    $services->alias(AssetFulltextQueryBuilderInterface::class, DefaultAssetFulltextQueryBuilder::class);
 
     $services->set(AssetFileMetadataProcessHandler::class)
         ->tag('messenger.message_handler', ['handler' => DistributionRemoteProcessingCheckMessage::class])
