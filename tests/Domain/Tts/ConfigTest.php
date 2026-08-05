@@ -52,6 +52,28 @@ final class ConfigTest extends TestCase
         yield 'just past the quiet boundary' => [Config::TARGET_LUFS_MIN - 0.01];
     }
 
+    #[DataProvider('providePreviewDurations')]
+    public function testPreviewDurationClampsRatioBetweenMinAndMax(int $masterDurationSeconds, int $expected): void
+    {
+        self::assertSame(
+            $expected,
+            self::config(enabled: false, targetLufs: 0.0)->getPreviewDurationSeconds($masterDurationSeconds),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{int, int}>
+     */
+    public static function providePreviewDurations(): iterable
+    {
+        yield 'unprocessed master (0s) falls back to the minimum' => [0, 30];
+        yield 'short narration stays at the minimum' => [60, 30];
+        yield 'mid-length narration unlocks the ratio share' => [150, 60];
+        yield 'fraction floors so at most the ratio share unlocks' => [149, 59];
+        yield 'boundary narration reaches the maximum exactly' => [225, 90];
+        yield 'long narration caps at the maximum' => [600, 90];
+    }
+
     private static function config(bool $enabled, float $targetLufs): Config
     {
         return new Config(

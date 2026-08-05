@@ -28,6 +28,9 @@ final readonly class Config
         private int $audioRetentionGraceSeconds,
         private bool $loudnessNormalizationEnabled,
         private float $targetLufs,
+        private int $previewMinDurationSeconds = 30,
+        private int $previewMaxDurationSeconds = 90,
+        private float $previewDurationRatio = 0.4,
     ) {
         if ($loudnessNormalizationEnabled && ($targetLufs < self::TARGET_LUFS_MIN || $targetLufs > self::TARGET_LUFS_MAX)) {
             throw new RuntimeException(sprintf(
@@ -37,6 +40,20 @@ final readonly class Config
                 $targetLufs,
             ));
         }
+    }
+
+    /**
+     * A short narration unlocks at most the configured ratio of its length; a long one caps at the max preview length.
+     */
+    public function getPreviewDurationSeconds(int $masterDurationSeconds): int
+    {
+        return min(
+            $this->previewMaxDurationSeconds,
+            max(
+                $this->previewMinDurationSeconds,
+                (int) floor($masterDurationSeconds * $this->previewDurationRatio),
+            ),
+        );
     }
 
     public function getTargetLufs(): ?float
