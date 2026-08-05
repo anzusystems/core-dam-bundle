@@ -27,6 +27,8 @@ final class DefaultAssetFulltextQueryBuilderTest extends TestCase
                         'custom_data_title.edgegrams^1',
                         'custom_data_title.lang^1',
                         'custom_data_headline',
+                        'keywordNames^2',
+                        'keywordNames.lang^1',
                         'authorNames^2',
                         'authorNames.lang^1',
                     ],
@@ -51,7 +53,8 @@ final class DefaultAssetFulltextQueryBuilderTest extends TestCase
             [
                 'custom_data_title^1',
                 'custom_data_headline^2',
-                'authorNames^3',
+                'keywordNames^3',
+                'authorNames^4',
             ],
             $query['multi_match']['fields'],
         );

@@ -23,6 +23,8 @@ final class StringIndexBuilder implements IndexBuilderInterface
 
     public static function optimizeImageCustomData(array $searchableCustomData): array
     {
+        // Image title was removed from the product model. Keep the legacy title index field as the
+        // strongly boosted description field so existing mappings and query boosts stay compatible.
         if (isset($searchableCustomData[self::CUSTOM_DESCRIPTION_KEY])) {
             $searchableCustomData[self::CUSTOM_DATA_TITLE_KEY] = $searchableCustomData[self::CUSTOM_DESCRIPTION_KEY];
         }

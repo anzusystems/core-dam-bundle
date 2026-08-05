@@ -56,6 +56,16 @@ return static function (ContainerConfigurator $configurator): void {
                         ],
                     ],
                 ],
+                'keywordNames' => [
+                    'type' => 'text',
+                    'analyzer' => 'exact_stop',
+                    'fields' => [
+                        'lang' => [
+                            'type' => 'text',
+                            'analyzer' => 'lang',
+                        ],
+                    ],
+                ],
                 'fileIds' => [
                     'type' => 'keyword',
                 ],

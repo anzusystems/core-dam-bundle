@@ -22,8 +22,13 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
             self::AUTHOR_NAMES_FIELD => 2,
             self::AUTHOR_NAMES_FIELD . '.lang' => 1,
         ],
+        self::KEYWORD_NAMES_FIELD => [
+            self::KEYWORD_NAMES_FIELD => 2,
+            self::KEYWORD_NAMES_FIELD . '.lang' => 1,
+        ],
     ];
     private const string AUTHOR_NAMES_FIELD = 'authorNames';
+    private const string KEYWORD_NAMES_FIELD = 'keywordNames';
 
     public function __construct(
         private readonly bool $searcNext = true,
@@ -38,7 +43,11 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
         return [
             'multi_match' => [
                 'query' => $text,
-                'fields' => $this->boostSearchFields([...$customDataFields, self::AUTHOR_NAMES_FIELD]),
+                'fields' => $this->boostSearchFields([
+                    ...$customDataFields,
+                    self::KEYWORD_NAMES_FIELD,
+                    self::AUTHOR_NAMES_FIELD,
+                ]),
                 'type' => 'most_fields',
                 'tie_breaker' => 0.3,
                 'lenient' => true,

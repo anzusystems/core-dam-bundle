@@ -113,6 +113,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
             $data[$index]['modified_at'] = DateTimeHelper::datetimeOrNull($item['modified_at']);
             $data[$index]['dates_uploaded_at'] = DateTimeHelper::datetimeOrNull($item['dates_uploaded_at']);
             $data[$index]['keyword_ids'] = $keywordMap[$item['id']]['ids'] ?? [];
+            $data[$index]['keyword_names'] = $keywordMap[$item['id']]['names'] ?? [];
             $data[$index]['author_ids'] = $authorMap[$item['id']]['ids'] ?? [];
             $data[$index]['author_names'] = $authorMap[$item['id']]['names'] ?? [];
             $data[$index]['file_ids'] = $assetSlotMap[$item['id']]['ids'] ?? [];
