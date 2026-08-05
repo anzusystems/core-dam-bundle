@@ -30,7 +30,6 @@ use Symfony\Component\HttpFoundation\File\File;
 /** Generates the short-clip preview AudioFile for the master's asset. */
 final readonly class PreviewMedia
 {
-    private const int PREVIEW_DURATION_SECONDS = 30;
     private const int PREVIEW_START_SECONDS = 0;
     private const int PREVIEW_PATH_RANDOM_BYTES = 8;
     private const int PREVIEW_ROUTE_RANDOM_BYTES = 16;
@@ -44,6 +43,7 @@ final readonly class PreviewMedia
         private AudioStatusFacade $audioStatusFacade,
         private FfmpegService $ffmpegService,
         private EntityManagerInterface $entityManager,
+        private Config $config,
     ) {
     }
 
@@ -65,7 +65,7 @@ final readonly class PreviewMedia
             $previewFile = $this->ffmpegService->clipAudio(
                 $masterLocalFile,
                 self::PREVIEW_START_SECONDS,
-                self::PREVIEW_DURATION_SECONDS,
+                $this->config->getPreviewDurationSeconds($masterAudioFile->getAttributes()->getDuration()),
             );
 
             /** @var array{0: AudioFile, 1: AssetFileRoute} $created */
