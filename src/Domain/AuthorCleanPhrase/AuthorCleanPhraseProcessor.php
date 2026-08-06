@@ -69,7 +69,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
             );
 
             if (is_string($match)) {
-                $authorParts[$index] = trim($match);
+                $authorParts[$index] = self::reorderSurnameFirst(trim($match));
             }
         }
 
@@ -78,6 +78,22 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
             array_unique(array_filter($authorParts)),
             CollectionHelper::newCollection($authorIdReplacements)
         );
+    }
+
+    /**
+     * "Surname, Firstname" is a press-credit convention, not two authors — the comma reorders the
+     * one name instead of separating names. Applied only to exactly two comma parts; anything else
+     * (three parts, a trailing comma) is left verbatim, since guessing there would silently rewrite
+     * a credit nobody can reconstruct afterwards.
+     */
+    private static function reorderSurnameFirst(string $name): string
+    {
+        $parts = array_values(array_filter(
+            array_map(trim(...), explode(',', $name)),
+            static fn (string $part): bool => '' !== $part,
+        ));
+
+        return 2 === count($parts) ? $parts[1] . ' ' . $parts[0] : $name;
     }
 
     /**
@@ -116,16 +132,32 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
      */
     private function split(string $string, ExtSystem $extSystem): array
     {
-        $patterns = $this->cleanPhraseWordCache->getList(
-            type: AuthorCleanPhraseType::Word,
-            mode: AuthorCleanPhraseMode::Split,
-            extSystem: $extSystem
-        );
+        // Word and regex split phrases both apply, and every pattern splits what the previous ones
+        // left — a separator expressible only as a regex (a dash that separates co-credits only with
+        // a space beside it, unlike the one inside a double-barrelled surname) is a split rule like
+        // any other.
+        $patterns = [
+            ...$this->cleanPhraseWordCache->getList(
+                type: AuthorCleanPhraseType::Word,
+                mode: AuthorCleanPhraseMode::Split,
+                extSystem: $extSystem
+            ),
+            ...$this->cleanPhraseWordCache->getList(
+                type: AuthorCleanPhraseType::Regex,
+                mode: AuthorCleanPhraseMode::Split,
+                extSystem: $extSystem
+            ),
+        ];
 
+        $parts = [$string];
         foreach ($patterns as $pattern) {
-            return array_map('trim', preg_split($pattern, $string));
+            $split = [];
+            foreach ($parts as $part) {
+                $split = [...$split, ...(preg_split($pattern, $part) ?: [$part])];
+            }
+            $parts = $split;
         }
 
-        return [trim($string)];
+        return array_map('trim', $parts);
     }
 }
