@@ -18,6 +18,19 @@ use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
 
 final class AuthorCleanPhraseProcessor extends AbstractManager
 {
+    /**
+     * Upper bound for {@see reorderSurnameFirst}: "Smadišová, Stanislava" plus a middle name or a
+     * compound surname still reads as one person, while a longer comma-joined phrase like
+     * "Archív SME, redakcia denníka" is left verbatim instead of being silently rewritten.
+     */
+    private const int REORDER_MAX_WORDS = 3;
+
+    /**
+     * Hides commas from the split rules while {@see processString} runs with the surname-first
+     * reading. Any character absent from credit data works; this one is never valid text.
+     */
+    private const string COMMA_PLACEHOLDER = "\u{0001}";
+
     public function __construct(
         private readonly AuthorCleanPhraseCache $cleanPhraseWordCache,
         private readonly AuthorCleanPhraseRepository $repository,
@@ -27,10 +40,29 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     /**
      * @throws AuthorCleanPhraseException
      */
-    public function processString(string $string, ExtSystem $extSystem): AuthorCleanResultDto
+    /**
+     * @param bool $commaReversesName how this source reads a comma: a separator between two credits
+     *  (cms uploads: "SME, TASR") or the "Surname, Firstname" convention reversing one name
+     *  (the NAXOS archive: "Smadišová, Stanislava"). Off by default — a caller that knows its source
+     *  opts in, and the rules themselves stay shared.
+     *
+     * @throws AuthorCleanPhraseException
+     */
+    public function processString(string $string, ExtSystem $extSystem, bool $commaReversesName = false): AuthorCleanResultDto
     {
-        $authorParts = $this->split($string, $extSystem);
+        $authorParts = $this->split(
+            $commaReversesName ? str_replace(',', self::COMMA_PLACEHOLDER, $string) : $string,
+            $extSystem,
+        );
         $authorParts = $this->removeWords($authorParts, $extSystem);
+        if ($commaReversesName) {
+            $authorParts = array_map(
+                static fn (string $part): string => self::reorderSurnameFirst(
+                    str_replace(self::COMMA_PLACEHOLDER, ',', $part),
+                ),
+                $authorParts,
+            );
+        }
 
         return $this->replace($string, $authorParts, $extSystem);
     }
@@ -69,7 +101,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
             );
 
             if (is_string($match)) {
-                $authorParts[$index] = self::reorderSurnameFirst(trim($match));
+                $authorParts[$index] = trim($match);
             }
         }
 
@@ -81,19 +113,22 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     }
 
     /**
-     * "Surname, Firstname" is a press-credit convention, not two authors — the comma reorders the
-     * one name instead of separating names. Applied only to exactly two comma parts; anything else
-     * (three parts, a trailing comma) is left verbatim, since guessing there would silently rewrite
-     * a credit nobody can reconstruct afterwards.
+     * Applied by {@see processString} only under the surname-first reading, and public so a caller
+     * doing its own part-level cleaning reverses names exactly the same way.
      */
-    private static function reorderSurnameFirst(string $name): string
+    public static function reorderSurnameFirst(string $name): string
     {
         $parts = array_values(array_filter(
             array_map(trim(...), explode(',', $name)),
             static fn (string $part): bool => '' !== $part,
         ));
+        if (2 !== count($parts)) {
+            return $name;
+        }
 
-        return 2 === count($parts) ? $parts[1] . ' ' . $parts[0] : $name;
+        $words = preg_split('~\s+~u', implode(' ', $parts), flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return self::REORDER_MAX_WORDS < count($words) ? $name : $parts[1] . ' ' . $parts[0];
     }
 
     /**
