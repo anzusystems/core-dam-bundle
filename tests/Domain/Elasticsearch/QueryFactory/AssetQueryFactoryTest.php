@@ -84,24 +84,49 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                             'query' => [
                                 'bool' => [
                                     'must' => [
-                                        'multi_match' => [
-                                            'query' => 'test',
-                                            'fields' => [
-                                                'custom_data_title^5',
-                                                'custom_data_title.edgegrams^1',
-                                                'custom_data_title.lang^1',
-                                                'custom_data_headline',
-                                                'keywordNames^2',
-                                                'keywordNames.lang^1',
-                                                'authorNames^2',
-                                                'authorNames.lang^1',
+                                        'bool' => [
+                                            'should' => [
+                                            [
+                                                'multi_match' => [
+                                                    'query' => 'test',
+                                                    'fields' => [
+                                                        'custom_data_title^5',
+                                                        'custom_data_title.edgegrams^1',
+                                                        'custom_data_title.lang^1',
+                                                        'custom_data_headline',
+                                                        'keywordNames^2',
+                                                        'keywordNames.lang^1',
+                                                        'authorNames^2',
+                                                        'authorNames.lang^1',
+                                                    ],
+                                                    'type' => 'most_fields',
+                                                    'tie_breaker' => 0.3,
+                                                    'lenient' => true,
+                                                ],
                                             ],
-                                            'type' => 'most_fields',
-                                            'tie_breaker' => 0.3,
-                                            'lenient' => true,
-                                            'fuzziness' => 'AUTO',
-                                            'prefix_length' => 2,
-                                            'max_expansions' => 50
+                                            [
+                                                'multi_match' => [
+                                                    'query' => 'test',
+                                                    'fields' => [
+                                                        'custom_data_title^5',
+                                                        'custom_data_title.lang^1',
+                                                        'custom_data_headline',
+                                                        'keywordNames^2',
+                                                        'keywordNames.lang^1',
+                                                        'authorNames^2',
+                                                        'authorNames.lang^1',
+                                                    ],
+                                                    'type' => 'most_fields',
+                                                    'tie_breaker' => 0.3,
+                                                    'lenient' => true,
+                                                    'fuzziness' => 'AUTO',
+                                                    'prefix_length' => 2,
+                                                    'max_expansions' => 50,
+                                                    'boost' => 0.5,
+                                                ],
+                                            ],
+                                            ],
+                                            'minimum_should_match' => 1,
                                         ]
                                     ],
                                     'filter' => [],
@@ -133,24 +158,49 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'custom_data_title^5',
-                                        'custom_data_title.edgegrams^1',
-                                        'custom_data_title.lang^1',
-                                        'custom_data_headline',
-                                        'keywordNames^2',
-                                        'keywordNames.lang^1',
-                                        'authorNames^2',
-                                        'authorNames.lang^1',
+                                'bool' => [
+                                    'should' => [
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.edgegrams^1',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3,
-                                    'lenient' => true,
-                                    'fuzziness' => 'AUTO',
-                                    'prefix_length' => 2,
-                                    'max_expansions' => 50
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                            'fuzziness' => 'AUTO',
+                                            'prefix_length' => 2,
+                                            'max_expansions' => 50,
+                                            'boost' => 0.5,
+                                        ],
+                                    ],
+                                    ],
+                                    'minimum_should_match' => 1,
                                 ]
                             ],
                             'filter' => [],
@@ -168,24 +218,49 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'custom_data_title^5',
-                                        'custom_data_title.edgegrams^1',
-                                        'custom_data_title.lang^1',
-                                        'custom_data_headline',
-                                        'keywordNames^2',
-                                        'keywordNames.lang^1',
-                                        'authorNames^2',
-                                        'authorNames.lang^1',
+                                'bool' => [
+                                    'should' => [
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.edgegrams^1',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3,
-                                    'lenient' => true,
-                                    'fuzziness' => 'AUTO',
-                                    'prefix_length' => 2,
-                                    'max_expansions' => 50
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                            'fuzziness' => 'AUTO',
+                                            'prefix_length' => 2,
+                                            'max_expansions' => 50,
+                                            'boost' => 0.5,
+                                        ],
+                                    ],
+                                    ],
+                                    'minimum_should_match' => 1,
                                 ]
                             ],
                             'filter' => [],
@@ -203,24 +278,49 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                     [
                         'bool' => [
                             'must' => [
-                                'multi_match' => [
-                                    'query' => 'test',
-                                    'fields' => [
-                                        'custom_data_title^5',
-                                        'custom_data_title.edgegrams^1',
-                                        'custom_data_title.lang^1',
-                                        'custom_data_headline',
-                                        'keywordNames^2',
-                                        'keywordNames.lang^1',
-                                        'authorNames^2',
-                                        'authorNames.lang^1',
+                                'bool' => [
+                                    'should' => [
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.edgegrams^1',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                        ],
                                     ],
-                                    'type' => 'most_fields',
-                                    'tie_breaker' => 0.3,
-                                    'lenient' => true,
-                                    'fuzziness' => 'AUTO',
-                                    'prefix_length' => 2,
-                                    'max_expansions' => 50
+                                    [
+                                        'multi_match' => [
+                                            'query' => 'test',
+                                            'fields' => [
+                                                'custom_data_title^5',
+                                                'custom_data_title.lang^1',
+                                                'custom_data_headline',
+                                                'keywordNames^2',
+                                                'keywordNames.lang^1',
+                                                'authorNames^2',
+                                                'authorNames.lang^1',
+                                            ],
+                                            'type' => 'most_fields',
+                                            'tie_breaker' => 0.3,
+                                            'lenient' => true,
+                                            'fuzziness' => 'AUTO',
+                                            'prefix_length' => 2,
+                                            'max_expansions' => 50,
+                                            'boost' => 0.5,
+                                        ],
+                                    ],
+                                    ],
+                                    'minimum_should_match' => 1,
                                 ]
                             ],
                             'filter' => [],

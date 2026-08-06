@@ -30,9 +30,11 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
     private const string AUTHOR_NAMES_FIELD = 'authorNames';
     private const string KEYWORD_NAMES_FIELD = 'keywordNames';
 
+    private const string EDGEGRAMS_SUFFIX = '.edgegrams';
     private const string FUZZINESS = 'AUTO';
     private const int FUZZINESS_PREFIX_LENGTH = 2;
     private const int FUZZINESS_MAX_EXPANSIONS = 50;
+    private const float FUZZY_CLAUSE_BOOST = 0.5;
 
     public function __construct(
         private readonly bool $searcNext = true,
@@ -40,32 +42,66 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
     }
 
     /**
-     * Fuzziness covers what stemming cannot: typos, and words the hunspell dictionary does not know
-     * (proper nouns, participles) or cannot reach because the source text was written without
-     * diacritics — a query "horucava" against an archive that stores "horucavy" differs by one
-     * edit. `prefix_length` keeps the first two characters exact, which both rules out matches on
-     * a different word and bounds how many terms a fuzzy query expands to on the edge-ngram fields.
+     * Two clauses, because fuzziness must not reach the edge-ngram fields. Those hold every prefix
+     * of every word, so an edit-distance match against them compares the query to fragments rather
+     * than to words: "pica" lands one substitution away from "pira", a prefix of "Pirátska", and
+     * pulls in a document nobody searched for. The exact clause keeps prefix search working, the
+     * fuzzy clause covers typos and forms the dictionary cannot reach, and its lower boost keeps
+     * approximate hits below the real ones.
      *
-     * @return array{multi_match: array{query: string, fields: list<string>, type: string, tie_breaker: float, lenient: bool, fuzziness: string, prefix_length: int, max_expansions: int}}
+     * @return array{bool: array{should: list<array<string, mixed>>, minimum_should_match: int}}
      */
     public function build(string $text, array $customDataFields, ExtSystem $extSystem): array
     {
+        $fields = $this->boostSearchFields([
+            ...$customDataFields,
+            self::KEYWORD_NAMES_FIELD,
+            self::AUTHOR_NAMES_FIELD,
+        ]);
+
         return [
-            'multi_match' => [
-                'query' => $text,
-                'fields' => $this->boostSearchFields([
-                    ...$customDataFields,
-                    self::KEYWORD_NAMES_FIELD,
-                    self::AUTHOR_NAMES_FIELD,
-                ]),
-                'type' => 'most_fields',
-                'tie_breaker' => 0.3,
-                'lenient' => true,
-                'fuzziness' => self::FUZZINESS,
-                'prefix_length' => self::FUZZINESS_PREFIX_LENGTH,
-                'max_expansions' => self::FUZZINESS_MAX_EXPANSIONS,
+            'bool' => [
+                'should' => [
+                    ['multi_match' => self::multiMatch($text, $fields)],
+                    ['multi_match' => self::multiMatch($text, self::withoutEdgegrams($fields)) + [
+                        'fuzziness' => self::FUZZINESS,
+                        'prefix_length' => self::FUZZINESS_PREFIX_LENGTH,
+                        'max_expansions' => self::FUZZINESS_MAX_EXPANSIONS,
+                        'boost' => self::FUZZY_CLAUSE_BOOST,
+                    ]],
+                ],
+                'minimum_should_match' => 1,
             ],
         ];
+    }
+
+    /**
+     * @param list<string> $fields
+     *
+     * @return array{query: string, fields: list<string>, type: string, tie_breaker: float, lenient: bool}
+     */
+    private static function multiMatch(string $text, array $fields): array
+    {
+        return [
+            'query' => $text,
+            'fields' => $fields,
+            'type' => 'most_fields',
+            'tie_breaker' => 0.3,
+            'lenient' => true,
+        ];
+    }
+
+    /**
+     * @param list<string> $fields
+     *
+     * @return list<string>
+     */
+    private static function withoutEdgegrams(array $fields): array
+    {
+        return array_values(array_filter(
+            $fields,
+            static fn (string $field): bool => false === str_contains($field, self::EDGEGRAMS_SUFFIX),
+        ));
     }
 
     /**

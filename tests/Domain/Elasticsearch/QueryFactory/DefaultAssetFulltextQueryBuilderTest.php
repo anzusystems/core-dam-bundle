@@ -20,24 +20,51 @@ final class DefaultAssetFulltextQueryBuilderTest extends TestCase
 
         self::assertSame(
             [
-                'multi_match' => [
-                    'query' => 'search text',
-                    'fields' => [
-                        'custom_data_title^5',
-                        'custom_data_title.edgegrams^1',
-                        'custom_data_title.lang^1',
-                        'custom_data_headline',
-                        'keywordNames^2',
-                        'keywordNames.lang^1',
-                        'authorNames^2',
-                        'authorNames.lang^1',
+                'bool' => [
+                    'should' => [
+                        [
+                            'multi_match' => [
+                                'query' => 'search text',
+                                'fields' => [
+                                    'custom_data_title^5',
+                                    'custom_data_title.edgegrams^1',
+                                    'custom_data_title.lang^1',
+                                    'custom_data_headline',
+                                    'keywordNames^2',
+                                    'keywordNames.lang^1',
+                                    'authorNames^2',
+                                    'authorNames.lang^1',
+                                ],
+                                'type' => 'most_fields',
+                                'tie_breaker' => 0.3,
+                                'lenient' => true,
+                            ],
+                        ],
+                        [
+                            'multi_match' => [
+                                'query' => 'search text',
+                                // No edge-ngram field: a fuzzy match against word prefixes reaches
+                                // unrelated documents ("pica" is one edit from the "pira" prefix).
+                                'fields' => [
+                                    'custom_data_title^5',
+                                    'custom_data_title.lang^1',
+                                    'custom_data_headline',
+                                    'keywordNames^2',
+                                    'keywordNames.lang^1',
+                                    'authorNames^2',
+                                    'authorNames.lang^1',
+                                ],
+                                'type' => 'most_fields',
+                                'tie_breaker' => 0.3,
+                                'lenient' => true,
+                                'fuzziness' => 'AUTO',
+                                'prefix_length' => 2,
+                                'max_expansions' => 50,
+                                'boost' => 0.5,
+                            ],
+                        ],
                     ],
-                    'type' => 'most_fields',
-                    'tie_breaker' => 0.3,
-                    'lenient' => true,
-                    'fuzziness' => 'AUTO',
-                    'prefix_length' => 2,
-                    'max_expansions' => 50,
+                    'minimum_should_match' => 1,
                 ],
             ],
             $query,
@@ -59,7 +86,7 @@ final class DefaultAssetFulltextQueryBuilderTest extends TestCase
                 'keywordNames^3',
                 'authorNames^4',
             ],
-            $query['multi_match']['fields'],
+            $query['bool']['should'][0]['multi_match']['fields'],
         );
     }
 }
