@@ -119,28 +119,26 @@ final class IndexDefinitionFactory
         ];
     }
 
+    /**
+     * Folding runs LAST in the language-aware analyzers, and that order is load-bearing: both the
+     * hunspell dictionary and the stop word list are written with diacritics, so folding first
+     * turns every accented word into a lookup miss — "horúčavy" stayed "horucavy" instead of
+     * lemmatizing to "horucava", and stop words like "že" survived. Same order as core-cms.
+     */
     private function getAnalyzers(Language $language): array
     {
-        $langFilters = [
-            'lowercase',
-            'asciifolding',
-            'unique_on_pos',
-        ];
-        $exactStopFilters = [
-            'lowercase',
-            'asciifolding',
-            'unique_on_pos',
-        ];
+        $langFilters = ['lowercase'];
+        $exactStopFilters = ['lowercase'];
         if ($this->indexSettings->hasElasticLanguageDictionary($language)) {
             $langFilters = array_merge($langFilters, [
                 'lang_syn',
                 'lang_stop',
                 'lang_hunspell',
             ]);
-            $exactStopFilters = array_merge($exactStopFilters, [
-                'lang_stop',
-            ]);
+            $exactStopFilters[] = 'lang_stop';
         }
+        $langFilters = array_merge($langFilters, ['asciifolding', 'unique_on_pos']);
+        $exactStopFilters = array_merge($exactStopFilters, ['asciifolding', 'unique_on_pos']);
 
         return array_merge([
             'lang' => [

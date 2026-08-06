@@ -98,7 +98,10 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                             ],
                                             'type' => 'most_fields',
                                             'tie_breaker' => 0.3,
-                                            'lenient' => true
+                                            'lenient' => true,
+                                            'fuzziness' => 'AUTO',
+                                            'prefix_length' => 2,
+                                            'max_expansions' => 50
                                         ]
                                     ],
                                     'filter' => [],
@@ -144,7 +147,10 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,
-                                    'lenient' => true
+                                    'lenient' => true,
+                                    'fuzziness' => 'AUTO',
+                                    'prefix_length' => 2,
+                                    'max_expansions' => 50
                                 ]
                             ],
                             'filter' => [],
@@ -176,7 +182,10 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,
-                                    'lenient' => true
+                                    'lenient' => true,
+                                    'fuzziness' => 'AUTO',
+                                    'prefix_length' => 2,
+                                    'max_expansions' => 50
                                 ]
                             ],
                             'filter' => [],
@@ -208,7 +217,10 @@ final class AssetQueryFactoryTest extends CoreDamKernelTestCase
                                     ],
                                     'type' => 'most_fields',
                                     'tie_breaker' => 0.3,
-                                    'lenient' => true
+                                    'lenient' => true,
+                                    'fuzziness' => 'AUTO',
+                                    'prefix_length' => 2,
+                                    'max_expansions' => 50
                                 ]
                             ],
                             'filter' => [],

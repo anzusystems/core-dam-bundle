@@ -30,13 +30,23 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
     private const string AUTHOR_NAMES_FIELD = 'authorNames';
     private const string KEYWORD_NAMES_FIELD = 'keywordNames';
 
+    private const string FUZZINESS = 'AUTO';
+    private const int FUZZINESS_PREFIX_LENGTH = 2;
+    private const int FUZZINESS_MAX_EXPANSIONS = 50;
+
     public function __construct(
         private readonly bool $searcNext = true,
     ) {
     }
 
     /**
-     * @return array{multi_match: array{query: string, fields: list<string>, type: string, tie_breaker: float, lenient: bool}}
+     * Fuzziness covers what stemming cannot: typos, and words the hunspell dictionary does not know
+     * (proper nouns, participles) or cannot reach because the source text was written without
+     * diacritics — a query "horucava" against an archive that stores "horucavy" differs by one
+     * edit. `prefix_length` keeps the first two characters exact, which both rules out matches on
+     * a different word and bounds how many terms a fuzzy query expands to on the edge-ngram fields.
+     *
+     * @return array{multi_match: array{query: string, fields: list<string>, type: string, tie_breaker: float, lenient: bool, fuzziness: string, prefix_length: int, max_expansions: int}}
      */
     public function build(string $text, array $customDataFields, ExtSystem $extSystem): array
     {
@@ -51,6 +61,9 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
                 'type' => 'most_fields',
                 'tie_breaker' => 0.3,
                 'lenient' => true,
+                'fuzziness' => self::FUZZINESS,
+                'prefix_length' => self::FUZZINESS_PREFIX_LENGTH,
+                'max_expansions' => self::FUZZINESS_MAX_EXPANSIONS,
             ],
         ];
     }
