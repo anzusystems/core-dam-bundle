@@ -90,33 +90,24 @@ final readonly class EpisodeRssImportManager
                 return $this->assignToPodcastEpisodeAndExistingAsset($episode, $asset, $podcastItem);
             }
 
-            $slotOriginUrl = (string) $slot->getAssetFile()->getAssetAttributes()->getOriginUrl();
-            // Slot is used but URL equals (already imported episode)
-            if ($slotOriginUrl === $podcastItem->getEnclosure()->getUrl()) {
+            $enclosureUrl = $podcastItem->getEnclosure()->getUrl();
+            $episodeRssUrl = $episode->getAttributes()->getRssUrl();
+            // Already imported: either the slot file was downloaded from this url, or the episode already
+            // carries it as its audio source.
+            if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $enclosureUrl
+                || $episodeRssUrl === $enclosureUrl
+            ) {
                 return new PodcastEpisodeImportDto(
                     episode: $episode,
                     newlyImported: false
                 );
             }
 
-            // Empty origin url means an editorial upload — that file is the episode audio, the feed only
-            // supplies metadata.
-            if (StringHelper::isEmpty($slotOriginUrl)) {
-                $episodeRssUrl = $episode->getAttributes()->getRssUrl();
-                // Second run for the same feed item; without this branch the adopted episode falls through
-                // to conflict.
-                if ($episodeRssUrl === $podcastItem->getEnclosure()->getUrl()) {
-                    return new PodcastEpisodeImportDto(
-                        episode: $episode,
-                        newlyImported: false
-                    );
-                }
-
-                // Only an episode that never came from the feed may be adopted; afterwards a foreign file in
-                // the import slot stays a human's conflict.
-                if (StringHelper::isEmpty($episodeRssUrl)) {
-                    return $this->adoptSlotAudio($episode, $slot, $podcastItem);
-                }
+            // Episode never came from the feed, so the file already in the import slot is the editor's — that
+            // file is the episode audio and the feed only supplies metadata.
+            $slotAudio = $slot->getAudio();
+            if (StringHelper::isEmpty($episodeRssUrl) && $slotAudio instanceof AudioFile) {
+                return $this->adoptSlotAudio($episode, $slotAudio, $podcastItem);
             }
 
             // Probably new version of podcast was uploaded, need to solve manually
@@ -242,18 +233,8 @@ final readonly class EpisodeRssImportManager
     /**
      * @throws SerializerException
      */
-    private function adoptSlotAudio(PodcastEpisode $episode, AssetSlot $slot, Item $item): PodcastEpisodeImportDto
+    private function adoptSlotAudio(PodcastEpisode $episode, AudioFile $audioFile, Item $item): PodcastEpisodeImportDto
     {
-        $audioFile = $slot->getAudio();
-        if (null === $audioFile) {
-            $this->podcastEpisodeStatusManager->toConflict($episode);
-
-            return new PodcastEpisodeImportDto(
-                episode: $episode,
-                newlyImported: false
-            );
-        }
-
         $this->updateImage($episode, $item);
         $this->updateEpisodeData($episode, $item, $audioFile);
         $this->podcastEpisodeStatusManager->updateExisting($episode);

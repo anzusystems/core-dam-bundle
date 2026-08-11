@@ -31,7 +31,7 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
             }
         );
 
-        $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem());
+        $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
 
         self::assertTrue($dto->isNewlyImported());
         self::assertSame(PodcastEpisodeStatus::Imported, $episode->getAttributes()->getLastImportStatus());
@@ -42,11 +42,25 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         self::assertEmpty($adopted->getAudioFile()->getAssetAttributes()->getOriginUrl());
     }
 
+    public function testSecondRunOfTheSameFeedItemAdoptsNothingAgain(): void
+    {
+        $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: '');
+        $manager = $this->getService(EpisodeRssImportManager::class);
+        $manager->importEpisode($episode->getPodcast(), $this->givenItem($episode));
+        $episode->getTexts()->setDescription('Editor wrote this after the first import');
+
+        $dto = $manager->importEpisode($episode->getPodcast(), $this->givenItem($episode));
+
+        self::assertFalse($dto->isNewlyImported());
+        self::assertSame(PodcastEpisodeStatus::Imported, $episode->getAttributes()->getLastImportStatus());
+        self::assertSame('Editor wrote this after the first import', $episode->getTexts()->getDescription());
+    }
+
     public function testEpisodeAlreadyFedFromRssStaysAConflict(): void
     {
         $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: 'https://feed.local/previous.mp3');
 
-        $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem());
+        $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
 
         self::assertFalse($dto->isNewlyImported());
         self::assertSame(PodcastEpisodeStatus::ImportFailed, $episode->getAttributes()->getLastImportStatus());
@@ -66,10 +80,10 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         return $episode;
     }
 
-    private function givenItem(): Item
+    private function givenItem(PodcastEpisode $episode): Item
     {
         return (new Item())
-            ->setTitle($this->entityManager->find(PodcastEpisode::class, PodcastEpisodeFixtures::EPISODE_1_ID)->getTexts()->getTitle())
+            ->setTitle($episode->getTexts()->getTitle())
             ->setEnclosure((new ItemEnclosure())->setUrl(self::ENCLOSURE_URL));
     }
 }
