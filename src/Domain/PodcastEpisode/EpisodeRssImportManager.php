@@ -236,7 +236,11 @@ final readonly class EpisodeRssImportManager
     private function adoptSlotAudio(PodcastEpisode $episode, AudioFile $audioFile, Item $item): PodcastEpisodeImportDto
     {
         $this->updateImage($episode, $item);
-        $this->updateEpisodeData($episode, $item, $audioFile);
+        // The editor authored this episode, so the feed only fills a description that is still missing.
+        if (StringHelper::isEmpty($episode->getTexts()->getDescription())) {
+            $this->writeEpisodeTexts($episode, $item);
+        }
+        $this->writeEpisodeFeedAttributes($episode, $item, $audioFile);
         $this->podcastEpisodeStatusManager->updateExisting($episode);
         // Route creation and publishing are consumer policy; the intake only announces the adoption.
         $this->podcastEpisodeEventDispatcher->dispatchAudioAdopted($episode, $audioFile);
@@ -249,11 +253,21 @@ final readonly class EpisodeRssImportManager
 
     private function updateEpisodeData(PodcastEpisode $episode, Item $item, AudioFile $audioFile): void
     {
+        $this->writeEpisodeTexts($episode, $item);
+        $this->writeEpisodeFeedAttributes($episode, $item, $audioFile);
+    }
+
+    private function writeEpisodeTexts(PodcastEpisode $episode, Item $item): void
+    {
         $episode->getTexts()
             ->setTitle($item->getTitle())
             ->setDescription(StringHelper::parseString($item->getDescription()))
             ->setRawDescription($item->getDescription())
         ;
+    }
+
+    private function writeEpisodeFeedAttributes(PodcastEpisode $episode, Item $item, AudioFile $audioFile): void
+    {
         $episode->getDates()->setPublicationDate($item->getPubDate());
         $duration = $item->getItunes()->getDurationInSeconds();
         $episode->getAttributes()

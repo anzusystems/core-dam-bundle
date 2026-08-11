@@ -42,6 +42,18 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         self::assertEmpty($adopted->getAudioFile()->getAssetAttributes()->getOriginUrl());
     }
 
+    public function testAdoptionKeepsTheEditorialDescription(): void
+    {
+        $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: '');
+        $episode->getTexts()->setDescription('Written by the editor');
+
+        $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
+
+        self::assertSame('Written by the editor', $episode->getTexts()->getDescription());
+        // Feed data the episode has no opinion about is still taken over.
+        self::assertSame(self::ENCLOSURE_URL, $episode->getAttributes()->getRssUrl());
+    }
+
     public function testSecondRunOfTheSameFeedItemAdoptsNothingAgain(): void
     {
         $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: '');
