@@ -103,10 +103,14 @@ final readonly class EpisodeRssImportManager
                 );
             }
 
-            // Episode never came from the feed, so the file already in the import slot is the editor's — that
-            // file is the episode audio and the feed only supplies metadata.
+            // Episode never came from the feed, so the file in the import slot is the editor's and the feed
+            // only supplies metadata. Only this importer ever sets fromRss, while the rss url is writable
+            // through the api.
             $slotAudio = $slot->getAudio();
-            if (StringHelper::isEmpty($episodeRssUrl) && $slotAudio instanceof AudioFile) {
+            if (StringHelper::isEmpty($episodeRssUrl)
+                && false === $episode->getFlags()->isFromRss()
+                && $slotAudio instanceof AudioFile
+            ) {
                 return $this->adoptSlotAudio($episode, $slotAudio, $podcastItem);
             }
 

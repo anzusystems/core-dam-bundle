@@ -50,7 +50,6 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
 
         self::assertSame('Written by the editor', $episode->getTexts()->getDescription());
-        // Feed data the episode has no opinion about is still taken over.
         self::assertSame(self::ENCLOSURE_URL, $episode->getAttributes()->getRssUrl());
     }
 
@@ -68,9 +67,10 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         self::assertSame('Editor wrote this after the first import', $episode->getTexts()->getDescription());
     }
 
-    public function testEpisodeAlreadyFedFromRssStaysAConflict(): void
+    // Rss url is writable through the api, so a blanked one must not re-open adoption for a fed episode.
+    public function testEpisodeThatCameFromTheFeedIsNeverAdopted(): void
     {
-        $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: 'https://feed.local/previous.mp3');
+        $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: '', cameFromFeed: true);
 
         $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
 
@@ -78,12 +78,24 @@ final class EpisodeRssImportManagerTest extends CoreDamKernelTestCase
         self::assertSame(PodcastEpisodeStatus::ImportFailed, $episode->getAttributes()->getLastImportStatus());
     }
 
-    private function givenEpisodeWithEditorialAudio(string $episodeRssUrl): PodcastEpisode
+    public function testEpisodeAlreadyFedFromRssStaysAConflict(): void
+    {
+        $episode = $this->givenEpisodeWithEditorialAudio(episodeRssUrl: 'https://feed.local/previous.mp3', cameFromFeed: true);
+
+        $dto = $this->getService(EpisodeRssImportManager::class)->importEpisode($episode->getPodcast(), $this->givenItem($episode));
+
+        self::assertFalse($dto->isNewlyImported());
+        self::assertSame(PodcastEpisodeStatus::ImportFailed, $episode->getAttributes()->getLastImportStatus());
+    }
+
+    private function givenEpisodeWithEditorialAudio(string $episodeRssUrl, bool $cameFromFeed = false): PodcastEpisode
     {
         $episode = $this->entityManager->find(PodcastEpisode::class, PodcastEpisodeFixtures::EPISODE_1_ID);
         self::assertInstanceOf(PodcastEpisode::class, $episode);
         $slot = $episode->getAsset()?->getSlots()->first();
         self::assertInstanceOf(AssetSlot::class, $slot);
+        // The fixture episode comes from rss — state the flag here instead of inheriting it.
+        $episode->getFlags()->setFromRss($cameFromFeed);
 
         $episode->getPodcast()->getAttributes()->setFileSlot($slot->getName());
         $episode->getAttributes()->setRssUrl($episodeRssUrl);
