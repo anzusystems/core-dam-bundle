@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\PodcastEpisodeEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -53,6 +54,7 @@ final readonly class EpisodeRssImportManager
         private ImagePreviewFactory $imagePreviewFactory,
         private PodcastEpisodeRepository $podcastEpisodeRepository,
         private PodcastEpisodeStatusManager $podcastEpisodeStatusManager,
+        private PodcastEpisodeEventDispatcher $podcastEpisodeEventDispatcher,
         private AssetSlotFactory $assetSlotFactory,
         private DamLogger $damLogger,
         private ImageFileRepository $imageFileRepository,
@@ -88,13 +90,35 @@ final readonly class EpisodeRssImportManager
                 return $this->assignToPodcastEpisodeAndExistingAsset($episode, $asset, $podcastItem);
             }
 
+            $slotOriginUrl = (string) $slot->getAssetFile()->getAssetAttributes()->getOriginUrl();
             // Slot is used but URL equals (already imported episode)
-            if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $podcastItem->getEnclosure()->getUrl()) {
+            if ($slotOriginUrl === $podcastItem->getEnclosure()->getUrl()) {
                 return new PodcastEpisodeImportDto(
                     episode: $episode,
                     newlyImported: false
                 );
             }
+
+            // Empty origin url means an editorial upload — that file is the episode audio, the feed only
+            // supplies metadata.
+            if (StringHelper::isEmpty($slotOriginUrl)) {
+                $episodeRssUrl = $episode->getAttributes()->getRssUrl();
+                // Second run for the same feed item; without this branch the adopted episode falls through
+                // to conflict.
+                if ($episodeRssUrl === $podcastItem->getEnclosure()->getUrl()) {
+                    return new PodcastEpisodeImportDto(
+                        episode: $episode,
+                        newlyImported: false
+                    );
+                }
+
+                // Only an episode that never came from the feed may be adopted; afterwards a foreign file in
+                // the import slot stays a human's conflict.
+                if (StringHelper::isEmpty($episodeRssUrl)) {
+                    return $this->adoptSlotAudio($episode, $slot, $podcastItem);
+                }
+            }
+
             // Probably new version of podcast was uploaded, need to solve manually
             $this->podcastEpisodeStatusManager->toConflict($episode);
 
@@ -208,6 +232,33 @@ final readonly class EpisodeRssImportManager
         $this->updateImage($episode, $item);
         $this->updateEpisodeData($episode, $item, $audioFile);
         $this->toUploaded($audioFile);
+
+        return new PodcastEpisodeImportDto(
+            episode: $episode,
+            newlyImported: true
+        );
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    private function adoptSlotAudio(PodcastEpisode $episode, AssetSlot $slot, Item $item): PodcastEpisodeImportDto
+    {
+        $audioFile = $slot->getAudio();
+        if (null === $audioFile) {
+            $this->podcastEpisodeStatusManager->toConflict($episode);
+
+            return new PodcastEpisodeImportDto(
+                episode: $episode,
+                newlyImported: false
+            );
+        }
+
+        $this->updateImage($episode, $item);
+        $this->updateEpisodeData($episode, $item, $audioFile);
+        $this->podcastEpisodeStatusManager->updateExisting($episode);
+        // Route creation and publishing are consumer policy; the intake only announces the adoption.
+        $this->podcastEpisodeEventDispatcher->dispatchAudioAdopted($episode, $audioFile);
 
         return new PodcastEpisodeImportDto(
             episode: $episode,
