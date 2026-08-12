@@ -20,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\PodcastEpisodeEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -53,6 +54,7 @@ final readonly class EpisodeRssImportManager
         private ImagePreviewFactory $imagePreviewFactory,
         private PodcastEpisodeRepository $podcastEpisodeRepository,
         private PodcastEpisodeStatusManager $podcastEpisodeStatusManager,
+        private PodcastEpisodeEventDispatcher $podcastEpisodeEventDispatcher,
         private AssetSlotFactory $assetSlotFactory,
         private DamLogger $damLogger,
         private ImageFileRepository $imageFileRepository,
@@ -88,13 +90,30 @@ final readonly class EpisodeRssImportManager
                 return $this->assignToPodcastEpisodeAndExistingAsset($episode, $asset, $podcastItem);
             }
 
-            // Slot is used but URL equals (already imported episode)
-            if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $podcastItem->getEnclosure()->getUrl()) {
+            $enclosureUrl = $podcastItem->getEnclosure()->getUrl();
+            $episodeRssUrl = $episode->getAttributes()->getRssUrl();
+            // Already imported: either the slot file was downloaded from this url, or the episode already
+            // carries it as its audio source.
+            if ($slot->getAssetFile()->getAssetAttributes()->getOriginUrl() === $enclosureUrl
+                || $episodeRssUrl === $enclosureUrl
+            ) {
                 return new PodcastEpisodeImportDto(
                     episode: $episode,
                     newlyImported: false
                 );
             }
+
+            // Episode never came from the feed, so the file in the import slot is the editor's and the feed
+            // only supplies metadata. Only this importer ever sets fromRss, while the rss url is writable
+            // through the api.
+            $slotAudio = $slot->getAudio();
+            if (StringHelper::isEmpty($episodeRssUrl)
+                && false === $episode->getFlags()->isFromRss()
+                && $slotAudio instanceof AudioFile
+            ) {
+                return $this->adoptSlotAudio($episode, $slotAudio, $podcastItem);
+            }
+
             // Probably new version of podcast was uploaded, need to solve manually
             $this->podcastEpisodeStatusManager->toConflict($episode);
 
@@ -215,13 +234,44 @@ final readonly class EpisodeRssImportManager
         );
     }
 
+    /**
+     * @throws SerializerException
+     */
+    private function adoptSlotAudio(PodcastEpisode $episode, AudioFile $audioFile, Item $item): PodcastEpisodeImportDto
+    {
+        $this->updateImage($episode, $item);
+        // The editor authored this episode, so the feed only fills a description that is still missing.
+        if (StringHelper::isEmpty($episode->getTexts()->getDescription())) {
+            $this->writeEpisodeTexts($episode, $item);
+        }
+        $this->writeEpisodeFeedAttributes($episode, $item, $audioFile);
+        $this->podcastEpisodeStatusManager->updateExisting($episode);
+        // Route creation and publishing are consumer policy; the intake only announces the adoption.
+        $this->podcastEpisodeEventDispatcher->dispatchAudioAdopted($episode, $audioFile);
+
+        return new PodcastEpisodeImportDto(
+            episode: $episode,
+            newlyImported: true
+        );
+    }
+
     private function updateEpisodeData(PodcastEpisode $episode, Item $item, AudioFile $audioFile): void
+    {
+        $this->writeEpisodeTexts($episode, $item);
+        $this->writeEpisodeFeedAttributes($episode, $item, $audioFile);
+    }
+
+    private function writeEpisodeTexts(PodcastEpisode $episode, Item $item): void
     {
         $episode->getTexts()
             ->setTitle($item->getTitle())
             ->setDescription(StringHelper::parseString($item->getDescription()))
             ->setRawDescription($item->getDescription())
         ;
+    }
+
+    private function writeEpisodeFeedAttributes(PodcastEpisode $episode, Item $item, AudioFile $audioFile): void
+    {
         $episode->getDates()->setPublicationDate($item->getPubDate());
         $duration = $item->getItunes()->getDurationInSeconds();
         $episode->getAttributes()
