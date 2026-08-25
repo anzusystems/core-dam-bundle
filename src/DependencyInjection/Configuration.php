@@ -54,6 +54,7 @@ class Configuration implements ConfigurationInterface
             ->append($this->addDomainsSection())
             ->append($this->addExifMetadataSection())
             ->append($this->addStoragesSection())
+            ->append($this->addAssetLicenceStorageOverridesSection())
             ->end()
         ;
 
@@ -316,6 +317,19 @@ class Configuration implements ConfigurationInterface
                         ->end()
                         ->defaultValue([])
                     ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addAssetLicenceStorageOverridesSection(): NodeDefinition
+    {
+        // immutable per-licence storage override, keyed by licence id; changed only via deploy
+        return (new TreeBuilder('asset_licence_storage_overrides'))->getRootNode()
+            ->useAttributeAsKey('id')
+            ->arrayPrototype()
+                ->children()
+                    ->scalarNode('storage_name')->cannotBeEmpty()->end()
+                    ->scalarNode('crop_storage_name')->cannotBeEmpty()->end()
                 ->end()
             ->end();
     }
