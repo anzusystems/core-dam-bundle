@@ -20,7 +20,7 @@ final class AssetLicenceFixtures extends AbstractFixtures
     public const int LICENCE_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 1;
     public const int LICENCE_2_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 2;
     public const int FIRST_SYS_SECONDARY_LICENCE = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 3;
-
+    public const int LICENCE_NO_UPLOAD_ID = BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID + 4;
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
@@ -84,6 +84,16 @@ final class AssetLicenceFixtures extends AbstractFixtures
         yield (new AssetLicence())
             ->setId(self::FIRST_SYS_SECONDARY_LICENCE)
             ->setExtId('2')
+            ->setExtSystem($cmsExtSystem);
+
+        $noUploadLicence = new AssetLicence();
+        $noUploadLicence->getFlags()
+            ->setManualUploadAllowed(false)
+            ->setDirectUseAllowed(false);
+
+        yield $noUploadLicence
+            ->setId(self::LICENCE_NO_UPLOAD_ID)
+            ->setExtId('3')
             ->setExtSystem($cmsExtSystem);
     }
 }
