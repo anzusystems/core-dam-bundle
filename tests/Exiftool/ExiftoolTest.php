@@ -13,6 +13,7 @@ final class ExiftoolTest extends CoreDamKernelTestCase
     private const string FIXTURE = __DIR__ . '/../data/Files/exifTags.jpg';
     private const string IPTC_CP1250_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250Undeclared.jpg';
     private const string IPTC_UTF8_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Undeclared.jpg';
+    private const string IPTC_UTF8_DECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Declared.jpg';
 
     private Exiftool $exiftool;
 
@@ -61,6 +62,19 @@ final class ExiftoolTest extends CoreDamKernelTestCase
 
         self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
         self::assertSame('Peter Žákovič', $tags['By-line'] ?? null);
+    }
+
+    /**
+     * The fixture declares IPTC:CodedCharacterSet=UTF8, so exiftool already decoded it correctly and
+     * charset recovery must keep its hands off: "£" lives in the Latin-1 range where cp1250 disagrees
+     * with Latin-1 and would come back as "Ł".
+     */
+    public function testIptcWithDeclaredCharsetIsLeftAsRead(): void
+    {
+        $tags = $this->exiftool->getTags(self::IPTC_UTF8_DECLARED_FIXTURE);
+
+        self::assertSame('£50 note', $tags['By-line'] ?? null);
+        self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
     }
 
     public static function undeclaredIptcCharsetFixtureProvider(): array

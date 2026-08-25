@@ -24,10 +24,13 @@ final class ExifTagNormalizerTest extends TestCase
                 'By-line' => "Ren\u{E8}",
                 'Caption-Abstract' => "\u{201E}Ahoj\u{201C}",
             ],
-            $normalizer->normalizeTags([
-                'By-line' => "Ren\u{E8}",
-                'Caption-Abstract' => "\u{201E}Ahoj\u{201C}",
-            ]),
+            $normalizer->normalizeTags(
+                [
+                    'By-line' => "Ren\u{E8}",
+                    'Caption-Abstract' => "\u{201E}Ahoj\u{201C}",
+                ],
+                ['By-line', 'Caption-Abstract'],
+            ),
         );
     }
 
@@ -38,7 +41,7 @@ final class ExifTagNormalizerTest extends TestCase
         // Raw UTF-8 bytes C5 BD C3 A1 6B ("Žák") read via passthrough as one char per byte.
         self::assertSame(
             ['By-line' => 'Žák'],
-            $normalizer->normalizeTags(['By-line' => "\u{C5}\u{BD}\u{C3}\u{A1}k"]),
+            $normalizer->normalizeTags(['By-line' => "\u{C5}\u{BD}\u{C3}\u{A1}k"], ['By-line']),
         );
     }
 
@@ -49,7 +52,7 @@ final class ExifTagNormalizerTest extends TestCase
         // cp1250 bytes 84 ("„"), 93 ("“"), 96 ("–"), 9C ("ś") arrive as cp1252 punctuation and must survive the undo table.
         self::assertSame(
             ['Caption-Abstract' => "\u{201E}Ahoj\u{201C} \u{2013} \u{15B}lub"],
-            $normalizer->normalizeTags(['Caption-Abstract' => "\u{201E}Ahoj\u{201C} \u{2013} \u{153}lub"]),
+            $normalizer->normalizeTags(['Caption-Abstract' => "\u{201E}Ahoj\u{201C} \u{2013} \u{153}lub"], ['Caption-Abstract']),
         );
     }
 
@@ -59,7 +62,7 @@ final class ExifTagNormalizerTest extends TestCase
 
         self::assertSame(
             ['Artist' => 'Peter Žákovič'],
-            $normalizer->normalizeTags(['Artist' => 'Peter Žákovič']),
+            $normalizer->normalizeTags(['Artist' => 'Peter Žákovič'], ['Artist']),
         );
     }
 

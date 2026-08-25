@@ -52,15 +52,15 @@ final readonly class ExifTagNormalizer
 
     /**
      * @param array<string, mixed> $decodedTags
-     * @param string[]|null $iptcTagNames tags read from the IPTC group — charset recovery applies only to them; null applies it to every tag (for callers without group info)
+     * @param string[] $recoverableTagNames tags charset recovery may touch — an empty list disables it. Never a "recover everything" fallback: applying IPTC recovery to EXIF or XMP values corrupts the Latin-1 range wherever cp1250 disagrees with it.
      *
      * @return array<string, string>
      */
-    public function normalizeTags(array $decodedTags, ?array $iptcTagNames = null): array
+    public function normalizeTags(array $decodedTags, array $recoverableTagNames): array
     {
         $tagList = [];
         foreach ($decodedTags as $tagName => $tagValue) {
-            $recoverCharset = null === $iptcTagNames || in_array($tagName, $iptcTagNames, true);
+            $recoverCharset = in_array($tagName, $recoverableTagNames, true);
             if (is_scalar($tagValue)) {
                 $tagList[$tagName] = StringHelper::repairDoubleEncodedUtf8(
                     trim($this->normalizeValue((string) $tagValue, $recoverCharset))
