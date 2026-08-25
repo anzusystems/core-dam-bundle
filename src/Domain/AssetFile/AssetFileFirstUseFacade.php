@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetFileDBALRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
@@ -20,7 +19,7 @@ final readonly class AssetFileFirstUseFacade
 {
     public function __construct(
         private AssetFileRepository $assetFileRepository,
-        private AssetFileDBALRepository $assetFileDBALRepository,
+        private AssetFileManager $assetFileManager,
         private AccessDenier $accessDenier,
         private Validator $validator,
         private DamLogger $damLogger,
@@ -50,14 +49,16 @@ final readonly class AssetFileFirstUseFacade
         $this->logUnknownDamIds($damIds, $assetFilesByDamId);
         $assetFilesByDamId = $this->filterAuthorized($assetFilesByDamId);
 
-        $firstUsedAtByDamId = [];
         foreach ($dto->getItems() as $item) {
-            if (isset($assetFilesByDamId[$item->getDamId()])) {
-                $firstUsedAtByDamId[$item->getDamId()] = $item->getFirstUsedAt();
+            $assetFile = $assetFilesByDamId[$item->getDamId()] ?? null;
+            // Write-once: the first recorded use date is never overwritten.
+            if ($assetFile instanceof AssetFile && null === $assetFile->getFirstUsedAt()) {
+                $assetFile->setFirstUsedAt($item->getFirstUsedAt());
+                $this->assetFileManager->updateExisting($assetFile, flush: false);
             }
         }
 
-        $this->assetFileDBALRepository->updateFirstUsedAtIfUnset($firstUsedAtByDamId);
+        $this->assetFileManager->flush();
     }
 
     /**
