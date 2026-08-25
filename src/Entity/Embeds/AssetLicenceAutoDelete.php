@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\DBAL\Types\Types;
@@ -19,7 +20,7 @@ class AssetLicenceAutoDelete
 
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     #[Serialize]
-    private int $olderThanDays = 0;
+    private int $olderThanDays = App::ZERO;
 
     public function isActive(): bool
     {

@@ -145,6 +145,36 @@ final class AssetRepository extends AbstractAnzuRepository
     }
 
     /**
+     * Retention condition lives in the query, not PHP, so a config change mid-run cannot resurrect a disabled licence.
+     */
+    public function findByLicenceRetention(AssetLicence $licence, DateTimeImmutable $createdBefore, int $limit, ?string $idFrom = null): Collection
+    {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->innerJoin('entity.licence', 'licence')
+            ->where('IDENTITY(entity.licence) = :licenceId')
+            ->andWhere('licence.autoDelete.active = :true')
+            ->andWhere('licence.autoDelete.olderThanDays > 1')
+            ->andWhere('entity.createdAt < :createdBefore')
+            ->setParameter('licenceId', $licence->getId())
+            ->setParameter('true', true)
+            ->setParameter('createdBefore', $createdBefore);
+
+        if (is_string($idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder
+                ->setMaxResults($limit)
+                ->orderBy('entity.id', Criteria::ASC)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
+    /**
      * @return Collection<int, Asset>
      */
     public function findAllByLicence(

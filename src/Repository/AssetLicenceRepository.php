@@ -36,6 +36,20 @@ final class AssetLicenceRepository extends AbstractAnzuRepository
         );
     }
 
+    /**
+     * @return Collection<int, AssetLicence>
+     */
+    public function findAllWithAutoDeleteActive(): Collection
+    {
+        return new ArrayCollection(
+            $this->createQueryBuilder('entity')
+                ->where('entity.autoDelete.active = :true')
+                ->setParameter('true', true)
+                ->getQuery()
+                ->getResult()
+        );
+    }
+
     protected function getEntityClass(): string
     {
         return AssetLicence::class;
