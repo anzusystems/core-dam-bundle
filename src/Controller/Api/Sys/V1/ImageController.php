@@ -26,7 +26,6 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Throwable;
 
 #[OA\Tag('Image')]
@@ -60,7 +59,6 @@ final class ImageController extends AbstractApiController
     /**
      * @throws AppReadOnlyModeException
      * @throws ValidationException
-     * @throws AccessDeniedException
      */
     #[Route(
         path: '/first-use',

@@ -16,6 +16,11 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
         return self::TABLE_NAME;
     }
 
+    /**
+     * @param string[] $assetIds
+     *
+     * @return array<string, array{ids: string[], names: string[]}>
+     */
     public function getByAsset(array $assetIds): array
     {
         $qb = $this->connection->createQueryBuilder();

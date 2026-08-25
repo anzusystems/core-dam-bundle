@@ -181,6 +181,29 @@ class AssetFacade
         return $assets->count();
     }
 
+    /**
+     * @param ReadableCollection<int, Asset> $assets
+     *
+     * @throws FilesystemException
+     */
+    public function deleteBulkForRetention(ReadableCollection $assets): int
+    {
+        if ($assets->isEmpty()) {
+            return App::ZERO;
+        }
+
+        // Retention deletes unconditionally — no usage or dependency checks; assets picked for a retention
+        // licence are the operator's responsibility. No per-asset catch — a failure after destruction started
+        // must fail the whole batch.
+        foreach ($assets as $asset) {
+            $deletedId = (string) $asset->getId();
+            $this->deleteWithFiles($asset);
+            $this->indexManager->delete($asset, $deletedId);
+        }
+
+        return $assets->count();
+    }
+
     private function transitionToDeleting(Asset $asset): void
     {
         $this->assetManager->beginTransaction();

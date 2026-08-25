@@ -2,25 +2,24 @@
 
 declare(strict_types=1);
 
-
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AudioFixtures;
-use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
-use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
-use AnzuSystems\CoreDamBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as TestImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
+use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as TestImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -31,7 +30,6 @@ use Symfony\Component\HttpFoundation\Response;
 final class ImageApiControllerTest extends AbstractAssetFileApiController
 {
     private const string TEST_DATA_FILENAME = 'metadata_image.jpeg';
-
 
     protected ImageUrlFactory $imageUrlFactory;
 
@@ -63,13 +61,12 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
         // Checks origin file and rotated resizes
         $this->assertFileInFilesystemExists($filesystem, $originImagePath->getFullPath());
-        foreach ($imageEntity->getResizes() as $resize)
-        {
+        foreach ($imageEntity->getResizes() as $resize) {
             $this->assertFileInFilesystemExists($filesystem, $resize->getFilePath());
         }
         $this->assertEquals(3, count($filesystem->listContents($originImagePath->getDir())->toArray()));
 
-        $response = $client->patch($imageUrl->getSingleAssetPath($image->getId())."/rotate/{$rotation}");
+        $response = $client->patch($imageUrl->getSingleAssetPath($image->getId()) . "/rotate/{$rotation}");
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
         $originImageAttrs = clone $imageEntity->getImageAttributes();
@@ -80,8 +77,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $this->assertEquals($originImageAttrs->getRatioHeight(), $imageEntity->getImageAttributes()->getRatioWidth());
         $this->assertEquals($rotation, $imageEntity->getImageAttributes()->getRotation());
 
-        foreach ($imageEntity->getResizes() as $resize)
-        {
+        foreach ($imageEntity->getResizes() as $resize) {
             $this->assertFileInFilesystemExists($filesystem, $resize->getFilePath());
         }
         $this->assertEquals(3, count($filesystem->listContents($originImagePath->getDir())->toArray()));
@@ -156,8 +152,8 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             [
                 ImageFixtures::IMAGE_ID_2,
                 'new',
-                ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT
-            ]
+                ForbiddenOperationException::DETAIL_INVALID_ASSET_SLOT,
+            ],
         ];
     }
 
@@ -172,18 +168,18 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             Response::HTTP_UNPROCESSABLE_ENTITY,
             [
                 'mimeType' => 'video/mp4',
-                'size' => 0
+                'size' => 0,
             ]
         )->getContent();
 
         $this->assertEquals(
             [
                 'mimeType' => [
-                    'error_field_invalid'
+                    'error_field_invalid',
                 ],
                 'size' => [
-                    'error_field_length_min'
-                ]
+                    'error_field_length_min',
+                ],
             ],
             json_decode($responseData, true)['fields'],
         );
@@ -219,25 +215,25 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
                 ],
                 [
                     'offset' => [
-                        'error_field_invalid'
+                        'error_field_invalid',
                     ],
                     'size' => [
                         'error_field_invalid',
-                        'error_field_length_min'
-                    ]
-                ]
+                        'error_field_length_min',
+                    ],
+                ],
             ],
             [
                 [
-                    'size' => 500000,
+                    'size' => 500_000,
                 ],
                 [
                     'size' => [
                         'error_field_invalid',
-                        'error_field_length_max'
-                    ]
-                ]
-            ]
+                        'error_field_length_max',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -249,28 +245,29 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $duplicateFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_3);
         $conflictFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
 
-        $response = $client->patch((
+        $response = $client->patch(
+            (
             new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(),
             [
                 [
-                   'asset' => (string) $imageFile->getAsset()->getId(),
-                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
+                    'asset' => (string) $imageFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
                 ],
                 [
-                   'asset' => (string) $duplicateFile->getAsset()->getId(),
-                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
+                    'asset' => (string) $duplicateFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
                 ],
                 [
-                   'asset' => (string) $conflictFile->getAsset()->getId(),
-                   'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
-                ]
+                    'asset' => (string) $conflictFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
+                ],
             ]
         );
 
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $content = json_decode($response->getContent(), true);
 
-        $copyingItem = array_values(array_filter($content, static fn (array $item) => $item['result'] === 'copy'))[0] ?? null;
+        $copyingItem = array_values(array_filter($content, static fn (array $item) => 'copy' === $item['result']))[0] ?? null;
         $this->assertNotNull($copyingItem);
         if ($copyingItem) {
             $this->assertSame($copyingItem['asset'], (string) $imageFile->getAsset()->getId());
@@ -306,12 +303,12 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
                 $this->assertNotSame($resize->getFilePath(), $copiedResize->getFilePath());
             }
 
-            $copyImageViewResponse = $client->get('http://image.anzusystems.localhost/image/w800-h450-c0/'.$copyingItem['targetMainFile'].'.jpg');
+            $copyImageViewResponse = $client->get('http://image.anzusystems.localhost/image/w800-h450-c0/' . $copyingItem['targetMainFile'] . '.jpg');
             $this->assertSame($copyImageViewResponse->getStatusCode(), Response::HTTP_OK);
 
         }
 
-        $existsItem = array_values(array_filter($content, static fn (array $item) => $item['result'] === 'exists'))[0] ?? null;
+        $existsItem = array_values(array_filter($content, static fn (array $item) => 'exists' === $item['result']))[0] ?? null;
         $this->assertNotNull($existsItem);
         if ($existsItem) {
             $this->assertSame($existsItem['asset'], (string) $duplicateFile->getAsset()->getId());
@@ -324,7 +321,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             $this->assertEmpty($copyingItem['assetConflicts']);
         }
 
-        $notAllowedItem = array_values(array_filter($content, static fn (array $item) => $item['result'] === 'notAllowed'))[0] ?? null;
+        $notAllowedItem = array_values(array_filter($content, static fn (array $item) => 'notAllowed' === $item['result']))[0] ?? null;
         $this->assertNotNull($notAllowedItem);
         if ($notAllowedItem) {
             $this->assertSame($notAllowedItem['asset'], (string) $conflictFile->getAsset()->getId());
@@ -341,18 +338,19 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         $imageFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1);
         $audioFile = $this->entityManager->find(AudioFile::class, AudioFixtures::AUDIO_ID_1);
 
-        $response = $client->patch((
+        $response = $client->patch(
+            (
             new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(),
+            [
                 [
-                    [
-                        'asset' => (string) $imageFile->getAsset()->getId(),
-                        'targetAssetLicence' => TestAssetLicenceFixtures::LICENCE_2_ID
-                    ],
-                    [
-                        'asset' => (string) $audioFile->getAsset()->getId(),
-                        'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE
-                    ]
-                ]
+                    'asset' => (string) $imageFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::LICENCE_2_ID,
+                ],
+                [
+                    'asset' => (string) $audioFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
+                ],
+            ]
         );
 
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -361,6 +359,40 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             '[0].targetAssetLicence' => [ValidationException::ERROR_INVALID_LICENCE],
             '[1].asset' => [ValidationException::ERROR_FIELD_INVALID],
         ]);
+    }
+
+    public function testCreateImageFailedOnManualUploadDisabledLicence(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $responseData = $this->createAsset(
+            $client,
+            new ImageUrl(TestAssetLicenceFixtures::LICENCE_NO_UPLOAD_ID),
+            $this->getFile(self::TEST_DATA_FILENAME),
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+        )->getContent();
+
+        $this->assertForbiddenOperationError($responseData, ForbiddenOperationException::LICENCE_MANUAL_UPLOAD_DISABLED);
+    }
+
+    public function testCopyFailedOnManualUploadDisabledTargetLicence(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $imageFile = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1);
+
+        $response = $client->patch(
+            (new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->copy(),
+            [
+                [
+                    'asset' => (string) $imageFile->getAsset()->getId(),
+                    'targetAssetLicence' => TestAssetLicenceFixtures::LICENCE_NO_UPLOAD_ID,
+                ],
+            ]
+        );
+
+        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        $this->assertForbiddenOperationError($response->getContent(), ForbiddenOperationException::LICENCE_MANUAL_UPLOAD_DISABLED);
     }
 
     public function testFinishUploadFailed(): void
@@ -376,7 +408,7 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
         )->getContent();
 
         $this->assertEquals(
-          'asset_not_fully_uploaded',
+            'asset_not_fully_uploaded',
             json_decode($responseData, true)['detail']
         );
     }

@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetFileDBALRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 
@@ -20,7 +19,7 @@ final readonly class AssetFileFirstUseFacade
 {
     public function __construct(
         private AssetFileRepository $assetFileRepository,
-        private AssetFileDBALRepository $assetFileDBALRepository,
+        private AssetFileManager $assetFileManager,
         private AccessDenier $accessDenier,
         private Validator $validator,
         private DamLogger $damLogger,
@@ -47,16 +46,37 @@ final readonly class AssetFileFirstUseFacade
         foreach ($this->assetFileRepository->findByIds($damIds) as $assetFile) {
             $assetFilesByDamId[$assetFile->getId()] = $assetFile;
         }
+        $this->logUnknownDamIds($damIds, $assetFilesByDamId);
         $assetFilesByDamId = $this->filterAuthorized($assetFilesByDamId);
 
-        $firstUsedAtByDamId = [];
         foreach ($dto->getItems() as $item) {
-            if (isset($assetFilesByDamId[$item->getDamId()])) {
-                $firstUsedAtByDamId[$item->getDamId()] = $item->getFirstUsedAt();
+            $assetFile = $assetFilesByDamId[$item->getDamId()] ?? null;
+            // Write-once: the first recorded use date is never overwritten.
+            if ($assetFile instanceof AssetFile && null === $assetFile->getFirstUsedAt()) {
+                $assetFile->setFirstUsedAt($item->getFirstUsedAt());
+                $this->assetFileManager->updateExisting($assetFile, flush: false);
             }
         }
 
-        $this->assetFileDBALRepository->updateFirstUsedAtIfUnset($firstUsedAtByDamId);
+        $this->assetFileManager->flush();
+    }
+
+    /**
+     * @param string[] $damIds
+     * @param array<string, AssetFile> $assetFilesByDamId
+     */
+    private function logUnknownDamIds(array $damIds, array $assetFilesByDamId): void
+    {
+        // Unknown ids signal CMS<->DAM drift, so they surface in logs even though the batch succeeds.
+        $unknownDamIds = array_diff($damIds, array_keys($assetFilesByDamId));
+        if ([] === $unknownDamIds) {
+            return;
+        }
+
+        $this->damLogger->warning(
+            DamLogger::NAMESPACE_ASSET_FILE_FIRST_USE,
+            sprintf('First-use batch skipped %d unknown damId(s) (%s)', count($unknownDamIds), implode(',', $unknownDamIds)),
+        );
     }
 
     /**

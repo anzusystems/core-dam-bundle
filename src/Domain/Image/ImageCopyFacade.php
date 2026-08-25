@@ -58,6 +58,7 @@ final class ImageCopyFacade
      */
     public function prepareCopyList(Collection $collection): Collection
     {
+        $this->assertManualUploadAllowed($collection);
         $this->validateMaxBulkCount($collection);
         $this->validator->validate($collection);
 
@@ -189,6 +190,19 @@ final class ImageCopyFacade
                 $targetSlot->getAssetFile(),
                 AssetFileFailedType::Unknown
             );
+        }
+    }
+
+    // Adm-only entrypoint — sys copy-job flows through JobImageCopyFacade, not here.
+    /**
+     * @param Collection<int, ImageCopyDto> $collection
+     */
+    private function assertManualUploadAllowed(Collection $collection): void
+    {
+        foreach ($collection as $imageCopyDto) {
+            if ($imageCopyDto->getTargetAssetLicence()->getFlags()->isNotManualUploadAllowed()) {
+                throw new ForbiddenOperationException(ForbiddenOperationException::LICENCE_MANUAL_UPLOAD_DISABLED);
+            }
         }
     }
 

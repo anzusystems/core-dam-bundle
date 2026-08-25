@@ -579,6 +579,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $container->setParameter('anzu_systems.dam_bundle.domains', $this->processedConfig['domains']);
         $container->setParameter('anzu_systems.dam_bundle.distribution_services', $this->processedConfig['distribution_services']);
         $container->setParameter('anzu_systems.dam_bundle.asset_external_providers', $this->processedConfig['asset_external_providers']);
+        $container->setParameter('anzu_systems.dam_bundle.asset_licence_storage_overrides', $this->processedConfig['asset_licence_storage_overrides']);
         $container->setParameter('anzu_systems.dam_bundle.common_metadata', $this->processedConfig['exif_metadata']['common_metadata']);
         $container->setParameter('anzu_systems.dam_bundle.image_metadata', $this->processedConfig['exif_metadata']['image_metadata']);
         $container->setParameter('anzu_systems.dam_bundle.exif_iptc_fallback_charset', $this->processedConfig['exif_metadata']['iptc_fallback_charset']);

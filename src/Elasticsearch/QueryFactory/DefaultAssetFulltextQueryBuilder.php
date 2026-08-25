@@ -37,7 +37,7 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
     private const float FUZZY_CLAUSE_BOOST = 0.5;
 
     public function __construct(
-        private readonly bool $searcNext = true,
+        private readonly bool $searchNext = true,
     ) {
     }
 
@@ -111,7 +111,7 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
      */
     private function boostSearchFields(array $customDataFields): array
     {
-        if (false === $this->searcNext) {
+        if (false === $this->searchNext) {
             foreach ($customDataFields as $key => $field) {
                 $customDataFields[$key] = $field . '^' . ($key + 1);
             }

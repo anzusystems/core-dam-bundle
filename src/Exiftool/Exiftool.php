@@ -14,26 +14,32 @@ final class Exiftool
 {
     private const array PNG_CLEAR = ['-png:all=', '-overwrite_original'];
     private const array READ_TAGS = ['-json', '-charset', 'utf8'];
-    private const float DEFAULT_TIMEOUT = 15.0;
 
-    private readonly ExifTagNormalizer $tagNormalizer;
+    // Byte-passthrough read for undeclared IPTC so ExifTagNormalizer can detect the real per-value
+    // charset; a declared CodedCharacterSet still takes priority over this override.
+    private const array IPTC_PASSTHROUGH = ['-charset', 'iptc=latin1'];
+    private const float DEFAULT_TIMEOUT = 15.0;
 
     public function __construct(
         private readonly string $exiftoolBin,
         private readonly DamLogger $damLogger,
+        private readonly ExifTagNormalizer $tagNormalizer,
         private readonly ?string $iptcFallbackCharset = null,
-        ?ExifTagNormalizer $tagNormalizer = null,
     ) {
-        $this->tagNormalizer = $tagNormalizer ?? new ExifTagNormalizer($iptcFallbackCharset);
     }
 
     /**
+     * @return array<string, string> tag name => flattened value
+     *
      * @throws SerializerException
      */
     public function getTags(string $filePath): array
     {
         try {
-            return $this->parseOutput($this->execute($filePath, $this->buildReadTags()));
+            $decoded = $this->decodeTags($this->execute($filePath, $this->buildReadTags()))
+                ?? throw new RuntimeException('Exiftool returned unparsable output');
+
+            return $this->tagNormalizer->normalizeTags($decoded, $this->readIptcTagNames($filePath));
         } catch (RuntimeException $exception) {
             $this->damLogger->error(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage(), exception: $exception);
 
@@ -60,18 +66,44 @@ final class Exiftool
         return isset($tags['Rotation']) ? (int) $tags['Rotation'] : 0;
     }
 
+    private function isCharsetRecoveryEnabled(): bool
+    {
+        return false === (null === $this->iptcFallbackCharset || App::EMPTY_STRING === $this->iptcFallbackCharset);
+    }
+
     /**
      * @return string[]
      */
     private function buildReadTags(): array
     {
-        if (null === $this->iptcFallbackCharset || App::EMPTY_STRING === $this->iptcFallbackCharset) {
-            return self::READ_TAGS;
+        return $this->isCharsetRecoveryEnabled()
+            ? [...self::READ_TAGS, ...self::IPTC_PASSTHROUGH]
+            : self::READ_TAGS;
+    }
+
+    /**
+     * Charset recovery must only touch IPTC values and the flat read loses tag groups, so the IPTC
+     * group is read alone for its tag names. Fails safe: on error no tag gets charset-recovered.
+     *
+     * @return string[]|null null when charset recovery is off
+     */
+    private function readIptcTagNames(string $filePath): ?array
+    {
+        if (false === $this->isCharsetRecoveryEnabled()) {
+            return null;
         }
 
-        // Byte-passthrough read for undeclared IPTC so normalizeIptcCharset() can detect the real
-        // per-value charset; a declared CodedCharacterSet still takes priority over this override.
-        return [...self::READ_TAGS, '-charset', 'iptc=latin1'];
+        try {
+            $decoded = $this->decodeTags(
+                $this->execute($filePath, [...self::READ_TAGS, ...self::IPTC_PASSTHROUGH, '-IPTC:all'])
+            ) ?? [];
+        } catch (RuntimeException $exception) {
+            $this->damLogger->warning(DamLogger::NAMESPACE_EXIFTOOL, $exception->getMessage());
+            $decoded = [];
+        }
+        unset($decoded['SourceFile']);
+
+        return array_map(strval(...), array_keys($decoded));
     }
 
     private function execute(string $filePath, array $command = []): string
@@ -110,16 +142,6 @@ final class Exiftool
         }
 
         return '';
-    }
-
-    /**
-     * @throws RuntimeException when the output is not parsable, so a failed extract is not reported as "no tags"
-     */
-    private function parseOutput(string $output): array
-    {
-        return $this->tagNormalizer->normalizeTags(
-            $this->decodeTags($output) ?? throw new RuntimeException('Exiftool returned unparsable output'),
-        );
     }
 
     private function decodeTags(string $output): ?array

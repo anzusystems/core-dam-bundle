@@ -155,6 +155,7 @@ abstract class AbstractAssetFileFacade
     ): AssetFile {
         $uploadDto->setAssetLicence($assetLicence);
         $this->validator->validate($uploadDto);
+        $this->assertManualUploadAllowed($assetLicence);
         $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $imageDto = $this->assetExternalProviderContainer
             ->get($uploadDto->getExternalProvider())
@@ -217,6 +218,7 @@ abstract class AbstractAssetFileFacade
     public function createAssetFile(AssetFileAdmCreateDto $createDto, AssetLicence $assetLicence): AssetFile
     {
         $this->validator->validate($createDto);
+        $this->assertManualUploadAllowed($assetLicence);
         $this->validateAssetSize($createDto, $assetLicence);
         $this->validateLimitedAssetLicenceFileCount($assetLicence);
         $assetFile = $this->getFactory()->createFromAdmDto($assetLicence, $createDto);
@@ -245,6 +247,7 @@ abstract class AbstractAssetFileFacade
      */
     public function addAssetFileToAsset(Asset $asset, AssetFileAdmCreateDto $createDto, string $slotName): AssetFile
     {
+        $this->assertManualUploadAllowed($asset->getLicence());
         $this->validateAssetType($asset, $createDto);
         $this->validateSlotTitle($asset, $slotName);
         $this->validator->validate($createDto);
@@ -409,4 +412,12 @@ abstract class AbstractAssetFileFacade
     abstract protected function getFactory(): AbstractAssetFileFactory;
 
     abstract protected function getRepository(): AbstractAssetFileRepository;
+
+    // Adm upload funnel only — sys API, commands and job processors never call this facade.
+    private function assertManualUploadAllowed(AssetLicence $assetLicence): void
+    {
+        if ($assetLicence->getFlags()->isNotManualUploadAllowed()) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::LICENCE_MANUAL_UPLOAD_DISABLED);
+        }
+    }
 }

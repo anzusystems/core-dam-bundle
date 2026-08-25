@@ -13,6 +13,8 @@ use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceFlags;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceInternalRule;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
@@ -86,6 +88,16 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Serialize]
     private AssetLicenceInternalRule $internalRule;
 
+    #[ORM\Embedded(class: AssetLicenceFlags::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private AssetLicenceFlags $flags;
+
+    #[ORM\Embedded(class: AssetLicenceAutoDelete::class)]
+    #[Serialize]
+    #[Assert\Valid]
+    private AssetLicenceAutoDelete $autoDelete;
+
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY)]
     #[ORM\JoinTable(name: 'asset_licence_internal_rule_author')]
     #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
@@ -106,6 +118,8 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setLimitedFiles(false);
         $this->setGroups(new ArrayCollection());
         $this->setInternalRule(new AssetLicenceInternalRule());
+        $this->setFlags(new AssetLicenceFlags());
+        $this->setAutoDelete(new AssetLicenceAutoDelete());
         $this->internalRuleAuthors = new ArrayCollection();
         $this->internalRuleUsers = new ArrayCollection();
     }
@@ -214,6 +228,30 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setInternalRule(AssetLicenceInternalRule $internalRule): self
     {
         $this->internalRule = $internalRule;
+
+        return $this;
+    }
+
+    public function getFlags(): AssetLicenceFlags
+    {
+        return $this->flags;
+    }
+
+    public function setFlags(AssetLicenceFlags $flags): self
+    {
+        $this->flags = $flags;
+
+        return $this;
+    }
+
+    public function getAutoDelete(): AssetLicenceAutoDelete
+    {
+        return $this->autoDelete;
+    }
+
+    public function setAutoDelete(AssetLicenceAutoDelete $autoDelete): self
+    {
+        $this->autoDelete = $autoDelete;
 
         return $this;
     }

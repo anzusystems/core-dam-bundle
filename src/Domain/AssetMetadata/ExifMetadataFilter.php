@@ -7,9 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 /**
- * Reduces a normalized exiftool tag map to the configured allow list and caps every value the same
- * way for every ingest path — the app's own upload and any bulk importer alike, so imported assets
- * carry byte-identical exif data to uploaded ones.
+ * Applies the configured allow list and value cap identically for every ingest path (app upload and batch importers).
  */
 final readonly class ExifMetadataFilter
 {

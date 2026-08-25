@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Image\Crop;
 
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
+use AnzuSystems\CoreDamBundle\FileSystem\AbstractFilesystem;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCropDto;
@@ -23,7 +25,7 @@ final readonly class CropCache
     {
         try {
             return $this->fileSystemProvider
-                ->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug())
+                ->getCropFilesystemByImage($image)
                 ->read($this->getPath($image, $imageCrop));
         } catch (UnableToReadFile) {
             return null;
@@ -36,7 +38,7 @@ final readonly class CropCache
     public function store(ImageFile $image, ImageCropDto $imageCrop, string $content): void
     {
         $this->fileSystemProvider
-            ->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug())
+            ->getCropFilesystemByImage($image)
             ->write(
                 $this->getPath($image, $imageCrop),
                 $content
@@ -57,16 +59,28 @@ final readonly class CropCache
     /**
      * @throws FilesystemException
      */
-    public function removeCacheByOriginFilePath(string $extSystemSlug, string $path): void
+    public function removeCacheByOriginFilePath(string $extSystemSlug, string $path, ?string $cropStorageName = null): void
     {
         $cacheDir = $this->getCacheDir($path);
         if (0 === strlen($cacheDir)) {
             return;
         }
 
-        $this->fileSystemProvider
-            ->getCropFilesystemByExtSystemSlug($extSystemSlug)
-            ->deleteDirectory($cacheDir);
+        $this->resolveFilesystem($extSystemSlug, $cropStorageName)->deleteDirectory($cacheDir);
+    }
+
+    private function resolveFilesystem(string $extSystemSlug, ?string $cropStorageName): AbstractFilesystem
+    {
+        if (null === $cropStorageName) {
+            return $this->fileSystemProvider->getCropFilesystemByExtSystemSlug($extSystemSlug);
+        }
+
+        $filesystem = $this->fileSystemProvider->getFileSystemByStorageName($cropStorageName);
+        if (null === $filesystem) {
+            throw new InvalidArgumentException("Unknown storage name ({$cropStorageName})");
+        }
+
+        return $filesystem;
     }
 
     private function getCacheDir(string $path): string

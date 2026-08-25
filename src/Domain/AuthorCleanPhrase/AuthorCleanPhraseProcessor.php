@@ -18,17 +18,10 @@ use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
 
 final class AuthorCleanPhraseProcessor extends AbstractManager
 {
-    /**
-     * Upper bound for {@see reorderSurnameFirst}: "Smadišová, Stanislava" plus a middle name or a
-     * compound surname still reads as one person, while a longer comma-joined phrase like
-     * "Archív SME, redakcia denníka" is left verbatim instead of being silently rewritten.
-     */
+    // Cap for reorderSurnameFirst(): longer comma phrases ("Archív SME, redakcia denníka") stay verbatim.
     private const int REORDER_MAX_WORDS = 3;
 
-    /**
-     * Hides commas from the split rules while {@see processString} runs with the surname-first
-     * reading. Any character absent from credit data works; this one is never valid text.
-     */
+    // Hides commas from the split rules during the surname-first reading; never valid credit text.
     private const string COMMA_PLACEHOLDER = "\u{0001}";
 
     public function __construct(
@@ -38,13 +31,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     }
 
     /**
-     * @throws AuthorCleanPhraseException
-     */
-    /**
-     * @param bool $commaReversesName how this source reads a comma: a separator between two credits
-     *  (cms uploads: "SME, TASR") or the "Surname, Firstname" convention reversing one name
-     *  (the NAXOS archive: "Smadišová, Stanislava"). Off by default — a caller that knows its source
-     *  opts in, and the rules themselves stay shared.
+     * @param bool $commaReversesName comma read as the "Surname, Firstname" convention (NAXOS) instead of a credit separator (cms uploads); callers opt in per source
      *
      * @throws AuthorCleanPhraseException
      */
@@ -167,10 +154,7 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
      */
     private function split(string $string, ExtSystem $extSystem): array
     {
-        // Word and regex split phrases both apply, and every pattern splits what the previous ones
-        // left — a separator expressible only as a regex (a dash that separates co-credits only with
-        // a space beside it, unlike the one inside a double-barrelled surname) is a split rule like
-        // any other.
+        // Word and regex split rules cascade — each pattern splits what the previous ones left.
         $patterns = [
             ...$this->cleanPhraseWordCache->getList(
                 type: AuthorCleanPhraseType::Word,

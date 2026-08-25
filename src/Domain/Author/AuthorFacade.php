@@ -99,19 +99,6 @@ final class AuthorFacade
         return $author;
     }
 
-    private function createAuthorNameReindexJob(Author $author): void
-    {
-        try {
-            $this->jobFacade->create((new JobAuthorNameReindex())->setAuthorId((string) $author->getId()));
-        } catch (Throwable $exception) {
-            $this->damLogger->error(
-                DamLogger::NAMESPACE_JOB,
-                sprintf('Failed to create JobAuthorNameReindex for author (%s)', (string) $author->getId()),
-                exception: $exception,
-            );
-        }
-    }
-
     public function delete(Author $author): bool
     {
         try {
@@ -129,5 +116,18 @@ final class AuthorFacade
         }
 
         return true;
+    }
+
+    private function createAuthorNameReindexJob(Author $author): void
+    {
+        try {
+            $this->jobFacade->create((new JobAuthorNameReindex())->setAuthorId((string) $author->getId()));
+        } catch (Throwable $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_JOB,
+                sprintf('Failed to create JobAuthorNameReindex for author (%s)', (string) $author->getId()),
+                exception: $exception,
+            );
+        }
     }
 }

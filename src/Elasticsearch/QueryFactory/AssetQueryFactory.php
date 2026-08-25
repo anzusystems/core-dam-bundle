@@ -21,14 +21,12 @@ final class AssetQueryFactory extends AbstractQueryFactory
     private const string CUSTOM_SORT_DATE_DECAY_SCALE = '60d';
     private const string CUSTOM_SORT_DATE_DECAY_OFFSET = '14d';
     private const float CUSTOM_SORT_DATE_DECAY_DECAY = 0.5;
-    private readonly AssetFulltextQueryBuilderInterface $fulltextQueryBuilder;
 
     public function __construct(
         private readonly CustomFormProvider $customFormProvider,
-        private bool $searcNext = true,
-        ?AssetFulltextQueryBuilderInterface $fulltextQueryBuilder = null,
+        private readonly AssetFulltextQueryBuilderInterface $fulltextQueryBuilder,
+        private readonly bool $searchNext = true,
     ) {
-        $this->fulltextQueryBuilder = $fulltextQueryBuilder ?? new DefaultAssetFulltextQueryBuilder($searcNext);
     }
 
     public function getSupportedSearchDtoClasses(): array
@@ -44,7 +42,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
      */
     public function getScriptScoreFunction(SearchDtoInterface $searchDto): ?array
     {
-        if (false === $this->searcNext || false === $this->isFulltextSearch($searchDto)) {
+        if (false === $this->searchNext || false === $this->isFulltextSearch($searchDto)) {
             return null;
         }
 
@@ -72,7 +70,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
     protected function expandFulltextOrderFields(string $field, string $direction): array
     {
-        if (false === $this->searcNext) {
+        if (false === $this->searchNext) {
             return parent::expandFulltextOrderFields($field, $direction);
         }
 
