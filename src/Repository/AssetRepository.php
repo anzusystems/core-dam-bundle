@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use DateTimeImmutable;
@@ -153,10 +154,11 @@ final class AssetRepository extends AbstractAnzuRepository
             ->innerJoin('entity.licence', 'licence')
             ->where('IDENTITY(entity.licence) = :licenceId')
             ->andWhere('licence.autoDelete.active = :true')
-            ->andWhere('licence.autoDelete.olderThanDays > 1')
+            ->andWhere('licence.autoDelete.olderThanDays >= :minOlderThanDays')
             ->andWhere('entity.createdAt < :createdBefore')
             ->setParameter('licenceId', $licence->getId())
             ->setParameter('true', true)
+            ->setParameter('minOlderThanDays', AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS)
             ->setParameter('createdBefore', $createdBefore);
 
         if (is_string($idFrom)) {

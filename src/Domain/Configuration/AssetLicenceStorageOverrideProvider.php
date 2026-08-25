@@ -4,24 +4,39 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Configuration;
 
+use AnzuSystems\CoreDamBundle\Model\Configuration\AssetLicenceStorageOverrideConfiguration;
+
 final readonly class AssetLicenceStorageOverrideProvider
 {
     /**
-     * @param array<int, array{storage_name: string, crop_storage_name: string}> $assetLicenceStorageOverrides
+     * @var array<int, AssetLicenceStorageOverrideConfiguration>
      */
-    public function __construct(
-        private array $assetLicenceStorageOverrides,
-    ) {
+    private array $overrides;
+
+    /**
+     * @param array<int, array<string, string>> $assetLicenceStorageOverrides raw config, typed at this boundary only
+     */
+    public function __construct(array $assetLicenceStorageOverrides)
+    {
+        $this->overrides = array_map(
+            static fn (array $config): AssetLicenceStorageOverrideConfiguration => AssetLicenceStorageOverrideConfiguration::getFromArrayConfiguration($config),
+            $assetLicenceStorageOverrides,
+        );
     }
 
     // config, not entity: immutable per licence, changed only via deploy
     public function getStorageName(int $licenceId): ?string
     {
-        return $this->assetLicenceStorageOverrides[$licenceId]['storage_name'] ?? null;
+        return $this->getOverride($licenceId)?->getStorageName();
     }
 
     public function getCropStorageName(int $licenceId): ?string
     {
-        return $this->assetLicenceStorageOverrides[$licenceId]['crop_storage_name'] ?? null;
+        return $this->getOverride($licenceId)?->getCropStorageName();
+    }
+
+    private function getOverride(int $licenceId): ?AssetLicenceStorageOverrideConfiguration
+    {
+        return $this->overrides[$licenceId] ?? null;
     }
 }

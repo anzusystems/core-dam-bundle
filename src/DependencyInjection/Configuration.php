@@ -328,8 +328,9 @@ class Configuration implements ConfigurationInterface
             ->useAttributeAsKey('id')
             ->arrayPrototype()
                 ->children()
-                    ->scalarNode('storage_name')->cannotBeEmpty()->end()
-                    ->scalarNode('crop_storage_name')->cannotBeEmpty()->end()
+                    // both required together: a partial override would silently send crops to the default storage
+                    ->scalarNode('storage_name')->isRequired()->cannotBeEmpty()->end()
+                    ->scalarNode('crop_storage_name')->isRequired()->cannotBeEmpty()->end()
                 ->end()
             ->end();
     }

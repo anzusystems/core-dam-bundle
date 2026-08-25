@@ -13,9 +13,11 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Event\AssetDeleteEvent;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Ext system checkImageUsedOnDelete defaults to false and no ExtSystemCallbackInterface is registered
@@ -128,6 +130,59 @@ final class AssetLicenceRetentionFacadeTest extends CoreDamKernelTestCase
         foreach ($assetIds as $assetId) {
             self::assertNull($this->entityManager->find(Asset::class, $assetId));
         }
+    }
+
+    /**
+     * Hook: AssetDeleteEvent fires once per deleted asset, right after the batch's commit and before
+     * the facade's entityManager->clear() + per-batch re-find — precisely the "between batches" window.
+     * A callback-based hook (ExtSystemCallbackInterface, as used in ExtSystemCallbackFacadeTest) was
+     * considered per the task brief, but no implementation of that interface is registered in this
+     * bundle's test container (see the class docblock above and AssetFacadeTest), so its compiled
+     * ServiceLocator is empty and cannot intercept anything here without production code changes.
+     */
+    public function testDeleteExpiredAssetsStopsWhenLicenceIsDisabledMidRun(): void
+    {
+        $this->retentionFacade->setBulkSize(1);
+        $licence = $this->createRetentionLicence(active: true, olderThanDays: 5);
+        $licenceId = $licence->getId();
+        $assets = [
+            $this->createImageAsset($licence, App::getAppDate()->modify('-10 days')),
+            $this->createImageAsset($licence, App::getAppDate()->modify('-11 days')),
+            $this->createImageAsset($licence, App::getAppDate()->modify('-12 days')),
+        ];
+        $this->entityManager->flush();
+        $assetIds = array_map(static fn (Asset $asset): string => (string) $asset->getId(), $assets);
+        $connection = $this->entityManager->getConnection();
+        $disabled = false;
+
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            AssetDeleteEvent::class,
+            static function () use (&$disabled, $connection, $licenceId): void {
+                if ($disabled) {
+                    return;
+                }
+                $disabled = true;
+
+                // Simulates an admin flipping the flag mid-sweep via a raw write that bypasses the EM
+                // identity map — exactly what the per-batch re-find after entityManager->clear() must see.
+                $connection->executeStatement(
+                    'UPDATE asset_licence SET auto_delete_active = 0 WHERE id = ?',
+                    [$licenceId]
+                );
+            }
+        );
+
+        $deleted = $this->retentionFacade->deleteExpiredAssets();
+
+        self::assertSame(1, $deleted);
+        $this->entityManager->clear();
+        $remaining = App::ZERO;
+        foreach ($assetIds as $assetId) {
+            if (null !== $this->entityManager->find(Asset::class, $assetId)) {
+                ++$remaining;
+            }
+        }
+        self::assertSame(2, $remaining);
     }
 
     private function createRetentionLicence(bool $active, int $olderThanDays): AssetLicence

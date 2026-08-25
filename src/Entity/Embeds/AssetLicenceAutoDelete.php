@@ -14,6 +14,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[AppAssert\AssetLicenceAutoDeleteValid]
 class AssetLicenceAutoDelete
 {
+    public const int MIN_OLDER_THAN_DAYS = 2;
+
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
     private bool $active = false;

@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetLicence;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -62,6 +63,25 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         $stored = $this->getFixtureLicence();
         self::assertFalse($stored->getAutoDelete()->isActive());
         self::assertSame(1, $stored->getAutoDelete()->getOlderThanDays());
+    }
+
+    public function testUpdateAllowsRetentionAtMinimumOlderThanDaysBoundary(): void
+    {
+        $licence = $this->getFixtureLicence();
+        $newLicence = $this->buildNewLicenceState(
+            $licence,
+            manualUploadAllowed: true,
+            directUseAllowed: true,
+            autoDeleteActive: true,
+            olderThanDays: AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS,
+        );
+
+        $this->assetLicenceFacade->update($licence, $newLicence);
+        $this->entityManager->clear();
+
+        $stored = $this->getFixtureLicence();
+        self::assertTrue($stored->getAutoDelete()->isActive());
+        self::assertSame(AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS, $stored->getAutoDelete()->getOlderThanDays());
     }
 
     private function getFixtureLicence(): AssetLicence

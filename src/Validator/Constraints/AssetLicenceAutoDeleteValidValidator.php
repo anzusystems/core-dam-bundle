@@ -11,8 +11,6 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 
 final class AssetLicenceAutoDeleteValidValidator extends ConstraintValidator
 {
-    private const int MIN_OLDER_THAN_DAYS = 2;
-
     /**
      * @param AssetLicenceAutoDeleteValid $constraint
      */
@@ -26,7 +24,7 @@ final class AssetLicenceAutoDeleteValidValidator extends ConstraintValidator
             return;
         }
 
-        if ($value->getOlderThanDays() >= self::MIN_OLDER_THAN_DAYS) {
+        if ($value->getOlderThanDays() >= AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS) {
             return;
         }
 
