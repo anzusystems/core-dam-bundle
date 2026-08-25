@@ -21,7 +21,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Ext system checkImageUsedOnDelete defaults to false and no ExtSystemCallbackInterface is registered
- * for the fixture ext systems, so enabling the flag exercises the real fail-closed used path
+ * for the fixture ext systems, so enabling the flag makes every asset read as used
  * (see AssetFacadeTest) without needing to mock the callback boundary.
  */
 final class AssetLicenceRetentionFacadeTest extends CoreDamKernelTestCase
@@ -93,7 +93,11 @@ final class AssetLicenceRetentionFacadeTest extends CoreDamKernelTestCase
         self::assertNotNull($this->entityManager->find(Asset::class, $oldAssetId));
     }
 
-    public function testDeleteExpiredAssetsSkipsUsedAssetsAndCompletesTheRun(): void
+    /**
+     * Retention licences have directUseAllowed = false, so their assets are never referenced directly and
+     * usage must not hold a delete back — only copies under a different licence are ever used.
+     */
+    public function testDeleteExpiredAssetsDeletesUsedAssets(): void
     {
         $licence = $this->createRetentionLicence(active: true, olderThanDays: 5);
         $licence->getExtSystem()->getFlags()->setCheckImageUsedOnDelete(true);
@@ -105,10 +109,10 @@ final class AssetLicenceRetentionFacadeTest extends CoreDamKernelTestCase
 
         $deleted = $this->retentionFacade->deleteExpiredAssets();
 
-        self::assertSame(0, $deleted);
+        self::assertSame(2, $deleted);
         $this->entityManager->clear();
-        self::assertNotNull($this->entityManager->find(Asset::class, $usedAssetOneId));
-        self::assertNotNull($this->entityManager->find(Asset::class, $usedAssetTwoId));
+        self::assertNull($this->entityManager->find(Asset::class, $usedAssetOneId));
+        self::assertNull($this->entityManager->find(Asset::class, $usedAssetTwoId));
     }
 
     public function testDeleteExpiredAssetsContinuesAcrossMultipleBatches(): void

@@ -186,13 +186,15 @@ class AssetFacade
      *
      * @throws FilesystemException
      */
-    public function deleteBulkNotUsed(ReadableCollection $assets): int
+    public function deleteBulkForRetention(ReadableCollection $assets): int
     {
         if ($assets->isEmpty()) {
             return App::ZERO;
         }
 
-        // Filter phase: used or undeletable assets are skipped and logged, never fatal to the batch.
+        // Usage is deliberately not checked here: retention licences have directUseAllowed = false, so their
+        // assets are never referenced directly — only copies living under a different licence are used.
+        // Filter phase: undeletable assets are skipped and logged, never fatal to the batch.
         $deletable = $this->filterDeletable($assets);
         $this->logSkipped($assets, $deletable);
 
@@ -214,7 +216,7 @@ class AssetFacade
     private function filterDeletable(ReadableCollection $assets): array
     {
         $deletable = [];
-        foreach ($this->filterNotUsed($assets) as $asset) {
+        foreach ($assets as $asset) {
             try {
                 $this->assertDeletable($asset);
                 $deletable[] = $asset;
@@ -246,7 +248,7 @@ class AssetFacade
 
         $this->damLogger->warning(
             DamLogger::NAMESPACE_ASSET_LICENCE_RETENTION,
-            sprintf('Retention batch skipped %d used/undeletable asset(s) (%s)', count($skippedIds), implode(',', $skippedIds)),
+            sprintf('Retention batch skipped %d undeletable asset(s) (%s)', count($skippedIds), implode(',', $skippedIds)),
         );
     }
 

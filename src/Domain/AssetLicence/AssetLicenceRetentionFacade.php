@@ -82,7 +82,7 @@ final class AssetLicenceRetentionFacade
 
             try {
                 $this->entityManager->beginTransaction();
-                $deleted += $this->assetFacade->deleteBulkNotUsed($assets);
+                $deleted += $this->assetFacade->deleteBulkForRetention($assets);
                 $this->entityManager->commit();
             } catch (Throwable $throwable) {
                 if ($this->entityManager->getConnection()->isTransactionActive()) {
