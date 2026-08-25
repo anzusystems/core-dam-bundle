@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetLicence;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFacade;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileDeleteEventDispatcher;
@@ -65,17 +66,13 @@ final class AssetLicenceRetentionFacade
     {
         $deleted = App::ZERO;
         $idFrom = null;
+        $licence = $this->assetLicenceRepository->find($licenceId);
 
-        while (true) {
-            $licence = $this->assetLicenceRepository->find($licenceId);
-            if (null === $licence || $licence->getAutoDelete()->isNotActive()) {
-                break;
-            }
-
+        while ($licence instanceof AssetLicence && $licence->getAutoDelete()->isActive()) {
             $createdBefore = App::getAppDate()->modify(sprintf('-%d days', $licence->getAutoDelete()->getOlderThanDays()));
             $assets = $this->assetRepository->findByLicenceRetention($licence, $createdBefore, $this->bulkSize, $idFrom);
             if ($assets->isEmpty()) {
-                break;
+                return $deleted;
             }
 
             $idFrom = (string) $assets->last()->getId();
@@ -106,6 +103,7 @@ final class AssetLicenceRetentionFacade
             }
 
             $this->entityManager->clear();
+            $licence = $this->assetLicenceRepository->find($licenceId);
         }
 
         return $deleted;

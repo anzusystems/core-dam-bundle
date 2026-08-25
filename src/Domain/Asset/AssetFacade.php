@@ -192,64 +192,16 @@ class AssetFacade
             return App::ZERO;
         }
 
-        // Usage is deliberately not checked here: retention licences have directUseAllowed = false, so their
-        // assets are never referenced directly — only copies living under a different licence are used.
-        // Filter phase: undeletable assets are skipped and logged, never fatal to the batch.
-        $deletable = $this->filterDeletable($assets);
-        $this->logSkipped($assets, $deletable);
-
-        // Delete phase: no per-asset catch here — a failure after destruction started must fail the whole batch.
-        foreach ($deletable as $asset) {
+        // Retention deletes unconditionally — no usage or dependency checks; assets picked for a retention
+        // licence are the operator's responsibility. No per-asset catch — a failure after destruction started
+        // must fail the whole batch.
+        foreach ($assets as $asset) {
             $deletedId = (string) $asset->getId();
             $this->deleteWithFiles($asset);
             $this->indexManager->delete($asset, $deletedId);
         }
 
-        return count($deletable);
-    }
-
-    /**
-     * @param ReadableCollection<int, Asset> $assets
-     *
-     * @return list<Asset>
-     */
-    private function filterDeletable(ReadableCollection $assets): array
-    {
-        $deletable = [];
-        foreach ($assets as $asset) {
-            try {
-                $this->assertDeletable($asset);
-                $deletable[] = $asset;
-            } catch (Throwable) {
-                continue;
-            }
-        }
-
-        return $deletable;
-    }
-
-    /**
-     * @param ReadableCollection<int, Asset> $assets
-     * @param list<Asset> $deletable
-     */
-    private function logSkipped(ReadableCollection $assets, array $deletable): void
-    {
-        $deletableIds = array_flip(array_map(static fn (Asset $asset): string => (string) $asset->getId(), $deletable));
-        $skippedIds = [];
-        foreach ($assets as $asset) {
-            if (false === isset($deletableIds[(string) $asset->getId()])) {
-                $skippedIds[] = (string) $asset->getId();
-            }
-        }
-
-        if ([] === $skippedIds) {
-            return;
-        }
-
-        $this->damLogger->warning(
-            DamLogger::NAMESPACE_ASSET_LICENCE_RETENTION,
-            sprintf('Retention batch skipped %d undeletable asset(s) (%s)', count($skippedIds), implode(',', $skippedIds)),
-        );
+        return $assets->count();
     }
 
     private function transitionToDeleting(Asset $asset): void

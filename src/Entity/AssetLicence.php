@@ -90,6 +90,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     #[ORM\Embedded(class: AssetLicenceFlags::class)]
     #[Serialize]
+    #[Assert\Valid]
     private AssetLicenceFlags $flags;
 
     #[ORM\Embedded(class: AssetLicenceAutoDelete::class)]
