@@ -21,19 +21,17 @@ final class AssetMetadataProcessor
      * @var iterable<DataSuggesterInterface>
      */
     private readonly iterable $dataSuggesters;
-    private readonly ExifMetadataFilter $exifMetadataFilter;
 
     public function __construct(
         private readonly array $exifImageMetadata,
         private readonly array $exifCommonMetadata,
         private readonly Exiftool $exiftool,
         private readonly ResourceLocker $resourceLocker,
+        private readonly ExifMetadataFilter $exifMetadataFilter,
         #[AutowireIterator(tag: DataSuggesterInterface::class, indexAttribute: 'key')]
         iterable $dataSuggesters,
-        ?ExifMetadataFilter $exifMetadataFilter = null,
     ) {
         $this->dataSuggesters = $dataSuggesters;
-        $this->exifMetadataFilter = $exifMetadataFilter ?? new ExifMetadataFilter();
     }
 
     /**

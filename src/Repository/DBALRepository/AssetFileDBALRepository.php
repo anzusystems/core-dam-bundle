@@ -49,10 +49,12 @@ final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
 
         $params['ids'] = array_keys($firstUsedAtByDamId);
         $types['ids'] = ArrayParameterType::STRING;
+        $params['modifiedAt'] = App::getAppDate();
+        $types['modifiedAt'] = Types::DATETIME_IMMUTABLE;
 
         return (int) $this->connection->executeStatement(
             sprintf(
-                'UPDATE %s SET first_used_at = CASE id %s END, modified_at = NOW() WHERE id IN (:ids) AND first_used_at IS NULL',
+                'UPDATE %s SET first_used_at = CASE id %s END, modified_at = :modifiedAt WHERE id IN (:ids) AND first_used_at IS NULL',
                 self::TABLE_NAME,
                 implode(' ', $caseWhen),
             ),

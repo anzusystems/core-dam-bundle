@@ -49,7 +49,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->autowire(true)
         ->autoconfigure(true)
 
-        ->bind('$searcNext', param('elasticsearch_next_enabled'))
+        ->bind('$searchNext', param('elasticsearch_next_enabled'))
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
         ->bind('$redirectDomain', param('anzu_systems.dam_bundle.settings_redirect_domain'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))

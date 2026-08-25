@@ -11,12 +11,16 @@
 
 ### Changes
 * **BC break**: raise minimum PHP version to `>=8.5`; base Docker image updated to `anzusystems/php:5.1.0-php85-cli-vipsffmpeg`
-* Add Symfony `^8.0` support alongside `^7.4` (dual compatibility); `symfony/http-kernel`, `symfony/dependency-injection` and `symfony/messenger` stay on the `7.4` line for now because `petitpress/gps-messenger-bundle` and `symfony/monolog-bundle` don't allow Symfony 8 yet
+* Add Symfony `^8.0` support alongside `^7.4` (dual compatibility on all `symfony/*` packages); `petitpress/gps-messenger-bundle` allowed at `^3.2 || ^4.0` and `symfony/monolog-bundle` at `^3.11 || ^4.0` for Symfony 8 compatibility
 * **BC break**: `ExtSystemCallbackInterface` gains a required `isImageFileUsedBulk()` method — every implementor must add it
 * **BC break**: `AssetFileManager::canBeRemoved()` is now `final` — override `canBeRemovedBulk()` instead
 * Usage checks on delete are now fail-closed (an unavailable or erroring callback is treated as used); the usage check is now also enforced in `AssetFacade::delete()`/`deleteBulk()`; `deleteUnfinishedUploads` skips assets in use instead of failing
 * `AssetFileCopyBuilder` carries `flags.singleUse` and records `originAssetId` (source file id) on copies; `originAssetId` is now serialized
 * `AssetSysFactory::createFromDto()` accepts an optional service-level `$sourceStorageName` — storage override was removed from the sys DTO wire format
+* Undeclared-IPTC charset recovery is scoped to tags actually read from the IPTC group (extra lightweight exiftool read per file when `iptc_fallback_charset` is set) — EXIF/XMP values can no longer be reinterpreted; `ExifTagNormalizer::normalizeTags()` accepts optional `$iptcTagNames` (null keeps the apply-to-all behaviour for callers without group info)
+* **BC break** (manual construction only, DI unaffected): `Exiftool` requires `ExifTagNormalizer`, `AssetMetadataProcessor` requires `ExifMetadataFilter` and `AssetQueryFactory` requires `AssetFulltextQueryBuilderInterface` as constructor dependencies — the `?Service = null` fallbacks were removed
+* Rename container bind `$searcNext` to `$searchNext` (typo); env `ELASTICSEARCH_NEXT_ENABLED` and behaviour unchanged
+* `AssetFileDBALRepository::updateFirstUsedAtIfUnset()` writes `modified_at` from `App::getAppDate()` instead of SQL `NOW()`
 
 ### Fixes
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
