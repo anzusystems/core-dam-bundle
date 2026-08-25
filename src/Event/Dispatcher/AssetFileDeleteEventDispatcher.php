@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Event\Dispatcher;
 
 use AnzuSystems\CoreDamBundle\Cache\AssetFileRouteGenerator;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\AssetLicenceStorageOverrideProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
@@ -19,6 +20,7 @@ final class AssetFileDeleteEventDispatcher
     public function __construct(
         private readonly AssetFileRouteGenerator $assetFileRouteGenerator,
         private readonly EventDispatcherInterface $dispatcher,
+        private readonly AssetLicenceStorageOverrideProvider $assetLicenceStorageOverrideProvider,
         /**
          * @var list<AssetFileDeleteEvent>
          */
@@ -77,7 +79,8 @@ final class AssetFileDeleteEventDispatcher
             extSystem: $assetFile->getExtSystem()->getSlug(),
             routePaths: $assetFile->getRoutes()->map(
                 fn (AssetFileRoute $route): string => $this->assetFileRouteGenerator->getFullUrl($route)
-            )->toArray()
+            )->toArray(),
+            cropStorageName: $this->assetLicenceStorageOverrideProvider->getCropStorageName((int) $assetFile->getLicence()->getId()),
         );
     }
 

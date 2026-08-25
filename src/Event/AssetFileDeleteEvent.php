@@ -22,6 +22,7 @@ final readonly class AssetFileDeleteEvent
         private array $roiPositions,
         private string $extSystem,
         private array $routePaths,
+        private ?string $cropStorageName = null,
     ) {
     }
 
@@ -66,5 +67,10 @@ final readonly class AssetFileDeleteEvent
     public function getRoutePaths(): array
     {
         return $this->routePaths;
+    }
+
+    public function getCropStorageName(): ?string
+    {
+        return $this->cropStorageName;
     }
 }

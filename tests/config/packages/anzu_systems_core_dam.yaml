@@ -262,6 +262,10 @@ anzu_systems_core_dam:
         file_slots:
           default: default
           slots: [ default, test ]
+  asset_licence_storage_overrides:
+    100004: # AssetLicenceFixtures::LICENCE_NO_UPLOAD_ID
+      storage_name: 'blog.image'
+      crop_storage_name: 'blog.crop'
   domains:
     admin:
       domain: 'http://admin-image.anzusystems.localhost'
