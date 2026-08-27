@@ -43,6 +43,7 @@ final class AssetLicenceManager extends AbstractManager
             ->setActive($newAssetLicence->getAutoDelete()->isActive())
             ->setOlderThanDays($newAssetLicence->getAutoDelete()->getOlderThanDays())
         ;
+        $assetLicence->setDefaultAuthor($newAssetLicence->getDefaultAuthor());
         if (empty($assetLicence->getName())) {
             $assetLicence->setName($assetLicence->getDefaultName());
         }

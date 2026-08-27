@@ -330,6 +330,50 @@ final class AssetLicenceControllerTest extends AbstractApiController
     }
 
     /**
+     * @throws SerializerException
+     */
+    public function testUpdateSetsAndClearsDefaultAuthorViaHttp(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $existingLicence = self::getContainer()
+            ->get(AssetLicenceRepository::class)
+            ->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
+        $response = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'defaultAuthor' => AuthorFixtures::AUTHOR_1,
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_OK);
+        $updated = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+        $this->assertSame(AuthorFixtures::AUTHOR_1, $updated->getDefaultAuthor()?->getId());
+
+        $getResponse = $client->get(AssetLicenceUrl::getOne($existingLicence->getId()));
+        $this->assertStatusCode($getResponse, Response::HTTP_OK);
+        $fetched = $this->serializer->deserialize($getResponse->getContent(), AssetLicence::class);
+        $this->assertSame(AuthorFixtures::AUTHOR_1, $fetched->getDefaultAuthor()?->getId());
+
+        $clearResponse = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'defaultAuthor' => null,
+        ]);
+        $this->assertStatusCode($clearResponse, Response::HTTP_OK);
+        $cleared = $this->serializer->deserialize($clearResponse->getContent(), AssetLicence::class);
+        $this->assertNull($cleared->getDefaultAuthor());
+
+        $finalGetResponse = $client->get(AssetLicenceUrl::getOne($existingLicence->getId()));
+        $this->assertStatusCode($finalGetResponse, Response::HTTP_OK);
+        $finalFetched = $this->serializer->deserialize($finalGetResponse->getContent(), AssetLicence::class);
+        $this->assertNull($finalFetched->getDefaultAuthor());
+    }
+
+    /**
      * Tests internalRuleUsers CRUD at the domain level since DamUser is a
      * MappedSuperclass and cannot be deserialized via the API EntityIdHandler.
      */

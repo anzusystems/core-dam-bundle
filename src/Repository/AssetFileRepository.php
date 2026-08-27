@@ -6,7 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
+use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\NonUniqueResultException;
@@ -19,6 +22,8 @@ use Doctrine\ORM\NonUniqueResultException;
  */
 final class AssetFileRepository extends AbstractAssetFileRepository
 {
+    private const int DEFAULT_FAILED_REASONS_LIMIT = 3;
+
     /**
      * @return Collection<array-key, AssetFile>
      */
@@ -47,6 +52,28 @@ final class AssetFileRepository extends AbstractAssetFileRepository
             ->setParameter('originExternalProvider', $originExternalProvider->toString())
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * @return list<AssetFileFailedType>
+     */
+    public function findFailedReasonsByOriginStorage(
+        OriginStorage $originStorage,
+        int $limit = self::DEFAULT_FAILED_REASONS_LIMIT,
+    ): array {
+        return array_column(
+            $this->createQueryBuilder('entity')
+                ->select('entity.assetAttributes.failReason AS failReason')
+                ->where('entity.assetAttributes.originStorage = :originStorage')
+                ->andWhere('entity.assetAttributes.status = :status')
+                ->setParameter('originStorage', $originStorage->toString())
+                ->setParameter('status', AssetFileProcessStatus::Failed->toString())
+                ->orderBy('entity.createdAt', 'DESC')
+                ->setMaxResults($limit)
+                ->getQuery()
+                ->getArrayResult(),
+            'failReason',
+        );
     }
 
     /**

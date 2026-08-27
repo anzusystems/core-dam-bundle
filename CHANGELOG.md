@@ -23,6 +23,9 @@
 * **BC break** (manual construction only, DI unaffected): `Exiftool` requires `ExifTagNormalizer`, `AssetMetadataProcessor` requires `ExifMetadataFilter` and `AssetQueryFactory` requires `AssetFulltextQueryBuilderInterface` as constructor dependencies — the `?Service = null` fallbacks were removed
 * Rename container bind `$searcNext` to `$searchNext` (typo); env `ELASTICSEARCH_NEXT_ENABLED` and behaviour unchanged
 * `AssetFileDBALRepository::updateFirstUsedAtIfUnset()` writes `modified_at` from `App::getAppDate()` instead of SQL `NOW()`
+* Add nullable `AssetLicence::$defaultAuthor` (ManyToOne `Author`, same ext system enforced, serialized as author id, editable via the adm licence API) — hosts need a migration for the new `asset_licence.default_author_id` column
+* Add `AssetFileRepository::findFailedReasonsByOriginStorage()` plus the `IDX_attributes_origin_storage_status` index on `AssetFile` — lets storage-strategy importers tell a permanently rejected source path from a transiently failed one; hosts need a migration for the new index
+* **BC break**: the asset-file processing lock is now scoped per checksum (`<assetType>_<licenceId>_<checksum>`) instead of per licence, so distinct files in one licence no longer serialise; identical files still do, which is what the duplicate check requires
 
 ### Fixes
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)

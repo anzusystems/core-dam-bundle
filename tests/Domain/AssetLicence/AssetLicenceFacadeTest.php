@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetLicence;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -82,6 +84,35 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         $stored = $this->getFixtureLicence();
         self::assertTrue($stored->getAutoDelete()->isActive());
         self::assertSame(AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS, $stored->getAutoDelete()->getOlderThanDays());
+    }
+
+    public function testUpdateSetsDefaultAuthor(): void
+    {
+        $licence = $this->getFixtureLicence();
+        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_BLOG_1);
+        $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
+        $newLicence->setDefaultAuthor($author);
+
+        $this->assetLicenceFacade->update($licence, $newLicence);
+        $this->entityManager->clear();
+
+        $stored = $this->getFixtureLicence();
+        self::assertSame(AuthorFixtures::AUTHOR_BLOG_1, $stored->getDefaultAuthor()?->getId());
+    }
+
+    public function testDefaultAuthorFromForeignExtSystemFailsValidation(): void
+    {
+        $licence = $this->getFixtureLicence();
+        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1);
+        $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
+        $newLicence->setDefaultAuthor($author);
+
+        try {
+            $this->assetLicenceFacade->update($licence, $newLicence);
+            self::fail('Expected ValidationException was not thrown.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('defaultAuthor', $exception->getFormattedErrors());
+        }
     }
 
     private function getFixtureLicence(): AssetLicence

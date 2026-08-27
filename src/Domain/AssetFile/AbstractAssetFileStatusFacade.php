@@ -204,13 +204,15 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile
     {
-        $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
+        $lockName = $this->createLockName($assetFile);
 
         try {
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
                 $file = $file ?: $this->createFile($assetFile);
                 $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
                 $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
+                // checksum is only known here — without recomputing, all files in the licence would share one lock
+                $lockName = $this->createLockName($assetFile);
                 // we need to lock process due to duplicity checks
                 $this->resourceLocker->lock($lockName);
                 $this->store($assetFile, $file);
@@ -362,5 +364,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             ),
             AssetFileCreateStrategy::Storage => $this->fileFactory->createFromStorage($assetFile),
         };
+    }
+
+    private function createLockName(AssetFile $assetFile): string
+    {
+        return $assetFile->getAssetType()->value
+            . '_' . $assetFile->getLicence()->getId()
+            . '_' . $assetFile->getAssetAttributes()->getChecksum();
     }
 }
