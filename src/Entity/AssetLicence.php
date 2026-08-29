@@ -40,6 +40,11 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     use TimeTrackingTrait;
     use UserTrackingTrait;
 
+    /**
+     * Upper bound shared by the licence-collection search DTOs and AssetListView::$licences.
+     */
+    public const int COLLECTION_MAX = 20;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
         min: 3,

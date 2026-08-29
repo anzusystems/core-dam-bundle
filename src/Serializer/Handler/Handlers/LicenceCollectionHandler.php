@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use AnzuSystems\SerializerBundle\Handler\BatchItem;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
@@ -16,8 +17,6 @@ use Doctrine\Common\Collections\Collection;
 final class LicenceCollectionHandler extends AbstractHandler
 {
     use SerializerAwareTrait;
-
-    public const int MAX_IDS = 30;
 
     public function __construct(
         private readonly EntityIdHandler $entityIdHandler,
@@ -41,9 +40,9 @@ final class LicenceCollectionHandler extends AbstractHandler
                 explode(',', $value)
             );
 
-            if (count($ids) > self::MAX_IDS) {
-                throw new SerializerException('Licence collection size ');
-            }
+            // Nested handlers run outside the deserializer's batch, so the ids must be warmed up here -
+            // EntityIdHandler silently drops every id its identity map does not know.
+            $this->entityIdHandler->prepareDeserializeBatch(new BatchItem($ids, $metadata));
 
             return $this->entityIdHandler->deserialize($ids, $metadata);
         }

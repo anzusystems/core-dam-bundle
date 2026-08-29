@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceRetentionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewResolver;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
@@ -71,6 +72,12 @@ return static function (ContainerConfigurator $configurator): void {
 
     // Its consumer (retention cron command) lives in host apps, so the bundle test container would prune it as unused.
     $services->set(AssetLicenceRetentionFacade::class)
+        ->autowire(true)
+        ->autoconfigure(true)
+        ->public();
+
+    // Consumed only by the host current-user endpoint; exposed for the kernel test.
+    $services->set(AssetListViewResolver::class)
         ->autowire(true)
         ->autoconfigure(true)
         ->public();
