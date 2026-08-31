@@ -125,6 +125,19 @@ final class FfmpegService
     /**
      * @throws FfmpegException
      */
+    public function transcodeToMp3(File $source, int $bitrateKbps): AdapterFile
+    {
+        return $this->runToTmpMp3([
+            '-y',
+            '-i', $source->getRealPath(),
+            '-c:a', 'libmp3lame',
+            '-b:a', $bitrateKbps . 'k',
+        ]);
+    }
+
+    /**
+     * @throws FfmpegException
+     */
     public function clipAudio(File $source, int $startSeconds, int $durationSeconds): AdapterFile
     {
         return $this->runToTmpMp3([
