@@ -6,9 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AudioFixtures;
-use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
@@ -22,7 +20,6 @@ use Symfony\Component\HttpFoundation\Response;
 final class AudioApiControllerTest extends AbstractAssetFileApiController
 {
     private const TEST_DATA_FILENAME = 'audio_example.mp3';
-    private const int BITRATE_TOLERANCE_KBPS = 24;
 
     /**
      * @throws SerializerException|FilesystemException
@@ -78,17 +75,13 @@ final class AudioApiControllerTest extends AbstractAssetFileApiController
         $this->assertFileInFilesystemExists($publicFilesystem, $routePath);
 
         $publicFile = $this->filesystemProvider->getTmpFileSystem()->writeTmpFileFromFilesystem($publicFilesystem, $routePath);
-        $publicPath = (string) $publicFile->getRealPath();
-        $probe = FFProbe::create();
-        $this->assertSame('mp3', $probe->streams($publicPath)->audios()->first()->get('codec_name'));
-        $actualKbps = (int) round(((int) $probe->format($publicPath)->get('bit_rate')) / 1_000);
-        $this->assertGreaterThanOrEqual(
-            AudioMimeTypes::PUBLIC_CONVERSION_BITRATE_KBPS - self::BITRATE_TOLERANCE_KBPS,
-            $actualKbps
-        );
-        $this->assertLessThanOrEqual(
-            AudioMimeTypes::PUBLIC_CONVERSION_BITRATE_KBPS + self::BITRATE_TOLERANCE_KBPS,
-            $actualKbps
+        $publicStream = FFProbe::create()->streams((string) $publicFile->getRealPath())->audios()->first();
+        $this->assertNotNull($publicStream);
+        $this->assertSame('mp3', $publicStream->get('codec_name'));
+        // Stream bitrate is the nominal CBR value; format bit_rate is skewed by the ID3 header on short files.
+        $this->assertSame(
+            AudioMimeTypes::PUBLIC_CONVERSION_BITRATE_KBPS * 1_000,
+            (int) $publicStream->get('bit_rate')
         );
 
         $this->assertSame(
