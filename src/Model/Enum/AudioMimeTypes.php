@@ -1,13 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AnzuSystems\CoreDamBundle\Model\Enum;
 
 use AnzuSystems\Contracts\Model\Enum\BaseEnumTrait;
 use AnzuSystems\Contracts\Model\Enum\EnumInterface;
+use AnzuSystems\CoreDamBundle\Ffmpeg\FfmpegService;
 
 enum AudioMimeTypes: string implements EnumInterface
 {
     use BaseEnumTrait;
+
+    public const string PUBLIC_CONVERSION_EXTENSION = FfmpegService::AUDIO_EXTENSION_MP3;
+    public const int PUBLIC_CONVERSION_BITRATE_KBPS = 128;
 
     public const array CHOICES = [
         self::MIME_AUDIO_MP4,
@@ -37,5 +43,13 @@ enum AudioMimeTypes: string implements EnumInterface
         return [
             self::MimeMpeg
         ];
+    }
+
+    /**
+     * Uncompressed PCM must not reach the public CDN (~18x mp3 bandwidth, above CloudFlare cacheable file size).
+     */
+    public static function requiresPublicMp3Conversion(string $mimeType): bool
+    {
+        return self::tryFrom($mimeType)?->in([self::MimeWaw, self::MimeXWaw]) ?? false;
     }
 }
