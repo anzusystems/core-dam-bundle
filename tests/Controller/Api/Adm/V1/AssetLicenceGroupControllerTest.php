@@ -210,20 +210,128 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
      */
     public function testUpdateRejectsLicenceRemovalThatWouldEmptyAListView(): void
     {
-        /** @var AssetLicenceGroup $group100 */
-        $group100 = $this->entityManager->find(AssetLicenceGroup::class, AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
+        $group100 = $this->findGroup(AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
+        $licence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_ID);
+        $viewId = (int) $this->createListView('View with a single licence', [$group100], [$licence])->getId();
+
+        $response = $this->getApiClient(User::ID_ADMIN)->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
+            'id' => AssetLicenceGroupFixtures::LICENCE_GROUP_ID,
+            'name' => $group100->getName(),
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'licences' => [],
+        ]);
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'licences' => [AssetLicenceGroupFacade::ERROR_LICENCE_REQUIRED_BY_LIST_VIEW],
+        ]);
+
+        $this->entityManager->clear();
+        self::assertTrue($this->findListView($viewId)->getLicences()->containsKey((int) $licence->getId()));
+    }
+
+    public function testUpdateCascadesLicenceRemovalOnlyToViewsUnreachableByOtherGroups(): void
+    {
+        $group100 = $this->findGroup(AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
+        $licence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_ID);
+        $keptLicence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_2_ID);
+        $this->attachLicenceToGroup($keptLicence, $group100);
+        $secondGroup = $this->createLicenceGroup('Second group for cascade test', [$licence]);
+
+        $viewOnGroup100OnlyId = (int) $this->createListView('View targeting only group 100', [$group100], [$licence, $keptLicence])->getId();
+        $viewOnBothGroupsId = (int) $this->createListView('View targeting both groups', [$group100, $secondGroup], [$licence])->getId();
+        $globalViewId = (int) $this->createListView('Global view', [], [$licence])->getId();
+
+        $response = $this->getApiClient(User::ID_ADMIN)->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
+            'id' => AssetLicenceGroupFixtures::LICENCE_GROUP_ID,
+            'name' => $group100->getName(),
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'licences' => [TestAssetLicenceFixtures::LICENCE_2_ID],
+        ]);
+        self::assertStatusCode($response, Response::HTTP_OK);
+
+        $this->entityManager->clear();
+        $reloadedGroup100Only = $this->findListView($viewOnGroup100OnlyId);
+        self::assertFalse($reloadedGroup100Only->getLicences()->containsKey((int) $licence->getId()));
+        self::assertTrue($reloadedGroup100Only->getLicences()->containsKey((int) $keptLicence->getId()));
+        self::assertTrue($this->findListView($viewOnBothGroupsId)->getLicences()->containsKey((int) $licence->getId()));
+        self::assertTrue($this->findListView($globalViewId)->getLicences()->containsKey((int) $licence->getId()));
+    }
+
+    private function findGroup(int $id): AssetLicenceGroup
+    {
+        /** @var AssetLicenceGroup $group */
+        $group = $this->entityManager->find(AssetLicenceGroup::class, $id);
+
+        return $group;
+    }
+
+    private function findLicence(int $id): AssetLicence
+    {
         /** @var AssetLicence $licence */
-        $licence = $this->entityManager->find(AssetLicence::class, TestAssetLicenceFixtures::LICENCE_ID);
-        /** @var ExtSystem $extSystem */
-        $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
+        $licence = $this->entityManager->find(AssetLicence::class, $id);
+
+        return $licence;
+    }
+
+    private function findListView(int $id): AssetListView
+    {
+        /** @var AssetListView $view */
+        $view = $this->entityManager->find(AssetListView::class, $id);
+
+        return $view;
+    }
+
+    private function attachLicenceToGroup(AssetLicence $licence, AssetLicenceGroup $group): void
+    {
+        $group->getLicences()->add($licence);
+        $licence->getGroups()->add($group);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * @param list<AssetLicence> $licences
+     */
+    private function createLicenceGroup(string $name, array $licences): AssetLicenceGroup
+    {
         /** @var User $author */
         $author = $this->entityManager->find(User::class, User::ID_ADMIN);
+        /** @var ExtSystem $extSystem */
+        $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
+
+        $group = (new AssetLicenceGroup())
+            ->setName($name)
+            ->setExtSystem($extSystem)
+            ->setLicences(new ArrayCollection($licences))
+            ->setCreatedAt(App::getAppDate())
+            ->setModifiedAt(App::getAppDate())
+            ->setCreatedBy($author)
+            ->setModifiedBy($author)
+        ;
+        foreach ($licences as $licence) {
+            $licence->getGroups()->add($group);
+        }
+        $this->entityManager->persist($group);
+        $this->entityManager->flush();
+
+        return $group;
+    }
+
+    /**
+     * @param list<AssetLicenceGroup> $groups
+     * @param list<AssetLicence> $licences
+     */
+    private function createListView(string $name, array $groups, array $licences): AssetListView
+    {
+        /** @var User $author */
+        $author = $this->entityManager->find(User::class, User::ID_ADMIN);
+        /** @var ExtSystem $extSystem */
+        $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
 
         $view = (new AssetListView())
-            ->setName('View with a single licence')
+            ->setName($name)
             ->setExtSystem($extSystem)
-            ->setGroups(new ArrayCollection([$group100]))
-            ->setLicences(new ArrayCollection([$licence]))
+            ->setGroups(new ArrayCollection($groups))
+            ->setLicences(new ArrayCollection($licences))
             ->setTypes([])
             ->setCreatedAt(App::getAppDate())
             ->setModifiedAt(App::getAppDate())
@@ -232,99 +340,7 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
         ;
         $this->entityManager->persist($view);
         $this->entityManager->flush();
-        $viewId = (int) $view->getId();
 
-        $response = $this->getApiClient(User::ID_ADMIN)->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
-            'id' => AssetLicenceGroupFixtures::LICENCE_GROUP_ID,
-            'name' => $group100->getName(),
-            'extSystem' => ExtSystemFixtures::ID_BLOG,
-            'licences' => [],
-        ]);
-        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
-        $this->assertValidationErrors(json_decode($response->getContent(), true), [
-            'licences' => [AssetLicenceGroupFacade::ERROR_LICENCE_REQUIRED_BY_LIST_VIEW],
-        ]);
-
-        $this->entityManager->clear();
-        /** @var AssetListView $reloadedView */
-        $reloadedView = $this->entityManager->find(AssetListView::class, $viewId);
-        self::assertTrue($reloadedView->getLicences()->containsKey((int) $licence->getId()));
-    }
-
-    public function testUpdateCascadesLicenceRemovalOnlyToViewsUnreachableByOtherGroups(): void
-    {
-        /** @var AssetLicenceGroup $group100 */
-        $group100 = $this->entityManager->find(AssetLicenceGroup::class, AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
-        /** @var AssetLicence $licence */
-        $licence = $this->entityManager->find(AssetLicence::class, TestAssetLicenceFixtures::LICENCE_ID);
-        /** @var AssetLicence $keptLicence */
-        $keptLicence = $this->entityManager->find(AssetLicence::class, TestAssetLicenceFixtures::LICENCE_2_ID);
-        $group100->getLicences()->add($keptLicence);
-        $keptLicence->getGroups()->add($group100);
-        /** @var ExtSystem $extSystem */
-        $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
-        /** @var User $author */
-        $author = $this->entityManager->find(User::class, User::ID_ADMIN);
-
-        $secondGroup = (new AssetLicenceGroup())
-            ->setName('Second group for cascade test')
-            ->setExtSystem($extSystem)
-            ->setLicences(new ArrayCollection([$licence]))
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($author)
-            ->setModifiedBy($author)
-        ;
-        $licence->getGroups()->add($secondGroup);
-        $this->entityManager->persist($secondGroup);
-
-        $viewOnGroup100Only = (new AssetListView())
-            ->setName('View targeting only group 100')
-            ->setExtSystem($extSystem)
-            ->setGroups(new ArrayCollection([$group100]))
-            ->setLicences(new ArrayCollection([$licence, $keptLicence]))
-            ->setTypes([])
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($author)
-            ->setModifiedBy($author)
-        ;
-        $viewOnBothGroups = (new AssetListView())
-            ->setName('View targeting both groups')
-            ->setExtSystem($extSystem)
-            ->setGroups(new ArrayCollection([$group100, $secondGroup]))
-            ->setLicences(new ArrayCollection([$licence]))
-            ->setTypes([])
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($author)
-            ->setModifiedBy($author)
-        ;
-        $this->entityManager->persist($viewOnGroup100Only);
-        $this->entityManager->persist($viewOnBothGroups);
-        $this->entityManager->flush();
-
-        $viewOnGroup100OnlyId = (int) $viewOnGroup100Only->getId();
-        $viewOnBothGroupsId = (int) $viewOnBothGroups->getId();
-
-        $client = $this->getApiClient(User::ID_ADMIN);
-        $response = $client->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
-            'id' => AssetLicenceGroupFixtures::LICENCE_GROUP_ID,
-            'name' => $group100->getName(),
-            'extSystem' => ExtSystemFixtures::ID_BLOG,
-            'licences' => [TestAssetLicenceFixtures::LICENCE_2_ID],
-        ]);
-        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-
-        $this->entityManager->clear();
-
-        /** @var AssetListView $reloadedGroup100Only */
-        $reloadedGroup100Only = $this->entityManager->find(AssetListView::class, $viewOnGroup100OnlyId);
-        /** @var AssetListView $reloadedBothGroups */
-        $reloadedBothGroups = $this->entityManager->find(AssetListView::class, $viewOnBothGroupsId);
-
-        self::assertFalse($reloadedGroup100Only->getLicences()->containsKey((int) $licence->getId()));
-        self::assertTrue($reloadedGroup100Only->getLicences()->containsKey((int) $keptLicence->getId()));
-        self::assertTrue($reloadedBothGroups->getLicences()->containsKey((int) $licence->getId()));
+        return $view;
     }
 }

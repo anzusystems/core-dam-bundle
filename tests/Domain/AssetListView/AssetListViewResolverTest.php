@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetListView;
 
+use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewResolver;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
@@ -24,13 +25,18 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
     private const int USER_MEMBER_ID = 900_101;
     private const int USER_OUTSIDER_ID = 900_102;
     private const int USER_GLOBAL_ONLY_ID = 900_103;
+    private const int USER_SUPER_ADMIN_ID = 900_104;
+    private const int SECOND_GROUP_ID = 900_105;
 
     private AssetListViewResolver $resolver;
     private UserManager $userManager;
     private User $userMember;
     private User $userOutsider;
     private User $userGlobalOnly;
+    private User $userSuperAdmin;
     private AssetListView $targetedView;
+    private AssetListView $targetedFirstView;
+    private AssetListView $foreignLicenceView;
     private AssetListView $globalViewA;
     private AssetListView $globalViewB;
     private User $author;
@@ -54,13 +60,20 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         /** @var AssetLicence $licenceOutsideGroup */
         $licenceOutsideGroup = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_2_ID);
 
-        $this->userMember = $this->createUser(self::USER_MEMBER_ID, 'member@anzusystems.sk', licenceGroups: new ArrayCollection([$group100]));
+        /** @var AssetLicence $foreignLicence */
+        $foreignLicence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE);
+        $secondGroup = $this->createGroup(self::SECOND_GROUP_ID, 'Second group', $blogExtSystem, [$licenceInGroup]);
+
+        $this->userMember = $this->createUser(self::USER_MEMBER_ID, 'member@anzusystems.sk', licenceGroups: new ArrayCollection([$group100, $secondGroup]));
         $this->userOutsider = $this->createUser(self::USER_OUTSIDER_ID, 'outsider@anzusystems.sk');
         $this->userGlobalOnly = $this->createUser(self::USER_GLOBAL_ONLY_ID, 'global-only@anzusystems.sk', userToExtSystems: new ArrayCollection([$blogExtSystem]));
+        $this->userSuperAdmin = $this->createUser(self::USER_SUPER_ADMIN_ID, 'super-admin@anzusystems.sk', roles: [AnzuUser::ROLE_SUPER_ADMIN]);
 
-        $this->targetedView = $this->createView('Targeted at group 100', $blogExtSystem, [$group100], [$licenceInGroup]);
+        $this->targetedView = $this->createView('Targeted at both groups', $blogExtSystem, [$group100, $secondGroup], [$licenceInGroup]);
+        $this->targetedFirstView = $this->createView('Targeted first by position', $blogExtSystem, [$group100], [$licenceInGroup], position: -1);
         $this->globalViewA = $this->createView('Global - reachable licence', $blogExtSystem, [], [$licenceInGroup]);
         $this->globalViewB = $this->createView('Global - unreachable licence', $blogExtSystem, [], [$licenceOutsideGroup]);
+        $this->foreignLicenceView = $this->createView('Global - licence moved to another ext system', $blogExtSystem, [], [$licenceInGroup, $foreignLicence]);
 
         $this->entityManager->flush();
         $this->entityManager->clear();
@@ -69,6 +82,7 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $this->userMember = $this->reloadUser(self::USER_MEMBER_ID);
         $this->userOutsider = $this->reloadUser(self::USER_OUTSIDER_ID);
         $this->userGlobalOnly = $this->reloadUser(self::USER_GLOBAL_ONLY_ID);
+        $this->userSuperAdmin = $this->reloadUser(self::USER_SUPER_ADMIN_ID);
     }
 
     public function testTargetedViewIsVisibleOnlyToGroupMember(): void
@@ -108,6 +122,34 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         self::assertLessThan($globalPosition, $targetedPosition);
     }
 
+    public function testSuperAdminGetsEveryLicenceOfTheViewWithoutOwnRights(): void
+    {
+        $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userSuperAdmin));
+
+        self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $scopes[(int) $this->globalViewB->getId()]->getLicenceIds());
+    }
+
+    public function testLicenceFromAnotherExtSystemIsFilteredOutOfTheScope(): void
+    {
+        $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userSuperAdmin));
+
+        self::assertSame([AssetLicenceFixtures::LICENCE_ID], $scopes[(int) $this->foreignLicenceView->getId()]->getLicenceIds());
+    }
+
+    public function testTargetedViewsAreOrderedByPosition(): void
+    {
+        $viewIds = $this->scopeViewIds($this->resolver->resolveForUser($this->userMember));
+
+        self::assertSame([(int) $this->targetedFirstView->getId(), (int) $this->targetedView->getId()], array_slice($viewIds, 0, 2));
+    }
+
+    public function testViewTargetedByTwoGroupsOfTheUserIsReturnedOnce(): void
+    {
+        $viewIds = $this->scopeViewIds($this->resolver->resolveForUser($this->userMember));
+
+        self::assertSame(1, count(array_keys($viewIds, (int) $this->targetedView->getId(), true)));
+    }
+
     private function reloadUser(int $id): User
     {
         /** @var User $user */
@@ -116,9 +158,12 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         return $user;
     }
 
-    private function createUser(int $id, string $email, ?ArrayCollection $licenceGroups = null, ?ArrayCollection $userToExtSystems = null): User
+    /**
+     * @param list<string> $roles
+     */
+    private function createUser(int $id, string $email, ?ArrayCollection $licenceGroups = null, ?ArrayCollection $userToExtSystems = null, array $roles = []): User
     {
-        $user = (new User())->setId($id)->setEmail($email);
+        $user = (new User())->setId($id)->setEmail($email)->setRoles($roles);
         if (null !== $licenceGroups) {
             $user->setLicenceGroups($licenceGroups);
         }
@@ -136,11 +181,12 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
      * @param list<AssetLicenceGroup> $groups
      * @param list<AssetLicence> $licences
      */
-    private function createView(string $name, ExtSystem $extSystem, array $groups, array $licences): AssetListView
+    private function createView(string $name, ExtSystem $extSystem, array $groups, array $licences, int $position = App::ZERO): AssetListView
     {
         $view = (new AssetListView())
             ->setName($name)
             ->setExtSystem($extSystem)
+            ->setPosition($position)
             ->setGroups(new ArrayCollection($groups))
             ->setLicences(new ArrayCollection($licences))
             ->setTypes([])
@@ -152,6 +198,44 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $this->entityManager->persist($view);
 
         return $view;
+    }
+
+    /**
+     * @param list<AssetLicence> $licences
+     */
+    private function createGroup(int $id, string $name, ExtSystem $extSystem, array $licences): AssetLicenceGroup
+    {
+        $group = (new AssetLicenceGroup())
+            ->setId($id)
+            ->setName($name)
+            ->setExtSystem($extSystem)
+            ->setLicences(new ArrayCollection($licences))
+            ->setCreatedAt(App::getAppDate())
+            ->setModifiedAt(App::getAppDate())
+            ->setCreatedBy($this->author)
+            ->setModifiedBy($this->author)
+        ;
+        foreach ($licences as $licence) {
+            $licence->getGroups()->add($group);
+        }
+        $this->entityManager->persist($group);
+
+        return $group;
+    }
+
+    /**
+     * @param list<AssetListViewScope> $scopes
+     *
+     * @return array<int, AssetListViewScope>
+     */
+    private function scopesByViewId(array $scopes): array
+    {
+        $byId = [];
+        foreach ($scopes as $scope) {
+            $byId[(int) $scope->getView()->getId()] = $scope;
+        }
+
+        return $byId;
     }
 
     /**

@@ -27,7 +27,7 @@ final class AssetControllerTest extends AbstractApiController
             AssetLicenceFixtures::LICENCE_2_ID,
         ]));
 
-        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertStatusCode($response, Response::HTTP_OK);
     }
 
     public function testLicenceSearchRejectsLicencesFromDifferentExtSystems(): void
@@ -39,7 +39,7 @@ final class AssetControllerTest extends AbstractApiController
             AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
         ]));
 
-        self::assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         $content = json_decode($response->getContent(), true);
         $this->assertValidationErrors($content, [
             'licences' => [ValidationException::ERROR_FIELD_INVALID],
