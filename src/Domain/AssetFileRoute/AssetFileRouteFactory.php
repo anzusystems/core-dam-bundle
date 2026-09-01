@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\RouteUri;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFileRoute\AssetFileRouteAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AudioMimeTypes;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\RouteStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
@@ -98,8 +99,17 @@ final class AssetFileRouteFactory extends AbstractManager
             self::PATH_TEMPLATE,
             $assetFile->getId(),
             $slug,
-            $this->fileHelper->guessExtension($assetFile->getAssetAttributes()->getMimeType())
+            $this->getPublicExtension($assetFile)
         );
+    }
+
+    private function getPublicExtension(AssetFile $assetFile): string
+    {
+        $mimeType = $assetFile->getAssetAttributes()->getMimeType();
+
+        return AudioMimeTypes::requiresPublicMp3Conversion($mimeType)
+            ? AudioMimeTypes::PUBLIC_CONVERSION_EXTENSION
+            : $this->fileHelper->guessExtension($mimeType);
     }
 
     private function createPathForImage(ImageFile $imageFile): string

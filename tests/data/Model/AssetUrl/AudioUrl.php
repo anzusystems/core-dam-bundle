@@ -28,6 +28,16 @@ final class AudioUrl extends AbstractAssetFileUrl
         return "/api/adm/v{$this->version}/audio/{$assetId}";
     }
 
+    public function getMakePublicPath(string $assetFileId): string
+    {
+        return $this->getSingleAssetPath($assetFileId) . '/make-public';
+    }
+
+    public function getMakePrivatePath(string $assetFileId): string
+    {
+        return $this->getSingleAssetPath($assetFileId) . '/make-private';
+    }
+
     public function setToSlot(string $assetId, string $assetFileId, string $position): string
     {
         return "/api/adm/v{$this->version}/audio/{$assetFileId}/asset/{$assetId}/slot-name/{$position}";
