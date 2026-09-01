@@ -54,6 +54,7 @@ class Configuration implements ConfigurationInterface
             ->append($this->addDomainsSection())
             ->append($this->addExifMetadataSection())
             ->append($this->addStoragesSection())
+            ->append($this->addAssetLicenceStorageOverridesSection())
             ->end()
         ;
 
@@ -193,24 +194,19 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode(SettingsConfiguration::UNSPLASH_API_CLIENT)
                     ->defaultValue('https://api.unsplash.com')
-                    ->isRequired()
                 ->end()
                 ->scalarNode(SettingsConfiguration::JW_PLAYER_API_CLIENT)
                     ->defaultValue('https://api.jwplayer.com')
-                    ->isRequired()
                 ->end()
                 ->scalarNode(SettingsConfiguration::JW_PLAYER_CDN_API_CLIENT)
                     ->defaultValue('https://cdn.jwplayer.com')
-                    ->isRequired()
                 ->end()
                 ->scalarNode(SettingsConfiguration::TTS_ELEVENLABS_API_HOST)
                     ->defaultValue(SettingsConfiguration::TTS_ELEVENLABS_API_HOST_DEFAULT)
-                    ->isRequired()
                     ->info('Base URL of the ElevenLabs TTS API. Override only for testing against a mock.')
                 ->end()
                 ->scalarNode(SettingsConfiguration::TTS_GOOGLE_API_HOST)
                     ->defaultValue(SettingsConfiguration::TTS_GOOGLE_API_HOST_DEFAULT)
-                    ->isRequired()
                     ->info('Base URL of the Google Cloud Text-to-Speech API. Override only for testing against a mock.')
                 ->end()
                 ->scalarNode(SettingsConfiguration::ELASTIC_INDEX_PREFIX_KEY)
@@ -285,7 +281,6 @@ class Configuration implements ConfigurationInterface
                 ->integerNode(SettingsConfiguration::LIMITED_ASSET_LICENCE_FILES_COUNT)
                     ->info('Number of allowed files for an asset licence with enabled limitation.')
                     ->defaultValue(100)
-                    ->isRequired()
                 ->end()
                 ->append($this->addChunkConfiguration())
             ->end();
@@ -322,6 +317,20 @@ class Configuration implements ConfigurationInterface
                         ->end()
                         ->defaultValue([])
                     ->end()
+                ->end()
+            ->end();
+    }
+
+    private function addAssetLicenceStorageOverridesSection(): NodeDefinition
+    {
+        // immutable per-licence storage override, keyed by licence id; changed only via deploy
+        return (new TreeBuilder('asset_licence_storage_overrides'))->getRootNode()
+            ->useAttributeAsKey('id')
+            ->arrayPrototype()
+                ->children()
+                    // both required together: a partial override would silently send crops to the default storage
+                    ->scalarNode('storage_name')->isRequired()->cannotBeEmpty()->end()
+                    ->scalarNode('crop_storage_name')->isRequired()->cannotBeEmpty()->end()
                 ->end()
             ->end();
     }
@@ -409,7 +418,6 @@ class Configuration implements ConfigurationInterface
                             ->end()
                             ->scalarNode('strategy')
                                 ->defaultValue(DistributionStrategy::NONE)
-                                ->isRequired()
                             ->end()
                             ->append($this::addTextMapperConfiguration(ExtSystemAssetTypeDistributionRequirementConfiguration::DISTRIBUTION_METADATA_MAP))
                         ->end()
@@ -566,6 +574,11 @@ class Configuration implements ConfigurationInterface
     private function addExifMetadataSection(): NodeDefinition
     {
         return (new TreeBuilder('exif_metadata'))->getRootNode()
+            ->children()
+                ->scalarNode('iptc_fallback_charset')
+                    ->defaultNull()
+                ->end()
+            ->end()
             ->append($this->addSpecificMetadataSection('common_metadata'))
             ->append($this->addSpecificMetadataSection('image_metadata'))
         ;

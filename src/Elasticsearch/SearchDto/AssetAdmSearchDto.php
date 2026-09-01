@@ -192,6 +192,12 @@ class AssetAdmSearchDto extends AbstractSearchDto
     protected ?DateTimeImmutable $createdAtUntil = null;
 
     #[Serialize]
+    protected ?DateTimeImmutable $uploadedAtFrom = null;
+
+    #[Serialize]
+    protected ?DateTimeImmutable $uploadedAtUntil = null;
+
+    #[Serialize]
     protected ?bool $mainFileSingleUse = null;
 
     #[Serialize]
@@ -584,6 +590,30 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setCreatedAtUntil(?DateTimeImmutable $createdAtUntil): self
     {
         $this->createdAtUntil = $createdAtUntil;
+
+        return $this;
+    }
+
+    public function getUploadedAtFrom(): ?DateTimeImmutable
+    {
+        return $this->uploadedAtFrom;
+    }
+
+    public function setUploadedAtFrom(?DateTimeImmutable $uploadedAtFrom): self
+    {
+        $this->uploadedAtFrom = $uploadedAtFrom;
+
+        return $this;
+    }
+
+    public function getUploadedAtUntil(): ?DateTimeImmutable
+    {
+        return $this->uploadedAtUntil;
+    }
+
+    public function setUploadedAtUntil(?DateTimeImmutable $uploadedAtUntil): self
+    {
+        $this->uploadedAtUntil = $uploadedAtUntil;
 
         return $this;
     }

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
@@ -11,9 +10,9 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use AnzuSystems\CoreDamBundle\Repository\KeywordRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetFileSysUrl;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -44,9 +43,9 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
             'path' => self::TEST_DATA_FILENAME,
             'customData' => [
                 'title' => 'Titulok',
-                'headline' => 'Headline'
+                'headline' => 'Headline',
             ],
-            'generatePublicRoute' => true
+            'generatePublicRoute' => true,
         ]);
 
         $fileSystem->delete(self::TEST_DATA_FILENAME);
@@ -73,6 +72,29 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
         );
     }
 
+    public function testCreateOnManualUploadDisabledLicence(): void
+    {
+        $client = $this->getApiClient(User::ID_CMS_USER);
+
+        $fixturesImagePath = AbstractAssetFileFixtures::DATA_PATH . self::TEST_DATA_FILENAME;
+        $fileSystem = $this->filesystemProvider->getFileSystemByStorageName('cms.image');
+        $fileSystem->write(self::TEST_DATA_FILENAME, file_get_contents($fixturesImagePath));
+
+        $response = $client->post(AssetFileSysUrl::create(), [
+            'licence' => TestAssetLicenceFixtures::LICENCE_NO_UPLOAD_ID,
+            'path' => self::TEST_DATA_FILENAME,
+            'customData' => [
+                'title' => 'Titulok',
+                'headline' => 'Headline',
+            ],
+            'generatePublicRoute' => true,
+        ]);
+
+        $fileSystem->delete(self::TEST_DATA_FILENAME);
+
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode(), $response->getContent());
+    }
+
     public function testCreateFromUrl(): void
     {
         $client = $this->getApiClient(User::ID_CMS_USER);
@@ -81,17 +103,17 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
             'url' => 'http://core-dam.sme.localhost/download-file?file=50x50',
             'customData' => [
                 'title' => 'Titulok',
-                'headline' => 'Headline'
+                'headline' => 'Headline',
             ],
             'generatePublicRoute' => false,
             'authors' => [
                 'Aarne Ormonde',
-                'New author'
+                'New author',
             ],
             'keywords' => [
                 'News',
                 'New keyword',
-            ]
+            ],
         ]);
 
         $this->assertEquals(Response::HTTP_OK, $response ->getStatusCode());
@@ -104,7 +126,7 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
         $this->assertEqualsCanonicalizing(
             [
                 'title' => 'Titulok',
-                'headline' => 'Headline'
+                'headline' => 'Headline',
             ],
             $responseData['customData']
         );
@@ -119,7 +141,7 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
     {
         $keyword = $this->entityManager->getRepository(Keyword::class)->findOneBy([
             'extSystem' => 1,
-            'name' => $keyword
+            'name' => $keyword,
         ]);
 
         $this->assertNotNull($keyword);
@@ -129,7 +151,7 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
     {
         $author = $this->entityManager->getRepository(Author::class)->findOneBy([
             'extSystem' => 1,
-            'name' => $keyword
+            'name' => $keyword,
         ]);
 
         $this->assertNotNull($author);

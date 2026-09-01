@@ -29,4 +29,23 @@ final class CollectionHelper extends CommonCollectionHelper
 
         return null;
     }
+
+    /**
+     * @template TKey of array-key
+     * @template T
+     *
+     * @param iterable<T> $items
+     * @param callable(T): TKey $keyFn
+     *
+     * @return array<TKey, T[]>
+     */
+    public static function groupBy(iterable $items, callable $keyFn): array
+    {
+        $grouped = [];
+        foreach ($items as $item) {
+            $grouped[$keyFn($item)][] = $item;
+        }
+
+        return $grouped;
+    }
 }

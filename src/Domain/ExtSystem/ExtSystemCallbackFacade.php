@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
@@ -36,7 +37,35 @@ final class ExtSystemCallbackFacade
 
     public function isImageFileUsed(ImageFile $imageFile): bool
     {
-        return $this->getCallback($imageFile->getLicence()->getExtSystem()->getSlug())?->isImageFileUsed($imageFile) ?? false;
+        return $this->isImageFileUsedBulk([$imageFile])[(string) $imageFile->getId()] ?? true;
+    }
+
+    /**
+     * Fails closed: images whose ext system has no registered (or a failing) callback,
+     * or that are missing from the callback's response, are treated as "used".
+     * Total map: every id in $imageFiles is present in the result.
+     *
+     * @param iterable<ImageFile> $imageFiles
+     *
+     * @return array<string, bool> image file id => used
+     */
+    public function isImageFileUsedBulk(iterable $imageFiles): array
+    {
+        $grouped = CollectionHelper::groupBy(
+            $imageFiles,
+            static fn (ImageFile $imageFile): string => $imageFile->getLicence()->getExtSystem()->getSlug(),
+        );
+
+        $result = [];
+        foreach ($grouped as $slug => $imagesForSlug) {
+            $usageMap = $this->resolveBulkUsage($slug, $imagesForSlug);
+            foreach ($imagesForSlug as $imageFile) {
+                $id = (string) $imageFile->getId();
+                $result[$id] = $usageMap[$id] ?? true;
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -140,12 +169,43 @@ final class ExtSystemCallbackFacade
         $callback->notifyMediaStatus($assetId, $status, $failureReason);
     }
 
+    /**
+     * @param ImageFile[] $imageFiles
+     *
+     * @return array<string, bool>
+     */
+    private function resolveBulkUsage(string $slug, array $imageFiles): array
+    {
+        $callback = $this->getCallback($slug);
+        if (null === $callback) {
+            $this->logger->warning(
+                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
+                'isImageFileUsedBulk.noCallbackRegistered',
+                ['slug' => $slug],
+            );
+
+            return [];
+        }
+
+        try {
+            return $callback->isImageFileUsedBulk($imageFiles);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
+                sprintf('isImageFileUsedBulk failed for ext system (%s)', $slug),
+                exception: $e,
+            );
+
+            return [];
+        }
+    }
+
     private function getCallback(string $slug): ?ExtSystemCallbackInterface
     {
         try {
             return $this->extSystemCallbackLocator->get($slug);
         } catch (Throwable $e) {
-            $this->logger->warning('ExtSystemCallback', $e->getMessage());
+            $this->logger->warning(DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK, $e->getMessage());
 
             return null;
         }

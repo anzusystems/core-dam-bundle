@@ -9,9 +9,11 @@ use AnzuSystems\CoreDamBundle\Elasticsearch\CustomData\AssetMetadataCustomData;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\DocumentFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
@@ -53,7 +55,15 @@ final class AssetIndexFactory implements IndexFactoryInterface
                 static fn (AssetSlot $slot): string => (string) $slot->getAssetFile()->getId()
             )),
             'keywordIds' => array_values(CollectionHelper::traversableToIds($entity->getKeywords())),
+            'keywordNames' => array_values(array_map(
+                static fn (Keyword $keyword): string => $keyword->getName(),
+                $entity->getKeywords()->toArray(),
+            )),
             'authorIds' => array_values(CollectionHelper::traversableToIds($entity->getAuthors())),
+            'authorNames' => array_values(array_map(
+                static fn (Author $author): string => $author->getName(),
+                $entity->getAuthors()->toArray(),
+            )),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),

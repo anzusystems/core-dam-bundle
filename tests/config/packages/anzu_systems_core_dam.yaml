@@ -52,6 +52,7 @@ anzu_systems_core_dam:
     tmp_dir_path: '%kernel.project_dir%/var/mnt/data/tmp'
     fixtures_dir_path: '%kernel.project_dir%/var/mnt/data/fixtures'
   exif_metadata:
+    iptc_fallback_charset: cp1250
     common_metadata:
       Software: ~
       ExifVersion:
@@ -261,6 +262,10 @@ anzu_systems_core_dam:
         file_slots:
           default: default
           slots: [ default, test ]
+  asset_licence_storage_overrides:
+    100004: # AssetLicenceFixtures::LICENCE_NO_UPLOAD_ID
+      storage_name: 'blog.image'
+      crop_storage_name: 'blog.crop'
   domains:
     admin:
       domain: 'http://admin-image.anzusystems.localhost'

@@ -35,6 +35,14 @@ final class AssetLicenceManager extends AbstractManager
         ;
         $this->colUpdate($assetLicence->getInternalRuleAuthors(), $newAssetLicence->getInternalRuleAuthors());
         $this->colUpdate($assetLicence->getInternalRuleUsers(), $newAssetLicence->getInternalRuleUsers());
+        $assetLicence->getFlags()
+            ->setManualUploadAllowed($newAssetLicence->getFlags()->isManualUploadAllowed())
+            ->setDirectUseAllowed($newAssetLicence->getFlags()->isDirectUseAllowed())
+        ;
+        $assetLicence->getAutoDelete()
+            ->setActive($newAssetLicence->getAutoDelete()->isActive())
+            ->setOlderThanDays($newAssetLicence->getAutoDelete()->getOlderThanDays())
+        ;
         if (empty($assetLicence->getName())) {
             $assetLicence->setName($assetLicence->getDefaultName());
         }

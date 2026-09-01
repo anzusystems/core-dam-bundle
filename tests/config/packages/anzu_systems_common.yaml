@@ -18,7 +18,8 @@ anzu_systems_common:
     errors:
         enabled: true
         default_exception_handler: AnzuSystems\CommonBundle\Exception\Handler\DefaultExceptionHandler
-        exception_handlers: []
+        exception_handlers:
+            - AnzuSystems\CommonBundle\Exception\Handler\AccessDeniedExceptionHandler
     logs:
         enabled: true
         messenger_transport:

@@ -10,6 +10,7 @@ use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceRetentionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
@@ -67,6 +68,12 @@ return static function (ContainerConfigurator $configurator): void {
         ->arg('$audioRetentionGraceSeconds', 86_400)
         ->arg('$loudnessNormalizationEnabled', false)
         ->arg('$targetLufs', -18.0);
+
+    // Its consumer (retention cron command) lives in host apps, so the bundle test container would prune it as unused.
+    $services->set(AssetLicenceRetentionFacade::class)
+        ->autowire(true)
+        ->autoconfigure(true)
+        ->public();
 
     $services->set(SystemUserFixtures::class)
         ->arg('$userManager', service(UserManager::class))

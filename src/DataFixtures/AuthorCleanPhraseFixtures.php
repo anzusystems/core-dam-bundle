@@ -65,13 +65,9 @@ final class AuthorCleanPhraseFixtures extends AbstractFixtures
             ->setType(AuthorCleanPhraseType::Word)
         ;
 
-        yield (new AuthorCleanPhrase())
-            ->setExtSystem($cmsExtSystem)
-            ->setPhrase(',')
-            ->setMode(AuthorCleanPhraseMode::Split)
-            ->setType(AuthorCleanPhraseType::Word)
-        ;
-
+        // No comma split on purpose: a comma inside a credit is the "Surname, Firstname" convention,
+        // which AuthorCleanPhraseProcessor reorders into one author. Splitting on it first would
+        // turn one person into two.
         yield (new AuthorCleanPhrase())
             ->setExtSystem($cmsExtSystem)
             ->setPhrase(';')

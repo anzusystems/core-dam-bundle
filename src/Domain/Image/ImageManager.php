@@ -53,15 +53,35 @@ final class ImageManager extends AssetFileManager
     }
 
     /**
-     * @param ImageFile $assetFile
+     * @param iterable<ImageFile> $assetFiles
+     *
+     * @return array<string, bool> image file id => can be removed
      */
-    public function canBeRemoved(AssetFile $assetFile): bool
+    public function canBeRemovedBulk(iterable $assetFiles): array
     {
-        if (false === $assetFile->getExtSystem()->getFlags()->isCheckImageUsedOnDelete()) {
-            return true;
+        $result = [];
+        $toCheck = [];
+
+        foreach ($assetFiles as $assetFile) {
+            if (false === $assetFile->getExtSystem()->getFlags()->isCheckImageUsedOnDelete()) {
+                $result[(string) $assetFile->getId()] = true;
+
+                continue;
+            }
+
+            $toCheck[] = $assetFile;
         }
 
-        return false === $this->extSystemCallbackFacade->isImageFileUsed($assetFile);
+        if ([] === $toCheck) {
+            return $result;
+        }
+
+        $usageMap = $this->extSystemCallbackFacade->isImageFileUsedBulk($toCheck);
+        foreach ($toCheck as $assetFile) {
+            $result[(string) $assetFile->getId()] = false === ($usageMap[(string) $assetFile->getId()] ?? true);
+        }
+
+        return $result;
     }
 
     /**

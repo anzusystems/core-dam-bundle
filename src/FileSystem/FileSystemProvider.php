@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\FileSystem;
 
+use AnzuSystems\CoreDamBundle\Domain\Configuration\AssetLicenceStorageOverrideProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetFileRoute;
 use AnzuSystems\CoreDamBundle\Entity\Chunk;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\FileSystem\Adapter\LocalFileSystemAdapter;
@@ -30,6 +33,7 @@ final class FileSystemProvider
         private readonly NameGenerator $nameGenerator,
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly StorageProviderContainer $storageProviderContainer,
+        private readonly AssetLicenceStorageOverrideProvider $assetLicenceStorageOverrideProvider,
     ) {
     }
 
@@ -147,7 +151,36 @@ final class FileSystemProvider
             return $extSystemConfig->getChunkStorageName();
         }
 
+        // resize is not an AssetFile, but its derived files must follow the same licence override as the original image
+        $licence = match (true) {
+            $storable instanceof AssetFile => $storable->getLicence(),
+            $storable instanceof ImageFileOptimalResize => $storable->getImage()->getLicence(),
+            default => null,
+        };
+        $storageName = null === $licence ? null : $this->assetLicenceStorageOverrideProvider->getStorageName((int) $licence->getId());
+        if (is_string($storageName)) {
+            return $storageName;
+        }
+
         return $extSystemConfig->getStorageName();
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    public function getCropFilesystemByImage(ImageFile $image): AbstractFilesystem
+    {
+        $storageName = $this->assetLicenceStorageOverrideProvider->getCropStorageName((int) $image->getLicence()->getId());
+        if (false === is_string($storageName)) {
+            return $this->getCropFilesystemByExtSystemSlug($image->getExtSystem()->getSlug());
+        }
+
+        $filesystem = $this->getFileSystemByStorageName($storageName);
+        if (null === $filesystem) {
+            throw new InvalidArgumentException("Unknown storage name ({$storageName})");
+        }
+
+        return $filesystem;
     }
 
     public function getFileSystemByStorageName(string $storageName): ?AbstractFilesystem

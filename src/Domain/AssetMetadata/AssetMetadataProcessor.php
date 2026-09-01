@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion\DataSuggesterInter
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
-use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
@@ -17,8 +16,6 @@ use Symfony\Component\HttpFoundation\File\File as BaseFile;
 final class AssetMetadataProcessor
 {
     private const string DATA_SUGGESTER_LOCK_PREFIX = 'lock_suggester_';
-
-    private const int MAX_VALUE_LENGTH = 5_000;
 
     /**
      * @var iterable<DataSuggesterInterface>
@@ -30,6 +27,7 @@ final class AssetMetadataProcessor
         private readonly array $exifCommonMetadata,
         private readonly Exiftool $exiftool,
         private readonly ResourceLocker $resourceLocker,
+        private readonly ExifMetadataFilter $exifMetadataFilter,
         #[AutowireIterator(tag: DataSuggesterInterface::class, indexAttribute: 'key')]
         iterable $dataSuggesters,
     ) {
@@ -43,11 +41,11 @@ final class AssetMetadataProcessor
     {
         $rawMetadata = $this->exiftool->getTags($file->getRealPath());
 
-        $metadata = $this->provideCommonMetadata($rawMetadata, $this->exifCommonMetadata);
+        $metadata = $this->exifMetadataFilter->filter($rawMetadata, $this->exifCommonMetadata);
         if ($assetFile instanceof ImageFile) {
             $metadata = array_merge(
                 $metadata,
-                $this->provideCommonMetadata($rawMetadata, $this->exifImageMetadata)
+                $this->exifMetadataFilter->filter($rawMetadata, $this->exifImageMetadata)
             );
         }
         $assetFile->getMetadata()->setExifData($metadata);
@@ -75,21 +73,4 @@ final class AssetMetadataProcessor
         }
     }
 
-    private function provideCommonMetadata(array $rawMetadata, array $allowedMetadataList): array
-    {
-        $metadata = [];
-        foreach ($allowedMetadataList as $metadataName => $value) {
-            if (isset($rawMetadata[$metadataName])) {
-                $metadata[$metadataName] = $this->parseValue($rawMetadata[$metadataName]);
-            }
-        }
-
-        return $metadata;
-    }
-
-    // No HTML escaping: values go to JSON/ES only, never raw HTML; escaping here double-encoded & and '.
-    private function parseValue(string $value): string
-    {
-        return StringHelper::parseString($value, self::MAX_VALUE_LENGTH);
-    }
 }

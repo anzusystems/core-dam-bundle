@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Features
+* Add sys endpoint `POST /api/sys/v1/image/first-use` to write-once set `AssetFile::$firstUsedAt` — hosts need a migration for the new nullable `asset_file.first_used_at` column; the column ships unmapped until the host migration lands; partial-success semantics: unknown damIds and items in licences outside the caller's scope are skipped (skips logged as warning), never a 4xx
+* Add `JobAuthorNameReindex` job, automatically enqueued when an author is renamed via the adm update endpoint — hosts need a migration for the new `job_author_name_reindex` table (JOINED `Job` inheritance)
+* Add Elasticsearch asset mapping fields `authorNames` (fulltext, boosted) and `uploadedAt` (`epoch_second`, exposed as adm range filter `uploadedAtFrom`/`uploadedAtUntil`) — a full reindex is required to populate existing documents
+* Add `exif_metadata.iptc_fallback_charset` config option (default `null`, preserves previous behaviour): when set, undeclared IPTC values are auto-detected as UTF-8 per value, falling back to the configured charset only when the value isn't valid UTF-8
+* Add `CollectionHelper::groupBy`
+* Add `AssetLicence` embeds `flags` (`manualUploadAllowed`, `directUseAllowed`, both default `true`) and `autoDelete` (`active` default `false`, `olderThanDays` validated `> 1` when active), editable via the adm licence API — hosts need a migration for the four new `asset_licence` columns (all with DB defaults, old code keeps running during deploy)
+* Add manual upload guard: licences with `flags.manualUploadAllowed=false` reject adm file create, create-to-asset, external provider upload and adm copy target with `licence_manual_upload_disabled`; sys API, commands and job processors stay unguarded by design
+* Add `asset_licence_storage_overrides` bundle config (immutable map licence id => `storage_name`/`crop_storage_name`): `FileSystemProvider` resolves asset files, optimal resizes and crop cache through the override (`AssetLicenceStorageOverrideProvider`), `AssetFileDeleteEvent` carries the crop storage name resolved while the entity is alive
+* Add `AssetLicenceRetentionFacade::deleteExpiredAssets()` — batch sweep deleting assets older than the licence `autoDelete` threshold (conditions enforced in SQL, licence config re-read every batch so disabling stops a running sweep, usage is deliberately not checked because retention licences are not directly usable, undeletable assets skipped with a warning); hosts wire it into a daily cron command with Sentry check-ins
+* **BC break**: raise minimum PHP version to `>=8.5`; base Docker image updated to `anzusystems/php:5.1.0-php85-cli-vipsffmpeg`
+* Add Symfony `^8.0` support alongside `^7.4` (dual compatibility on all `symfony/*` packages); `petitpress/gps-messenger-bundle` allowed at `^3.2 || ^4.0` and `symfony/monolog-bundle` at `^3.11 || ^4.0` for Symfony 8 compatibility
+* **BC break**: `ExtSystemCallbackInterface` gains a required `isImageFileUsedBulk()` method — every implementor must add it
+* **BC break**: `AssetFileManager::canBeRemoved()` is now `final` — override `canBeRemovedBulk()` instead
+* Usage checks on delete are now fail-closed (an unavailable or erroring callback is treated as used); the usage check is now also enforced in `AssetFacade::delete()`/`deleteBulk()`; `deleteUnfinishedUploads` skips assets in use instead of failing
+* `AssetFileCopyBuilder` carries `flags.singleUse` and records `originAssetId` (source file id) on copies; `originAssetId` is now serialized
+* `AssetSysFactory::createFromDto()` accepts an optional service-level `$sourceStorageName` — storage override was removed from the sys DTO wire format
+* Undeclared-IPTC charset recovery is scoped to tags actually read from the IPTC group (extra lightweight exiftool read per file when `iptc_fallback_charset` is set) — EXIF/XMP values can no longer be reinterpreted; `ExifTagNormalizer::normalizeTags()` accepts optional `$iptcTagNames` (null keeps the apply-to-all behaviour for callers without group info)
+* **BC break** (manual construction only, DI unaffected): `Exiftool` requires `ExifTagNormalizer`, `AssetMetadataProcessor` requires `ExifMetadataFilter` and `AssetQueryFactory` requires `AssetFulltextQueryBuilderInterface` as constructor dependencies — the `?Service = null` fallbacks were removed
+* Rename container bind `$searcNext` to `$searchNext` (typo); env `ELASTICSEARCH_NEXT_ENABLED` and behaviour unchanged
+* `AssetFileDBALRepository::updateFirstUsedAtIfUnset()` writes `modified_at` from `App::getAppDate()` instead of SQL `NOW()`
+
 ### Fixes
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file

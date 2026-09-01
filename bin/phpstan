@@ -16,7 +16,7 @@ docker_env_vars
 
 if [ -f /.dockerenv ]; then
     echo "[INFO] Running PHPStan check"
-    vendor/bin/phpstan analyse --configuration=phpstan.neon.dist "${CHECK_DIR}"
+    vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G "${CHECK_DIR}"
     exit
 fi
 

@@ -18,6 +18,12 @@ use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
 
 final class AuthorCleanPhraseProcessor extends AbstractManager
 {
+    // Cap for reorderSurnameFirst(): longer comma phrases ("Archív SME, redakcia denníka") stay verbatim.
+    private const int REORDER_MAX_WORDS = 3;
+
+    // Hides commas from the split rules during the surname-first reading; never valid credit text.
+    private const string COMMA_PLACEHOLDER = "\u{0001}";
+
     public function __construct(
         private readonly AuthorCleanPhraseCache $cleanPhraseWordCache,
         private readonly AuthorCleanPhraseRepository $repository,
@@ -25,12 +31,25 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     }
 
     /**
+     * @param bool $commaReversesName comma read as the "Surname, Firstname" convention (NAXOS) instead of a credit separator (cms uploads); callers opt in per source
+     *
      * @throws AuthorCleanPhraseException
      */
-    public function processString(string $string, ExtSystem $extSystem): AuthorCleanResultDto
+    public function processString(string $string, ExtSystem $extSystem, bool $commaReversesName = false): AuthorCleanResultDto
     {
-        $authorParts = $this->split($string, $extSystem);
+        $authorParts = $this->split(
+            $commaReversesName ? str_replace(',', self::COMMA_PLACEHOLDER, $string) : $string,
+            $extSystem,
+        );
         $authorParts = $this->removeWords($authorParts, $extSystem);
+        if ($commaReversesName) {
+            $authorParts = array_map(
+                static fn (string $part): string => self::reorderSurnameFirst(
+                    str_replace(self::COMMA_PLACEHOLDER, ',', $part),
+                ),
+                $authorParts,
+            );
+        }
 
         return $this->replace($string, $authorParts, $extSystem);
     }
@@ -81,6 +100,25 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
     }
 
     /**
+     * Applied by {@see processString} only under the surname-first reading, and public so a caller
+     * doing its own part-level cleaning reverses names exactly the same way.
+     */
+    public static function reorderSurnameFirst(string $name): string
+    {
+        $parts = array_values(array_filter(
+            array_map(trim(...), explode(',', $name)),
+            static fn (string $part): bool => '' !== $part,
+        ));
+        if (2 !== count($parts)) {
+            return $name;
+        }
+
+        $words = preg_split('~\s+~u', implode(' ', $parts), flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return self::REORDER_MAX_WORDS < count($words) ? $name : $parts[1] . ' ' . $parts[0];
+    }
+
+    /**
      * @param array<int, string> $strings
      * @throws AuthorCleanPhraseException
      */
@@ -116,16 +154,29 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
      */
     private function split(string $string, ExtSystem $extSystem): array
     {
-        $patterns = $this->cleanPhraseWordCache->getList(
-            type: AuthorCleanPhraseType::Word,
-            mode: AuthorCleanPhraseMode::Split,
-            extSystem: $extSystem
-        );
+        // Word and regex split rules cascade — each pattern splits what the previous ones left.
+        $patterns = [
+            ...$this->cleanPhraseWordCache->getList(
+                type: AuthorCleanPhraseType::Word,
+                mode: AuthorCleanPhraseMode::Split,
+                extSystem: $extSystem
+            ),
+            ...$this->cleanPhraseWordCache->getList(
+                type: AuthorCleanPhraseType::Regex,
+                mode: AuthorCleanPhraseMode::Split,
+                extSystem: $extSystem
+            ),
+        ];
 
+        $parts = [$string];
         foreach ($patterns as $pattern) {
-            return array_map('trim', preg_split($pattern, $string));
+            $split = [];
+            foreach ($parts as $part) {
+                $split = [...$split, ...(preg_split($pattern, $part) ?: [$part])];
+            }
+            $parts = $split;
         }
 
-        return [trim($string)];
+        return array_map('trim', $parts);
     }
 }

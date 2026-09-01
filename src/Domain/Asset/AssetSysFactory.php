@@ -25,12 +25,12 @@ final readonly class AssetSysFactory
      * @throws NonUniqueResultException
      * @throws InvalidMimeTypeException
      */
-    public function createFromDto(AssetFileSysPathCreateDto $dto): AssetFile
+    public function createFromDto(AssetFileSysPathCreateDto $dto, ?string $sourceStorageName = null): AssetFile
     {
         $configuration = $this->configurationProvider->getExtSystemConfiguration($dto->getExtSystem()->getSlug());
 
         return $this->assetFileFactory->createAssetFileForStorage(
-            storageName: $configuration->getExtStorage(),
+            storageName: $sourceStorageName ?? $configuration->getExtStorage(),
             filePath: $dto->getPath(),
             licence: $dto->getLicence()
         );

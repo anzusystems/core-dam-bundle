@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexDefinition\CustomDataIndexDefinitionFactory;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\AssetAdmSearchDto;
@@ -16,17 +15,6 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 
 final class AssetQueryFactory extends AbstractQueryFactory
 {
-    protected const array BOOST_FIELDS = [
-        StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => [
-            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY => 5,
-            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.edgegrams' => 1,
-            StringIndexBuilder::CUSTOM_DATA_TITLE_KEY . '.lang' => 1,
-        ],
-        StringIndexBuilder::CUSTOM_DESCRIPTION_KEY => [
-            StringIndexBuilder::CUSTOM_DESCRIPTION_KEY . '.lang' => 1,
-        ],
-    ];
-
     private const string CUSTOM_SORT_DATE_FIELD = 'createdAt';
     private const string CUSTOM_SORT_DATE_DECAY_FUNCTION = 'exp';
     private const string CUSTOM_SORT_DATE_DECAY_ORIGIN = 'now';
@@ -36,7 +24,8 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
     public function __construct(
         private readonly CustomFormProvider $customFormProvider,
-        private bool $searcNext = true,
+        private readonly AssetFulltextQueryBuilderInterface $fulltextQueryBuilder,
+        private readonly bool $searchNext = true,
     ) {
     }
 
@@ -53,7 +42,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
      */
     public function getScriptScoreFunction(SearchDtoInterface $searchDto): ?array
     {
-        if (false === $this->searcNext || false === $this->isFulltextSearch($searchDto)) {
+        if (false === $this->searchNext || false === $this->isFulltextSearch($searchDto)) {
             return null;
         }
 
@@ -81,7 +70,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
 
     protected function expandFulltextOrderFields(string $field, string $direction): array
     {
-        if (false === $this->searcNext) {
+        if (false === $this->searchNext) {
             return parent::expandFulltextOrderFields($field, $direction);
         }
 
@@ -134,15 +123,7 @@ final class AssetQueryFactory extends AbstractQueryFactory
         }
 
         if ($searchDto->getText()) {
-            return [
-                'multi_match' => [
-                    'query' => $searchDto->getText(),
-                    'fields' => $this->boostSearchFields($customDataFields),
-                    'type' => 'most_fields',
-                    'tie_breaker' => 0.3,
-                    'lenient' => true,
-                ],
-            ];
+            return $this->fulltextQueryBuilder->build($searchDto->getText(), $customDataFields, $extSystem);
         }
 
         return parent::getMust($searchDto, $extSystem);
@@ -251,37 +232,9 @@ final class AssetQueryFactory extends AbstractQueryFactory
         $this->applyRangeFilter($filter, 'bitrate', $searchDto->getBitrateFrom(), $searchDto->getBitrateUntil());
         $this->applyRangeFilter($filter, 'slotsCount', $searchDto->getSlotsCountFrom(), $searchDto->getSlotsCountUntil());
         $this->applyRangeFilter($filter, 'createdAt', $searchDto->getCreatedAtFrom()?->getTimestamp(), $searchDto->getCreatedAtUntil()?->getTimestamp(), 'epoch_second');
+        $this->applyRangeFilter($filter, 'uploadedAt', $searchDto->getUploadedAtFrom()?->getTimestamp(), $searchDto->getUploadedAtUntil()?->getTimestamp(), 'epoch_second');
 
         return $filter;
-    }
-
-    /**
-     * @param array<int, string> $customDataFields
-     */
-    private function boostSearchFields(array $customDataFields): array
-    {
-        if ($this->searcNext) {
-            $searchFields = [];
-            foreach ($customDataFields as $field) {
-                if (isset(self::BOOST_FIELDS[$field])) {
-                    foreach (self::BOOST_FIELDS[$field] as $boostField => $boost) {
-                        $searchFields[] = $boostField . '^' . $boost;
-                    }
-
-                    continue;
-                }
-
-                $searchFields[] = $field;
-            }
-
-            return $searchFields;
-        }
-
-        foreach ($customDataFields as $key => $field) {
-            $customDataFields[$key] = $field . '^' . ($key + 1);
-        }
-
-        return $customDataFields;
     }
 
     private function getAssetIdAndMainFileIdFilter(array $ids): array

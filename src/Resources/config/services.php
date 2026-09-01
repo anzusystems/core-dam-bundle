@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexBuilder;
+use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\AssetFulltextQueryBuilderInterface;
+use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\DefaultAssetFulltextQueryBuilder;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNameGenerator;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\DirectoryNamGeneratorInterface;
@@ -47,7 +49,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->autowire(true)
         ->autoconfigure(true)
 
-        ->bind('$searcNext', param('elasticsearch_next_enabled'))
+        ->bind('$searchNext', param('elasticsearch_next_enabled'))
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
         ->bind('$redirectDomain', param('anzu_systems.dam_bundle.settings_redirect_domain'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))
@@ -65,9 +67,11 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$exifImageMetadata', param('anzu_systems.dam_bundle.image_metadata'))
         ->bind('$colorSet', param('anzu_systems.dam_bundle.color_set'))
         ->bind('$exiftoolBin', param('kernel.project_dir') . '/vendor/phpexiftool/exiftool/exiftool')
+        ->bind('$iptcFallbackCharset', param('anzu_systems.dam_bundle.exif_iptc_fallback_charset'))
         ->bind('$userEntityClass', param('anzu_systems.dam_bundle.settings.user_entity_class'))
         ->bind('$urlFileTrustedDomains', param('anzu_systems.dam_bundle.url_file_trusted_domains'))
         ->bind('$urlFileAllowPrivateNetworks', param('anzu_systems.dam_bundle.url_file_allow_private_networks'))
+        ->bind('$assetLicenceStorageOverrides', param('anzu_systems.dam_bundle.asset_licence_storage_overrides'))
     ;
 
     $services
@@ -81,6 +85,7 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(FileNameGeneratorInterface::class . ' $fileNameGenerator', FileNameGenerator::class);
     $services->set(DirectoryNamGeneratorInterface::class . ' $directoryNameGenerator', DirectoryNameGenerator::class);
     $services->set(SluggerInterface::class . ' $slugger', Slugger::class);
+    $services->alias(AssetFulltextQueryBuilderInterface::class, DefaultAssetFulltextQueryBuilder::class);
 
     $services->set(AssetFileMetadataProcessHandler::class)
         ->tag('messenger.message_handler', ['handler' => DistributionRemoteProcessingCheckMessage::class])
