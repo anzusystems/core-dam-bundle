@@ -9,6 +9,8 @@
 * Add `exif_metadata.iptc_fallback_charset` config option (default `null`, preserves previous behaviour): when set, undeclared IPTC values are auto-detected as UTF-8 per value, falling back to the configured charset only when the value isn't valid UTF-8
 * Add `CollectionHelper::groupBy`
 * Add `AssetLicence` embeds `flags` (`manualUploadAllowed`, `directUseAllowed`, both default `true`) and `autoDelete` (`active` default `false`, `olderThanDays` validated `> 1` when active), editable via the adm licence API — hosts need a migration for the four new `asset_licence` columns (all with DB defaults, old code keeps running during deploy)
+* Add `AssetLicence` flag `singleUseEnforced` (default `false`, editable via the adm licence API) and `AssetFileSingleUseEnforcer`, the single place deciding which asset files must be single use: every asset file of such a licence gets `flags.singleUse=true` forced on create and on update, whatever the origin (upload, import, copy, adm bulk edit), so it cannot be switched off — hosts need a migration adding `flags_single_use_enforced TINYINT(1) DEFAULT 0 NOT NULL` to `asset_licence`; files created before the flag was switched on are backfilled (DB + Elasticsearch, batches of 500) by `AssetFileSingleUseEnforcer::enforceLicence()` via `anzu-dam:asset-licence:enforce-single-use <licence_id>`
+* Add `AuthorProvider::provideAuthorToColl()` — adds an author to an asset and resolves `currentAuthors` aliases in the same step
 * Add manual upload guard: licences with `flags.manualUploadAllowed=false` reject adm file create, create-to-asset, external provider upload and adm copy target with `licence_manual_upload_disabled`; sys API, commands and job processors stay unguarded by design
 * Add `asset_licence_storage_overrides` bundle config (immutable map licence id => `storage_name`/`crop_storage_name`): `FileSystemProvider` resolves asset files, optimal resizes and crop cache through the override (`AssetLicenceStorageOverrideProvider`), `AssetFileDeleteEvent` carries the crop storage name resolved while the entity is alive
 * Add `AssetLicenceRetentionFacade::deleteExpiredAssets()` — batch sweep deleting assets older than the licence `autoDelete` threshold (conditions enforced in SQL, licence config re-read every batch so disabling stops a running sweep, usage is deliberately not checked because retention licences are not directly usable, undeletable assets skipped with a warning); hosts wire it into a daily cron command with Sentry check-ins
@@ -28,6 +30,7 @@
 * **BC break**: the asset-file processing lock is now scoped per checksum (`<assetType>_<licenceId>_<checksum>`) instead of per licence, so distinct files in one licence no longer serialise; identical files still do, which is what the duplicate check requires
 
 ### Fixes
+* `AuthorProvider::provideCurrentAuthorToColl()` adds resolved current authors via `Asset::addAuthor()`, so an author already present on the asset is no longer added twice
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file
 

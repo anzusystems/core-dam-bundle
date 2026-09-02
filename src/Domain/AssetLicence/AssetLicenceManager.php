@@ -38,6 +38,7 @@ final class AssetLicenceManager extends AbstractManager
         $assetLicence->getFlags()
             ->setManualUploadAllowed($newAssetLicence->getFlags()->isManualUploadAllowed())
             ->setDirectUseAllowed($newAssetLicence->getFlags()->isDirectUseAllowed())
+            ->setSingleUseEnforced($newAssetLicence->getFlags()->isSingleUseEnforced())
         ;
         $assetLicence->getAutoDelete()
             ->setActive($newAssetLicence->getAutoDelete()->isActive())

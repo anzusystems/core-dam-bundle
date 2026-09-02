@@ -46,8 +46,7 @@ final class ImageManager extends AssetFileManager
             ->setSingleUse($dto->getFlags()->isSingleUse())
         ;
 
-        $this->trackModification($image);
-        $this->flush($flush);
+        $this->updateExisting($image, flush: $flush);
 
         return $image;
     }

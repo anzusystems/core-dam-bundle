@@ -41,6 +41,24 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         self::assertSame(10, $stored->getAutoDelete()->getOlderThanDays());
     }
 
+    public function testUpdatePersistsSingleUseEnforced(): void
+    {
+        $licence = $this->getFixtureLicence();
+        $newLicence = $this->buildNewLicenceState(
+            $licence,
+            manualUploadAllowed: true,
+            directUseAllowed: true,
+            autoDeleteActive: false,
+            olderThanDays: 1,
+            singleUseEnforced: true,
+        );
+
+        $this->assetLicenceFacade->update($licence, $newLicence);
+        $this->entityManager->clear();
+
+        self::assertTrue($this->getFixtureLicence()->getFlags()->isSingleUseEnforced());
+    }
+
     public function testUpdateRejectsShortRetentionWhenAutoDeleteActive(): void
     {
         $licence = $this->getFixtureLicence();
@@ -129,6 +147,7 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         bool $directUseAllowed,
         bool $autoDeleteActive,
         int $olderThanDays,
+        bool $singleUseEnforced = false,
     ): AssetLicence {
         $newLicence = (new AssetLicence())
             ->setId($licence->getId())
@@ -142,6 +161,7 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         $newLicence->getFlags()
             ->setManualUploadAllowed($manualUploadAllowed)
             ->setDirectUseAllowed($directUseAllowed)
+            ->setSingleUseEnforced($singleUseEnforced)
         ;
         $newLicence->getAutoDelete()
             ->setActive($autoDeleteActive)
