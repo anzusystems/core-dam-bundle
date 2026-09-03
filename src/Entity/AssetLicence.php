@@ -79,6 +79,12 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private ?string $extId;
 
+    #[ORM\Column(type: Types::STRING, length: 3, options: ['default' => App::EMPTY_STRING])]
+    #[Serialize]
+    #[Assert\Regex(pattern: '/^[A-Z0-9]{0,3}$/', message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: 3, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private string $badge;
+
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
     private bool $limitedFiles;
@@ -125,6 +131,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setName('');
         $this->setExtSystem(new ExtSystem());
         $this->setExtId(null);
+        $this->setBadge(App::EMPTY_STRING);
         $this->setUsers(new ArrayCollection());
         $this->setLimitedFiles(false);
         $this->setGroups(new ArrayCollection());
@@ -173,6 +180,18 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public function setExtId(?string $extId): self
     {
         $this->extId = $extId;
+
+        return $this;
+    }
+
+    public function getBadge(): string
+    {
+        return $this->badge;
+    }
+
+    public function setBadge(string $badge): self
+    {
+        $this->badge = $badge;
 
         return $this;
     }

@@ -197,6 +197,106 @@ final class AssetLicenceControllerTest extends AbstractApiController
     /**
      * @throws SerializerException
      */
+    public function testCreateWithBadgeSuccess(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-with-badge',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'badge' => 'AG',
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_CREATED);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $licence->getBadge());
+
+        $getResponse = $client->get(AssetLicenceUrl::getOne($licence->getId()));
+        $this->assertStatusCode($getResponse, Response::HTTP_OK);
+        $fetched = $this->serializer->deserialize($getResponse->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $fetched->getBadge());
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateClearsBadge(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $createResponse = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-clear-badge',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'badge' => 'AG',
+        ]);
+        $this->assertStatusCode($createResponse, Response::HTTP_CREATED);
+        $created = $this->serializer->deserialize($createResponse->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $created->getBadge());
+
+        $updateResponse = $client->put(AssetLicenceUrl::update($created->getId()), [
+            'id' => $created->getId(),
+            'name' => $created->getName(),
+            'extSystem' => $created->getExtSystem()->getId(),
+            'extId' => $created->getExtId(),
+            'badge' => '',
+        ]);
+        $this->assertStatusCode($updateResponse, Response::HTTP_OK);
+        $updated = $this->serializer->deserialize($updateResponse->getContent(), AssetLicence::class);
+        $this->assertSame('', $updated->getBadge());
+    }
+
+    #[DataProvider('createBadgeFailureDataProvider')]
+    public function testCreateBadgeFailure(array $requestJson, array $validationErrors): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AssetLicenceUrl::createPath(), $requestJson);
+        $this->assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+
+        $content = json_decode($response->getContent(), true);
+        $this->assertValidationErrors($content, $validationErrors);
+    }
+
+    /**
+     * @return list<array{requestJson: array<string, mixed>, validationErrors: array<string, list<string>>}>
+     */
+    public static function createBadgeFailureDataProvider(): array
+    {
+        return [
+            [
+                'requestJson' => [
+                    'name' => 'badge-too-long',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                    'badge' => 'ABCD',
+                ],
+                'validationErrors' => [
+                    'badge' => [
+                        ValidationException::ERROR_FIELD_LENGTH_MAX,
+                    ],
+                ],
+            ],
+            [
+                'requestJson' => [
+                    'name' => 'badge-lowercase',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                    'badge' => 'ag',
+                ],
+                'validationErrors' => [
+                    'badge' => [
+                        ValidationException::ERROR_FIELD_INVALID,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @throws SerializerException
+     */
     public function testCreateWithInternalRuleAndAuthors(): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
