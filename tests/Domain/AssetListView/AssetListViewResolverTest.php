@@ -221,7 +221,6 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
             ->setGroups(new ArrayCollection($groups))
             ->setLicences(new ArrayCollection($licences))
             ->setUploadLicence($uploadLicence)
-            ->setTypes([])
             ->setCreatedAt(App::getAppDate())
             ->setModifiedAt(App::getAppDate())
             ->setCreatedBy($this->author)

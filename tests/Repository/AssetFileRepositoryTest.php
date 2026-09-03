@@ -55,6 +55,21 @@ final class AssetFileRepositoryTest extends CoreDamKernelTestCase
         );
     }
 
+    public function testFindFailedReasonsByOriginStorageIgnoresFailuresOlderThanTheSource(): void
+    {
+        $this->storeAttempt(ImageFixtures::IMAGE_ID_1_1, self::IMPORTED_PATH, AssetFileProcessStatus::Failed, AssetFileFailedType::InvalidMimeType, '-3 hours');
+        $this->storeAttempt(ImageFixtures::IMAGE_ID_1_2, self::IMPORTED_PATH, AssetFileProcessStatus::Failed, AssetFileFailedType::DownloadFailed, '-1 hour');
+        $this->entityManager->flush();
+
+        self::assertSame(
+            [AssetFileFailedType::DownloadFailed],
+            $this->repository->findFailedReasonsByOriginStorage(
+                new OriginStorage(self::STORAGE_NAME, self::IMPORTED_PATH),
+                failedSince: new DateTimeImmutable('-2 hours'),
+            ),
+        );
+    }
+
     public function testFindFailedReasonsByOriginStorageReturnsNothingForAnUntouchedPath(): void
     {
         self::assertSame(

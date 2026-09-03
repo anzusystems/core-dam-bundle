@@ -13,8 +13,11 @@ use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetLicenceUrl;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetListViewUrl;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -194,6 +197,30 @@ final class AssetLicenceControllerTest extends AbstractApiController
     /**
      * @throws SerializerException
      */
+    public function testUpdateRejectsExtSystemChangeWhileLicenceIsInListView(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $viewResponse = $client->post(AssetListViewUrl::createPath(), [
+            'name' => 'Locks licence ext system',
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'groups' => [],
+            'licences' => [TestAssetLicenceFixtures::LICENCE_2_ID],
+        ]);
+        self::assertStatusCode($viewResponse, Response::HTTP_CREATED);
+
+        $response = $client->put(AssetLicenceUrl::update(TestAssetLicenceFixtures::LICENCE_2_ID), [
+            'id' => TestAssetLicenceFixtures::LICENCE_2_ID,
+            'name' => 'moved licence',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => '5',
+        ]);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'extSystem' => [AssetLicenceFacade::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW],
+        ]);
+    }
+
     public function testCreateWithoutExtIdIsNotUniqueChecked(): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);

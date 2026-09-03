@@ -13,7 +13,6 @@ use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -90,16 +89,6 @@ class AssetListView implements
     #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?AssetLicence $uploadLicence;
-
-    /**
-     * Empty array lists all asset types.
-     *
-     * @var list<string>
-     */
-    #[ORM\Column(type: Types::JSON)]
-    #[Assert\Choice(choices: AssetType::CHOICES, multiple: true, multipleMessage: ValidationException::ERROR_FIELD_INVALID)]
-    #[Serialize]
-    private array $types = [];
 
     public function __construct()
     {
@@ -191,24 +180,6 @@ class AssetListView implements
     public function setUploadLicence(?AssetLicence $uploadLicence): self
     {
         $this->uploadLicence = $uploadLicence;
-
-        return $this;
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function getTypes(): array
-    {
-        return $this->types;
-    }
-
-    /**
-     * @param list<string> $types
-     */
-    public function setTypes(array $types): self
-    {
-        $this->types = $types;
 
         return $this;
     }

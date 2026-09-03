@@ -25,7 +25,6 @@ final class AssetListViewManager extends AbstractManager
             ->setName($newAssetListView->getName())
             ->setExtSystem($newAssetListView->getExtSystem())
             ->setPosition($newAssetListView->getPosition())
-            ->setTypes($newAssetListView->getTypes())
             ->setUploadLicence($newAssetListView->getUploadLicence())
         ;
         $this->colUpdate($assetListView->getGroups(), $newAssetListView->getGroups());

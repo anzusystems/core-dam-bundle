@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
 use Doctrine\DBAL\ArrayParameterType;
@@ -122,6 +123,17 @@ final class AssetListViewRepository extends AbstractAnzuRepository
                 'licenceIds' => ArrayParameterType::INTEGER,
             ]
         );
+    }
+
+    public function isLicenceUsed(AssetLicence $licence): bool
+    {
+        return (int) $this->createQueryBuilder('entity')
+            ->select('COUNT(entity.id)')
+            ->leftJoin('entity.licences', 'licence')
+            ->where('licence = :licence OR entity.uploadLicence = :licence')
+            ->setParameter('licence', $licence)
+            ->getQuery()
+            ->getSingleScalarResult() > App::ZERO;
     }
 
     /**

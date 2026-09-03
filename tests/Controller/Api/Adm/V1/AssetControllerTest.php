@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
@@ -28,6 +29,18 @@ final class AssetControllerTest extends AbstractApiController
         ]));
 
         self::assertStatusCode($response, Response::HTTP_OK);
+    }
+
+    public function testLicenceSearchRejectsOversizedCollectionBeforeQuerying(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->get(AssetUrl::licenceSearch(range(1, AssetLicence::COLLECTION_MAX + 1)));
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'licences' => [ValidationException::ERROR_FIELD_RANGE_MAX],
+        ]);
     }
 
     public function testLicenceSearchRejectsLicencesFromDifferentExtSystems(): void

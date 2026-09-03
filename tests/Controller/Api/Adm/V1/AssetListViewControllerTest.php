@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -58,7 +57,6 @@ final class AssetListViewControllerTest extends AbstractApiController
         $updateJson['groups'] = [];
         $updateJson['licences'] = [AssetLicenceFixtures::LICENCE_2_ID];
         $updateJson['uploadLicence'] = AssetLicenceFixtures::LICENCE_2_ID;
-        $updateJson['types'] = [AssetType::IMAGE];
         $updateResponse = $client->put(AssetListViewUrl::update($id), $updateJson);
         self::assertStatusCode($updateResponse, Response::HTTP_OK);
 
@@ -68,7 +66,6 @@ final class AssetListViewControllerTest extends AbstractApiController
         self::assertSame([], $reloaded['groups']);
         self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $reloaded['licences']);
         self::assertSame(AssetLicenceFixtures::LICENCE_2_ID, $reloaded['uploadLicence']);
-        self::assertSame([AssetType::IMAGE], $reloaded['types']);
 
         $deleteResponse = $client->delete(AssetListViewUrl::delete($id));
         self::assertStatusCode($deleteResponse, Response::HTTP_NO_CONTENT);
@@ -121,7 +118,7 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @param array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]} $requestJson
+     * @param array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int} $requestJson
      * @param array<string, string[]> $validationErrors
      */
     #[DataProvider('createFailureDataProvider')]
@@ -137,7 +134,7 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @return list<array{requestJson: array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]}, validationErrors: array<string, string[]>}>
+     * @return list<array{requestJson: array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int}, validationErrors: array<string, string[]>}>
      */
     public static function createFailureDataProvider(): array
     {
@@ -148,7 +145,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_BLOG,
                     'groups' => [AssetLicenceGroupFixtures::LICENCE_GROUP_ID],
                     'licences' => [AssetLicenceFixtures::LICENCE_2_ID],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'licences' => [ValidationException::ERROR_FIELD_INVALID],
@@ -160,7 +156,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_BLOG,
                     'groups' => [],
                     'licences' => [],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'licences' => [ValidationException::ERROR_FIELD_RANGE_MIN],
@@ -172,22 +167,9 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_BLOG,
                     'groups' => [],
                     'licences' => [AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'licences' => [ValidationException::ERROR_FIELD_INVALID],
-                ],
-            ],
-            'unknown_type' => [
-                'requestJson' => [
-                    'name' => 'Bad type',
-                    'extSystem' => ExtSystemFixtures::ID_BLOG,
-                    'groups' => [],
-                    'licences' => [AssetLicenceFixtures::LICENCE_ID],
-                    'types' => ['unknown_type'],
-                ],
-                'validationErrors' => [
-                    'types' => [ValidationException::ERROR_FIELD_INVALID],
                 ],
             ],
             'group_from_other_ext_system' => [
@@ -196,7 +178,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_CMS,
                     'groups' => [AssetLicenceGroupFixtures::LICENCE_GROUP_ID],
                     'licences' => [AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'groups' => [ValidationException::ERROR_FIELD_INVALID],
@@ -208,7 +189,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_BLOG,
                     'groups' => [],
                     'licences' => [AssetLicenceFixtures::LICENCE_ID],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'name' => [ValidationException::ERROR_FIELD_LENGTH_MIN],
@@ -220,7 +200,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'extSystem' => ExtSystemFixtures::ID_BLOG,
                     'groups' => [],
                     'licences' => [AssetLicenceFixtures::LICENCE_ID],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'name' => [ValidationException::ERROR_FIELD_UNIQUE],
@@ -233,7 +212,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'groups' => [],
                     'licences' => [AssetLicenceFixtures::LICENCE_ID],
                     'uploadLicence' => AssetLicenceFixtures::LICENCE_2_ID,
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'uploadLicence' => [ValidationException::ERROR_FIELD_INVALID],
@@ -246,7 +224,6 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'position' => 40_000,
                     'groups' => [],
                     'licences' => [AssetLicenceFixtures::LICENCE_ID],
-                    'types' => [],
                 ],
                 'validationErrors' => [
                     'position' => [ValidationException::ERROR_FIELD_INVALID],
@@ -256,7 +233,7 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @return array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]}
+     * @return array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int}
      */
     private static function validRequestJson(): array
     {
@@ -265,7 +242,6 @@ final class AssetListViewControllerTest extends AbstractApiController
             'extSystem' => ExtSystemFixtures::ID_BLOG,
             'groups' => [AssetLicenceGroupFixtures::LICENCE_GROUP_ID],
             'licences' => [AssetLicenceFixtures::LICENCE_ID],
-            'types' => [],
         ];
     }
 
