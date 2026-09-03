@@ -14,6 +14,7 @@ final class ExiftoolTest extends CoreDamKernelTestCase
     private const string IPTC_CP1250_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250Undeclared.jpg';
     private const string IPTC_UTF8_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Undeclared.jpg';
     private const string IPTC_UTF8_DECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Declared.jpg';
+    private const string IPTC_CP1250_MISDECLARED_UTF8_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250MisdeclaredUtf8.jpg';
 
     private Exiftool $exiftool;
 
@@ -75,6 +76,20 @@ final class ExiftoolTest extends CoreDamKernelTestCase
 
         self::assertSame('£50 note', $tags['By-line'] ?? null);
         self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
+    }
+
+    /**
+     * TASR/AP feed shape: IPTC:CodedCharacterSet=UTF8 declared over cp1250 bytes. Exiftool alone yields
+     * "Peter ??kovi?"; the raw-bytes re-read must restore the text.
+     */
+    public function testIptcMisdeclaredAsUtf8IsRecovered(): void
+    {
+        $tags = $this->exiftool->getTags(self::IPTC_CP1250_MISDECLARED_UTF8_FIXTURE);
+
+        self::assertSame('UTF8', $tags['CodedCharacterSet'] ?? null);
+        self::assertSame('Peter Žákovič', $tags['By-line'] ?? null);
+        self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
+        self::assertSame('Žák, beta', $tags['Keywords'] ?? null);
     }
 
     public static function undeclaredIptcCharsetFixtureProvider(): array

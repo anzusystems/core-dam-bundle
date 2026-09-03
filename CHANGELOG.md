@@ -30,6 +30,7 @@
 * **BC break**: the asset-file processing lock is now scoped per checksum (`<assetType>_<licenceId>_<checksum>`) instead of per licence, so distinct files in one licence no longer serialise; identical files still do, which is what the duplicate check requires
 
 ### Fixes
+* Fix IPTC values read as `?` from files that declare `CodedCharacterSet=UTF8` over cp1250 bytes (TASR/AP feed): when charset recovery is enabled and such a file yields `?`, the IPTC record is re-read raw (`-b`) and values exiftool could not decode are recovered via `iptc_fallback_charset`; correctly declared files are untouched
 * `AuthorProvider::provideCurrentAuthorToColl()` adds resolved current authors via `Asset::addAuthor()`, so an author already present on the asset is no longer added twice
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file

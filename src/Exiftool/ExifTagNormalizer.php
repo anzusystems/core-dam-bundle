@@ -81,6 +81,24 @@ final readonly class ExifTagNormalizer
         return $tagList;
     }
 
+    /**
+     * Raw IPTC bytes to UTF-8: valid UTF-8 stays, anything else goes through the fallback charset;
+     * null when the fallback cannot decode them either.
+     */
+    public function recoverBytes(string $bytes): ?string
+    {
+        if (null === $this->iptcFallbackCharset || App::EMPTY_STRING === $this->iptcFallbackCharset) {
+            return null;
+        }
+        if (mb_check_encoding($bytes, 'UTF-8')) {
+            return $bytes;
+        }
+
+        $recovered = iconv($this->iptcFallbackCharset, 'UTF-8', $bytes);
+
+        return false === $recovered ? null : $recovered;
+    }
+
     private function normalizeValue(string $value, bool $recoverCharset): string
     {
         return $recoverCharset ? $this->normalizeIptcCharset($value) : $value;
@@ -103,13 +121,6 @@ final readonly class ExifTagNormalizer
             return $value;
         }
 
-        $bytes = mb_convert_encoding($passthrough, 'ISO-8859-1', 'UTF-8');
-        if (mb_check_encoding($bytes, 'UTF-8')) {
-            return $bytes;
-        }
-
-        $recovered = iconv($this->iptcFallbackCharset, 'UTF-8', $bytes);
-
-        return false === $recovered ? $value : $recovered;
+        return $this->recoverBytes(mb_convert_encoding($passthrough, 'ISO-8859-1', 'UTF-8')) ?? $value;
     }
 }
