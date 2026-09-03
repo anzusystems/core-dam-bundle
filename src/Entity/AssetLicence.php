@@ -47,7 +47,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
-        min: 3,
+        min: 2,
         max: 255,
         minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
