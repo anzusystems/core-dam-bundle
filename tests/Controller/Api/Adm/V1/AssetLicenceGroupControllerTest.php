@@ -358,7 +358,6 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
             ->setExtSystem($extSystem)
             ->setGroups(new ArrayCollection($groups))
             ->setLicences(new ArrayCollection($licences))
-            ->setTypes([])
             ->setCreatedAt(App::getAppDate())
             ->setModifiedAt(App::getAppDate())
             ->setCreatedBy($author)
