@@ -30,6 +30,7 @@
 * **BC break**: the asset-file processing lock is now scoped per checksum (`<assetType>_<licenceId>_<checksum>`) instead of per licence, so distinct files in one licence no longer serialise; identical files still do, which is what the duplicate check requires
 
 ### Fixes
+* Fix crop output size drifting by 1-2 px from the requested `w{W}-h{H}` (e.g. 1199/1201/1202 for w1200): `VispImageManipulator::resize()` scaled both axes by the height factor only, so the whole-pixel truncation of the crop rectangle leaked into the width; both axes are now scaled independently. Already cached crops keep their old size until the crop cache is purged
 * Fix IPTC values read as `?` from files that declare `CodedCharacterSet=UTF8` over cp1250 bytes (TASR/AP feed): when charset recovery is enabled and such a file yields `?`, the IPTC record is re-read raw (`-b`) and values exiftool could not decode are recovered via `iptc_fallback_charset`; correctly declared files are untouched
 * `AuthorProvider::provideCurrentAuthorToColl()` adds resolved current authors via `Asset::addAuthor()`, so an author already present on the asset is no longer added twice
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
