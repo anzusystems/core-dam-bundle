@@ -133,9 +133,6 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     'extSystem' => [
                         ValidationException::ERROR_FIELD_EMPTY,
                     ],
-                    'extId' => [
-                        ValidationException::ERROR_FIELD_EMPTY,
-                    ]
                 ],
             ],
             [
@@ -197,6 +194,23 @@ final class AssetLicenceControllerTest extends AbstractApiController
     /**
      * @throws SerializerException
      */
+    public function testCreateWithoutExtIdIsNotUniqueChecked(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        foreach (['licence-no-ext-id-a', 'licence-no-ext-id-b'] as $name) {
+            $response = $client->post(AssetLicenceUrl::createPath(), [
+                'name' => $name,
+                'extSystem' => ExtSystemFixtures::ID_CMS,
+                'extId' => '',
+            ]);
+            $this->assertStatusCode($response, Response::HTTP_CREATED);
+
+            $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+            $this->assertNull($licence->getExtId());
+        }
+    }
+
     public function testCreateWithBadgeSuccess(): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);

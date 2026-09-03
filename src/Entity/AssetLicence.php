@@ -33,7 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(fields: ['name'])]
 #[ORM\UniqueConstraint(fields: ['extSystem', 'extId'])]
 #[ORM\Index(fields: ['name'])]
-#[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
+#[AppAssert\AssetLicenceExtIdUnique]
 class AssetLicence implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, AssetLicenceInterface, ExtSystemInterface
 {
     use IdentityTrait;
@@ -76,7 +76,6 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     #[Serialize]
-    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private ?string $extId;
 
     #[ORM\Column(type: Types::STRING, length: 3, options: ['default' => App::EMPTY_STRING])]
@@ -179,7 +178,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     public function setExtId(?string $extId): self
     {
-        $this->extId = $extId;
+        $this->extId = App::EMPTY_STRING === $extId ? null : $extId;
 
         return $this;
     }
