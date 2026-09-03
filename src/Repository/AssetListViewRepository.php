@@ -60,7 +60,8 @@ final class AssetListViewRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Drops the licences from every targeted view that no longer reaches them through any of its other groups.
+     * Drops the licences from every targeted view that no longer reaches them through any of its other groups,
+     * and nulls the view's upload licence when it no longer belongs to the view's remaining licences.
      * Excluding the edited group makes the result independent of whether its own change is already flushed.
      *
      * @param list<int> $licenceIds
@@ -96,6 +97,26 @@ final class AssetListViewRepository extends AbstractAnzuRepository
             [
                 'licenceIds' => $licenceIds,
                 'excludedGroupId' => $excludedGroup->getId(),
+            ],
+            [
+                'licenceIds' => ArrayParameterType::INTEGER,
+            ]
+        );
+
+        $this->getEntityManager()->getConnection()->executeStatement(
+            <<<SQL
+                UPDATE asset_list_view AS view
+                SET view.upload_licence_id = NULL
+                WHERE view.upload_licence_id IN (:licenceIds)
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM asset_licence_in_list_view AS licence_in_view
+                        WHERE licence_in_view.asset_list_view_id = view.id
+                            AND licence_in_view.asset_licence_id = view.upload_licence_id
+                    )
+                SQL,
+            [
+                'licenceIds' => $licenceIds,
             ],
             [
                 'licenceIds' => ArrayParameterType::INTEGER,

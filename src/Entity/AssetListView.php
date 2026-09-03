@@ -86,6 +86,11 @@ class AssetListView implements
     )]
     private Collection $licences;
 
+    #[ORM\ManyToOne(targetEntity: AssetLicence::class)]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    #[Serialize(handler: EntityIdHandler::class)]
+    private ?AssetLicence $uploadLicence;
+
     /**
      * Empty array lists all asset types.
      *
@@ -103,6 +108,7 @@ class AssetListView implements
         $this->setPosition(App::ZERO);
         $this->setGroups(new ArrayCollection());
         $this->setLicences(new ArrayCollection());
+        $this->setUploadLicence(null);
     }
 
     public function getName(): string
@@ -173,6 +179,18 @@ class AssetListView implements
     public function setLicences(Collection $licences): self
     {
         $this->licences = $licences;
+
+        return $this;
+    }
+
+    public function getUploadLicence(): ?AssetLicence
+    {
+        return $this->uploadLicence;
+    }
+
+    public function setUploadLicence(?AssetLicence $uploadLicence): self
+    {
+        $this->uploadLicence = $uploadLicence;
 
         return $this;
     }

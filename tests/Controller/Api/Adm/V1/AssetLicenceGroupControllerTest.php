@@ -257,6 +257,32 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
         self::assertTrue($this->findListView($globalViewId)->getLicences()->containsKey((int) $licence->getId()));
     }
 
+    public function testUpdateCascadesLicenceRemovalNullsUploadLicenceOfAffectedView(): void
+    {
+        $group100 = $this->findGroup(AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
+        $licence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_ID);
+        $keptLicence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_2_ID);
+        $this->attachLicenceToGroup($keptLicence, $group100);
+
+        $view = $this->createListView('View using the removed licence as upload licence', [$group100], [$licence, $keptLicence]);
+        $view->setUploadLicence($licence);
+        $this->entityManager->flush();
+        $viewId = (int) $view->getId();
+
+        $response = $this->getApiClient(User::ID_ADMIN)->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
+            'id' => AssetLicenceGroupFixtures::LICENCE_GROUP_ID,
+            'name' => $group100->getName(),
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'licences' => [TestAssetLicenceFixtures::LICENCE_2_ID],
+        ]);
+        self::assertStatusCode($response, Response::HTTP_OK);
+
+        $this->entityManager->clear();
+        $reloadedView = $this->findListView($viewId);
+        self::assertNull($reloadedView->getUploadLicence());
+        self::assertTrue($reloadedView->getLicences()->containsKey((int) $keptLicence->getId()));
+    }
+
     private function findGroup(int $id): AssetLicenceGroup
     {
         /** @var AssetLicenceGroup $group */

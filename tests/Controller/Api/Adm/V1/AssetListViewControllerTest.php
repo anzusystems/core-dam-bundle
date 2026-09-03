@@ -57,6 +57,7 @@ final class AssetListViewControllerTest extends AbstractApiController
         $updateJson['position'] = 3;
         $updateJson['groups'] = [];
         $updateJson['licences'] = [AssetLicenceFixtures::LICENCE_2_ID];
+        $updateJson['uploadLicence'] = AssetLicenceFixtures::LICENCE_2_ID;
         $updateJson['types'] = [AssetType::IMAGE];
         $updateResponse = $client->put(AssetListViewUrl::update($id), $updateJson);
         self::assertStatusCode($updateResponse, Response::HTTP_OK);
@@ -66,6 +67,7 @@ final class AssetListViewControllerTest extends AbstractApiController
         self::assertSame(3, $reloaded['position']);
         self::assertSame([], $reloaded['groups']);
         self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $reloaded['licences']);
+        self::assertSame(AssetLicenceFixtures::LICENCE_2_ID, $reloaded['uploadLicence']);
         self::assertSame([AssetType::IMAGE], $reloaded['types']);
 
         $deleteResponse = $client->delete(AssetListViewUrl::delete($id));
@@ -75,7 +77,51 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @param array{name: string, extSystem: int, groups: int[], licences: int[], types: string[]} $requestJson
+     * @throws SerializerException
+     */
+    public function testCreateWithValidUploadLicenceIsPersisted(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $requestJson = self::validRequestJson();
+        $requestJson['uploadLicence'] = AssetLicenceFixtures::LICENCE_ID;
+
+        $response = $client->post(AssetListViewUrl::createPath(), $requestJson);
+        self::assertStatusCode($response, Response::HTTP_CREATED);
+
+        $created = json_decode($response->getContent(), true);
+        self::assertSame(AssetLicenceFixtures::LICENCE_ID, $created['uploadLicence']);
+
+        $reloaded = json_decode($client->get(AssetListViewUrl::getOne((int) $created['id']))->getContent(), true);
+        self::assertSame(AssetLicenceFixtures::LICENCE_ID, $reloaded['uploadLicence']);
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateChangingLicencesAndUploadLicenceTogetherSucceeds(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $createResponse = $client->post(AssetListViewUrl::createPath(), self::validRequestJson());
+        self::assertStatusCode($createResponse, Response::HTTP_CREATED);
+        $id = (int) json_decode($createResponse->getContent(), true)['id'];
+
+        $updateJson = self::validRequestJson();
+        $updateJson['id'] = $id;
+        $updateJson['groups'] = [];
+        $updateJson['licences'] = [AssetLicenceFixtures::LICENCE_2_ID];
+        $updateJson['uploadLicence'] = AssetLicenceFixtures::LICENCE_2_ID;
+        $updateResponse = $client->put(AssetListViewUrl::update($id), $updateJson);
+        self::assertStatusCode($updateResponse, Response::HTTP_OK);
+
+        $reloaded = json_decode($client->get(AssetListViewUrl::getOne($id))->getContent(), true);
+        self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $reloaded['licences']);
+        self::assertSame(AssetLicenceFixtures::LICENCE_2_ID, $reloaded['uploadLicence']);
+    }
+
+    /**
+     * @param array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]} $requestJson
      * @param array<string, string[]> $validationErrors
      */
     #[DataProvider('createFailureDataProvider')]
@@ -91,7 +137,7 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @return list<array{requestJson: array{name: string, extSystem: int, groups: int[], licences: int[], types: string[]}, validationErrors: array<string, string[]>}>
+     * @return list<array{requestJson: array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]}, validationErrors: array<string, string[]>}>
      */
     public static function createFailureDataProvider(): array
     {
@@ -180,6 +226,19 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'name' => [ValidationException::ERROR_FIELD_UNIQUE],
                 ],
             ],
+            'upload_licence_outside_licences' => [
+                'requestJson' => [
+                    'name' => 'Bad upload licence',
+                    'extSystem' => ExtSystemFixtures::ID_BLOG,
+                    'groups' => [],
+                    'licences' => [AssetLicenceFixtures::LICENCE_ID],
+                    'uploadLicence' => AssetLicenceFixtures::LICENCE_2_ID,
+                    'types' => [],
+                ],
+                'validationErrors' => [
+                    'uploadLicence' => [ValidationException::ERROR_FIELD_INVALID],
+                ],
+            ],
             'position_out_of_smallint_range' => [
                 'requestJson' => [
                     'name' => 'Far away',
@@ -197,7 +256,7 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @return array{name: string, extSystem: int, groups: int[], licences: int[], types: string[]}
+     * @return array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int, types: string[]}
      */
     private static function validRequestJson(): array
     {

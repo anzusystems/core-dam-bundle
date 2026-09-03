@@ -39,6 +39,7 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
     private AssetListView $foreignLicenceView;
     private AssetListView $globalViewA;
     private AssetListView $globalViewB;
+    private AssetListView $mixedUploadLicenceView;
     private User $author;
 
     protected function setUp(): void
@@ -74,6 +75,13 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $this->globalViewA = $this->createView('Global - reachable licence', $blogExtSystem, [], [$licenceInGroup]);
         $this->globalViewB = $this->createView('Global - unreachable licence', $blogExtSystem, [], [$licenceOutsideGroup]);
         $this->foreignLicenceView = $this->createView('Global - licence moved to another ext system', $blogExtSystem, [], [$licenceInGroup, $foreignLicence]);
+        $this->mixedUploadLicenceView = $this->createView(
+            'Global - upload licence not granted to every viewer',
+            $blogExtSystem,
+            [],
+            [$licenceInGroup, $licenceOutsideGroup],
+            uploadLicence: $licenceOutsideGroup,
+        );
 
         $this->entityManager->flush();
         $this->entityManager->clear();
@@ -150,6 +158,23 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         self::assertSame(1, count(array_keys($viewIds, (int) $this->targetedView->getId(), true)));
     }
 
+    public function testUploadLicenceIdIsNullWhenUserHasNoRightToIt(): void
+    {
+        $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userMember));
+
+        self::assertNull($scopes[(int) $this->mixedUploadLicenceView->getId()]->getUploadLicenceId());
+    }
+
+    public function testUploadLicenceIdIsReturnedWhenUserHasRightToIt(): void
+    {
+        $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userSuperAdmin));
+
+        self::assertSame(
+            (int) $this->mixedUploadLicenceView->getUploadLicence()->getId(),
+            $scopes[(int) $this->mixedUploadLicenceView->getId()]->getUploadLicenceId()
+        );
+    }
+
     private function reloadUser(int $id): User
     {
         /** @var User $user */
@@ -181,14 +206,21 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
      * @param list<AssetLicenceGroup> $groups
      * @param list<AssetLicence> $licences
      */
-    private function createView(string $name, ExtSystem $extSystem, array $groups, array $licences, int $position = App::ZERO): AssetListView
-    {
+    private function createView(
+        string $name,
+        ExtSystem $extSystem,
+        array $groups,
+        array $licences,
+        int $position = App::ZERO,
+        ?AssetLicence $uploadLicence = null,
+    ): AssetListView {
         $view = (new AssetListView())
             ->setName($name)
             ->setExtSystem($extSystem)
             ->setPosition($position)
             ->setGroups(new ArrayCollection($groups))
             ->setLicences(new ArrayCollection($licences))
+            ->setUploadLicence($uploadLicence)
             ->setTypes([])
             ->setCreatedAt(App::getAppDate())
             ->setModifiedAt(App::getAppDate())

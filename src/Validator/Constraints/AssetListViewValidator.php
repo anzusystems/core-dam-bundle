@@ -43,6 +43,20 @@ final class AssetListViewValidator extends ConstraintValidator
             }
         }
 
+        $uploadLicence = $value->getUploadLicence();
+        if (null !== $uploadLicence) {
+            $licenceIds = [];
+            foreach ($value->getLicences() as $licence) {
+                $licenceIds[(int) $licence->getId()] = true;
+            }
+
+            if (false === isset($licenceIds[(int) $uploadLicence->getId()])) {
+                $this->addViolation('uploadLicence');
+
+                return;
+            }
+        }
+
         if ($value->getGroups()->isEmpty()) {
             return;
         }
