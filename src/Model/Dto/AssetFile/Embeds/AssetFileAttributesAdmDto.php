@@ -29,6 +29,9 @@ final class AssetFileAttributesAdmDto
     private string $originFileName = '';
 
     #[Serialize]
+    private string $takenOverFromId = '';
+
+    #[Serialize]
     #[Assert\Url]
     #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private ?string $originUrl = null;
@@ -46,6 +49,7 @@ final class AssetFileAttributesAdmDto
             ->setMimeType($assetFileAttributes->getMimeType())
             ->setSize($assetFileAttributes->getSize())
             ->setOriginFileName($assetFileAttributes->getOriginFileName())
+            ->setTakenOverFromId($assetFileAttributes->getTakenOverFromId())
             ->setOriginUrl($assetFileAttributes->getOriginUrl())
             ->setFailReason($assetFileAttributes->getFailReason())
         ;
@@ -107,6 +111,18 @@ final class AssetFileAttributesAdmDto
     public function setOriginFileName(string $originFileName): self
     {
         $this->originFileName = $originFileName;
+
+        return $this;
+    }
+
+    public function getTakenOverFromId(): string
+    {
+        return $this->takenOverFromId;
+    }
+
+    public function setTakenOverFromId(string $takenOverFromId): self
+    {
+        $this->takenOverFromId = $takenOverFromId;
 
         return $this;
     }

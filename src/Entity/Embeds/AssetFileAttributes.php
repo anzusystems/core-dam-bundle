@@ -25,6 +25,15 @@ class AssetFileAttributes
     #[Serialize]
     private string $originAssetId;
 
+    /**
+     * Root of the take-over chain: id of the AssetFile this one was physically copied from into another
+     * licence, empty for originals. Soft link without a FK on purpose — licence retention deletes the
+     * agency original while its take-overs live on.
+     */
+    #[ORM\Column(type: Types::STRING, length: 36, options: ['default' => ''])]
+    #[Serialize]
+    private string $takenOverFromId;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $filePath;
 
@@ -66,6 +75,7 @@ class AssetFileAttributes
         $this->setOriginFileName('');
         $this->setMimeType('');
         $this->setOriginAssetId('');
+        $this->setTakenOverFromId('');
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setOriginStorage(null);
@@ -191,6 +201,18 @@ class AssetFileAttributes
     public function setOriginAssetId(string $originAssetId): self
     {
         $this->originAssetId = $originAssetId;
+
+        return $this;
+    }
+
+    public function getTakenOverFromId(): string
+    {
+        return $this->takenOverFromId;
+    }
+
+    public function setTakenOverFromId(string $takenOverFromId): self
+    {
+        $this->takenOverFromId = $takenOverFromId;
 
         return $this;
     }

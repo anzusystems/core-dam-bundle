@@ -103,6 +103,22 @@ final class AssetFileRepository extends AbstractAssetFileRepository
         return count($results);
     }
 
+    /**
+     * Existence probe over IDX_attributes_taken_over_from: tells whether the given file is already the root of
+     * a take-over group of its own.
+     */
+    public function existsTakenOverFrom(string $takenOverFromId): bool
+    {
+        return [] !== $this->createQueryBuilder('entity')
+            ->select('entity.id')
+            ->where('entity.assetAttributes.takenOverFromId = :takenOverFromId')
+            ->setParameter('takenOverFromId', $takenOverFromId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getSingleColumnResult()
+        ;
+    }
+
     protected function getEntityClass(): string
     {
         return AssetFile::class;
