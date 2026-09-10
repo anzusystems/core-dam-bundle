@@ -12,4 +12,9 @@ final class ImageSysUrl
     {
         return sprintf('/api/sys/v%d/image/first-use', self::API_VERSION);
     }
+
+    public static function usage(): string
+    {
+        return sprintf('/api/sys/v%d/image/usage', self::API_VERSION);
+    }
 }

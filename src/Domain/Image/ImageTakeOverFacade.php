@@ -174,8 +174,9 @@ final class ImageTakeOverFacade
         }
 
         $existing->getAssetAttributes()->setTakenOverFromId($source->getTakeOverRootId());
-        // Flushed with the transaction opened in takeOverToLicence().
-        $this->assetFileManager->updateExisting(assetFile: $existing, flush: false, trackModification: false);
+        // Flushed here, inside the transaction opened by takeOverToLicence(): committing it does not flush the
+        // unit of work, and unlike the copy branch nothing else in this path writes.
+        $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
 
         return ImageTakeOverResultDto::getInstance($existing, takenOver: true);
     }
