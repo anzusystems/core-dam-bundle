@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -60,6 +61,33 @@ class AssetFileManager extends AbstractManager
         if ($trackModification) {
             $this->trackModification($assetFile);
         }
+        $this->flush($flush);
+
+        return $assetFile;
+    }
+
+    /**
+     * Deliberately not routed through {@see updateExisting()}: the single use enforcer lazy loads the licence
+     * of every touched file, and a usage claim changes no licence and no flag — it is not a user edit either,
+     * so no modification tracking.
+     *
+     * @param T $assetFile
+     *
+     * @return T
+     */
+    public function updateUsage(AssetFile $assetFile, UsageClaim $claim, bool $flush = true): AssetFile
+    {
+        $attributes = $assetFile->getAssetAttributes();
+        if ($claim->matches($attributes)) {
+            return $assetFile;
+        }
+
+        $attributes
+            ->setUsedByScopeName($claim->getScopeName())
+            ->setUsedByScopeId($claim->getScopeId())
+            ->setUsedByResourceName($claim->getHolderName())
+            ->setUsedByResourceId($claim->getHolderId())
+        ;
         $this->flush($flush);
 
         return $assetFile;

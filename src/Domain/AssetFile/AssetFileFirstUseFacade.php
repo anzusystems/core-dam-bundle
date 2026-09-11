@@ -48,7 +48,12 @@ final readonly class AssetFileFirstUseFacade
         foreach ($this->assetFileRepository->findByIds($damIds) as $assetFile) {
             $assetFilesByDamId[$assetFile->getId()] = $assetFile;
         }
-        $this->logUnknownDamIds($damIds, $assetFilesByDamId);
+        $this->damLogger->warnUnknownDamIds(
+            DamLogger::NAMESPACE_ASSET_FILE_FIRST_USE,
+            'First-use batch',
+            $damIds,
+            $assetFilesByDamId,
+        );
         $assetFilesByDamId = $this->filterAuthorized($assetFilesByDamId);
         $roots = $this->findTakeOverRoots($assetFilesByDamId);
 
@@ -119,24 +124,6 @@ final readonly class AssetFileFirstUseFacade
         }
 
         return $roots;
-    }
-
-    /**
-     * @param string[] $damIds
-     * @param array<string, AssetFile> $assetFilesByDamId
-     */
-    private function logUnknownDamIds(array $damIds, array $assetFilesByDamId): void
-    {
-        // Unknown ids signal CMS<->DAM drift, so they surface in logs even though the batch succeeds.
-        $unknownDamIds = array_diff($damIds, array_keys($assetFilesByDamId));
-        if ([] === $unknownDamIds) {
-            return;
-        }
-
-        $this->damLogger->warning(
-            DamLogger::NAMESPACE_ASSET_FILE_FIRST_USE,
-            sprintf('First-use batch skipped %d unknown damId(s) (%s)', count($unknownDamIds), implode(',', $unknownDamIds)),
-        );
     }
 
     /**

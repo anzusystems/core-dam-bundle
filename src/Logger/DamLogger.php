@@ -70,6 +70,33 @@ final class DamLogger
     }
 
     /**
+     * Unknown ids signal CMS<->DAM drift, so they surface in logs even though the caller's operation succeeds.
+     *
+     * @param string[] $damIds
+     * @param array<string, mixed> $knownByDamId
+     *
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function warnUnknownDamIds(string $namespace, string $operation, array $damIds, array $knownByDamId): void
+    {
+        $unknownDamIds = array_diff($damIds, array_keys($knownByDamId));
+        if ([] === $unknownDamIds) {
+            return;
+        }
+
+        $this->warning(
+            $namespace,
+            sprintf(
+                '%s skipped %d unknown damId(s) (%s)',
+                $operation,
+                count($unknownDamIds),
+                implode(',', $unknownDamIds),
+            ),
+        );
+    }
+
+    /**
      * @throws SerializerException
      * @throws JsonException
      */

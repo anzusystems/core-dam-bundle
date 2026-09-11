@@ -10,11 +10,11 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageConflictDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageSyncDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageSyncResultDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Throwable;
 
 /**
@@ -35,7 +35,6 @@ final class ImageUsageSyncFacade
     public function __construct(
         private readonly AssetFileRepository $assetFileRepository,
         private readonly AssetFileManager $assetFileManager,
-        private readonly EntityManagerInterface $entityManager,
         private readonly DamLogger $damLogger,
     ) {
     }
@@ -48,13 +47,13 @@ final class ImageUsageSyncFacade
         $this->validator->validate($dto);
 
         try {
-            $this->entityManager->beginTransaction();
+            $this->assetFileManager->beginTransaction();
             $result = $this->syncScope($dto);
             $this->assetFileManager->flush();
-            $this->entityManager->commit();
+            $this->assetFileManager->commit();
         } catch (Throwable $exception) {
-            if ($this->entityManager->getConnection()->isTransactionActive()) {
-                $this->entityManager->rollback();
+            if ($this->assetFileManager->isTransactionActive()) {
+                $this->assetFileManager->rollback();
             }
 
             throw $exception;
@@ -129,7 +128,12 @@ final class ImageUsageSyncFacade
         foreach ($this->assetFileRepository->findByIds($damIds) as $assetFile) {
             $rootIdByDamId[(string) $assetFile->getId()] = $assetFile->getTakeOverRootId();
         }
-        $this->logUnknownDamIds($damIds, $rootIdByDamId);
+        $this->damLogger->warnUnknownDamIds(
+            DamLogger::NAMESPACE_ASSET_FILE_USAGE,
+            'Usage sync',
+            $damIds,
+            $rootIdByDamId,
+        );
 
         return $rootIdByDamId;
     }
@@ -179,63 +183,11 @@ final class ImageUsageSyncFacade
 
     private function claim(AssetFile $assetFile, ImageUsageSyncDto $dto): void
     {
-        $this->write(
-            $assetFile,
-            $dto->getScopeResourceName(),
-            $dto->getScopeResourceId(),
-            $dto->getHolderResourceName(),
-            $dto->getHolderResourceId(),
-        );
+        $this->assetFileManager->updateUsage($assetFile, UsageClaim::fromDto($dto), flush: false);
     }
 
     private function release(AssetFile $assetFile): void
     {
-        $this->write($assetFile, App::EMPTY_STRING, App::EMPTY_STRING, App::EMPTY_STRING, App::EMPTY_STRING);
-    }
-
-    private function write(
-        AssetFile $assetFile,
-        string $scopeName,
-        string $scopeId,
-        string $holderName,
-        string $holderId,
-    ): void {
-        $attributes = $assetFile->getAssetAttributes();
-        if (
-            $attributes->getUsedByScopeName() === $scopeName
-            && $attributes->getUsedByScopeId() === $scopeId
-            && $attributes->getUsedByResourceName() === $holderName
-            && $attributes->getUsedByResourceId() === $holderId
-        ) {
-            return;
-        }
-
-        $attributes
-            ->setUsedByScopeName($scopeName)
-            ->setUsedByScopeId($scopeId)
-            ->setUsedByResourceName($holderName)
-            ->setUsedByResourceId($holderId)
-        ;
-        // Deliberately not through AssetFileManager::updateExisting(): it runs the single use enforcer, which
-        // lazy loads the licence of every touched file, and this write changes no licence and no flag. The
-        // entity is managed, so the single flush in sync() persists it.
-    }
-
-    /**
-     * @param string[] $damIds
-     * @param array<string, string> $rootIdByDamId
-     */
-    private function logUnknownDamIds(array $damIds, array $rootIdByDamId): void
-    {
-        // Unknown ids signal CMS<->DAM drift, so they surface in logs even though the sync succeeds.
-        $unknownDamIds = array_diff($damIds, array_keys($rootIdByDamId));
-        if ([] === $unknownDamIds) {
-            return;
-        }
-
-        $this->damLogger->warning(
-            DamLogger::NAMESPACE_ASSET_FILE_USAGE,
-            sprintf('Usage sync skipped %d unknown damId(s) (%s)', count($unknownDamIds), implode(',', $unknownDamIds)),
-        );
+        $this->assetFileManager->updateUsage($assetFile, UsageClaim::released(), flush: false);
     }
 }

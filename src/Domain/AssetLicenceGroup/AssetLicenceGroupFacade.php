@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
@@ -22,6 +23,7 @@ final class AssetLicenceGroupFacade
     public function __construct(
         private readonly AssetLicenceGroupManager $assetLicenceGroupManager,
         private readonly AssetListViewRepository $assetListViewRepository,
+        private readonly AssetListViewManager $assetListViewManager,
     ) {
     }
 
@@ -50,7 +52,7 @@ final class AssetLicenceGroupFacade
 
         try {
             $this->assetLicenceGroupManager->update($assetLicenceGroup, $newAssetLicenceGroup, flush: false);
-            $this->assetListViewRepository->removeLicencesUnreachableByOtherGroups($removedLicenceIds, $assetLicenceGroup);
+            $this->assetListViewManager->removeUnreachableLicences($removedLicenceIds, $assetLicenceGroup);
             if ($this->assetListViewRepository->countWithoutLicences() > App::ZERO) {
                 throw (new ValidationException())->addFormattedError('licences', self::ERROR_LICENCE_REQUIRED_BY_LIST_VIEW);
             }
