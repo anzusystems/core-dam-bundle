@@ -27,6 +27,9 @@ final class ImageControllerTest extends AbstractApiController
     private const string REQUESTED_AT_STORED = '2026-03-01 10:15:00';
     private const string LATER_REQUESTED_AT = '2026-04-01T12:00:00.000000Z';
     private const string ALREADY_USED_AT = '2020-05-04 08:30:00';
+    private const string HOLDER_NAME = 'articleKindStandard';
+    private const string HOLDER_ID = '2f8b0f1e-0000-4000-8000-000000000001';
+    private const string OTHER_HOLDER_ID = '2f8b0f1e-0000-4000-8000-000000000002';
 
     private AssetFileRepository $assetFileRepository;
 
@@ -163,6 +166,77 @@ final class ImageControllerTest extends AbstractApiController
                 'itemDamIds' => [ImageFixtures::IMAGE_ID_1_1, BlogImageFixtures::IMAGE_ID_1],
                 'expectedWrittenDamIds' => [ImageFixtures::IMAGE_ID_1_1],
             ],
+        ];
+    }
+
+    public function testUsageSyncClaimsThenReportsConflictForAnotherScope(): void
+    {
+        $client = $this->getApiClient(User::ID_CMS_USER);
+        $damId = ImageFixtures::IMAGE_ID_2;
+
+        $claimResponse = $client->post(ImageSysUrl::usage(), self::usagePayload('10', [$damId]));
+
+        self::assertStatusCode($claimResponse, Response::HTTP_OK);
+        self::assertSame([], self::conflicts($claimResponse));
+        self::assertSame(
+            [self::HOLDER_NAME, self::HOLDER_ID],
+            $this->reloadHolder($damId),
+        );
+
+        $conflictResponse = $client->post(
+            ImageSysUrl::usage(),
+            self::usagePayload('20', [$damId], scopeName: 'articleKindStandard', holderId: self::OTHER_HOLDER_ID),
+        );
+
+        self::assertStatusCode($conflictResponse, Response::HTTP_OK);
+        self::assertSame(
+            [['damId' => $damId, 'resourceName' => self::HOLDER_NAME, 'resourceId' => self::HOLDER_ID]],
+            self::conflicts($conflictResponse),
+        );
+        // The conflicting scope changed nothing: the first holder is still the one holding it.
+        self::assertSame([self::HOLDER_NAME, self::HOLDER_ID], $this->reloadHolder($damId));
+    }
+
+    /**
+     * @param list<string> $damIds
+     *
+     * @return array<string, mixed>
+     */
+    private static function usagePayload(
+        string $scopeId,
+        array $damIds,
+        string $scopeName = 'gallery',
+        string $holderId = self::HOLDER_ID,
+    ): array {
+        return [
+            'scopeResourceName' => $scopeName,
+            'scopeResourceId' => $scopeId,
+            'holderResourceName' => self::HOLDER_NAME,
+            'holderResourceId' => $holderId,
+            'damIds' => $damIds,
+        ];
+    }
+
+    /**
+     * @return list<array<string, string>>
+     */
+    private static function conflicts(Response $response): array
+    {
+        return json_decode((string) $response->getContent(), true)['conflicts'];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function reloadHolder(string $damId): array
+    {
+        $this->entityManager->clear();
+        $assetFile = $this->assetFileRepository->find($damId);
+        self::assertNotNull($assetFile);
+
+        return [
+            $assetFile->getAssetAttributes()->getUsedByResourceName(),
+            $assetFile->getAssetAttributes()->getUsedByResourceId(),
         ];
     }
 
