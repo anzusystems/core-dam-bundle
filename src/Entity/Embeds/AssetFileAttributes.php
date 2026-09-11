@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginExternalProviderType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginStorageType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -24,6 +25,38 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 36)]
     #[Serialize]
     private string $originAssetId;
+
+    /**
+     * Root of the take-over chain: id of the AssetFile this one was physically copied from into another
+     * licence, empty for originals. Soft link without a FK on purpose — licence retention deletes the
+     * agency original while its take-overs live on.
+     */
+    #[ORM\Column(type: Types::STRING, length: 36, options: ['default' => ''])]
+    #[Serialize]
+    private string $takenOverFromId;
+
+    /**
+     * Effective holder of the photo — the pair a picker compares against when a single use licence allows
+     * only one user. Empty means the photo is free.
+     */
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[Serialize]
+    private string $usedByResourceName;
+
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[Serialize]
+    private string $usedByResourceId;
+
+    /**
+     * The entity that owns the usage row the holder came from, and the key the declarative usage sync
+     * releases by. Deliberately not serialized: a gallery photo is scoped to the gallery but held by the
+     * article the gallery sits in, and only the holder is anyone else's business.
+     */
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    private string $usedByScopeName;
+
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    private string $usedByScopeId;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $filePath;
@@ -66,6 +99,11 @@ class AssetFileAttributes
         $this->setOriginFileName('');
         $this->setMimeType('');
         $this->setOriginAssetId('');
+        $this->setTakenOverFromId('');
+        $this->setUsedByResourceName(App::EMPTY_STRING);
+        $this->setUsedByResourceId(App::EMPTY_STRING);
+        $this->setUsedByScopeName(App::EMPTY_STRING);
+        $this->setUsedByScopeId(App::EMPTY_STRING);
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setOriginStorage(null);
@@ -191,6 +229,66 @@ class AssetFileAttributes
     public function setOriginAssetId(string $originAssetId): self
     {
         $this->originAssetId = $originAssetId;
+
+        return $this;
+    }
+
+    public function getTakenOverFromId(): string
+    {
+        return $this->takenOverFromId;
+    }
+
+    public function setTakenOverFromId(string $takenOverFromId): self
+    {
+        $this->takenOverFromId = $takenOverFromId;
+
+        return $this;
+    }
+
+    public function getUsedByResourceName(): string
+    {
+        return $this->usedByResourceName;
+    }
+
+    public function setUsedByResourceName(string $usedByResourceName): self
+    {
+        $this->usedByResourceName = $usedByResourceName;
+
+        return $this;
+    }
+
+    public function getUsedByResourceId(): string
+    {
+        return $this->usedByResourceId;
+    }
+
+    public function setUsedByResourceId(string $usedByResourceId): self
+    {
+        $this->usedByResourceId = $usedByResourceId;
+
+        return $this;
+    }
+
+    public function getUsedByScopeName(): string
+    {
+        return $this->usedByScopeName;
+    }
+
+    public function setUsedByScopeName(string $usedByScopeName): self
+    {
+        $this->usedByScopeName = $usedByScopeName;
+
+        return $this;
+    }
+
+    public function getUsedByScopeId(): string
+    {
+        return $this->usedByScopeId;
+    }
+
+    public function setUsedByScopeId(string $usedByScopeId): self
+    {
+        $this->usedByScopeId = $usedByScopeId;
 
         return $this;
     }

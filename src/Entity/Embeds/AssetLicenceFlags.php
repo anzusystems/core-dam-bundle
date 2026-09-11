@@ -19,6 +19,10 @@ class AssetLicenceFlags
     #[Serialize]
     private bool $directUseAllowed = true;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $singleUseEnforced = false;
+
     public function isManualUploadAllowed(): bool
     {
         return $this->manualUploadAllowed;
@@ -44,6 +48,18 @@ class AssetLicenceFlags
     public function setDirectUseAllowed(bool $directUseAllowed): self
     {
         $this->directUseAllowed = $directUseAllowed;
+
+        return $this;
+    }
+
+    public function isSingleUseEnforced(): bool
+    {
+        return $this->singleUseEnforced;
+    }
+
+    public function setSingleUseEnforced(bool $singleUseEnforced): self
+    {
+        $this->singleUseEnforced = $singleUseEnforced;
 
         return $this;
     }

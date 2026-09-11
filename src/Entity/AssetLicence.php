@@ -33,16 +33,21 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(fields: ['name'])]
 #[ORM\UniqueConstraint(fields: ['extSystem', 'extId'])]
 #[ORM\Index(fields: ['name'])]
-#[BaseAppAssert\UniqueEntity(fields: ['extSystem', 'extId'], errorAtPath: ['extId'])]
+#[AppAssert\AssetLicenceExtIdUnique]
 class AssetLicence implements IdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, AssetLicenceInterface, ExtSystemInterface
 {
     use IdentityTrait;
     use TimeTrackingTrait;
     use UserTrackingTrait;
 
+    /**
+     * Upper bound shared by the licence-collection search DTOs and AssetListView::$licences.
+     */
+    public const int COLLECTION_MAX = 20;
+
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
-        min: 3,
+        min: 2,
         max: 255,
         minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
@@ -71,8 +76,13 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     #[Serialize]
-    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     private ?string $extId;
+
+    #[ORM\Column(type: Types::STRING, length: 3, options: ['default' => App::EMPTY_STRING])]
+    #[Serialize]
+    #[Assert\Regex(pattern: '/^[A-Z0-9]{0,3}$/', message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: 3, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private string $badge;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     #[Serialize]
@@ -109,11 +119,18 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $internalRuleUsers;
 
+    #[ORM\ManyToOne(targetEntity: Author::class)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
+    private ?Author $defaultAuthor = null;
+
     public function __construct()
     {
         $this->setName('');
         $this->setExtSystem(new ExtSystem());
         $this->setExtId(null);
+        $this->setBadge(App::EMPTY_STRING);
         $this->setUsers(new ArrayCollection());
         $this->setLimitedFiles(false);
         $this->setGroups(new ArrayCollection());
@@ -122,6 +139,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setAutoDelete(new AssetLicenceAutoDelete());
         $this->internalRuleAuthors = new ArrayCollection();
         $this->internalRuleUsers = new ArrayCollection();
+        $this->setDefaultAuthor(null);
     }
 
     public function getName(): string
@@ -160,7 +178,19 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     public function setExtId(?string $extId): self
     {
-        $this->extId = $extId;
+        $this->extId = App::EMPTY_STRING === $extId ? null : $extId;
+
+        return $this;
+    }
+
+    public function getBadge(): string
+    {
+        return $this->badge;
+    }
+
+    public function setBadge(string $badge): self
+    {
+        $this->badge = $badge;
 
         return $this;
     }
@@ -306,6 +336,18 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         if (false === $this->internalRuleUsers->contains($user)) {
             $this->internalRuleUsers->add($user);
         }
+
+        return $this;
+    }
+
+    public function getDefaultAuthor(): ?Author
+    {
+        return $this->defaultAuthor;
+    }
+
+    public function setDefaultAuthor(?Author $defaultAuthor): self
+    {
+        $this->defaultAuthor = $defaultAuthor;
 
         return $this;
     }

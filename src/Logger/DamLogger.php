@@ -32,7 +32,9 @@ final class DamLogger
     public const string NAMESPACE_TTS = 'Tts';
     public const string NAMESPACE_EXT_SYSTEM_CALLBACK = 'ExtSystemCallback';
     public const string NAMESPACE_ASSET_FILE_FIRST_USE = 'AssetFileFirstUse';
+    public const string NAMESPACE_ASSET_FILE_USAGE = 'AssetFileUsage';
     public const string NAMESPACE_ASSET_LICENCE_RETENTION = 'AssetLicenceRetention';
+    public const string NAMESPACE_LICENCE_AUTO_IMPORT = 'LicenceAutoImport';
 
     public function __construct(
         private readonly LoggerInterface $journalLogger,
@@ -65,6 +67,33 @@ final class DamLogger
     public function info(string $namespace, string $message = '', array $content = [], array $params = []): void
     {
         $this->journalLogger->info("[{$namespace}] {$message}", $this->createContext($content, $params));
+    }
+
+    /**
+     * Unknown ids signal CMS<->DAM drift, so they surface in logs even though the caller's operation succeeds.
+     *
+     * @param string[] $damIds
+     * @param array<string, mixed> $knownByDamId
+     *
+     * @throws JsonException
+     * @throws SerializerException
+     */
+    public function warnUnknownDamIds(string $namespace, string $operation, array $damIds, array $knownByDamId): void
+    {
+        $unknownDamIds = array_diff($damIds, array_keys($knownByDamId));
+        if ([] === $unknownDamIds) {
+            return;
+        }
+
+        $this->warning(
+            $namespace,
+            sprintf(
+                '%s skipped %d unknown damId(s) (%s)',
+                $operation,
+                count($unknownDamIds),
+                implode(',', $unknownDamIds),
+            ),
+        );
     }
 
     /**
