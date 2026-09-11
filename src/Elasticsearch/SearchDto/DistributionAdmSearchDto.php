@@ -11,11 +11,13 @@ use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\LicenceCollectionHandler;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[AppAssert\LicenceCollectionSingleExtSystem]
 final class DistributionAdmSearchDto extends AbstractSearchDto implements LicenceCollectionInterface
 {
     #[Serialize]
@@ -42,7 +44,7 @@ final class DistributionAdmSearchDto extends AbstractSearchDto implements Licenc
     #[Serialize(handler: LicenceCollectionHandler::class, type: AssetLicence::class)]
     #[Assert\Count(
         min: 1,
-        max: 20,
+        max: AssetLicence::COLLECTION_MAX,
         minMessage: ValidationException::ERROR_FIELD_RANGE_MIN,
         maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX
     )]
