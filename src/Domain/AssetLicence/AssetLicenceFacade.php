@@ -39,7 +39,7 @@ final class AssetLicenceFacade
     {
         $this->validator->validate($newAssetLicence, $assetLicence);
         if (
-            $assetLicence->getExtSystem()->getId() !== $newAssetLicence->getExtSystem()->getId()
+            $assetLicence->getExtSystem()->isNot($newAssetLicence->getExtSystem())
             && $this->assetListViewRepository->isLicenceUsed($assetLicence)
         ) {
             throw (new ValidationException())->addFormattedError('extSystem', self::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW);

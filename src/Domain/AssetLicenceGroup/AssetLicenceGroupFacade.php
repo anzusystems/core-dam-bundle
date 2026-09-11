@@ -7,22 +7,17 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
-use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 use Throwable;
 
 final class AssetLicenceGroupFacade
 {
     use ValidatorAwareTrait;
 
-    public const string ERROR_LICENCE_REQUIRED_BY_LIST_VIEW = 'error_licence_required_by_list_view';
-
     public function __construct(
         private readonly AssetLicenceGroupManager $assetLicenceGroupManager,
-        private readonly AssetListViewRepository $assetListViewRepository,
         private readonly AssetListViewManager $assetListViewManager,
     ) {
     }
@@ -52,16 +47,11 @@ final class AssetLicenceGroupFacade
 
         try {
             $this->assetLicenceGroupManager->update($assetLicenceGroup, $newAssetLicenceGroup, flush: false);
+            // A view can end up without licences here. That is an administrator's mistake, not a broken
+            // state: the resolver stops offering the view until a licence is put back.
             $this->assetListViewManager->removeUnreachableLicences($removedLicenceIds, $assetLicenceGroup);
-            if ($this->assetListViewRepository->countWithoutLicences() > App::ZERO) {
-                throw (new ValidationException())->addFormattedError('licences', self::ERROR_LICENCE_REQUIRED_BY_LIST_VIEW);
-            }
             $this->assetLicenceGroupManager->flush();
             $this->assetLicenceGroupManager->commit();
-        } catch (ValidationException $exception) {
-            $this->assetLicenceGroupManager->rollback();
-
-            throw $exception;
         } catch (Throwable $exception) {
             if ($this->assetLicenceGroupManager->isTransactionActive()) {
                 $this->assetLicenceGroupManager->rollback();

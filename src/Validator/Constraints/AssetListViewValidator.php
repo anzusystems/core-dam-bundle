@@ -25,10 +25,10 @@ final class AssetListViewValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, EntityAssetListView::class);
         }
 
-        $extSystemId = $value->getExtSystem()->getId();
+        $extSystem = $value->getExtSystem();
 
         foreach ($value->getGroups() as $group) {
-            if ($group->getExtSystem()->getId() !== $extSystemId) {
+            if ($group->getExtSystem()->isNot($extSystem)) {
                 $this->addViolation('groups');
 
                 return;
@@ -36,7 +36,7 @@ final class AssetListViewValidator extends ConstraintValidator
         }
 
         foreach ($value->getLicences() as $licence) {
-            if ($licence->getExtSystem()->getId() !== $extSystemId) {
+            if ($licence->getExtSystem()->isNot($extSystem)) {
                 $this->addViolation('licences');
 
                 return;

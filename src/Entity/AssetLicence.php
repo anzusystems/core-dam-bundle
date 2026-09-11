@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceInternalRule;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\AssetLicenceInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemInterface;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\EmptyStringToNullHandler;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -44,6 +45,8 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
      * Upper bound shared by the licence-collection search DTOs and AssetListView::$licences.
      */
     public const int COLLECTION_MAX = 20;
+
+    public const int BADGE_MAX_LENGTH = 4;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
@@ -75,13 +78,13 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
      * External system licence ID (e.g. BlogId)
      */
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    #[Serialize]
+    #[Serialize(handler: EmptyStringToNullHandler::class)]
     private ?string $extId;
 
-    #[ORM\Column(type: Types::STRING, length: 3, options: ['default' => App::EMPTY_STRING])]
+    #[ORM\Column(type: Types::STRING, length: self::BADGE_MAX_LENGTH, options: ['default' => App::EMPTY_STRING])]
     #[Serialize]
-    #[Assert\Regex(pattern: '/^[A-Z0-9]{0,3}$/', message: ValidationException::ERROR_FIELD_INVALID)]
-    #[Assert\Length(max: 3, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Regex(pattern: '/^[A-Z0-9]{0,4}$/', message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: self::BADGE_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $badge;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
@@ -178,7 +181,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     public function setExtId(?string $extId): self
     {
-        $this->extId = App::EMPTY_STRING === $extId ? null : $extId;
+        $this->extId = $extId;
 
         return $this;
     }

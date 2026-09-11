@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
-use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
@@ -208,7 +207,7 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
     /**
      * @throws SerializerException
      */
-    public function testUpdateRejectsLicenceRemovalThatWouldEmptyAListView(): void
+    public function testUpdateEmptiesAListViewWhenItsLastLicenceIsRemoved(): void
     {
         $group100 = $this->findGroup(AssetLicenceGroupFixtures::LICENCE_GROUP_ID);
         $licence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_ID);
@@ -220,13 +219,10 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
             'extSystem' => ExtSystemFixtures::ID_BLOG,
             'licences' => [],
         ]);
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode($response->getContent(), true), [
-            'licences' => [AssetLicenceGroupFacade::ERROR_LICENCE_REQUIRED_BY_LIST_VIEW],
-        ]);
+        self::assertStatusCode($response, Response::HTTP_OK);
 
         $this->entityManager->clear();
-        self::assertTrue($this->findListView($viewId)->getLicences()->containsKey((int) $licence->getId()));
+        self::assertTrue($this->findListView($viewId)->getLicences()->isEmpty());
     }
 
     public function testUpdateCascadesLicenceRemovalOnlyToViewsUnreachableByOtherGroups(): void

@@ -63,7 +63,7 @@ final readonly class AssetListViewResolver
 
         $licenceIds = [];
         foreach ($view->getLicences() as $licence) {
-            $sameExtSystem = $licence->getExtSystem()->getId() === $view->getExtSystem()->getId();
+            $sameExtSystem = $licence->getExtSystem()->is($view->getExtSystem());
             if ($sameExtSystem && ($superAdmin || $this->licencePermissionGranted($licence, $user))) {
                 $licenceIds[] = (int) $licence->getId();
             }

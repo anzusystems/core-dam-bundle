@@ -311,7 +311,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     'name' => 'badge-too-long',
                     'extSystem' => ExtSystemFixtures::ID_CMS,
                     'extId' => (string) Uuid::v7(),
-                    'badge' => 'ABCD',
+                    'badge' => 'ABCDE',
                 ],
                 'validationErrors' => [
                     'badge' => [

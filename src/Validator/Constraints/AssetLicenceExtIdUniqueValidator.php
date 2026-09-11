@@ -33,7 +33,7 @@ final class AssetLicenceExtIdUniqueValidator extends ConstraintValidator
         }
 
         $existing = $this->assetLicenceRepository->findOneByExtSystemAndExtId($value->getExtSystem(), $extId);
-        if (null === $existing || $existing->getId() === $value->getId()) {
+        if (null === $existing || $existing->is($value)) {
             return;
         }
 

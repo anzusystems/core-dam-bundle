@@ -74,7 +74,7 @@ final class Exiftool
 
     private function isCharsetRecoveryEnabled(): bool
     {
-        return false === (null === $this->iptcFallbackCharset || App::EMPTY_STRING === $this->iptcFallbackCharset);
+        return null !== $this->iptcFallbackCharset && App::EMPTY_STRING !== $this->iptcFallbackCharset;
     }
 
     /**

@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
-use Doctrine\DBAL\Exception;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -67,24 +66,6 @@ final class AssetListViewRepository extends AbstractAnzuRepository
             ->setParameter('licence', $licence)
             ->getQuery()
             ->getSingleScalarResult() > App::ZERO;
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function countWithoutLicences(): int
-    {
-        return (int) $this->getEntityManager()->getConnection()->fetchOne(
-            <<<SQL
-                SELECT COUNT(*)
-                FROM asset_list_view AS view
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM asset_licence_in_list_view AS licence_in_view
-                    WHERE licence_in_view.asset_list_view_id = view.id
-                )
-                SQL
-        );
     }
 
     protected function getEntityClass(): string

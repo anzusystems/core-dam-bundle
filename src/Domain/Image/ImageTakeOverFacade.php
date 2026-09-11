@@ -74,7 +74,7 @@ final class ImageTakeOverFacade
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_DIRECT_USE_DISABLED);
         }
 
-        $sameLicence = $source->getLicence()->getId() === $targetLicence->getId();
+        $sameLicence = $source->getLicence()->is($targetLicence);
 
         // Asking for the licence the file already lives in leaves nothing to copy, so the source is handed
         // back — but only where using it there is allowed at all. Without the flag the same request is

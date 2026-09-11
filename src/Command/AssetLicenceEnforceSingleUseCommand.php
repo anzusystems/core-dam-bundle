@@ -6,51 +6,42 @@ namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
+use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'anzu-dam:asset-licence:enforce-single-use',
     description: 'Switch every asset file of a licence with flags.singleUseEnforced to single use and reindex it'
 )]
-final class AssetLicenceEnforceSingleUseCommand extends Command
+final readonly class AssetLicenceEnforceSingleUseCommand
 {
-    private const string ARG_LICENCE_ID = 'licence_id';
-
     public function __construct(
-        private readonly AssetLicenceRepository $assetLicenceRepository,
-        private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
+        private AssetLicenceRepository $assetLicenceRepository,
+        private AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
-        parent::__construct();
     }
 
-    public function configure(): void
-    {
-        $this->addArgument(
-            name: self::ARG_LICENCE_ID,
-            mode: InputArgument::REQUIRED,
-        );
-    }
-
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $licence = $this->assetLicenceRepository->find((int) $input->getArgument(self::ARG_LICENCE_ID));
+    public function __invoke(
+        SymfonyStyle $io,
+        #[Argument(description: 'Asset licence to enforce single use on', name: 'licence_id')]
+        int $licenceId,
+    ): int {
+        $licence = $this->assetLicenceRepository->find($licenceId);
         if (null === $licence) {
-            $output->writeln('<error>Asset licence not found</error>');
+            $io->error('Asset licence not found');
 
             return Command::FAILURE;
         }
         if (false === $licence->getFlags()->isSingleUseEnforced()) {
-            $output->writeln('<error>Asset licence does not enforce single use, nothing to do</error>');
+            $io->error('Asset licence does not enforce single use, nothing to do');
 
             return Command::FAILURE;
         }
 
         $enforcedCount = $this->assetFileSingleUseEnforcer->enforceLicence($licence);
-        $output->writeln(sprintf('<info>Switched %d asset file(s) of licence %d to single use</info>', $enforcedCount, $licence->getId()));
+        $io->success(sprintf('Switched %d asset file(s) of licence %d to single use', $enforcedCount, $licence->getId()));
 
         return Command::SUCCESS;
     }
