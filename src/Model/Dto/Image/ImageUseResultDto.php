@@ -12,7 +12,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
  * The file the caller must use from now on: either the one it asked for, or the copy that was taken over
  * into the target licence. `takenOverFromId` is the identity of the photo across licences.
  */
-final class ImageTakeOverResultDto
+final class ImageUseResultDto
 {
     #[Serialize]
     private string $imageFileId = App::EMPTY_STRING;

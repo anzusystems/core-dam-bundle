@@ -13,10 +13,14 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
+/**
+ * One photo of an {@see ImageUseRequestDto} batch: which file to use and, where the licence forbids using
+ * it as is, which licence to take it over into.
+ */
 #[AppAssert\AssetCopyEqualExtSystem]
-final class ImageTakeOverRequestDto
+final class ImageUseItemDto
 {
-    #[Serialize(handler: EntityIdHandler::class)]
+    #[Serialize(serializedName: 'imageFileId', handler: EntityIdHandler::class)]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     #[BaseAppAssert\NotEmptyId]
     private ImageFile $imageFile;

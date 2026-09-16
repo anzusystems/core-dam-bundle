@@ -9,8 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 
 /**
- * One photo the sync refused to claim, together with who holds it now. The holder is reported, never the
- * scope — the caller shows the user which article blocks the photo, not which row it came from.
+ * One photo a claim was refused for, together with who holds it now.
  */
 final class ImageUsageConflictDto
 {
@@ -18,17 +17,17 @@ final class ImageUsageConflictDto
     private string $damId = App::EMPTY_STRING;
 
     #[Serialize]
-    private string $resourceName = App::EMPTY_STRING;
+    private string $holderName = App::EMPTY_STRING;
 
     #[Serialize]
-    private string $resourceId = App::EMPTY_STRING;
+    private string $holderId = App::EMPTY_STRING;
 
     public static function getInstance(string $damId, AssetFileAttributes $holder): self
     {
         return (new self())
             ->setDamId($damId)
-            ->setResourceName($holder->getUsedByResourceName())
-            ->setResourceId($holder->getUsedByResourceId())
+            ->setHolderName($holder->getUsedByHolderName())
+            ->setHolderId($holder->getUsedByHolderId())
         ;
     }
 
@@ -44,26 +43,26 @@ final class ImageUsageConflictDto
         return $this;
     }
 
-    public function getResourceName(): string
+    public function getHolderName(): string
     {
-        return $this->resourceName;
+        return $this->holderName;
     }
 
-    public function setResourceName(string $resourceName): self
+    public function setHolderName(string $holderName): self
     {
-        $this->resourceName = $resourceName;
+        $this->holderName = $holderName;
 
         return $this;
     }
 
-    public function getResourceId(): string
+    public function getHolderId(): string
     {
-        return $this->resourceId;
+        return $this->holderId;
     }
 
-    public function setResourceId(string $resourceId): self
+    public function setHolderId(string $holderId): self
     {
-        $this->resourceId = $resourceId;
+        $this->holderId = $holderId;
 
         return $this;
     }

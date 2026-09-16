@@ -83,10 +83,8 @@ class AssetFileManager extends AbstractManager
         }
 
         $attributes
-            ->setUsedByScopeName($claim->getScopeName())
-            ->setUsedByScopeId($claim->getScopeId())
-            ->setUsedByResourceName($claim->getHolderName())
-            ->setUsedByResourceId($claim->getHolderId())
+            ->setUsedByHolderName($claim->getHolderName())
+            ->setUsedByHolderId($claim->getHolderId())
         ;
         $this->flush($flush);
 

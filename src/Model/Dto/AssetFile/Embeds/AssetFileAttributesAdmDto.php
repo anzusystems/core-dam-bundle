@@ -36,10 +36,10 @@ final class AssetFileAttributesAdmDto
     private ?DateTimeImmutable $firstUsedAt = null;
 
     #[Serialize]
-    private string $usedByResourceName = '';
+    private string $usedByHolderName = '';
 
     #[Serialize]
-    private string $usedByResourceId = '';
+    private string $usedByHolderId = '';
 
     #[Serialize]
     #[Assert\Url]
@@ -67,8 +67,8 @@ final class AssetFileAttributesAdmDto
             ->setOriginFileName($assetFileAttributes->getOriginFileName())
             ->setTakenOverFromId($assetFileAttributes->getTakenOverFromId())
             ->setFirstUsedAt($assetFile->getFirstUsedAt())
-            ->setUsedByResourceName($assetFileAttributes->getUsedByResourceName())
-            ->setUsedByResourceId($assetFileAttributes->getUsedByResourceId())
+            ->setUsedByHolderName($assetFileAttributes->getUsedByHolderName())
+            ->setUsedByHolderId($assetFileAttributes->getUsedByHolderId())
             ->setOriginUrl($assetFileAttributes->getOriginUrl())
             ->setFailReason($assetFileAttributes->getFailReason())
         ;
@@ -158,26 +158,26 @@ final class AssetFileAttributesAdmDto
         return $this;
     }
 
-    public function getUsedByResourceName(): string
+    public function getUsedByHolderName(): string
     {
-        return $this->usedByResourceName;
+        return $this->usedByHolderName;
     }
 
-    public function setUsedByResourceName(string $usedByResourceName): self
+    public function setUsedByHolderName(string $usedByHolderName): self
     {
-        $this->usedByResourceName = $usedByResourceName;
+        $this->usedByHolderName = $usedByHolderName;
 
         return $this;
     }
 
-    public function getUsedByResourceId(): string
+    public function getUsedByHolderId(): string
     {
-        return $this->usedByResourceId;
+        return $this->usedByHolderId;
     }
 
-    public function setUsedByResourceId(string $usedByResourceId): self
+    public function setUsedByHolderId(string $usedByHolderId): self
     {
-        $this->usedByResourceId = $usedByResourceId;
+        $this->usedByHolderId = $usedByHolderId;
 
         return $this;
     }

@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageTakeOverRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -33,8 +33,8 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
             return;
         }
 
-        if ($value instanceof ImageTakeOverRequestDto) {
-            $this->validateImageTakeOverDto($value);
+        if ($value instanceof ImageUseItemDto) {
+            $this->validateImageUseItemDto($value);
 
             return;
         }
@@ -56,7 +56,7 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
         }
     }
 
-    private function validateImageTakeOverDto(ImageTakeOverRequestDto $value): void
+    private function validateImageUseItemDto(ImageUseItemDto $value): void
     {
         $targetAssetLicence = $value->getTargetAssetLicence();
         if (

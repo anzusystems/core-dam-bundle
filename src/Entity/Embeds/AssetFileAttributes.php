@@ -41,22 +41,11 @@ class AssetFileAttributes
      */
     #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
     #[Serialize]
-    private string $usedByResourceName;
+    private string $usedByHolderName;
 
     #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
     #[Serialize]
-    private string $usedByResourceId;
-
-    /**
-     * The entity that owns the usage row the holder came from, and the key the declarative usage sync
-     * releases by. Deliberately not serialized: a gallery photo is scoped to the gallery but held by the
-     * article the gallery sits in, and only the holder is anyone else's business.
-     */
-    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
-    private string $usedByScopeName;
-
-    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
-    private string $usedByScopeId;
+    private string $usedByHolderId;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $filePath;
@@ -100,10 +89,8 @@ class AssetFileAttributes
         $this->setMimeType('');
         $this->setOriginAssetId('');
         $this->setTakenOverFromId('');
-        $this->setUsedByResourceName(App::EMPTY_STRING);
-        $this->setUsedByResourceId(App::EMPTY_STRING);
-        $this->setUsedByScopeName(App::EMPTY_STRING);
-        $this->setUsedByScopeId(App::EMPTY_STRING);
+        $this->setUsedByHolderName(App::EMPTY_STRING);
+        $this->setUsedByHolderId(App::EMPTY_STRING);
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setOriginStorage(null);
@@ -245,50 +232,26 @@ class AssetFileAttributes
         return $this;
     }
 
-    public function getUsedByResourceName(): string
+    public function getUsedByHolderName(): string
     {
-        return $this->usedByResourceName;
+        return $this->usedByHolderName;
     }
 
-    public function setUsedByResourceName(string $usedByResourceName): self
+    public function setUsedByHolderName(string $usedByHolderName): self
     {
-        $this->usedByResourceName = $usedByResourceName;
+        $this->usedByHolderName = $usedByHolderName;
 
         return $this;
     }
 
-    public function getUsedByResourceId(): string
+    public function getUsedByHolderId(): string
     {
-        return $this->usedByResourceId;
+        return $this->usedByHolderId;
     }
 
-    public function setUsedByResourceId(string $usedByResourceId): self
+    public function setUsedByHolderId(string $usedByHolderId): self
     {
-        $this->usedByResourceId = $usedByResourceId;
-
-        return $this;
-    }
-
-    public function getUsedByScopeName(): string
-    {
-        return $this->usedByScopeName;
-    }
-
-    public function setUsedByScopeName(string $usedByScopeName): self
-    {
-        $this->usedByScopeName = $usedByScopeName;
-
-        return $this;
-    }
-
-    public function getUsedByScopeId(): string
-    {
-        return $this->usedByScopeId;
-    }
-
-    public function setUsedByScopeId(string $usedByScopeId): self
-    {
-        $this->usedByScopeId = $usedByScopeId;
+        $this->usedByHolderId = $usedByHolderId;
 
         return $this;
     }

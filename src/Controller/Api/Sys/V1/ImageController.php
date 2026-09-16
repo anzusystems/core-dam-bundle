@@ -13,18 +13,19 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageTakeOverFacade;
-use AnzuSystems\CoreDamBundle\Domain\Image\ImageUsageSyncFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageReleaseFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Exception\ImageUsageConflictException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageTakeOverRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageTakeOverResultDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageSyncDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageSyncResultDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageReleaseRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest as OADamRequest;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -41,33 +42,66 @@ final class ImageController extends AbstractApiController
     public function __construct(
         private readonly JobImageCopyFacade $imageCopyFacade,
         private readonly AssetFileFirstUseFacade $firstUseFacade,
-        private readonly ImageTakeOverFacade $imageTakeOverFacade,
-        private readonly ImageUsageSyncFacade $imageUsageSyncFacade,
+        private readonly ImageUseFacade $imageUseFacade,
+        private readonly ImageReleaseFacade $imageReleaseFacade,
     ) {
     }
 
     /**
-     * Resolve which image file the caller may use: the requested one, or the copy taken over into its
-     * licence. Finished synchronously, so the returned file is usable the moment it is returned.
+     * Resolve which image file the caller may use for each item of the batch: the requested one, or the
+     * copy taken over into its licence. Finished synchronously, so every returned file is usable the moment
+     * it is returned. For a single use photo also claims it for the given holder, on the whole take-over
+     * group — all items of the batch in one transaction, all-or-nothing.
      *
      * @throws AppReadOnlyModeException
      * @throws ForbiddenOperationException
+     * @throws ImageUsageConflictException
      * @throws Throwable
      */
     #[Route(
-        path: '/take-over',
-        name: 'take_over',
+        path: '/use',
+        name: 'use',
         methods: [Request::METHOD_POST],
     )]
-    #[OADamRequest(ImageTakeOverRequestDto::class), OAResponse(ImageTakeOverResultDto::class), OAResponseValidation]
-    public function takeOver(Request $request, #[SerializeParam] ImageTakeOverRequestDto $dto): JsonResponse
+    #[OADamRequest(ImageUseRequestDto::class), OAResponse(ImageUseResultListDto::class), OAResponseValidation]
+    public function useImages(Request $request, #[SerializeParam] ImageUseRequestDto $dto): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $dto->getImageFile());
+        AuditLogResourceHelper::setResource(
+            request: $request,
+            resourceName: AssetFile::getResourceName(),
+            resourceId: CollectionHelper::traversableToIds($dto->getItems(), static fn (ImageUseItemDto $item): string => (string) $item->getImageFile()->getId()),
+        );
 
         return $this->okResponse(
-            $this->imageTakeOverFacade->takeOver($dto)
+            $this->imageUseFacade->useImages($dto)
         );
+    }
+
+    /**
+     * Drops the holder's claim on every single use photo of the batch, on the whole take-over group — only
+     * where that holder actually holds a given group; every other one is silently skipped.
+     *
+     * @throws AppReadOnlyModeException
+     * @throws Throwable
+     */
+    #[Route(
+        path: '/release',
+        name: 'release',
+        methods: [Request::METHOD_POST],
+    )]
+    #[OADamRequest(ImageReleaseRequestDto::class), OAResponse(description: 'Released.', response: JsonResponse::HTTP_NO_CONTENT), OAResponseValidation]
+    public function release(Request $request, #[SerializeParam] ImageReleaseRequestDto $dto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        AuditLogResourceHelper::setResource(
+            request: $request,
+            resourceName: AssetFile::getResourceName(),
+            resourceId: CollectionHelper::traversableToIds($dto->getImageFileIds(), static fn (AssetFile $imageFile): string => (string) $imageFile->getId()),
+        );
+        $this->imageReleaseFacade->releaseImages($dto);
+
+        return $this->noContentResponse();
     }
 
     /**
@@ -113,32 +147,5 @@ final class ImageController extends AbstractApiController
         $this->firstUseFacade->processBatch($dto);
 
         return $this->noContentResponse();
-    }
-
-    /**
-     * Declare which photos one usage scope holds. Photos held by another scope are reported back as
-     * conflicts and left untouched; everything else the scope held and this request omits is released.
-     *
-     * @throws AppReadOnlyModeException
-     * @throws Throwable
-     */
-    #[Route(
-        path: '/usage',
-        name: 'usage_sync',
-        methods: [Request::METHOD_POST],
-    )]
-    #[OADamRequest(ImageUsageSyncDto::class), OAResponse(ImageUsageSyncResultDto::class), OAResponseValidation]
-    public function usageSync(Request $request, #[SerializeParam] ImageUsageSyncDto $dto): JsonResponse
-    {
-        App::throwOnReadOnlyMode();
-        AuditLogResourceHelper::setResource(
-            request: $request,
-            resourceName: AssetFile::getResourceName(),
-            resourceId: array_values($dto->getDamIds()->toArray()),
-        );
-
-        return $this->okResponse(
-            $this->imageUsageSyncFacade->sync($dto)
-        );
     }
 }

@@ -151,17 +151,17 @@ final class AssetFileRepository extends AbstractAssetFileRepository
     }
 
     /**
-     * Everything the given usage scope currently holds; rides IDX_attributes_used_by_scope.
+     * Everything the given holder currently holds; rides IDX_attributes_used_by_holder.
      *
      * @return list<AssetFile>
      */
-    public function findByUsedByScope(string $scopeName, string $scopeId, bool $lock = false): array
+    public function findByHolder(string $holderName, string $holderId, bool $lock = false): array
     {
         $query = $this->createQueryBuilder('entity')
-            ->where('entity.assetAttributes.usedByScopeName = :scopeName')
-            ->andWhere('entity.assetAttributes.usedByScopeId = :scopeId')
-            ->setParameter('scopeName', $scopeName)
-            ->setParameter('scopeId', $scopeId)
+            ->where('entity.assetAttributes.usedByHolderName = :holderName')
+            ->andWhere('entity.assetAttributes.usedByHolderId = :holderId')
+            ->setParameter('holderName', $holderName)
+            ->setParameter('holderId', $holderId)
             ->getQuery()
         ;
         if ($lock) {
