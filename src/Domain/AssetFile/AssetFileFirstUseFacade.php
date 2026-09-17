@@ -63,15 +63,44 @@ final readonly class AssetFileFirstUseFacade
                 continue;
             }
 
-            // Write-once: the first recorded use date is never overwritten.
-            if (null === $assetFile->getFirstUsedAt()) {
-                $assetFile->setFirstUsedAt($item->getFirstUsedAt());
-                $this->assetFileManager->updateExisting($assetFile, flush: false);
-            }
-            $this->stampTakeOverRoot($assetFile, $roots, $item->getFirstUsedAt());
+            $this->stampFirstUse($assetFile, $roots, $item->getFirstUsedAt());
         }
 
         $this->assetFileManager->flush();
+    }
+
+    /**
+     * Deliberately not routed through {@see filterAuthorized()}: the caller is the server itself recording
+     * the use it has just granted, not an external client.
+     *
+     * @param list<AssetFile> $assetFiles
+     */
+    public function recordFirstUse(array $assetFiles, DateTimeImmutable $firstUsedAt, bool $flush = true): void
+    {
+        $assetFilesByDamId = [];
+        foreach ($assetFiles as $assetFile) {
+            $assetFilesByDamId[$assetFile->getId()] = $assetFile;
+        }
+        $roots = $this->findTakeOverRoots($assetFilesByDamId);
+
+        foreach ($assetFilesByDamId as $assetFile) {
+            $this->stampFirstUse($assetFile, $roots, $firstUsedAt);
+        }
+
+        $this->assetFileManager->flush($flush);
+    }
+
+    /**
+     * @param array<string, AssetFile> $roots
+     */
+    private function stampFirstUse(AssetFile $assetFile, array $roots, ?DateTimeImmutable $firstUsedAt): void
+    {
+        // Write-once: the first recorded use date is never overwritten.
+        if (null === $assetFile->getFirstUsedAt()) {
+            $assetFile->setFirstUsedAt($firstUsedAt);
+            $this->assetFileManager->updateExisting($assetFile, flush: false);
+        }
+        $this->stampTakeOverRoot($assetFile, $roots, $firstUsedAt);
     }
 
     /**

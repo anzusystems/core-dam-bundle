@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -36,7 +37,8 @@ use Throwable;
  * Decides whether each image of a batch may be used as it is, or has to be taken over into the caller's
  * licence first, and — for a single use photo — claims it for the caller. The licence flags own the
  * take-over rule and DAM alone owns exclusivity, so the caller never decides either, it only receives the
- * files to use.
+ * files to use. The first use of every file of the batch is recorded here, because the licence clock
+ * starts with the first successful use.
  *
  * The whole batch is resolved and claimed under one transaction: a gallery of 20 photos costs one request,
  * and either all of them end up usable or none does.
@@ -55,6 +57,7 @@ final class ImageUseFacade
      */
     public function __construct(
         private readonly ImageCopyFacade $imageCopyFacade,
+        private readonly AssetFileFirstUseFacade $assetFileFirstUseFacade,
         private readonly AssetManager $assetManager,
         private readonly AssetPropertiesRefresher $assetPropertiesRefresher,
         private readonly AssetFileManager $assetFileManager,
@@ -81,6 +84,11 @@ final class ImageUseFacade
                 $resolved[] = $this->resolveItem($item);
             }
             $this->claimSingleUseFiles($resolved, $dto->getHolder());
+            $this->assetFileFirstUseFacade->recordFirstUse(
+                array_column($resolved, 'file'),
+                App::getAppDate(),
+                flush: true,
+            );
 
             $results = new ArrayCollection();
             foreach ($resolved as $entry) {
