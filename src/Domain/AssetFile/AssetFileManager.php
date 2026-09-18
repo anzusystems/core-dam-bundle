@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -23,6 +24,7 @@ class AssetFileManager extends AbstractManager
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
     protected AssetFileRouteManager $assetFileRouteManager;
+    protected AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer;
 
     #[Required]
     public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
@@ -42,6 +44,12 @@ class AssetFileManager extends AbstractManager
         $this->assetFileRouteManager = $assetFileRouteManager;
     }
 
+    #[Required]
+    public function setAssetFileSingleUseEnforcer(AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer): void
+    {
+        $this->assetFileSingleUseEnforcer = $assetFileSingleUseEnforcer;
+    }
+
     /**
      * @param T $assetFile
      *
@@ -49,9 +57,35 @@ class AssetFileManager extends AbstractManager
      */
     public function updateExisting(AssetFile $assetFile, bool $flush = true, bool $trackModification = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         if ($trackModification) {
             $this->trackModification($assetFile);
         }
+        $this->flush($flush);
+
+        return $assetFile;
+    }
+
+    /**
+     * Deliberately not routed through {@see updateExisting()}: the single use enforcer lazy loads the licence
+     * of every touched file, and a usage claim changes no licence and no flag — it is not a user edit either,
+     * so no modification tracking.
+     *
+     * @param T $assetFile
+     *
+     * @return T
+     */
+    public function updateUsage(AssetFile $assetFile, UsageClaim $claim, bool $flush = true): AssetFile
+    {
+        $attributes = $assetFile->getAssetAttributes();
+        if ($claim->matches($attributes)) {
+            return $assetFile;
+        }
+
+        $attributes
+            ->setUsedByHolderName($claim->getHolderName())
+            ->setUsedByHolderId($claim->getHolderId())
+        ;
         $this->flush($flush);
 
         return $assetFile;
@@ -87,6 +121,7 @@ class AssetFileManager extends AbstractManager
      */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         $this->trackCreation($assetFile);
         $this->entityManager->persist($assetFile);
         $this->flush($flush);
