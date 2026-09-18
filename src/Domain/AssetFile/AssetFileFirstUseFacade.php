@@ -35,7 +35,7 @@ final readonly class AssetFileFirstUseFacade
      *
      * @throws ValidationException
      */
-    public function processBatch(ImageFirstUseRequestDto $dto): void
+    public function recordFromRequest(ImageFirstUseRequestDto $dto): void
     {
         $this->validator->validate($dto);
 
@@ -75,7 +75,7 @@ final readonly class AssetFileFirstUseFacade
      *
      * @param list<AssetFile> $assetFiles
      */
-    public function recordFirstUse(array $assetFiles, DateTimeImmutable $firstUsedAt, bool $flush = true): void
+    public function record(array $assetFiles, DateTimeImmutable $firstUsedAt): void
     {
         $assetFilesByDamId = [];
         foreach ($assetFiles as $assetFile) {
@@ -87,7 +87,7 @@ final readonly class AssetFileFirstUseFacade
             $this->stampFirstUse($assetFile, $roots, $firstUsedAt);
         }
 
-        $this->assetFileManager->flush($flush);
+        $this->assetFileManager->flush();
     }
 
     /**

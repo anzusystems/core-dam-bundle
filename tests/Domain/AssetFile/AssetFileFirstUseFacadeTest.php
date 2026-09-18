@@ -45,7 +45,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $original = $this->createImage();
         $takeOver = $this->createTakeOverOf($original);
 
-        $this->firstUseFacade->processBatch($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));
@@ -59,7 +59,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $original->setFirstUsedAt(new DateTimeImmutable(self::EARLIER_USED_AT));
         $takeOver = $this->createTakeOverOf($original);
 
-        $this->firstUseFacade->processBatch($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::EARLIER_USED_AT, $this->reloadFirstUsedAt($original));
@@ -71,7 +71,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $takeOver->getAssetAttributes()->setTakenOverFromId(Uuid::v7()->toRfc4122());
         $this->entityManager->flush();
 
-        $this->firstUseFacade->processBatch($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));

@@ -51,8 +51,7 @@ final class ImageReleaseFacade
         // the only defense against a deadlock between a release and a use racing over an overlapping set.
         sort($rootIds);
 
-        $holder = $dto->getHolder();
-        $claim = new UsageClaim($holder->getName(), $holder->getId());
+        $claim = UsageClaim::fromHolder($dto->getHolder());
 
         try {
             $this->assetFileManager->beginTransaction();

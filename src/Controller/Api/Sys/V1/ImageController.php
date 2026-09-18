@@ -144,7 +144,7 @@ final class ImageController extends AbstractApiController
             resourceName: AssetFile::getResourceName(),
             resourceId: CollectionHelper::traversableToIds($dto->getItems(), static fn (ImageFirstUseItemDto $item): string => $item->getDamId()),
         );
-        $this->firstUseFacade->processBatch($dto);
+        $this->firstUseFacade->recordFromRequest($dto);
 
         return $this->noContentResponse();
     }

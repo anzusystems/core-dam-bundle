@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\ImageUsageConflictException;
+use AnzuSystems\CoreDamBundle\Model\Domain\Image\ImageUseResolution;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
@@ -84,15 +85,14 @@ final class ImageUseFacade
                 $resolved[] = $this->resolveItem($item);
             }
             $this->claimSingleUseFiles($resolved, $dto->getHolder());
-            $this->assetFileFirstUseFacade->recordFirstUse(
-                array_column($resolved, 'file'),
+            $this->assetFileFirstUseFacade->record(
+                array_map(static fn (ImageUseResolution $resolution): AssetFile => $resolution->getFile(), $resolved),
                 App::getAppDate(),
-                flush: true,
             );
 
             $results = new ArrayCollection();
-            foreach ($resolved as $entry) {
-                $results->add(ImageUseResultDto::getInstance($entry['file'], $entry['takenOver']));
+            foreach ($resolved as $resolution) {
+                $results->add(ImageUseResultDto::getInstance($resolution->getFile(), $resolution->isTakenOver()));
             }
             $result = ImageUseResultListDto::getInstance($results);
             $this->entityManager->commit();
@@ -110,12 +110,10 @@ final class ImageUseFacade
     }
 
     /**
-     * @return array{file: AssetFile, takenOver: bool}
-     *
      * @throws ForbiddenOperationException
      * @throws Throwable
      */
-    private function resolveItem(ImageUseItemDto $item): array
+    private function resolveItem(ImageUseItemDto $item): ImageUseResolution
     {
         $source = $item->getImageFile();
         $this->assertUsableSource($source);
@@ -124,12 +122,10 @@ final class ImageUseFacade
     }
 
     /**
-     * @return array{file: AssetFile, takenOver: bool}
-     *
      * @throws ForbiddenOperationException
      * @throws Throwable
      */
-    private function resolve(ImageUseItemDto $item, ImageFile $source): array
+    private function resolve(ImageUseItemDto $item, ImageFile $source): ImageUseResolution
     {
         $targetLicence = $item->getTargetAssetLicence();
         $directUseAllowed = $source->getLicence()->getFlags()->isDirectUseAllowed();
@@ -137,7 +133,7 @@ final class ImageUseFacade
         // The source licence flag decides first: a caller that mislabels the licence in its request must not
         // be able to skip the copy.
         if ($directUseAllowed && false === $item->isForce()) {
-            return ['file' => $source, 'takenOver' => false];
+            return ImageUseResolution::directUse($source);
         }
         if (false === $targetLicence instanceof AssetLicence) {
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_DIRECT_USE_DISABLED);
@@ -149,7 +145,7 @@ final class ImageUseFacade
         // back — but only where using it there is allowed at all. Without the flag the same request is
         // exactly the direct use the licence forbids, no matter which licence the caller names as target.
         if ($sameLicence && $directUseAllowed) {
-            return ['file' => $source, 'takenOver' => false];
+            return ImageUseResolution::directUse($source);
         }
         if ($sameLicence) {
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_DIRECT_USE_DISABLED);
@@ -162,11 +158,9 @@ final class ImageUseFacade
     }
 
     /**
-     * @return array{file: AssetFile, takenOver: bool}
-     *
      * @throws Throwable
      */
-    private function copyToLicence(ImageFile $source, AssetLicence $targetLicence): array
+    private function copyToLicence(ImageFile $source, AssetLicence $targetLicence): ImageUseResolution
     {
         $copyDto = (new ImageCopyDto())
             ->setAsset($source->getAsset())
@@ -176,12 +170,10 @@ final class ImageUseFacade
     }
 
     /**
-     * @return array{file: AssetFile, takenOver: bool}
-     *
      * @throws ForbiddenOperationException
      * @throws Throwable
      */
-    private function finishCopy(AssetFileCopyResultDto $prepared, ImageFile $source): array
+    private function finishCopy(AssetFileCopyResultDto $prepared, ImageFile $source): ImageUseResolution
     {
         $targetAsset = $prepared->getTargetAsset();
         $targetMainFile = $prepared->getTargetMainFile();
@@ -205,7 +197,7 @@ final class ImageUseFacade
         $this->assetManager->updateExisting(asset: $targetAsset, trackModification: false);
         $this->indexManager->index($targetAsset);
 
-        return ['file' => $targetMainFile, 'takenOver' => true];
+        return ImageUseResolution::takenOver($targetMainFile);
     }
 
     /**
@@ -222,16 +214,14 @@ final class ImageUseFacade
      * different exclusivity group. Adopting it would merge two groups into one and leave its own copies pointing
      * at a root their source no longer belongs to, so it is refused instead.
      *
-     * @return array{file: AssetFile, takenOver: bool}
-     *
      * @throws ForbiddenOperationException
      */
-    private function reuseExisting(AssetFile $existing, ImageFile $source): array
+    private function reuseExisting(AssetFile $existing, ImageFile $source): ImageUseResolution
     {
         $existingRootId = $existing->getAssetAttributes()->getTakenOverFromId();
         if (App::EMPTY_STRING !== $existingRootId) {
             if ($existingRootId === $source->getTakeOverRootId()) {
-                return ['file' => $existing, 'takenOver' => true];
+                return ImageUseResolution::takenOver($existing);
             }
 
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
@@ -245,7 +235,7 @@ final class ImageUseFacade
         // of work, and unlike the copy branch nothing else in this path writes.
         $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
 
-        return ['file' => $existing, 'takenOver' => true];
+        return ImageUseResolution::takenOver($existing);
     }
 
     /**
@@ -258,28 +248,28 @@ final class ImageUseFacade
      * Every conflict of the batch is collected before anything throws, so the caller learns about all of
      * them at once instead of retrying one item at a time.
      *
-     * @param list<array{file: AssetFile, takenOver: bool}> $resolved
+     * @param list<ImageUseResolution> $resolved
      *
      * @throws ImageUsageConflictException
      */
     private function claimSingleUseFiles(array $resolved, ImageHolderDto $holder): void
     {
-        $singleUseEntries = array_values(array_filter(
+        $singleUseResolutions = array_values(array_filter(
             $resolved,
-            static fn (array $entry): bool => $entry['file']->getFlags()->isSingleUse(),
+            static fn (ImageUseResolution $resolution): bool => $resolution->getFile()->getFlags()->isSingleUse(),
         ));
-        if ([] === $singleUseEntries) {
+        if ([] === $singleUseResolutions) {
             return;
         }
 
         $rootIds = [];
-        foreach ($singleUseEntries as $entry) {
-            $rootIds[$entry['file']->getTakeOverRootId()] = true;
+        foreach ($singleUseResolutions as $resolution) {
+            $rootIds[$resolution->getFile()->getTakeOverRootId()] = true;
         }
         $rootIds = array_keys($rootIds);
         sort($rootIds);
 
-        $claim = new UsageClaim($holder->getName(), $holder->getId());
+        $claim = UsageClaim::fromHolder($holder);
         $group = $this->assetFileRepository->findGroupFiles($rootIds, lock: true);
 
         $groupByRoot = [];
@@ -287,7 +277,7 @@ final class ImageUseFacade
             $groupByRoot[$groupFile->getTakeOverRootId()][] = $groupFile;
         }
 
-        $conflicts = $this->collectConflicts($singleUseEntries, $groupByRoot, $claim);
+        $conflicts = $this->collectConflicts($singleUseResolutions, $groupByRoot, $claim);
         if ([] !== $conflicts) {
             throw new ImageUsageConflictException($conflicts);
         }
@@ -299,16 +289,16 @@ final class ImageUseFacade
     }
 
     /**
-     * @param list<array{file: AssetFile, takenOver: bool}> $singleUseEntries
+     * @param list<ImageUseResolution> $singleUseResolutions
      * @param array<string, list<AssetFile>> $groupByRoot
      *
      * @return list<ImageUsageConflictDto>
      */
-    private function collectConflicts(array $singleUseEntries, array $groupByRoot, UsageClaim $claim): array
+    private function collectConflicts(array $singleUseResolutions, array $groupByRoot, UsageClaim $claim): array
     {
         $conflicts = [];
-        foreach ($singleUseEntries as $entry) {
-            $file = $entry['file'];
+        foreach ($singleUseResolutions as $resolution) {
+            $file = $resolution->getFile();
             foreach ($groupByRoot[$file->getTakeOverRootId()] ?? [] as $groupFile) {
                 $attributes = $groupFile->getAssetAttributes();
                 if (App::EMPTY_STRING === $attributes->getUsedByHolderName() || $claim->matches($attributes)) {

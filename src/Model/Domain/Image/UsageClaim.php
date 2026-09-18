@@ -6,13 +6,19 @@ namespace AnzuSystems\CoreDamBundle\Model\Domain\Image;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageHolderDto;
 
 final readonly class UsageClaim
 {
-    public function __construct(
+    private function __construct(
         private string $holderName,
         private string $holderId,
     ) {
+    }
+
+    public static function fromHolder(ImageHolderDto $holder): self
+    {
+        return new self($holder->getName(), $holder->getId());
     }
 
     public static function released(): self
