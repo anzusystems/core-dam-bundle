@@ -9,15 +9,21 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
+use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
+use DateTimeImmutable;
 
 final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
 {
@@ -101,6 +107,23 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
     }
 
+    public function testBulkEditTurningSingleUseOnArmsTheUsageCheck(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
+        $imageId = (string) $image->getId();
+        $asset = $image->getAsset();
+        self::assertNull($image->getAssetAttributes()->getUsedByCheckAfter());
+
+        $dto = FormProvidableMetadataBulkUpdateDto::getInstance($asset)
+            ->setMainFileSingleUse(true);
+        $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $dto);
+        $this->entityManager->clear();
+
+        $stored = $this->findImage($imageId);
+        self::assertTrue($stored->getFlags()->isSingleUse());
+        self::assertNotNull($stored->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
     public function testEnforceLicenceBackfillsFilesCreatedBeforeTheFlag(): void
     {
         $licence = $this->createLicence(singleUseEnforced: false);
@@ -114,6 +137,59 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertSame(1, $this->assetFileSingleUseEnforcer->enforceLicence($licence));
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertSame(0, $this->assetFileSingleUseEnforcer->enforceLicence($this->findLicence($licence->getId())));
+    }
+
+    public function testFlippingSingleUseOnThroughTheAdminArmsTheUsageCheck(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
+        $imageId = (string) $image->getId();
+        self::assertNull($image->getAssetAttributes()->getUsedByCheckAfter());
+
+        $dto = new ImageFileAdmDetailDto();
+        $dto->getFlags()
+            ->setPublic($image->getFlags()->isPublic())
+            ->setSingleUse(true)
+        ;
+        $this->imageManager->updateImage($image, $dto);
+        $this->entityManager->clear();
+
+        self::assertNotNull(
+            $this->findImage($imageId)->getAssetAttributes()->getUsedByCheckAfter(),
+            'A photo switched by hand reaches the enforcer with the flag already set, so only this call puts '
+            . 'it into the reconcile population; without it the register never learns who holds it.',
+        );
+    }
+
+    public function testRefusingTheSwitchAfterFirstUseKeepsItsOwnReasonInsteadOfARotateError(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
+        $image->setFirstUsedAt(new DateTimeImmutable());
+        $this->entityManager->flush();
+        $this->imageManager->setAssetFileSingleUseEnforcer($this->enforcedSingleUseEnforcer());
+
+        $dto = new ImageFileAdmDetailDto();
+        $dto->getFlags()
+            ->setPublic($image->getFlags()->isPublic())
+            ->setSingleUse(true)
+        ;
+
+        try {
+            $this->getService(ImageFacade::class)->update($image, $dto);
+            self::fail('The switch had to be refused.');
+        } catch (ForbiddenOperationException $exception) {
+            self::assertSame(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE, $exception->getDetail());
+        }
+    }
+
+    private function enforcedSingleUseEnforcer(): AssetFileSingleUseEnforcer
+    {
+        return new AssetFileSingleUseEnforcer(
+            $this->getService(AssetRepository::class),
+            $this->entityManager,
+            $this->getService(IndexManager::class),
+            $this->getService(DamLogger::class),
+            true,
+        );
     }
 
     private function findLicence(int $licenceId): AssetLicence

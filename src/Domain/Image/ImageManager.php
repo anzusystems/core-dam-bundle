@@ -46,10 +46,16 @@ final class ImageManager extends AssetFileManager
     public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
     {
         $this->assertSingleUseSwitchAllowed($image, $dto->getFlags()->isSingleUse());
+        $becomesSingleUse = $dto->getFlags()->isSingleUse() && false === $image->getFlags()->isSingleUse();
         $image->getFlags()
             ->setPublic($dto->getFlags()->isPublic())
             ->setSingleUse($dto->getFlags()->isSingleUse())
         ;
+        if ($becomesSingleUse) {
+            // The enforcer arms the check itself only for the licence rule; a flag flipped here reaches it
+            // already set and would otherwise leave the file out of the reconcile population.
+            $this->assetFileSingleUseEnforcer->armUsageCheck($image);
+        }
 
         $this->updateExisting($image, flush: $flush);
 

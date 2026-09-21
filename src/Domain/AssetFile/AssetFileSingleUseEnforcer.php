@@ -40,11 +40,20 @@ final readonly class AssetFileSingleUseEnforcer
         }
 
         $assetFile->getFlags()->setSingleUse(true);
-        // Nobody holds it in the register yet, and only the ext system knows who really uses it — the
-        // reconcile discovers that, but only for files it can see (AssetFileRepository::findUsageChecksDue).
-        $assetFile->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
+        $this->armUsageCheck($assetFile);
 
         return true;
+    }
+
+    /**
+     * Every path that turns a file single use ends here, not just the licence rule above: nobody holds it in
+     * the register yet, and only the ext system knows who really uses it. The reconcile discovers that, but
+     * only for files it can see ({@see \AnzuSystems\CoreDamBundle\Repository\AssetFileRepository::findUsageChecksDue}),
+     * so a file that becomes single use without a check date stays outside its reach for good.
+     */
+    public function armUsageCheck(AssetFile $assetFile): void
+    {
+        $assetFile->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
     }
 
     /**
