@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileUsageReconcileResult;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
+use DateInterval;
 use DateTimeImmutable;
 use Throwable;
 
@@ -23,6 +24,13 @@ use Throwable;
 final readonly class AssetFileUsageReconciler
 {
     private const int PAGE_SIZE = 100;
+
+    /**
+     * A group still in use, or one the ext system did not answer for, is asked about again a day later
+     * rather than dropping out of the check for good: a holder has to stay verifiable for as long as it
+     * is held, and an hourly question about an unchanged photo would ask 24 times a day.
+     */
+    private const string RECHECK_DELAY = 'P1D';
 
     /**
      * @param AssetFileManager<AssetFile> $assetFileManager
@@ -46,6 +54,7 @@ final readonly class AssetFileUsageReconciler
         $confirmed = App::ZERO;
         $released = App::ZERO;
         $skipped = App::ZERO;
+        $unanswered = App::ZERO;
 
         while ($checked < $limit) {
             $due = $this->assetFileRepository->findUsageChecksDue($now, min(self::PAGE_SIZE, $limit - $checked), $idFrom);
@@ -63,6 +72,11 @@ final readonly class AssetFileUsageReconciler
 
                     continue;
                 }
+                if (null === $used) {
+                    $unanswered++;
+
+                    continue;
+                }
                 if ($used) {
                     $confirmed++;
 
@@ -72,13 +86,24 @@ final readonly class AssetFileUsageReconciler
             }
         }
 
-        return new AssetFileUsageReconcileResult($checked, $confirmed, $released, $skipped);
+        if (App::ZERO < $unanswered) {
+            $this->damLogger->warning(
+                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
+                sprintf('Single use usage reconcile kept %d group(s) held: the ext system did not answer', $unanswered),
+            );
+        }
+
+        return new AssetFileUsageReconcileResult($checked, $confirmed, $released, $skipped, $unanswered);
     }
 
     /**
+     * Used beats unanswered beats unused: one file the ext system still points at holds the whole group,
+     * and one it did not answer for is enough to leave the group alone.
+     *
      * @param list<AssetFile> $due
      *
-     * @return array<string, bool> take-over root id => the ext system still points at some file of the group
+     * @return array<string, bool|null> take-over root id => the ext system still points at some file of
+     *                                  the group, null when it did not answer
      */
     private function usedByRoot(array $due): array
     {
@@ -89,25 +114,34 @@ final readonly class AssetFileUsageReconciler
 
         $group = $this->assetFileRepository->findGroupFiles($rootIds);
         $imageFiles = array_filter($group, static fn (AssetFile $assetFile): bool => $assetFile instanceof ImageFile);
-        // Fails closed: an ext system that cannot answer keeps its photos held.
-        $usage = $this->extSystemCallbackFacade->isImageFileUsedBulk($imageFiles);
+        $answer = $this->extSystemCallbackFacade->resolveImageFileUsage($imageFiles);
 
         $usedByRoot = array_fill_keys($rootIds, false);
-        foreach ($group as $assetFile) {
-            if ($usage[(string) $assetFile->getId()] ?? true) {
-                $usedByRoot[$assetFile->getTakeOverRootId()] = true;
+        foreach ($imageFiles as $imageFile) {
+            $rootId = $imageFile->getTakeOverRootId();
+            if (true === $usedByRoot[$rootId]) {
+                continue;
             }
+
+            $used = $answer[(string) $imageFile->getId()] ?? null;
+            if (false === $used) {
+                continue;
+            }
+
+            $usedByRoot[$rootId] = $used;
         }
 
         return $usedByRoot;
     }
 
     /**
+     * @param bool|null $used null when the ext system did not answer for the group
+     *
      * @return bool whether the group was written; false when a claim arrived while the ext system was asked
      *
      * @throws Throwable
      */
-    private function settleGroup(string $rootId, bool $used, DateTimeImmutable $now): bool
+    private function settleGroup(string $rootId, ?bool $used, DateTimeImmutable $now): bool
     {
         try {
             $this->assetFileManager->beginTransaction();
@@ -121,14 +155,15 @@ final readonly class AssetFileUsageReconciler
                 return false;
             }
 
+            $checkAgainAfter = $now->add(new DateInterval(self::RECHECK_DELAY));
             foreach ($group as $assetFile) {
-                if ($used) {
-                    $assetFile->getAssetAttributes()->setUsedByCheckAfter(null);
+                if (false === $used) {
+                    $this->assetFileManager->updateUsage($assetFile, UsageClaim::released(), flush: false);
 
                     continue;
                 }
 
-                $this->assetFileManager->updateUsage($assetFile, UsageClaim::released(), flush: false);
+                $assetFile->getAssetAttributes()->setUsedByCheckAfter($checkAgainAfter);
             }
             $this->assetFileManager->flush();
             $this->assetFileManager->commit();

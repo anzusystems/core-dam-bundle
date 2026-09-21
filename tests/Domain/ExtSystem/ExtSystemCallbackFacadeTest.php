@@ -28,18 +28,18 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
     /**
      * @param list<string> $imageIds
      */
-    #[DataProvider('bulkFailClosedDataProvider')]
-    public function testIsImageFileUsedBulkFailsClosedOnCallbackFailure(bool $callbackThrows, array $imageIds): void
+    #[DataProvider('bulkUnansweredDataProvider')]
+    public function testResolveImageFileUsageAnswersNothingWhenTheCallbackCannot(bool $callbackThrows, array $imageIds): void
     {
         $facade = $callbackThrows
             ? $this->createFacade($this->createLocator($this->createThrowingCallback('isImageFileUsedBulk')))
             : $this->createFacade(new ServiceLocator([]));
         $images = array_map(fn (string $id) => $this->createImageFile($id), $imageIds);
 
-        self::assertSame(array_fill_keys($imageIds, true), $facade->isImageFileUsedBulk($images));
+        self::assertSame([], $facade->resolveImageFileUsage($images));
     }
 
-    public static function bulkFailClosedDataProvider(): array
+    public static function bulkUnansweredDataProvider(): array
     {
         return [
             'callback_missing' => ['callbackThrows' => false, 'imageIds' => ['image-1', 'image-2']],
@@ -47,7 +47,7 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
         ];
     }
 
-    public function testIsImageFileUsedBulkCallsCallbackExactlyOnceForTheWholeBatch(): void
+    public function testResolveImageFileUsageCallsCallbackExactlyOnceForTheWholeBatch(): void
     {
         $callback = $this->createMock(ExtSystemCallbackInterface::class);
         $callback->expects(self::once())
@@ -65,7 +65,7 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
             $this->createImageFile('image-3'),
         ];
 
-        $result = $facade->isImageFileUsedBulk($images);
+        $result = $facade->resolveImageFileUsage($images);
 
         self::assertSame(
             ['image-1' => true, 'image-2' => false, 'image-3' => false],
@@ -73,7 +73,7 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
         );
     }
 
-    public function testIsImageFileUsedBulkFailsClosedForImageMissingFromCallbackResponse(): void
+    public function testResolveImageFileUsageLeavesOutAnImageTheCallbackDidNotAnswerFor(): void
     {
         $callback = self::createStub(ExtSystemCallbackInterface::class);
         $callback->method('isImageFileUsedBulk')->willReturn(['image-1' => false]);
@@ -83,12 +83,9 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
             $this->createImageFile('image-unknown-to-callback'),
         ];
 
-        $result = $facade->isImageFileUsedBulk($images);
+        $result = $facade->resolveImageFileUsage($images);
 
-        self::assertSame(
-            ['image-1' => false, 'image-unknown-to-callback' => true],
-            $result,
-        );
+        self::assertSame(['image-1' => false], $result);
     }
 
     #[DataProvider('failClosedDataProvider')]

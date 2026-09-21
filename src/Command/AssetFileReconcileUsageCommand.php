@@ -35,10 +35,11 @@ final readonly class AssetFileReconcileUsageCommand
         $result = $this->assetFileUsageReconciler->reconcile($limit);
 
         $io->success(sprintf(
-            'Checked %d asset file(s): %d group(s) confirmed, %d released, %d left to the next run',
+            'Checked %d asset file(s): %d group(s) confirmed, %d released, %d unanswered, %d left to the next run',
             $result->getChecked(),
             $result->getConfirmed(),
             $result->getReleased(),
+            $result->getUnanswered(),
             $result->getSkipped(),
         ));
 

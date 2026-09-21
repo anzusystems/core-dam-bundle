@@ -86,10 +86,6 @@ class AssetFileManager extends AbstractManager
     public function updateUsage(AssetFile $assetFile, UsageClaim $claim, bool $flush = true): AssetFile
     {
         $attributes = $assetFile->getAssetAttributes();
-        if ($claim->matches($attributes)) {
-            return $assetFile;
-        }
-
         $attributes
             ->setUsedByHolderName($claim->getHolderName())
             ->setUsedByHolderId($claim->getHolderId())

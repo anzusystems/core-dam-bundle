@@ -23,7 +23,7 @@ interface ExtSystemCallbackInterface
     /**
      * @param iterable<ImageFile> $imageFiles
      *
-     * @return array<string, bool> image file id => used
+     * @return array<string, bool> image file id => used; an id the ext system cannot answer for is left out
      */
     public function isImageFileUsedBulk(iterable $imageFiles): array;
 

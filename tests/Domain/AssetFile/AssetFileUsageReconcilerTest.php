@@ -66,7 +66,7 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         self::assertNull($reloaded->getAssetAttributes()->getUsedByCheckAfter());
     }
 
-    public function testClaimTheExtSystemStillPointsAtKeepsItsHolderAndIsNotCheckedAgain(): void
+    public function testClaimTheExtSystemStillPointsAtKeepsItsHolderAndIsCheckedAgainTomorrow(): void
     {
         $image = $this->createClaimedImage();
         $imageId = (string) $image->getId();
@@ -78,7 +78,38 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         self::assertSame(1, $result->getConfirmed());
         $reloaded = $this->findImage($imageId);
         self::assertSame(self::HOLDER_ID, $reloaded->getAssetAttributes()->getUsedByHolderId());
-        self::assertNull($reloaded->getAssetAttributes()->getUsedByCheckAfter());
+        self::assertGreaterThan(new DateTimeImmutable('+23 hours'), $reloaded->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
+    public function testGroupTheExtSystemDidNotAnswerForStaysHeldAndIsAskedAboutAgain(): void
+    {
+        $image = $this->createClaimedImage();
+        $imageId = (string) $image->getId();
+        $this->makeCheckDue($image);
+
+        $result = $this->reconcilerAnswering([])->reconcile(10);
+        $this->entityManager->clear();
+
+        self::assertSame(1, $result->getUnanswered());
+        self::assertSame(0, $result->getReleased());
+        $reloaded = $this->findImage($imageId);
+        self::assertSame(self::HOLDER_ID, $reloaded->getAssetAttributes()->getUsedByHolderId());
+        self::assertGreaterThan(new DateTimeImmutable('+23 hours'), $reloaded->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
+    public function testReClaimByTheSameHolderPushesTheCheckForward(): void
+    {
+        $image = $this->createClaimedImage();
+        $imageId = (string) $image->getId();
+        $this->makeCheckDue($image);
+
+        $this->assetFileManager->updateUsage($image, UsageClaim::fromHolder($this->holder()));
+        $this->entityManager->clear();
+
+        self::assertGreaterThan(
+            new DateTimeImmutable(),
+            $this->findImage($imageId)->getAssetAttributes()->getUsedByCheckAfter(),
+        );
     }
 
     public function testFreshClaimIsLeftAloneUntilItsCheckComesDue(): void
@@ -136,14 +167,17 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         $this->imageManager->create($image);
         $image->getFlags()->setSingleUse(true);
 
-        $holder = new ImageHolderDto()
+        $this->assetFileManager->updateUsage($image, UsageClaim::fromHolder($this->holder()));
+
+        return $image;
+    }
+
+    private function holder(): ImageHolderDto
+    {
+        return new ImageHolderDto()
             ->setName(self::HOLDER_NAME)
             ->setId(self::HOLDER_ID)
         ;
-
-        $this->assetFileManager->updateUsage($image, UsageClaim::fromHolder($holder));
-
-        return $image;
     }
 
     private function makeCheckDue(ImageFile $image): void

@@ -11,6 +11,7 @@ final readonly class AssetFileUsageReconcileResult
         private int $confirmed,
         private int $released,
         private int $skipped,
+        private int $unanswered,
     ) {
     }
 
@@ -32,5 +33,10 @@ final readonly class AssetFileUsageReconcileResult
     public function getSkipped(): int
     {
         return $this->skipped;
+    }
+
+    public function getUnanswered(): int
+    {
+        return $this->unanswered;
     }
 }

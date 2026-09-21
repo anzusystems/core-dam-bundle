@@ -37,35 +37,34 @@ final class ExtSystemCallbackFacade
 
     public function isImageFileUsed(ImageFile $imageFile): bool
     {
-        return $this->isImageFileUsedBulk([$imageFile])[(string) $imageFile->getId()] ?? true;
+        return $this->resolveImageFileUsage([$imageFile])[(string) $imageFile->getId()] ?? true;
     }
 
     /**
-     * Fails closed: images whose ext system has no registered (or a failing) callback,
-     * or that are missing from the callback's response, are treated as "used".
-     * Total map: every id in $imageFiles is present in the result.
+     * Only what the ext systems answered: an id is missing when its ext system has no callback, when
+     * the callback failed, or when it left the id out. What an unanswered id means is the caller's
+     * decision — a delete treats it as used, the usage reconcile keeps it held and asks again — so the
+     * two must not be flattened into one default here.
      *
      * @param iterable<ImageFile> $imageFiles
      *
-     * @return array<string, bool> image file id => used
+     * @return array<string, bool> image file id => used, for the answered ids only
      */
-    public function isImageFileUsedBulk(iterable $imageFiles): array
+    public function resolveImageFileUsage(iterable $imageFiles): array
     {
         $grouped = CollectionHelper::groupBy(
             $imageFiles,
             static fn (ImageFile $imageFile): string => $imageFile->getLicence()->getExtSystem()->getSlug(),
         );
 
-        $result = [];
+        $usage = [];
         foreach ($grouped as $slug => $imagesForSlug) {
-            $usageMap = $this->resolveBulkUsage($slug, $imagesForSlug);
-            foreach ($imagesForSlug as $imageFile) {
-                $id = (string) $imageFile->getId();
-                $result[$id] = $usageMap[$id] ?? true;
+            foreach ($this->resolveBulkUsage($slug, $imagesForSlug) as $id => $used) {
+                $usage[$id] = $used;
             }
         }
 
-        return $result;
+        return $usage;
     }
 
     /**
@@ -172,7 +171,7 @@ final class ExtSystemCallbackFacade
     /**
      * @param ImageFile[] $imageFiles
      *
-     * @return array<string, bool>
+     * @return array<string, bool> empty when the ext system did not answer at all
      */
     private function resolveBulkUsage(string $slug, array $imageFiles): array
     {

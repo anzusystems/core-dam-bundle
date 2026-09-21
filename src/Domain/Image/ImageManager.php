@@ -80,7 +80,7 @@ final class ImageManager extends AssetFileManager
             return $result;
         }
 
-        $usageMap = $this->extSystemCallbackFacade->isImageFileUsedBulk($toCheck);
+        $usageMap = $this->extSystemCallbackFacade->resolveImageFileUsage($toCheck);
         foreach ($toCheck as $assetFile) {
             $result[(string) $assetFile->getId()] = false === ($usageMap[(string) $assetFile->getId()] ?? true);
         }
