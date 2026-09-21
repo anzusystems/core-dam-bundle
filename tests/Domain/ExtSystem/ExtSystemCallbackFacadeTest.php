@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\ImageFileUsage;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -32,7 +33,7 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
     public function testResolveImageFileUsageAnswersNothingWhenTheCallbackCannot(bool $callbackThrows, array $imageIds): void
     {
         $facade = $callbackThrows
-            ? $this->createFacade($this->createLocator($this->createThrowingCallback('isImageFileUsedBulk')))
+            ? $this->createFacade($this->createLocator($this->createThrowingCallback('resolveImageFileUsage')))
             : $this->createFacade(new ServiceLocator([]));
         $images = array_map(fn (string $id) => $this->createImageFile($id), $imageIds);
 
@@ -51,11 +52,11 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
     {
         $callback = $this->createMock(ExtSystemCallbackInterface::class);
         $callback->expects(self::once())
-            ->method('isImageFileUsedBulk')
+            ->method('resolveImageFileUsage')
             ->willReturn([
-                'image-1' => true,
-                'image-2' => false,
-                'image-3' => false,
+                'image-1' => new ImageFileUsage(true),
+                'image-2' => new ImageFileUsage(false),
+                'image-3' => new ImageFileUsage(false),
             ])
         ;
         $facade = $this->createFacade($this->createLocator($callback));
@@ -69,14 +70,14 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
 
         self::assertSame(
             ['image-1' => true, 'image-2' => false, 'image-3' => false],
-            $result,
+            array_map(static fn (ImageFileUsage $usage): bool => $usage->isUsed(), $result),
         );
     }
 
     public function testResolveImageFileUsageLeavesOutAnImageTheCallbackDidNotAnswerFor(): void
     {
         $callback = self::createStub(ExtSystemCallbackInterface::class);
-        $callback->method('isImageFileUsedBulk')->willReturn(['image-1' => false]);
+        $callback->method('resolveImageFileUsage')->willReturn(['image-1' => new ImageFileUsage(false)]);
         $facade = $this->createFacade($this->createLocator($callback));
         $images = [
             $this->createImageFile('image-1'),
@@ -85,7 +86,10 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
 
         $result = $facade->resolveImageFileUsage($images);
 
-        self::assertSame(['image-1' => false], $result);
+        self::assertSame(
+            ['image-1' => false],
+            array_map(static fn (ImageFileUsage $usage): bool => $usage->isUsed(), $result),
+        );
     }
 
     #[DataProvider('failClosedDataProvider')]

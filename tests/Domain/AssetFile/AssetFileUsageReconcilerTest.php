@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\ImageFileUsage;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageHolderDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
@@ -24,6 +25,7 @@ use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
@@ -31,6 +33,7 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
     private const string CMS_SLUG = 'cms';
     private const string HOLDER_NAME = 'articleKindStandard';
     private const string HOLDER_ID = '01994000-0000-7000-8000-000000000001';
+    private const string OTHER_HOLDER_ID = '01994000-0000-7000-8000-000000000002';
 
     private AssetLicenceManager $assetLicenceManager;
     private AssetFactory $assetFactory;
@@ -57,7 +60,7 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         $imageId = (string) $image->getId();
         $this->makeCheckDue($image);
 
-        $result = $this->reconcilerAnswering([$imageId => false])->reconcile(10);
+        $result = $this->reconcilerAnswering([$imageId => new ImageFileUsage(false, [])])->reconcile(10);
         $this->entityManager->clear();
 
         self::assertSame(1, $result->getReleased());
@@ -66,19 +69,32 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         self::assertNull($reloaded->getAssetAttributes()->getUsedByCheckAfter());
     }
 
-    public function testClaimTheExtSystemStillPointsAtKeepsItsHolderAndIsCheckedAgainTomorrow(): void
+    /**
+     * @param list<ImageHolderDto>|null $holders
+     */
+    #[DataProvider('confirmedWithoutARewriteDataProvider')]
+    public function testClaimTheExtSystemStillPointsAtKeepsItsHolderAndIsCheckedAgainTomorrow(?array $holders): void
     {
         $image = $this->createClaimedImage();
         $imageId = (string) $image->getId();
         $this->makeCheckDue($image);
 
-        $result = $this->reconcilerAnswering([$imageId => true])->reconcile(10);
+        $result = $this->reconcilerAnswering([$imageId => new ImageFileUsage(true, $holders)])->reconcile(10);
         $this->entityManager->clear();
 
         self::assertSame(1, $result->getConfirmed());
+        self::assertSame(0, $result->getRewritten());
         $reloaded = $this->findImage($imageId);
         self::assertSame(self::HOLDER_ID, $reloaded->getAssetAttributes()->getUsedByHolderId());
         self::assertGreaterThan(new DateTimeImmutable('+23 hours'), $reloaded->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
+    public static function confirmedWithoutARewriteDataProvider(): array
+    {
+        return [
+            'holders not reported by this ext system' => ['holders' => null],
+            'holders reported, none can hold it' => ['holders' => []],
+        ];
     }
 
     public function testGroupTheExtSystemDidNotAnswerForStaysHeldAndIsAskedAboutAgain(): void
@@ -95,6 +111,39 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         $reloaded = $this->findImage($imageId);
         self::assertSame(self::HOLDER_ID, $reloaded->getAssetAttributes()->getUsedByHolderId());
         self::assertGreaterThan(new DateTimeImmutable('+23 hours'), $reloaded->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
+    public function testHolderTheExtSystemReportsIsWrittenBack(): void
+    {
+        $image = $this->createClaimedImage();
+        $imageId = (string) $image->getId();
+        $this->makeCheckDue($image);
+
+        $result = $this->reconcilerAnswering([
+            $imageId => new ImageFileUsage(true, [$this->holder(self::OTHER_HOLDER_ID)]),
+        ])->reconcile(10);
+        $this->entityManager->clear();
+
+        self::assertSame(1, $result->getRewritten());
+        $reloaded = $this->findImage($imageId);
+        self::assertSame(self::OTHER_HOLDER_ID, $reloaded->getAssetAttributes()->getUsedByHolderId());
+        self::assertGreaterThan(new DateTimeImmutable('+23 hours'), $reloaded->getAssetAttributes()->getUsedByCheckAfter());
+    }
+
+    public function testTwoHoldersLeaveTheRecordedOneAloneAndAreReported(): void
+    {
+        $image = $this->createClaimedImage();
+        $imageId = (string) $image->getId();
+        $this->makeCheckDue($image);
+
+        $result = $this->reconcilerAnswering([
+            $imageId => new ImageFileUsage(true, [$this->holder(), $this->holder(self::OTHER_HOLDER_ID)]),
+        ])->reconcile(10);
+        $this->entityManager->clear();
+
+        self::assertSame(1, $result->getConfirmed());
+        self::assertSame(0, $result->getRewritten());
+        self::assertSame(self::HOLDER_ID, $this->findImage($imageId)->getAssetAttributes()->getUsedByHolderId());
     }
 
     public function testReClaimByTheSameHolderPushesTheCheckForward(): void
@@ -117,7 +166,7 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         $image = $this->createClaimedImage();
         $imageId = (string) $image->getId();
 
-        $result = $this->reconcilerAnswering([$imageId => false])->reconcile(10);
+        $result = $this->reconcilerAnswering([$imageId => new ImageFileUsage(false, [])])->reconcile(10);
         $this->entityManager->clear();
 
         self::assertSame(0, $result->getChecked());
@@ -136,12 +185,12 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
     }
 
     /**
-     * @param array<string, bool> $usage
+     * @param array<string, ImageFileUsage> $usage
      */
     private function reconcilerAnswering(array $usage): AssetFileUsageReconciler
     {
         $callback = self::createStub(ExtSystemCallbackInterface::class);
-        $callback->method('isImageFileUsedBulk')->willReturn($usage);
+        $callback->method('resolveImageFileUsage')->willReturn($usage);
 
         $facade = new ExtSystemCallbackFacade(
             new ServiceLocator([
@@ -172,11 +221,11 @@ final class AssetFileUsageReconcilerTest extends CoreDamKernelTestCase
         return $image;
     }
 
-    private function holder(): ImageHolderDto
+    private function holder(string $id = self::HOLDER_ID): ImageHolderDto
     {
         return new ImageHolderDto()
             ->setName(self::HOLDER_NAME)
-            ->setId(self::HOLDER_ID)
+            ->setId($id)
         ;
     }
 

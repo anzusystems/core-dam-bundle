@@ -28,6 +28,16 @@ final class ImageUseRequestDto
     #[Assert\Valid]
     private ?ImageHolderDto $holder = null;
 
+    /**
+     * A holder handing the photos over to {@see $holder}: a group it currently holds counts as free instead
+     * of as a conflict, and the claim overwrites it under the same lock. Without it a hand over has to
+     * release first and claim second, and between the two calls anybody can take the photo. Ignored when
+     * there is no holder to hand over to.
+     */
+    #[Serialize]
+    #[Assert\Valid]
+    private ?ImageHolderDto $releaseFrom = null;
+
     #[Serialize(type: ImageUseItemDto::class)]
     #[Assert\Valid]
     #[Assert\Count(
@@ -51,6 +61,18 @@ final class ImageUseRequestDto
     public function setHolder(?ImageHolderDto $holder): self
     {
         $this->holder = $holder;
+
+        return $this;
+    }
+
+    public function getReleaseFrom(): ?ImageHolderDto
+    {
+        return $this->releaseFrom;
+    }
+
+    public function setReleaseFrom(?ImageHolderDto $releaseFrom): self
+    {
+        $this->releaseFrom = $releaseFrom;
 
         return $this;
     }

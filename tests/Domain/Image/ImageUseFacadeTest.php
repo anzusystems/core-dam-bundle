@@ -242,7 +242,9 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->useOne($source, $target);
 
         try {
-            $this->useOne($source, $target, holderId: self::OTHER_HOLDER_ID);
+            $this->enforcedImageUseFacade()->useImages(
+                $this->batchRequest([$this->item($source, $target)], holderId: self::OTHER_HOLDER_ID)
+            );
             self::fail('Expected a usage conflict.');
         } catch (ImageUsageConflictException $exception) {
             $conflicts = $exception->getConflicts();
@@ -251,6 +253,55 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
             self::assertSame(self::HOLDER_ID, $conflicts[0]->getHolderId());
         }
         // A conflict leaves the existing holder untouched.
+        $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
+    }
+
+    public function testForeignHolderIsOnlyLoggedInSoftModeAndTheRestOfTheBatchIsStillClaimed(): void
+    {
+        $heldSource = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $freeSource = $this->createImage(
+            $this->createLicence(directUseAllowed: false, singleUseEnforced: true),
+            self::OTHER_SOURCE_FILE_NAME,
+        );
+        $target = $this->createLicence();
+        $this->useOne($heldSource, $target);
+
+        $this->imageUseFacade->useImages(
+            $this->batchRequest([
+                $this->item($heldSource, $target),
+                $this->item($freeSource, $target),
+            ], holderId: self::OTHER_HOLDER_ID)
+        );
+
+        $this->assertHolder($heldSource, self::HOLDER_NAME, self::HOLDER_ID);
+        $this->assertHolder($freeSource, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
+    }
+
+    public function testHandingTheGroupOverOverwritesTheHolderInOneCall(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $target = $this->createLicence();
+        $this->useOne($source, $target);
+
+        $this->enforcedImageUseFacade()->useImages(
+            $this->batchRequest([$this->item($source, $target)], holderId: self::OTHER_HOLDER_ID)
+                ->setReleaseFrom(new ImageHolderDto()->setName(self::HOLDER_NAME)->setId(self::HOLDER_ID))
+        );
+
+        $this->assertHolder($source, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
+    }
+
+    public function testHandingOverFromSomebodyWhoDoesNotHoldItStillConflicts(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $target = $this->createLicence();
+        $this->useOne($source, $target);
+
+        $this->assertConflict(fn (): mixed => $this->enforcedImageUseFacade()->useImages(
+            $this->batchRequest([$this->item($source, $target)], holderId: self::OTHER_HOLDER_ID)
+                ->setReleaseFrom(new ImageHolderDto()->setName(self::HOLDER_NAME)->setId('2f8b0f1e-0000-4000-8000-000000000009'))
+        ));
+
         $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
     }
 
@@ -286,7 +337,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->useOne($heldSource, $target);
 
         try {
-            $this->imageUseFacade->useImages(
+            $this->enforcedImageUseFacade()->useImages(
                 $this->batchRequest([
                     $this->item($freeSource, $target),
                     $this->item($heldSource, $target),
@@ -338,6 +389,17 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->entityManager->clear();
 
         self::assertNotNull($this->findImage((string) $source->getId())->getFirstUsedAt());
+    }
+
+    private function assertConflict(callable $operation): void
+    {
+        try {
+            $operation();
+        } catch (ImageUsageConflictException) {
+            return;
+        }
+
+        self::fail('Expected a usage conflict.');
     }
 
     /**

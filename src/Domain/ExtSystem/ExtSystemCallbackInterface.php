@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\ImageFileUsage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -23,9 +24,10 @@ interface ExtSystemCallbackInterface
     /**
      * @param iterable<ImageFile> $imageFiles
      *
-     * @return array<string, bool> image file id => used; an id the ext system cannot answer for is left out
+     * @return array<string, ImageFileUsage> image file id => what the ext system points at it with; an id
+     *                                       it cannot answer for is left out
      */
-    public function isImageFileUsedBulk(iterable $imageFiles): array;
+    public function resolveImageFileUsage(iterable $imageFiles): array;
 
     /**
      * @param Collection<array-key, Asset> $collection

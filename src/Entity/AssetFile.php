@@ -94,7 +94,7 @@ abstract class AssetFile implements
     protected ?DateTimeImmutable $expireAt = null;
 
     /**
-     * When a CMS first published this photo (reported via the sys first-use endpoint, stamped on the take-over
+     * When a CMS first used this photo (stamped by the sys use endpoint, on the take-over
      * root as well). Informational only: nothing in DAM enforces a licence window or deletes by this date.
      */
     #[Serialize]

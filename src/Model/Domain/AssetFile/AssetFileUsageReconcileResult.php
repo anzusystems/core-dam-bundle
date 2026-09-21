@@ -9,6 +9,7 @@ final readonly class AssetFileUsageReconcileResult
     public function __construct(
         private int $checked,
         private int $confirmed,
+        private int $rewritten,
         private int $released,
         private int $skipped,
         private int $unanswered,
@@ -23,6 +24,11 @@ final readonly class AssetFileUsageReconcileResult
     public function getConfirmed(): int
     {
         return $this->confirmed;
+    }
+
+    public function getRewritten(): int
+    {
+        return $this->rewritten;
     }
 
     public function getReleased(): int

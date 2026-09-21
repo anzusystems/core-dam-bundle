@@ -9,6 +9,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\ImageFileUsage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -37,7 +38,7 @@ final class ExtSystemCallbackFacade
 
     public function isImageFileUsed(ImageFile $imageFile): bool
     {
-        return $this->resolveImageFileUsage([$imageFile])[(string) $imageFile->getId()] ?? true;
+        return ($this->resolveImageFileUsage([$imageFile])[(string) $imageFile->getId()] ?? null)?->isUsed() ?? true;
     }
 
     /**
@@ -48,7 +49,7 @@ final class ExtSystemCallbackFacade
      *
      * @param iterable<ImageFile> $imageFiles
      *
-     * @return array<string, bool> image file id => used, for the answered ids only
+     * @return array<string, ImageFileUsage> for the answered ids only
      */
     public function resolveImageFileUsage(iterable $imageFiles): array
     {
@@ -171,7 +172,7 @@ final class ExtSystemCallbackFacade
     /**
      * @param ImageFile[] $imageFiles
      *
-     * @return array<string, bool> empty when the ext system did not answer at all
+     * @return array<string, ImageFileUsage> empty when the ext system did not answer at all
      */
     private function resolveBulkUsage(string $slug, array $imageFiles): array
     {
@@ -179,7 +180,7 @@ final class ExtSystemCallbackFacade
         if (null === $callback) {
             $this->logger->warning(
                 DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                'isImageFileUsedBulk.noCallbackRegistered',
+                'resolveImageFileUsage.noCallbackRegistered',
                 ['slug' => $slug],
             );
 
@@ -187,11 +188,11 @@ final class ExtSystemCallbackFacade
         }
 
         try {
-            return $callback->isImageFileUsedBulk($imageFiles);
+            return $callback->resolveImageFileUsage($imageFiles);
         } catch (Throwable $e) {
             $this->logger->error(
                 DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                sprintf('isImageFileUsedBulk failed for ext system (%s)', $slug),
+                sprintf('resolveImageFileUsage failed for ext system (%s)', $slug),
                 exception: $e,
             );
 

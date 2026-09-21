@@ -82,7 +82,7 @@ final class ImageManager extends AssetFileManager
 
         $usageMap = $this->extSystemCallbackFacade->resolveImageFileUsage($toCheck);
         foreach ($toCheck as $assetFile) {
-            $result[(string) $assetFile->getId()] = false === ($usageMap[(string) $assetFile->getId()] ?? true);
+            $result[(string) $assetFile->getId()] = false === (($usageMap[(string) $assetFile->getId()] ?? null)?->isUsed() ?? true);
         }
 
         return $result;

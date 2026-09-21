@@ -12,12 +12,9 @@ use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
-use Doctrine\Common\Collections\ArrayCollection;
 use Symfony\Component\Uid\Uuid;
 
 final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
@@ -45,7 +42,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $original = $this->createImage();
         $takeOver = $this->createTakeOverOf($original);
 
-        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));
@@ -59,7 +56,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $original->setFirstUsedAt(new DateTimeImmutable(self::EARLIER_USED_AT));
         $takeOver = $this->createTakeOverOf($original);
 
-        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::EARLIER_USED_AT, $this->reloadFirstUsedAt($original));
@@ -71,22 +68,10 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $takeOver->getAssetAttributes()->setTakenOverFromId(Uuid::v7()->toRfc4122());
         $this->entityManager->flush();
 
-        $this->firstUseFacade->recordFromRequest($this->request($takeOver, self::USED_AT));
+        $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
 
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));
-    }
-
-    private function request(ImageFile $imageFile, string $usedAt): ImageFirstUseRequestDto
-    {
-        $item = (new ImageFirstUseItemDto())
-            ->setDamId((string) $imageFile->getId())
-            ->setFirstUsedAt(new DateTimeImmutable($usedAt));
-
-        $dto = new ImageFirstUseRequestDto();
-        $dto->setItems(new ArrayCollection([$item]));
-
-        return $dto;
     }
 
     private function reloadFirstUsedAt(ImageFile $imageFile): ?string
