@@ -88,6 +88,11 @@ final class ImageReleaseFacade
 
             foreach ($rootGroup as $file) {
                 $this->assetFileManager->updateUsage($file, $released, flush: false);
+                // The caller decided from its own state, which may have moved on since — a photo it dropped
+                // and took again reads as unused right up to the commit. One more question to the ext system
+                // turns a wrong release into a holder the reconcile writes back, instead of a photo offered
+                // as free with no check date left to notice it.
+                $file->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
             }
         }
     }

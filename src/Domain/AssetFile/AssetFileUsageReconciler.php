@@ -100,15 +100,6 @@ final readonly class AssetFileUsageReconciler
 
     /**
      * Used beats unanswered beats unused: one file the ext system still points at holds the whole group,
-     * and one it did not answer for is enough to leave the group alone.
-     *
-     * @param list<AssetFile> $due
-     *
-     * @return array<string, bool|null> take-over root id => the ext system still points at some file of
-     *                                  the group, null when it did not answer
-     */
-    /**
-     * Used beats unanswered beats unused: one file the ext system still points at holds the whole group,
      * and one it did not answer for is enough to leave the group alone. Holders are collected across the
      * group and deduplicated — every file of a take-over group is the same photo.
      *

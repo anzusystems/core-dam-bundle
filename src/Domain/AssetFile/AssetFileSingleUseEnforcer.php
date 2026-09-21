@@ -40,6 +40,9 @@ final readonly class AssetFileSingleUseEnforcer
         }
 
         $assetFile->getFlags()->setSingleUse(true);
+        // Nobody holds it in the register yet, and only the ext system knows who really uses it — the
+        // reconcile discovers that, but only for files it can see (AssetFileRepository::findUsageChecksDue).
+        $assetFile->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
 
         return true;
     }

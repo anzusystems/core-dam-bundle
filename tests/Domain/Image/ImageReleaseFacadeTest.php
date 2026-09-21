@@ -67,6 +67,22 @@ final class ImageReleaseFacadeTest extends CoreDamKernelTestCase
         $this->assertFree($copy);
     }
 
+    public function testReleaseLeavesTheGroupToBeVerifiedOnce(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $this->useOne($source, $this->createLicence());
+
+        $this->imageReleaseFacade->releaseImages($this->releaseRequest([$source]));
+
+        $this->assertFree($source);
+        $this->entityManager->clear();
+        self::assertNotNull(
+            $this->findImage((string) $source->getId())->getAssetAttributes()->getUsedByCheckAfter(),
+            'A release decided by the ext system is checked once more, so a wrong one heals instead of '
+            . 'leaving the photo free with nothing left to notice it.',
+        );
+    }
+
     public function testReleaseByAForeignHolderIsANoOp(): void
     {
         $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));

@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
 use DateInterval;
+use DateTimeImmutable;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
 
@@ -24,10 +25,11 @@ class AssetFileManager extends AbstractManager
     use FileStashAwareTrait;
 
     /**
-     * How long a fresh claim is left alone before the reconcile command asks the ext system whether it
-     * really uses the photo: longer than any request that is still about to write its own row.
+     * How long a claim — or a file that just became single use — is left alone before the reconcile
+     * command asks the ext system what really points at the photo: longer than any request that is still
+     * about to write its own row.
      */
-    private const string USAGE_CHECK_DELAY = 'PT15M';
+    public const string USAGE_CHECK_DELAY = 'PT15M';
 
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
@@ -89,11 +91,16 @@ class AssetFileManager extends AbstractManager
         $attributes
             ->setUsedByHolderName($claim->getHolderName())
             ->setUsedByHolderId($claim->getHolderId())
-            ->setUsedByCheckAfter($claim->isReleased() ? null : App::getAppDate()->add(new DateInterval(self::USAGE_CHECK_DELAY)))
+            ->setUsedByCheckAfter($claim->isReleased() ? null : self::nextUsageCheck())
         ;
         $this->flush($flush);
 
         return $assetFile;
+    }
+
+    public static function nextUsageCheck(): DateTimeImmutable
+    {
+        return App::getAppDate()->add(new DateInterval(self::USAGE_CHECK_DELAY));
     }
 
     /**

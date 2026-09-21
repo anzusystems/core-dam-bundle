@@ -361,6 +361,11 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         );
 
         $this->assertFree($source);
+        $this->entityManager->clear();
+        self::assertNotNull(
+            $this->findImage((string) $source->getId())->getAssetAttributes()->getUsedByCheckAfter(),
+            'Used by somebody the register cannot name — the reconcile has to ask who that is.',
+        );
     }
 
     public function testSingleUseWithoutAHolderIsRefusedWhenEnforced(): void

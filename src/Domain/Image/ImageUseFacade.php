@@ -362,6 +362,13 @@ final class ImageUseFacade
         if ($this->singleUseEnforced) {
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_HOLDER_REQUIRED);
         }
+
+        // Used, but claimed for nobody. Without a check date the group would never reach the reconcile, so
+        // the holder the ext system does know about could never be written back.
+        foreach ($singleUseResolutions as $resolution) {
+            $resolution->getFile()->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
+        }
+        $this->assetFileManager->flush();
     }
 
     /**

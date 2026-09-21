@@ -49,6 +49,18 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
     }
 
+    public function testBecomingSingleUseJoinsTheUsageCheckPopulation(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: true));
+        $imageId = (string) $image->getId();
+        $this->entityManager->clear();
+
+        self::assertNotNull(
+            $this->findImage($imageId)->getAssetAttributes()->getUsedByCheckAfter(),
+            'Without a check date the reconcile never asks the ext system who really holds this photo.',
+        );
+    }
+
     public function testCreateUnderPlainLicenceKeepsSingleUseOff(): void
     {
         $image = $this->createImage($this->createLicence(singleUseEnforced: false));

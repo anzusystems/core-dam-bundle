@@ -16,6 +16,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\ORM\Query;
 
 /**
  * @extends AbstractAssetFileRepository<AssetFile>
@@ -142,7 +143,11 @@ final class AssetFileRepository extends AbstractAssetFileRepository
             ->getQuery()
         ;
         if ($lock) {
-            $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+            // The row lock alone decides nothing: Doctrine hands back the instance already in the identity
+            // map, loaded before the lock was waited for, so a claim that committed meanwhile would be
+            // invisible and the caller would arbitrate on a holder that is no longer there.
+            $query->setLockMode(LockMode::PESSIMISTIC_WRITE)
+                ->setHint(Query::HINT_REFRESH, true);
         }
 
         /** @var list<AssetFile> $files */
@@ -190,7 +195,11 @@ final class AssetFileRepository extends AbstractAssetFileRepository
             ->getQuery()
         ;
         if ($lock) {
-            $query->setLockMode(LockMode::PESSIMISTIC_WRITE);
+            // The row lock alone decides nothing: Doctrine hands back the instance already in the identity
+            // map, loaded before the lock was waited for, so a claim that committed meanwhile would be
+            // invisible and the caller would arbitrate on a holder that is no longer there.
+            $query->setLockMode(LockMode::PESSIMISTIC_WRITE)
+                ->setHint(Query::HINT_REFRESH, true);
         }
 
         /** @var list<AssetFile> $files */
