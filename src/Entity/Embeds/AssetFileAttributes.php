@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -46,6 +47,13 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
     #[Serialize]
     private string $usedByHolderId;
+
+    /**
+     * When the holder above becomes due for a usage check, so that a claim CMS never committed does not hold
+     * the photo forever. Null once the check confirmed the use, and on release.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?DateTimeImmutable $usedByCheckAfter = null;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $filePath;
@@ -91,6 +99,7 @@ class AssetFileAttributes
         $this->setTakenOverFromId('');
         $this->setUsedByHolderName(App::EMPTY_STRING);
         $this->setUsedByHolderId(App::EMPTY_STRING);
+        $this->setUsedByCheckAfter(null);
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setOriginStorage(null);
@@ -240,6 +249,18 @@ class AssetFileAttributes
     public function setUsedByHolderName(string $usedByHolderName): self
     {
         $this->usedByHolderName = $usedByHolderName;
+
+        return $this;
+    }
+
+    public function getUsedByCheckAfter(): ?DateTimeImmutable
+    {
+        return $this->usedByCheckAfter;
+    }
+
+    public function setUsedByCheckAfter(?DateTimeImmutable $usedByCheckAfter): self
+    {
+        $this->usedByCheckAfter = $usedByCheckAfter;
 
         return $this;
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
@@ -146,6 +147,30 @@ final class AssetFileRepository extends AbstractAssetFileRepository
 
         /** @var list<AssetFile> $files */
         $files = $query->getResult();
+
+        return $files;
+    }
+
+    /**
+     * Single use files whose claim is due for a usage check, oldest id first; rides
+     * IDX_attributes_used_by_check_after. The id cursor is what makes a run resumable: a file the caller
+     * decides to leave alone keeps its due date and would otherwise come back in the very next page.
+     *
+     * @return list<AssetFile>
+     */
+    public function findUsageChecksDue(DateTimeInterface $checkAfter, int $limit, string $idFrom): array
+    {
+        /** @var list<AssetFile> $files */
+        $files = $this->createQueryBuilder('entity')
+            ->where('entity.assetAttributes.usedByCheckAfter <= :checkAfter')
+            ->andWhere('entity.id > :idFrom')
+            ->setParameter('checkAfter', $checkAfter)
+            ->setParameter('idFrom', $idFrom)
+            ->orderBy('entity.id', App::ORDER_ASC)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
 
         return $files;
     }

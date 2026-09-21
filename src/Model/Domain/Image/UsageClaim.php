@@ -36,6 +36,11 @@ final readonly class UsageClaim
         return $this->holderId;
     }
 
+    public function isReleased(): bool
+    {
+        return App::EMPTY_STRING === $this->holderName;
+    }
+
     public function matches(AssetFileAttributes $attributes): bool
     {
         return $attributes->getUsedByHolderName() === $this->holderName

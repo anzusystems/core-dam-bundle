@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
@@ -11,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
+use DateInterval;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
 
@@ -20,6 +22,12 @@ use Symfony\Contracts\Service\Attribute\Required;
 class AssetFileManager extends AbstractManager
 {
     use FileStashAwareTrait;
+
+    /**
+     * How long a fresh claim is left alone before the reconcile command asks the ext system whether it
+     * really uses the photo: longer than any request that is still about to write its own row.
+     */
+    private const string USAGE_CHECK_DELAY = 'PT15M';
 
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
@@ -85,6 +93,7 @@ class AssetFileManager extends AbstractManager
         $attributes
             ->setUsedByHolderName($claim->getHolderName())
             ->setUsedByHolderId($claim->getHolderId())
+            ->setUsedByCheckAfter($claim->isReleased() ? null : App::getAppDate()->add(new DateInterval(self::USAGE_CHECK_DELAY)))
         ;
         $this->flush($flush);
 
