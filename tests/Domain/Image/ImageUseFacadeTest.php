@@ -5,19 +5,27 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Image;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
+use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\ImageUsageConflictException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageHolderDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
@@ -25,6 +33,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -292,6 +301,45 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->assertFree($freeSource);
     }
 
+    public function testSingleUseWithoutAHolderIsLoggedButLetThroughInSoftMode(): void
+    {
+        $source = $this->createImage($this->createLicence(singleUseEnforced: true));
+
+        $this->imageUseFacade->useImages(
+            (new ImageUseRequestDto())->setItems(new ArrayCollection([$this->item($source)]))
+        );
+
+        $this->assertFree($source);
+    }
+
+    public function testSingleUseWithoutAHolderIsRefusedWhenEnforced(): void
+    {
+        $source = $this->createImage($this->createLicence(singleUseEnforced: true));
+
+        try {
+            $this->enforcedImageUseFacade()->useImages(
+                (new ImageUseRequestDto())->setItems(new ArrayCollection([$this->item($source)]))
+            );
+            self::fail('Expected the holderless claim to be refused.');
+        } catch (ForbiddenOperationException $exception) {
+            self::assertSame(ForbiddenOperationException::IMAGE_SINGLE_USE_HOLDER_REQUIRED, $exception->getDetail());
+        }
+
+        $this->assertFree($source);
+    }
+
+    public function testPlainImageWithoutAHolderIsRecordedAsUsed(): void
+    {
+        $source = $this->createImage($this->createLicence());
+
+        $this->imageUseFacade->useImages(
+            (new ImageUseRequestDto())->setItems(new ArrayCollection([$this->item($source)]))
+        );
+        $this->entityManager->clear();
+
+        self::assertNotNull($this->findImage((string) $source->getId())->getFirstUsedAt());
+    }
+
     /**
      * The detail is what the caller reacts to; every forbidden operation shares the same message.
      */
@@ -335,6 +383,25 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $result = $results->first();
 
         return $result;
+    }
+
+    private function enforcedImageUseFacade(): ImageUseFacade
+    {
+        $facade = new ImageUseFacade(
+            $this->getService(ImageCopyFacade::class),
+            $this->getService(AssetFileFirstUseFacade::class),
+            $this->getService(AssetManager::class),
+            $this->getService(AssetPropertiesRefresher::class),
+            $this->getService(AssetFileManager::class),
+            $this->getService(AssetFileRepository::class),
+            $this->entityManager,
+            $this->getService(DamLogger::class),
+            true,
+        );
+        $facade->setValidator($this->getService(Validator::class));
+        $facade->setIndexManager($this->getService(IndexManager::class));
+
+        return $facade;
     }
 
     private function item(ImageFile $imageFile, ?AssetLicence $targetLicence = null): ImageUseItemDto

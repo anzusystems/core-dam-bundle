@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\ImageUsageConflictException;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\ImageUseResolution;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
@@ -64,6 +65,8 @@ final class ImageUseFacade
         private readonly AssetFileManager $assetFileManager,
         private readonly AssetFileRepository $assetFileRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly DamLogger $damLogger,
+        private readonly bool $singleUseEnforced,
     ) {
     }
 
@@ -252,13 +255,18 @@ final class ImageUseFacade
      *
      * @throws ImageUsageConflictException
      */
-    private function claimSingleUseFiles(array $resolved, ImageHolderDto $holder): void
+    private function claimSingleUseFiles(array $resolved, ?ImageHolderDto $holder): void
     {
         $singleUseResolutions = array_values(array_filter(
             $resolved,
             static fn (ImageUseResolution $resolution): bool => $resolution->getFile()->getFlags()->isSingleUse(),
         ));
         if ([] === $singleUseResolutions) {
+            return;
+        }
+        if (null === $holder) {
+            $this->refuseSingleUseWithoutHolder($singleUseResolutions);
+
             return;
         }
 
@@ -286,6 +294,28 @@ final class ImageUseFacade
             $this->assetFileManager->updateUsage($groupFile, $claim, flush: false);
         }
         $this->assetFileManager->flush();
+    }
+
+    /**
+     * Exclusivity needs somebody to be exclusive to, so a single use photo cannot be used by a caller with
+     * no holder. Until the hosts send one, the refusal is only logged (#85974).
+     *
+     * @param list<ImageUseResolution> $singleUseResolutions
+     *
+     * @throws ForbiddenOperationException
+     */
+    private function refuseSingleUseWithoutHolder(array $singleUseResolutions): void
+    {
+        foreach ($singleUseResolutions as $resolution) {
+            $this->damLogger->warning(
+                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
+                sprintf('Single use file %s used without a holder', (string) $resolution->getFile()->getId()),
+            );
+        }
+
+        if ($this->singleUseEnforced) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_HOLDER_REQUIRED);
+        }
     }
 
     /**

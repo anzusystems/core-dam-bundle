@@ -20,12 +20,13 @@ final class ImageUseRequestDto
     public const int MAX_ITEMS = 200;
 
     /**
-     * The caller claiming the images. Written onto the whole take-over group of every single use item
-     * — {@see ImageUseFacade}.
+     * The caller claiming the images, written onto the whole take-over group of every single use item
+     * ({@see ImageUseFacade}). Null when the caller has nothing that may hold a photo — the batch is then
+     * resolved and recorded as used, but nothing is claimed, and a single use item is refused.
      */
     #[Serialize]
     #[Assert\Valid]
-    private ImageHolderDto $holder;
+    private ?ImageHolderDto $holder = null;
 
     #[Serialize(type: ImageUseItemDto::class)]
     #[Assert\Valid]
@@ -39,16 +40,15 @@ final class ImageUseRequestDto
 
     public function __construct()
     {
-        $this->setHolder(new ImageHolderDto());
         $this->setItems(new ArrayCollection());
     }
 
-    public function getHolder(): ImageHolderDto
+    public function getHolder(): ?ImageHolderDto
     {
         return $this->holder;
     }
 
-    public function setHolder(ImageHolderDto $holder): self
+    public function setHolder(?ImageHolderDto $holder): self
     {
         $this->holder = $holder;
 

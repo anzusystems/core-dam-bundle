@@ -8,7 +8,9 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
@@ -23,6 +25,8 @@ final readonly class AssetFileSingleUseEnforcer
         private AssetRepository $assetRepository,
         private EntityManagerInterface $entityManager,
         private IndexManager $indexManager,
+        private DamLogger $damLogger,
+        private bool $singleUseEnforced,
     ) {
     }
 
@@ -31,10 +35,32 @@ final readonly class AssetFileSingleUseEnforcer
         if ($assetFile->getFlags()->isSingleUse() || false === $this->mustBeSingleUse($assetFile)) {
             return false;
         }
+        if (false === $this->allowSwitchToSingleUse($assetFile)) {
+            return false;
+        }
 
         $assetFile->getFlags()->setSingleUse(true);
 
         return true;
+    }
+
+    /**
+     * A file somebody has already used cannot become single use: DAM does not know how many holders point
+     * at it, so exclusivity could not be honoured for it. Until every host sends a holder, the switch is
+     * only logged and still allowed (#85974).
+     */
+    public function allowSwitchToSingleUse(AssetFile $assetFile): bool
+    {
+        if (false === $assetFile->getFirstUsedAt() instanceof DateTimeImmutable) {
+            return true;
+        }
+
+        $this->damLogger->warning(
+            DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+            sprintf('Asset file %s switched to single use after its first use', (string) $assetFile->getId()),
+        );
+
+        return false === $this->singleUseEnforced;
     }
 
     /**

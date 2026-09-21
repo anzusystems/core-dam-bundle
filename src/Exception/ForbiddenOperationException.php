@@ -24,6 +24,8 @@ class ForbiddenOperationException extends DomainException
     public const string LICENCE_MANUAL_UPLOAD_DISABLED = 'licence_manual_upload_disabled';
     public const string IMAGE_DIRECT_USE_DISABLED = 'image_direct_use_disabled';
     public const string IMAGE_TAKE_OVER_CONFLICT = 'image_take_over_conflict';
+    public const string IMAGE_SINGLE_USE_HOLDER_REQUIRED = 'image_single_use_holder_required';
+    public const string IMAGE_SINGLE_USE_AFTER_FIRST_USE = 'image_single_use_after_first_use';
     public const string IMAGE_TAKE_OVER_SOURCE_INVALID = 'image_take_over_source_invalid';
 
     public const string IS_BLOCKING_ERROR = 'distribution_is_blocking';

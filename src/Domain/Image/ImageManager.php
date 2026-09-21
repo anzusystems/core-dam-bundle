@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 
 /**
@@ -39,8 +40,12 @@ final class ImageManager extends AssetFileManager
         return $image;
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
     {
+        $this->assertSingleUseSwitchAllowed($image, $dto->getFlags()->isSingleUse());
         $image->getFlags()
             ->setPublic($dto->getFlags()->isPublic())
             ->setSingleUse($dto->getFlags()->isSingleUse())
@@ -91,5 +96,20 @@ final class ImageManager extends AssetFileManager
         $this->regionOfInterestManager->deleteByImage($assetFile);
         $this->optimalResizeManager->deleteByImage($assetFile);
         $this->imagePreviewManager->deleteByImage($assetFile);
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
+    private function assertSingleUseSwitchAllowed(ImageFile $image, bool $requestedSingleUse): void
+    {
+        if (false === $requestedSingleUse || $image->getFlags()->isSingleUse()) {
+            return;
+        }
+        if ($this->assetFileSingleUseEnforcer->allowSwitchToSingleUse($image)) {
+            return;
+        }
+
+        throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE);
     }
 }
