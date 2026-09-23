@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 
 /**
@@ -39,15 +40,24 @@ final class ImageManager extends AssetFileManager
         return $image;
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
     {
+        $this->assertSingleUseSwitchAllowed($image, $dto->getFlags()->isSingleUse());
+        $becomesSingleUse = $dto->getFlags()->isSingleUse() && false === $image->getFlags()->isSingleUse();
         $image->getFlags()
             ->setPublic($dto->getFlags()->isPublic())
             ->setSingleUse($dto->getFlags()->isSingleUse())
         ;
+        if ($becomesSingleUse) {
+            // The enforcer arms the check itself only for the licence rule; a flag flipped here reaches it
+            // already set and would otherwise leave the file out of the reconcile population.
+            $this->assetFileSingleUseEnforcer->armUsageCheck($image);
+        }
 
-        $this->trackModification($image);
-        $this->flush($flush);
+        $this->updateExisting($image, flush: $flush);
 
         return $image;
     }
@@ -76,9 +86,9 @@ final class ImageManager extends AssetFileManager
             return $result;
         }
 
-        $usageMap = $this->extSystemCallbackFacade->isImageFileUsedBulk($toCheck);
+        $usageMap = $this->extSystemCallbackFacade->resolveImageFileUsage($toCheck);
         foreach ($toCheck as $assetFile) {
-            $result[(string) $assetFile->getId()] = false === ($usageMap[(string) $assetFile->getId()] ?? true);
+            $result[(string) $assetFile->getId()] = false === (($usageMap[(string) $assetFile->getId()] ?? null)?->isUsed() ?? true);
         }
 
         return $result;
@@ -92,5 +102,20 @@ final class ImageManager extends AssetFileManager
         $this->regionOfInterestManager->deleteByImage($assetFile);
         $this->optimalResizeManager->deleteByImage($assetFile);
         $this->imagePreviewManager->deleteByImage($assetFile);
+    }
+
+    /**
+     * @throws ForbiddenOperationException
+     */
+    private function assertSingleUseSwitchAllowed(ImageFile $image, bool $requestedSingleUse): void
+    {
+        if (false === $requestedSingleUse || $image->getFlags()->isSingleUse()) {
+            return;
+        }
+        if ($this->assetFileSingleUseEnforcer->allowSwitchToSingleUse($image)) {
+            return;
+        }
+
+        throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE);
     }
 }

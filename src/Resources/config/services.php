@@ -41,6 +41,7 @@ return static function (ContainerConfigurator $configurator): void {
             Distribution::INDEX_NAME => param('anzu_systems.dam_bundle.index_distribution'),
         ])
         ->set('app_false', false)
+        ->set('single_use_enforced', env('bool:SINGLE_USE_ENFORCED')->default('app_false'))
         ->set('elasticsearch_next_enabled', env('ELASTICSEARCH_NEXT_ENABLED')->default('app_false'))
     ;
 
@@ -50,6 +51,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->autoconfigure(true)
 
         ->bind('$searchNext', param('elasticsearch_next_enabled'))
+        ->bind('$singleUseEnforced', param('single_use_enforced'))
         ->bind('$settings', param('anzu_systems.dam_bundle.settings'))
         ->bind('$redirectDomain', param('anzu_systems.dam_bundle.settings_redirect_domain'))
         ->bind('$displayTitle', param('anzu_systems.dam_bundle.display_title'))

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginExternalProviderType;
 use AnzuSystems\CoreDamBundle\Doctrine\Type\OriginStorageType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -12,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginExternalProvider;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -24,6 +26,34 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 36)]
     #[Serialize]
     private string $originAssetId;
+
+    /**
+     * Root of the take-over chain: id of the AssetFile this one was physically copied from into another
+     * licence, empty for originals. Soft link without a FK on purpose — licence retention deletes the
+     * agency original while its take-overs live on.
+     */
+    #[ORM\Column(type: Types::STRING, length: 36, options: ['default' => ''])]
+    #[Serialize]
+    private string $takenOverFromId;
+
+    /**
+     * Effective holder of the photo — the pair a picker compares against when a single use licence allows
+     * only one user. Empty means the photo is free.
+     */
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[Serialize]
+    private string $usedByHolderName;
+
+    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[Serialize]
+    private string $usedByHolderId;
+
+    /**
+     * When the holder above becomes due for a usage check, so that a claim CMS never committed does not hold
+     * the photo forever. Null once the check confirmed the use, and on release.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    private ?DateTimeImmutable $usedByCheckAfter = null;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $filePath;
@@ -66,6 +96,10 @@ class AssetFileAttributes
         $this->setOriginFileName('');
         $this->setMimeType('');
         $this->setOriginAssetId('');
+        $this->setTakenOverFromId('');
+        $this->setUsedByHolderName(App::EMPTY_STRING);
+        $this->setUsedByHolderId(App::EMPTY_STRING);
+        $this->setUsedByCheckAfter(null);
         $this->setOriginUrl(null);
         $this->setOriginExternalProvider(null);
         $this->setOriginStorage(null);
@@ -191,6 +225,59 @@ class AssetFileAttributes
     public function setOriginAssetId(string $originAssetId): self
     {
         $this->originAssetId = $originAssetId;
+
+        return $this;
+    }
+
+    public function getTakenOverFromId(): string
+    {
+        return $this->takenOverFromId;
+    }
+
+    public function setTakenOverFromId(string $takenOverFromId): self
+    {
+        $this->takenOverFromId = $takenOverFromId;
+
+        return $this;
+    }
+
+    public function isTakenOver(): bool
+    {
+        return App::EMPTY_STRING !== $this->takenOverFromId;
+    }
+
+    public function getUsedByHolderName(): string
+    {
+        return $this->usedByHolderName;
+    }
+
+    public function setUsedByHolderName(string $usedByHolderName): self
+    {
+        $this->usedByHolderName = $usedByHolderName;
+
+        return $this;
+    }
+
+    public function getUsedByCheckAfter(): ?DateTimeImmutable
+    {
+        return $this->usedByCheckAfter;
+    }
+
+    public function setUsedByCheckAfter(?DateTimeImmutable $usedByCheckAfter): self
+    {
+        $this->usedByCheckAfter = $usedByCheckAfter;
+
+        return $this;
+    }
+
+    public function getUsedByHolderId(): string
+    {
+        return $this->usedByHolderId;
+    }
+
+    public function setUsedByHolderId(string $usedByHolderId): self
+    {
+        $this->usedByHolderId = $usedByHolderId;
 
         return $this;
     }

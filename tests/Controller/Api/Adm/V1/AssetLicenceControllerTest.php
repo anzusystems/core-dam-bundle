@@ -13,8 +13,10 @@ use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetLicenceUrl;
+use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetListViewUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -133,9 +135,6 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     'extSystem' => [
                         ValidationException::ERROR_FIELD_EMPTY,
                     ],
-                    'extId' => [
-                        ValidationException::ERROR_FIELD_EMPTY,
-                    ]
                 ],
             ],
             [
@@ -190,6 +189,147 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     'extId' => 'updated',
                 ],
                 'expectedResponseStatusCode' => Response::HTTP_OK,
+            ],
+        ];
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateRejectsExtSystemChangeWhileLicenceIsInListView(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $viewResponse = $client->post(AssetListViewUrl::createPath(), [
+            'name' => 'Locks licence ext system',
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'groups' => [],
+            'licences' => [TestAssetLicenceFixtures::LICENCE_2_ID],
+        ]);
+        self::assertStatusCode($viewResponse, Response::HTTP_CREATED);
+
+        $response = $client->put(AssetLicenceUrl::update(TestAssetLicenceFixtures::LICENCE_2_ID), [
+            'id' => TestAssetLicenceFixtures::LICENCE_2_ID,
+            'name' => 'moved licence',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => '5',
+        ]);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'extSystem' => [ValidationException::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW],
+        ]);
+    }
+
+    public function testCreateWithoutExtIdIsNotUniqueChecked(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        foreach (['licence-no-ext-id-a', 'licence-no-ext-id-b'] as $name) {
+            $response = $client->post(AssetLicenceUrl::createPath(), [
+                'name' => $name,
+                'extSystem' => ExtSystemFixtures::ID_CMS,
+                'extId' => '',
+            ]);
+            $this->assertStatusCode($response, Response::HTTP_CREATED);
+
+            $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+            $this->assertNull($licence->getExtId());
+        }
+    }
+
+    public function testCreateWithBadgeSuccess(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-with-badge',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'badge' => 'AG',
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_CREATED);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $licence->getBadge());
+
+        $getResponse = $client->get(AssetLicenceUrl::getOne($licence->getId()));
+        $this->assertStatusCode($getResponse, Response::HTTP_OK);
+        $fetched = $this->serializer->deserialize($getResponse->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $fetched->getBadge());
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateClearsBadge(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $createResponse = $client->post(AssetLicenceUrl::createPath(), [
+            'name' => 'licence-clear-badge',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => (string) Uuid::v7(),
+            'badge' => 'AG',
+        ]);
+        $this->assertStatusCode($createResponse, Response::HTTP_CREATED);
+        $created = $this->serializer->deserialize($createResponse->getContent(), AssetLicence::class);
+        $this->assertSame('AG', $created->getBadge());
+
+        $updateResponse = $client->put(AssetLicenceUrl::update($created->getId()), [
+            'id' => $created->getId(),
+            'name' => $created->getName(),
+            'extSystem' => $created->getExtSystem()->getId(),
+            'extId' => $created->getExtId(),
+            'badge' => '',
+        ]);
+        $this->assertStatusCode($updateResponse, Response::HTTP_OK);
+        $updated = $this->serializer->deserialize($updateResponse->getContent(), AssetLicence::class);
+        $this->assertSame('', $updated->getBadge());
+    }
+
+    #[DataProvider('createBadgeFailureDataProvider')]
+    public function testCreateBadgeFailure(array $requestJson, array $validationErrors): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AssetLicenceUrl::createPath(), $requestJson);
+        $this->assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+
+        $content = json_decode($response->getContent(), true);
+        $this->assertValidationErrors($content, $validationErrors);
+    }
+
+    /**
+     * @return list<array{requestJson: array<string, mixed>, validationErrors: array<string, list<string>>}>
+     */
+    public static function createBadgeFailureDataProvider(): array
+    {
+        return [
+            [
+                'requestJson' => [
+                    'name' => 'badge-too-long',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                    'badge' => 'ABCDE',
+                ],
+                'validationErrors' => [
+                    'badge' => [
+                        ValidationException::ERROR_FIELD_LENGTH_MAX,
+                    ],
+                ],
+            ],
+            [
+                'requestJson' => [
+                    'name' => 'badge-lowercase',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                    'badge' => 'ag',
+                ],
+                'validationErrors' => [
+                    'badge' => [
+                        ValidationException::ERROR_FIELD_INVALID,
+                    ],
+                ],
             ],
         ];
     }
@@ -327,6 +467,50 @@ final class AssetLicenceControllerTest extends AbstractApiController
 
         $this->assertFalse($updated->getInternalRule()->isActive());
         $this->assertCount(0, $updated->getInternalRuleAuthors());
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateSetsAndClearsDefaultAuthorViaHttp(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $existingLicence = self::getContainer()
+            ->get(AssetLicenceRepository::class)
+            ->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
+        $response = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'defaultAuthor' => AuthorFixtures::AUTHOR_1,
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_OK);
+        $updated = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+        $this->assertSame(AuthorFixtures::AUTHOR_1, $updated->getDefaultAuthor()?->getId());
+
+        $getResponse = $client->get(AssetLicenceUrl::getOne($existingLicence->getId()));
+        $this->assertStatusCode($getResponse, Response::HTTP_OK);
+        $fetched = $this->serializer->deserialize($getResponse->getContent(), AssetLicence::class);
+        $this->assertSame(AuthorFixtures::AUTHOR_1, $fetched->getDefaultAuthor()?->getId());
+
+        $clearResponse = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'defaultAuthor' => null,
+        ]);
+        $this->assertStatusCode($clearResponse, Response::HTTP_OK);
+        $cleared = $this->serializer->deserialize($clearResponse->getContent(), AssetLicence::class);
+        $this->assertNull($cleared->getDefaultAuthor());
+
+        $finalGetResponse = $client->get(AssetLicenceUrl::getOne($existingLicence->getId()));
+        $this->assertStatusCode($finalGetResponse, Response::HTTP_OK);
+        $finalFetched = $this->serializer->deserialize($finalGetResponse->getContent(), AssetLicence::class);
+        $this->assertNull($finalFetched->getDefaultAuthor());
     }
 
     /**

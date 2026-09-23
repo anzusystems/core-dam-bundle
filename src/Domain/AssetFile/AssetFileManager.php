@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotManager;
 use AnzuSystems\CoreDamBundle\Domain\Chunk\ChunkFileManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Traits\FileStashAwareTrait;
+use DateInterval;
+use DateTimeImmutable;
 use League\Flysystem\FilesystemException;
 use Symfony\Contracts\Service\Attribute\Required;
 
@@ -20,9 +24,17 @@ class AssetFileManager extends AbstractManager
 {
     use FileStashAwareTrait;
 
+    /**
+     * How long a claim — or a file that just became single use — is left alone before the reconcile
+     * command asks the ext system what really points at the photo: longer than any request that is still
+     * about to write its own row.
+     */
+    public const string USAGE_CHECK_DELAY = 'PT15M';
+
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
     protected AssetFileRouteManager $assetFileRouteManager;
+    protected AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer;
 
     #[Required]
     public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
@@ -42,6 +54,12 @@ class AssetFileManager extends AbstractManager
         $this->assetFileRouteManager = $assetFileRouteManager;
     }
 
+    #[Required]
+    public function setAssetFileSingleUseEnforcer(AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer): void
+    {
+        $this->assetFileSingleUseEnforcer = $assetFileSingleUseEnforcer;
+    }
+
     /**
      * @param T $assetFile
      *
@@ -49,12 +67,40 @@ class AssetFileManager extends AbstractManager
      */
     public function updateExisting(AssetFile $assetFile, bool $flush = true, bool $trackModification = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         if ($trackModification) {
             $this->trackModification($assetFile);
         }
         $this->flush($flush);
 
         return $assetFile;
+    }
+
+    /**
+     * Deliberately not routed through {@see updateExisting()}: the single use enforcer lazy loads the licence
+     * of every touched file, and a usage claim changes no licence and no flag — it is not a user edit either,
+     * so no modification tracking.
+     *
+     * @param T $assetFile
+     *
+     * @return T
+     */
+    public function updateUsage(AssetFile $assetFile, UsageClaim $claim, bool $flush = true): AssetFile
+    {
+        $attributes = $assetFile->getAssetAttributes();
+        $attributes
+            ->setUsedByHolderName($claim->getHolderName())
+            ->setUsedByHolderId($claim->getHolderId())
+            ->setUsedByCheckAfter($claim->isReleased() ? null : self::nextUsageCheck())
+        ;
+        $this->flush($flush);
+
+        return $assetFile;
+    }
+
+    public static function nextUsageCheck(): DateTimeImmutable
+    {
+        return App::date('now')->add(new DateInterval(self::USAGE_CHECK_DELAY));
     }
 
     /**
@@ -87,6 +133,7 @@ class AssetFileManager extends AbstractManager
      */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         $this->trackCreation($assetFile);
         $this->entityManager->persist($assetFile);
         $this->flush($flush);

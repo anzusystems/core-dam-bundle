@@ -6,10 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 
 final class AssetMetadataBulkManager extends AbstractManager
@@ -19,9 +21,13 @@ final class AssetMetadataBulkManager extends AbstractManager
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AuthorProvider $authorProvider,
         private readonly AssetFileInternalRuleEvaluator $evaluator,
+        private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function updateFromMetadataBulkDto(
         Asset $asset,
         FormProvidableMetadataBulkUpdateDto $dto,
@@ -74,6 +80,9 @@ final class AssetMetadataBulkManager extends AbstractManager
         $asset->getAssetFlags()->setTtsAudio($updateDto->isTtsAudio());
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     private function updateMainFileSingleUse(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
     {
         if ($updateDto->isMainFileSingleUndefined()) {
@@ -82,7 +91,15 @@ final class AssetMetadataBulkManager extends AbstractManager
 
         $mainFile = $asset->getMainFile();
         if ($mainFile instanceof AssetFile) {
+            $becomesSingleUse = $updateDto->isMainFileSingleUse() && false === $mainFile->getFlags()->isSingleUse();
+            if ($becomesSingleUse && false === $this->assetFileSingleUseEnforcer->allowSwitchToSingleUse($mainFile)) {
+                throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE);
+            }
             $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
+            if ($becomesSingleUse) {
+                $this->assetFileSingleUseEnforcer->armUsageCheck($mainFile);
+            }
+            $this->assetFileSingleUseEnforcer->enforce($mainFile);
         }
     }
 

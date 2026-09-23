@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
 use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
@@ -91,6 +92,7 @@ final class ImageFacade extends AbstractAssetFileFacade
     }
 
     /**
+     * @throws ForbiddenOperationException
      * @throws RuntimeException
      */
     public function update(ImageFile $image, ImageFileAdmDetailDto $dto): ImageFile
@@ -106,6 +108,12 @@ final class ImageFacade extends AbstractAssetFileFacade
             if ($dispatchManipulatedImageEvent) {
                 $this->dispatcher->dispatch($this->createEvent($image));
             }
+        } catch (ForbiddenOperationException $exception) {
+            // A refused edit is not a failed rotation: repacked below, it reaches the editor as a 500 with
+            // no reason instead of the 422 naming the rule that stopped them.
+            $this->imageManager->rollback();
+
+            throw $exception;
         } catch (Throwable $exception) {
             $this->imageManager->rollback();
 
