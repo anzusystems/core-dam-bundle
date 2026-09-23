@@ -6,9 +6,13 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
@@ -181,6 +185,44 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         }
     }
 
+    public function testBulkEditRefusesTheSwitchAfterFirstUse(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
+        $image->setFirstUsedAt(new DateTimeImmutable());
+        $this->entityManager->flush();
+        $imageId = (string) $image->getId();
+        $asset = $image->getAsset();
+
+        $dto = FormProvidableMetadataBulkUpdateDto::getInstance($asset)
+            ->setMainFileSingleUse(true);
+
+        try {
+            $this->enforcedAssetMetadataBulkManager()->updateFromMetadataBulkDto($asset, $dto);
+            self::fail('The switch had to be refused.');
+        } catch (ForbiddenOperationException $exception) {
+            self::assertSame(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE, $exception->getDetail());
+        }
+        $this->entityManager->clear();
+
+        self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
+    }
+
+    public function testBulkEditSwitchAfterFirstUsePassesInSoftMode(): void
+    {
+        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
+        $image->setFirstUsedAt(new DateTimeImmutable());
+        $this->entityManager->flush();
+        $imageId = (string) $image->getId();
+        $asset = $image->getAsset();
+
+        $dto = FormProvidableMetadataBulkUpdateDto::getInstance($asset)
+            ->setMainFileSingleUse(true);
+        $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $dto);
+        $this->entityManager->clear();
+
+        self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
+    }
+
     private function enforcedSingleUseEnforcer(): AssetFileSingleUseEnforcer
     {
         return new AssetFileSingleUseEnforcer(
@@ -189,6 +231,17 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
             $this->getService(IndexManager::class),
             $this->getService(DamLogger::class),
             true,
+        );
+    }
+
+    private function enforcedAssetMetadataBulkManager(): AssetMetadataBulkManager
+    {
+        return new AssetMetadataBulkManager(
+            $this->getService(AssetManager::class),
+            $this->getService(AssetMetadataManager::class),
+            $this->getService(AuthorProvider::class),
+            $this->getService(AssetFileInternalRuleEvaluator::class),
+            $this->enforcedSingleUseEnforcer(),
         );
     }
 

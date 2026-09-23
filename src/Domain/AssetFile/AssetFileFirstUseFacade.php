@@ -49,7 +49,7 @@ final readonly class AssetFileFirstUseFacade
     }
 
     /**
-     * A take-over is the same photo as the file it came from, so the licence clock starts with the first use
+     * A take-over is the same photo as the file it came from, so the original counts as used from the first use
      * of any of them — the child's own recorded date wins, the incoming one is used only when the child has
      * none. A root absent from the loaded set may be gone (retention deletes agency originals while their
      * take-overs live on), which is an expected state, not an error.

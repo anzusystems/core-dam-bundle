@@ -180,34 +180,6 @@ final class AssetFileRepository extends AbstractAssetFileRepository
         return $files;
     }
 
-    /**
-     * Everything the given holder currently holds; rides IDX_attributes_used_by_holder.
-     *
-     * @return list<AssetFile>
-     */
-    public function findByHolder(string $holderName, string $holderId, bool $lock = false): array
-    {
-        $query = $this->createQueryBuilder('entity')
-            ->where('entity.assetAttributes.usedByHolderName = :holderName')
-            ->andWhere('entity.assetAttributes.usedByHolderId = :holderId')
-            ->setParameter('holderName', $holderName)
-            ->setParameter('holderId', $holderId)
-            ->getQuery()
-        ;
-        if ($lock) {
-            // The row lock alone decides nothing: Doctrine hands back the instance already in the identity
-            // map, loaded before the lock was waited for, so a claim that committed meanwhile would be
-            // invisible and the caller would arbitrate on a holder that is no longer there.
-            $query->setLockMode(LockMode::PESSIMISTIC_WRITE)
-                ->setHint(Query::HINT_REFRESH, true);
-        }
-
-        /** @var list<AssetFile> $files */
-        $files = $query->getResult();
-
-        return $files;
-    }
-
     protected function getEntityClass(): string
     {
         return AssetFile::class;

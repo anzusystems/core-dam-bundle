@@ -39,8 +39,8 @@ use Throwable;
  * Decides whether each image of a batch may be used as it is, or has to be taken over into the caller's
  * licence first, and — for a single use photo — claims it for the caller. The licence flags own the
  * take-over rule and DAM alone owns exclusivity, so the caller never decides either, it only receives the
- * files to use. The first use of every file of the batch is recorded here, because the licence clock
- * starts with the first successful use.
+ * files to use. The first successful use of every file of the batch is recorded here; from then on the
+ * file can no longer be switched to single use.
  *
  * The whole batch is resolved and claimed under one transaction: a gallery of 20 photos costs one request,
  * and either all of them end up usable or none does.
@@ -207,7 +207,7 @@ final class ImageUseFacade
      * A file found by checksum did not necessarily get into the target licence by a take over — the same bytes
      * uploaded manually land here too, with no root of their own. Such a file is adopted under the source root,
      * otherwise the caller would store a photo with no link to the original: the exclusivity group would fall
-     * apart and the licence clock of the original would never start.
+     * apart and the first use would never reach the original.
      *
      * A file already taken over from this exact root is the idempotent case — a retry after a timeout, or the
      * same photo picked twice — and is handed back as-is: {@see useImages()} claims it again below, which is a

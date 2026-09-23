@@ -19,12 +19,12 @@ final readonly class ImageUseResolution
 
     public static function directUse(AssetFile $file): self
     {
-        return new self($file, false);
+        return new self($file, takenOver: false);
     }
 
     public static function takenOver(AssetFile $file): self
     {
-        return new self($file, true);
+        return new self($file, takenOver: true);
     }
 
     public function getFile(): AssetFile

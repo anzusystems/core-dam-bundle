@@ -42,6 +42,7 @@ final class AssetMetadataBulkFacade
      * @throws ValidationException
      * @throws AccessDeniedException
      * @throws NonUniqueResultException
+     * @throws ForbiddenOperationException
      */
     public function bulkUpdate(Collection $list): Collection
     {

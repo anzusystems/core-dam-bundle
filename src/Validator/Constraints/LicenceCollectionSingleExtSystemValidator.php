@@ -17,24 +17,19 @@ final class LicenceCollectionSingleExtSystemValidator extends ConstraintValidato
      */
     public function validate(mixed $value, Constraint $constraint): void
     {
-        if (null === $value) {
-            return;
-        }
-
         if (false === ($value instanceof LicenceCollectionInterface)) {
             throw new UnexpectedTypeException($constraint, LicenceCollectionInterface::class);
         }
 
-        $extSystemId = null;
+        $extSystem = null;
         foreach ($value->getLicences() as $licence) {
-            $licenceExtSystemId = (int) $licence->getExtSystem()->getId();
-            if (null === $extSystemId) {
-                $extSystemId = $licenceExtSystemId;
+            if (null === $extSystem) {
+                $extSystem = $licence->getExtSystem();
 
                 continue;
             }
 
-            if ($licenceExtSystemId !== $extSystemId) {
+            if ($licence->getExtSystem()->isNot($extSystem)) {
                 $this->context->buildViolation(ValidationException::ERROR_FIELD_INVALID)
                     ->atPath('licences')
                     ->addViolation()

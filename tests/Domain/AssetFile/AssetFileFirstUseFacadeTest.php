@@ -46,7 +46,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $this->entityManager->clear();
 
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));
-        // The licence clock runs for the photo, not for the file the article happens to reference.
+        // First use belongs to the photo, not to the file the article happens to reference.
         self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($original));
     }
 

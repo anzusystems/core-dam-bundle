@@ -17,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAs
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetLicenceUrl;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetListViewUrl;
-use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -217,7 +216,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
 
         self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->assertValidationErrors(json_decode($response->getContent(), true), [
-            'extSystem' => [AssetLicenceFacade::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW],
+            'extSystem' => [ValidationException::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW],
         ]);
     }
 

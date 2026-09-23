@@ -83,7 +83,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     #[ORM\Column(type: Types::STRING, length: self::BADGE_MAX_LENGTH, options: ['default' => App::EMPTY_STRING])]
     #[Serialize]
-    #[Assert\Regex(pattern: '/^[A-Z0-9]{0,4}$/', message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Regex(pattern: '/^[A-Z0-9]*$/', message: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Length(max: self::BADGE_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $badge;
 
