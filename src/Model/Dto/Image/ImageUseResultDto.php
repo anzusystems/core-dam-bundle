@@ -31,14 +31,13 @@ final class ImageUseResultDto
 
     public static function getInstance(AssetFile $assetFile, bool $takenOver): self
     {
-        $takenOverFromId = $assetFile->getAssetAttributes()
-            ->getTakenOverFromId();
+        $attributes = $assetFile->getAssetAttributes();
 
         return (new self())
             ->setImageFileId((string) $assetFile->getId())
             ->setLicenceId((int) $assetFile->getLicence()->getId())
             ->setSingleUse($assetFile->getFlags()->isSingleUse())
-            ->setTakenOverFromId(App::EMPTY_STRING === $takenOverFromId ? null : $takenOverFromId)
+            ->setTakenOverFromId($attributes->isTakenOver() ? $attributes->getTakenOverFromId() : null)
             ->setTakenOver($takenOver)
         ;
     }

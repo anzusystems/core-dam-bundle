@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use DateTimeImmutable;
@@ -78,13 +77,12 @@ final readonly class AssetFileFirstUseFacade
     {
         $rootIds = [];
         foreach ($assetFilesByDamId as $assetFile) {
-            $rootId = $assetFile->getAssetAttributes()
-                ->getTakenOverFromId();
-            if (App::EMPTY_STRING === $rootId) {
+            $attributes = $assetFile->getAssetAttributes();
+            if (false === $attributes->isTakenOver()) {
                 continue;
             }
 
-            $rootIds[$rootId] = true;
+            $rootIds[$attributes->getTakenOverFromId()] = true;
         }
 
         if ([] === $rootIds) {

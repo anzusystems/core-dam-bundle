@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileGroupUsage;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileUsageReconcileResult;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\UsageClaim;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageHolderDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileUsageReconcileOutcome;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use DateInterval;
 use DateTimeImmutable;
@@ -35,12 +36,6 @@ final readonly class AssetFileUsageReconciler
      * is held, and an hourly question about an unchanged photo would ask 24 times a day.
      */
     private const string RECHECK_DELAY = 'P1D';
-
-    private const string OUTCOME_CONFIRMED = 'confirmed';
-    private const string OUTCOME_REWRITTEN = 'rewritten';
-    private const string OUTCOME_RELEASED = 'released';
-    private const string OUTCOME_UNANSWERED = 'unanswered';
-    private const string OUTCOME_SKIPPED = 'skipped';
 
     /**
      * @param AssetFileManager<AssetFile> $assetFileManager
@@ -79,13 +74,18 @@ final readonly class AssetFileUsageReconciler
             foreach ($this->usageByRoot($due) as $rootId => $usage) {
                 $outcome = $this->settleGroup($rootId, $usage, $now);
                 match ($outcome) {
-                    self::OUTCOME_SKIPPED => $skipped++,
-                    self::OUTCOME_UNANSWERED => $unanswered++,
-                    self::OUTCOME_RELEASED => $released++,
-                    self::OUTCOME_REWRITTEN => $rewritten++,
-                    default => $confirmed++,
+                    AssetFileUsageReconcileOutcome::Skipped => $skipped++,
+                    AssetFileUsageReconcileOutcome::Unanswered => $unanswered++,
+                    AssetFileUsageReconcileOutcome::Released => $released++,
+                    AssetFileUsageReconcileOutcome::Rewritten => $rewritten++,
+                    AssetFileUsageReconcileOutcome::Confirmed => $confirmed++,
                 };
             }
+
+            // Every page fetches its own rows fresh in the next iteration, so nothing here is needed past
+            // the page boundary — up to PAGE_SIZE take-over groups otherwise stay in the identity map for
+            // the whole run.
+            $this->assetFileManager->clear();
         }
 
         if (App::ZERO < $unanswered) {
@@ -150,11 +150,9 @@ final readonly class AssetFileUsageReconciler
     }
 
     /**
-     * @return string one of the OUTCOME_* constants
-     *
      * @throws Throwable
      */
-    private function settleGroup(string $rootId, AssetFileGroupUsage $usage, DateTimeImmutable $now): string
+    private function settleGroup(string $rootId, AssetFileGroupUsage $usage, DateTimeImmutable $now): AssetFileUsageReconcileOutcome
     {
         $used = $usage->isUsed();
         $holders = $usage->getHolders();
@@ -169,7 +167,7 @@ final readonly class AssetFileUsageReconciler
             if ([] === $stillDue) {
                 $this->assetFileManager->rollback();
 
-                return self::OUTCOME_SKIPPED;
+                return AssetFileUsageReconcileOutcome::Skipped;
             }
 
             $attributes = $group[array_key_first($group)]->getAssetAttributes();
@@ -208,10 +206,10 @@ final readonly class AssetFileUsageReconciler
     /**
      * @param list<ImageHolderDto>|null $holders
      */
-    private function reportOutcome(string $rootId, ?bool $used, ?array $holders, bool $rewrites, string $recordedHolder): string
+    private function reportOutcome(string $rootId, ?bool $used, ?array $holders, bool $rewrites, string $recordedHolder): AssetFileUsageReconcileOutcome
     {
         if (null === $used) {
-            return self::OUTCOME_UNANSWERED;
+            return AssetFileUsageReconcileOutcome::Unanswered;
         }
         if (false === $used) {
             $this->damLogger->warning(
@@ -219,7 +217,7 @@ final readonly class AssetFileUsageReconciler
                 sprintf('Single use group %s released: the ext system points at none of its files', $rootId),
             );
 
-            return self::OUTCOME_RELEASED;
+            return AssetFileUsageReconcileOutcome::Released;
         }
         if (null !== $holders && 1 < count($holders)) {
             $this->damLogger->warning(
@@ -241,10 +239,10 @@ final readonly class AssetFileUsageReconciler
                 sprintf('Single use group %s was held by %s, the ext system says otherwise', $rootId, $recordedHolder),
             );
 
-            return self::OUTCOME_REWRITTEN;
+            return AssetFileUsageReconcileOutcome::Rewritten;
         }
 
-        return self::OUTCOME_CONFIRMED;
+        return AssetFileUsageReconcileOutcome::Confirmed;
     }
 
     private static function isDue(AssetFile $assetFile, DateTimeImmutable $now): bool

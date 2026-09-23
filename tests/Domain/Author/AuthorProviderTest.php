@@ -50,6 +50,19 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
         self::assertSame($this->sorted([AuthorFixtures::AUTHOR_5, AuthorFixtures::AUTHOR_6]), $this->authorIds($asset));
     }
 
+    /**
+     * AuthorFixtures::AUTHOR_4 is an unreviewed alias of AUTHOR_5 and AUTHOR_6.
+     */
+    public function testProvideAuthorToCollReportsNoChangeWhenTheAliasResolvesToAuthorsAlreadyPresent(): void
+    {
+        $asset = $this->createAsset();
+        $asset->addAuthor($this->author(AuthorFixtures::AUTHOR_5));
+        $asset->addAuthor($this->author(AuthorFixtures::AUTHOR_6));
+
+        self::assertFalse($this->authorProvider->provideAuthorToColl($asset, $this->author(AuthorFixtures::AUTHOR_4)));
+        self::assertSame($this->sorted([AuthorFixtures::AUTHOR_5, AuthorFixtures::AUTHOR_6]), $this->authorIds($asset));
+    }
+
     private function createAsset(): Asset
     {
         /** @var ExtSystem $extSystem */

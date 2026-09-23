@@ -27,9 +27,7 @@ final class ImageReleaseRequestDto
 
     #[Serialize(handler: EntityIdHandler::class, type: ImageFile::class)]
     #[Assert\Count(
-        min: 1,
         max: self::MAX_ITEMS,
-        minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
     )]
     private Collection $imageFileIds;

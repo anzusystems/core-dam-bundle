@@ -157,6 +157,21 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         );
     }
 
+    public function testSingleUseSourceCannotAdoptAnIndependentlyUploadedSharedTarget(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $target = $this->createLicence();
+        // Same bytes as $source, uploaded straight into the target licence rather than taken over — it
+        // carries no take-over root of its own, and since the target licence is not single use, no single
+        // use flag either.
+        $this->createImage($target);
+
+        $this->assertForbiddenDetail(
+            ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT,
+            fn (): mixed => $this->useOne($source, $target),
+        );
+    }
+
     public function testRequestWithoutTargetOnlyReportsWhetherDirectUseIsAllowed(): void
     {
         $usable = $this->createImage($this->createLicence());
@@ -461,7 +476,6 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
             $this->getService(AssetPropertiesRefresher::class),
             $this->getService(AssetFileManager::class),
             $this->getService(AssetFileRepository::class),
-            $this->entityManager,
             $this->getService(DamLogger::class),
             true,
         );

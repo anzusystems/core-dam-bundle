@@ -241,6 +241,11 @@ class AssetFileAttributes
         return $this;
     }
 
+    public function isTakenOver(): bool
+    {
+        return App::EMPTY_STRING !== $this->takenOverFromId;
+    }
+
     public function getUsedByHolderName(): string
     {
         return $this->usedByHolderName;

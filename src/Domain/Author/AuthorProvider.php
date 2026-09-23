@@ -43,15 +43,16 @@ final readonly class AuthorProvider
 
     /**
      * Adds the author and resolves aliases in the same step, so the asset never carries an alias
-     * next to the current author it stands for. Returns whether the author was newly added.
+     * next to the current author it stands for. Returns whether the collection actually changed —
+     * an added unreviewed alias resolved into a current author already on the asset is no net change.
      */
     public function provideAuthorToColl(Asset $asset, Author $author): bool
     {
-        $added = false === $asset->getAuthors()->contains($author);
+        $before = $this->authorIds($asset);
         $asset->addAuthor($author);
         $this->provideCurrentAuthorToColl($asset);
 
-        return $added;
+        return $before !== $this->authorIds($asset);
     }
 
     public function provideCurrentAuthorToColl(Asset $asset): bool
@@ -74,5 +75,18 @@ final readonly class AuthorProvider
         }
 
         return $changedCurrentAuthors;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function authorIds(Asset $asset): array
+    {
+        $ids = $asset->getAuthors()
+            ->map(static fn (Author $author): string => (string) $author->getId())
+            ->getValues();
+        sort($ids);
+
+        return $ids;
     }
 }

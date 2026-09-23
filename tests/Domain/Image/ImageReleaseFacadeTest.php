@@ -102,6 +102,15 @@ final class ImageReleaseFacadeTest extends CoreDamKernelTestCase
         $this->assertFree($source);
     }
 
+    public function testReleaseWithNoKnownIdsIsANoOp(): void
+    {
+        // What EntityIdHandler leaves behind when every requested id is unknown or already deleted — this
+        // must read as nothing to release, not as a validation error the caller has to react to.
+        $this->expectNotToPerformAssertions();
+
+        $this->imageReleaseFacade->releaseImages($this->releaseRequest([]));
+    }
+
     public function testRepeatedReleaseIsIdempotent(): void
     {
         $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));

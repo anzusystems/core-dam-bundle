@@ -32,7 +32,6 @@ use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\EntityManagerInterface;
 use Throwable;
 
 /**
@@ -64,7 +63,6 @@ final class ImageUseFacade
         private readonly AssetPropertiesRefresher $assetPropertiesRefresher,
         private readonly AssetFileManager $assetFileManager,
         private readonly AssetFileRepository $assetFileRepository,
-        private readonly EntityManagerInterface $entityManager,
         private readonly DamLogger $damLogger,
         private readonly bool $singleUseEnforced,
     ) {
@@ -80,7 +78,7 @@ final class ImageUseFacade
         $this->validator->validate($dto);
 
         try {
-            $this->entityManager->beginTransaction();
+            $this->assetFileManager->beginTransaction();
             // The whole batch — resolution and, for single use items, the claim — runs under one
             // transaction: a conflict or a refusal on any item must leave the database exactly as it was.
             $resolved = [];
@@ -98,18 +96,44 @@ final class ImageUseFacade
                 $results->add(ImageUseResultDto::getInstance($resolution->getFile(), $resolution->isTakenOver()));
             }
             $result = ImageUseResultListDto::getInstance($results);
-            $this->entityManager->commit();
+            $this->assetFileManager->commit();
         } catch (Throwable $exception) {
             // Only the DB is rolled back, so no half prepared target stays behind with no file and no owner.
             // Bytes already written to the bucket are not transactional and remain there as orphans.
-            if ($this->entityManager->getConnection()->isTransactionActive()) {
-                $this->entityManager->rollback();
+            if ($this->assetFileManager->isTransactionActive()) {
+                $this->assetFileManager->rollback();
             }
 
             throw $exception;
         }
 
+        // After commit, so a rollback leaves no ES orphan; reuse included, so a retry reindexes a target a
+        // failed batch never indexed.
+        foreach ($this->takenOverTargetAssets($resolved) as $targetAsset) {
+            $this->indexManager->index($targetAsset);
+        }
+
         return $result;
+    }
+
+    /**
+     * @param list<ImageUseResolution> $resolved
+     *
+     * @return list<Asset>
+     */
+    private function takenOverTargetAssets(array $resolved): array
+    {
+        $targetAssets = [];
+        foreach ($resolved as $resolution) {
+            if (false === $resolution->isTakenOver()) {
+                continue;
+            }
+
+            $targetAsset = $resolution->getFile()->getAsset();
+            $targetAssets[(string) $targetAsset->getId()] = $targetAsset;
+        }
+
+        return array_values($targetAssets);
     }
 
     /**
@@ -198,7 +222,6 @@ final class ImageUseFacade
         $this->imageCopyFacade->copyAssetSlots($source->getAsset(), $targetAsset);
         $this->assetPropertiesRefresher->refreshProperties($targetAsset);
         $this->assetManager->updateExisting(asset: $targetAsset, trackModification: false);
-        $this->indexManager->index($targetAsset);
 
         return ImageUseResolution::takenOver($targetMainFile);
     }
@@ -217,13 +240,16 @@ final class ImageUseFacade
      * different exclusivity group. Adopting it would merge two groups into one and leave its own copies pointing
      * at a root their source no longer belongs to, so it is refused instead.
      *
+     * A shared file is never adopted by a single use source: its flag stays shared (a used file cannot switch
+     * to single use), so the claim would skip it and bypass exclusivity.
+     *
      * @throws ForbiddenOperationException
      */
     private function reuseExisting(AssetFile $existing, ImageFile $source): ImageUseResolution
     {
-        $existingRootId = $existing->getAssetAttributes()->getTakenOverFromId();
-        if (App::EMPTY_STRING !== $existingRootId) {
-            if ($existingRootId === $source->getTakeOverRootId()) {
+        $existingAttributes = $existing->getAssetAttributes();
+        if ($existingAttributes->isTakenOver()) {
+            if ($existingAttributes->getTakenOverFromId() === $source->getTakeOverRootId()) {
                 return ImageUseResolution::takenOver($existing);
             }
 
@@ -232,8 +258,11 @@ final class ImageUseFacade
         if ($this->assetFileRepository->existsTakenOverFrom((string) $existing->getId())) {
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
         }
+        if ($source->getFlags()->isSingleUse() && false === $existing->getFlags()->isSingleUse()) {
+            throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
+        }
 
-        $existing->getAssetAttributes()->setTakenOverFromId($source->getTakeOverRootId());
+        $existingAttributes->setTakenOverFromId($source->getTakeOverRootId());
         // Flushed here, inside the transaction opened by useImages(): committing it does not flush the unit
         // of work, and unlike the copy branch nothing else in this path writes.
         $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);

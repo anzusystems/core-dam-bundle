@@ -100,7 +100,7 @@ class AssetFileManager extends AbstractManager
 
     public static function nextUsageCheck(): DateTimeImmutable
     {
-        return App::getAppDate()->add(new DateInterval(self::USAGE_CHECK_DELAY));
+        return App::date('now')->add(new DateInterval(self::USAGE_CHECK_DELAY));
     }
 
     /**
