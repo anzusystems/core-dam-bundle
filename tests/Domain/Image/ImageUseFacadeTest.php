@@ -264,6 +264,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         } catch (ImageUsageConflictException $exception) {
             $conflicts = $exception->getConflicts();
             self::assertCount(1, $conflicts);
+            self::assertSame((string) $source->getId(), $conflicts[0]->getDamId());
             self::assertSame(self::HOLDER_NAME, $conflicts[0]->getHolderName());
             self::assertSame(self::HOLDER_ID, $conflicts[0]->getHolderId());
         }

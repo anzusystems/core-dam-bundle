@@ -223,7 +223,7 @@ final class ImageUseFacade
         $this->assetPropertiesRefresher->refreshProperties($targetAsset);
         $this->assetManager->updateExisting(asset: $targetAsset, trackModification: false);
 
-        return ImageUseResolution::takenOver($targetMainFile);
+        return ImageUseResolution::takenOver($targetMainFile, $source);
     }
 
     /**
@@ -250,7 +250,7 @@ final class ImageUseFacade
         $existingAttributes = $existing->getAssetAttributes();
         if ($existingAttributes->isTakenOver()) {
             if ($existingAttributes->getTakenOverFromId() === $source->getTakeOverRootId()) {
-                return ImageUseResolution::takenOver($existing);
+                return ImageUseResolution::takenOver($existing, $source);
             }
 
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
@@ -267,7 +267,7 @@ final class ImageUseFacade
         // of work, and unlike the copy branch nothing else in this path writes.
         $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
 
-        return ImageUseResolution::takenOver($existing);
+        return ImageUseResolution::takenOver($existing, $source);
     }
 
     /**
@@ -359,7 +359,7 @@ final class ImageUseFacade
         $refused = [];
         foreach ($singleUseResolutions as $resolution) {
             $file = $resolution->getFile();
-            if (isset($refusedFileIds[(string) $file->getId()])) {
+            if (isset($refusedFileIds[(string) $resolution->getRequestedFile()->getId()])) {
                 $refused[$file->getTakeOverRootId()] = true;
                 $this->damLogger->warning(
                     DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
@@ -424,7 +424,7 @@ final class ImageUseFacade
                     continue;
                 }
 
-                $conflicts[] = ImageUsageConflictDto::getInstance((string) $file->getId(), $attributes);
+                $conflicts[] = ImageUsageConflictDto::getInstance((string) $resolution->getRequestedFile()->getId(), $attributes);
 
                 break;
             }
