@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Event\AssetChangedEvent;
 use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
@@ -17,9 +18,11 @@ use AnzuSystems\CoreDamBundle\Tests\ApiClient;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\AssetUrlInterface;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use ArrayObject;
 use Exception;
 use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
@@ -299,6 +302,25 @@ abstract class AbstractAssetFileApiController extends AbstractApiController
         // Delete secondary slot
         $response = $client->delete($url->setToSlot($assetId, $firstAssetFile->getId(), $newSlot));
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+    }
+
+    /**
+     * @return ArrayObject<int, string> ids of the assets announced as changed, filled while the test runs
+     */
+    protected function captureAnnouncedAssetIds(): ArrayObject
+    {
+        /** @var ArrayObject<int, string> $announced */
+        $announced = new ArrayObject();
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            AssetChangedEvent::class,
+            static function (AssetChangedEvent $event) use ($announced): void {
+                foreach ($event->getAffectedAssets() as $asset) {
+                    $announced[] = (string) $asset->getId();
+                }
+            },
+        );
+
+        return $announced;
     }
 
     /**

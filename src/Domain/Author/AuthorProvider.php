@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -41,6 +42,20 @@ final readonly class AuthorProvider
         );
     }
 
+    /**
+     * Adds the author and resolves aliases in the same step, so the asset never carries an alias
+     * next to the current author it stands for. Returns whether the collection actually changed —
+     * an added unreviewed alias resolved into a current author already on the asset is no net change.
+     */
+    public function provideAuthorToColl(Asset $asset, Author $author): bool
+    {
+        $before = $this->authorIds($asset);
+        $asset->addAuthor($author);
+        $this->provideCurrentAuthorToColl($asset);
+
+        return $before !== $this->authorIds($asset);
+    }
+
     public function provideCurrentAuthorToColl(Asset $asset): bool
     {
         $changedCurrentAuthors = false;
@@ -52,7 +67,7 @@ final readonly class AuthorProvider
             $changedCurrentAuthors = true;
 
             foreach ($assetAuthor->getCurrentAuthors() as $currentAuthor) {
-                $asset->getAuthors()->add($currentAuthor);
+                $asset->addAuthor($currentAuthor);
             }
 
             if (false === $assetAuthor->getFlags()->isReviewed()) {
@@ -61,5 +76,19 @@ final readonly class AuthorProvider
         }
 
         return $changedCurrentAuthors;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function authorIds(Asset $asset): array
+    {
+        $ids = CollectionHelper::traversableToIds(
+            $asset->getAuthors(),
+            static fn (Author $author): string => (string) $author->getId(),
+        );
+        sort($ids);
+
+        return $ids;
     }
 }

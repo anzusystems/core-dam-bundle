@@ -204,15 +204,16 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function storeAndProcess(AssetFile $assetFile, ?AdapterFile $file = null, bool $dispatchPropertyRefresh = true): AssetFile
     {
-        $lockName = $assetFile->getAssetType()->value . '_' . $assetFile->getLicence()->getId();
+        $acquiredLockName = null;
 
         try {
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
                 $file = $file ?: $this->createFile($assetFile);
                 $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
                 $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
-                // we need to lock process due to duplicity checks
-                $this->resourceLocker->lock($lockName);
+                // lock scoped by checksum, known only here; we need to lock process due to duplicity checks
+                $acquiredLockName = $this->createLockName($assetFile);
+                $this->resourceLocker->lock($acquiredLockName);
                 $this->store($assetFile, $file);
             }
             if (null === $file) {
@@ -221,10 +222,8 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             if ($assetFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored)) {
                 $this->chunkFileManager->clearChunks($assetFile);
                 $this->process($assetFile, $file, $dispatchPropertyRefresh);
-                $this->resourceLocker->unLock($lockName);
             }
         } catch (DuplicateAssetFileException $duplicateAssetFileException) {
-            $this->resourceLocker->unLock($lockName);
             $assetFile->getAssetAttributes()->setOriginAssetId(
                 (string) $duplicateAssetFileException->getOldAsset()->getId()
             );
@@ -235,7 +234,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $this->assetStatusManager->toDuplicate($assetFile);
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
-            $this->resourceLocker->unLock($lockName);
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType(),
@@ -243,7 +241,6 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (Throwable $exception) {
-            $this->resourceLocker->unLock($lockName);
             $this->assetStatusManager->toFailed(
                 $assetFile,
                 AssetFileFailedType::Unknown,
@@ -251,7 +248,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             );
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } finally {
-            $this->resourceLocker->unLock($lockName);
+            $this->unLockIfLocked($acquiredLockName);
         }
 
         return $assetFile;
@@ -362,5 +359,21 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             ),
             AssetFileCreateStrategy::Storage => $this->fileFactory->createFromStorage($assetFile),
         };
+    }
+
+    private function createLockName(AssetFile $assetFile): string
+    {
+        return $assetFile->getAssetType()->value
+            . '_' . $assetFile->getLicence()->getId()
+            . '_' . $assetFile->getAssetAttributes()->getChecksum();
+    }
+
+    private function unLockIfLocked(?string $lockName): void
+    {
+        if (null === $lockName) {
+            return;
+        }
+
+        $this->resourceLocker->unLock($lockName);
     }
 }

@@ -35,7 +35,7 @@ abstract class AbstractAssetFileAdmDto extends AbstractEntityDto
 
         return $parent
             ->setAsset($assetFile->getAsset())
-            ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($assetFile->getAssetAttributes()))
+            ->setFileAttributes(AssetFileAttributesAdmDto::getInstance($assetFile))
             ->setFlags(AssetFileFlagsAdmDto::getInstance($assetFile->getFlags()))
         ;
     }

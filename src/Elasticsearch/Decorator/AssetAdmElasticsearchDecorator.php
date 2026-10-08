@@ -41,8 +41,10 @@ final class AssetAdmElasticsearchDecorator
             throw new ForbiddenOperationException(ForbiddenOperationException::ERROR_MESSAGE);
         }
 
+        $extSystem = $licence->getExtSystem();
+
         return $this->decorate(
-            $this->elasticSearch->searchInfiniteList($searchDto, $licence->getExtSystem())
+            $this->elasticSearch->searchInfiniteList($searchDto, $extSystem)
         );
     }
 

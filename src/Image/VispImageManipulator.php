@@ -169,11 +169,17 @@ final class VispImageManipulator extends AbstractImageManipulator
     /**
      * @throws ImageManipulatorException
      */
+    /**
+     * Both axes get their own scale: the crop rectangle is truncated to whole pixels, so a single
+     * factor would carry its aspect-ratio error into the output (w1200 came back as 1199-1202).
+     */
     public function resize(int $width, int $height): void
     {
         $this->ensureImage();
-        $scale = $height / (int) $this->image->height;
-        $this->image = $this->image->resize($scale);
+        $this->image = $this->image->resize(
+            $width / (int) $this->image->width,
+            ['vscale' => $height / (int) $this->image->height],
+        );
     }
 
     /**

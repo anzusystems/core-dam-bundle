@@ -28,6 +28,7 @@ final class AssetLicenceManager extends AbstractManager
             ->setName($newAssetLicence->getName())
             ->setExtId($newAssetLicence->getExtId())
             ->setExtSystem($newAssetLicence->getExtSystem())
+            ->setBadge($newAssetLicence->getBadge())
         ;
         $assetLicence->getInternalRule()
             ->setActive($newAssetLicence->getInternalRule()->isActive())
@@ -38,11 +39,13 @@ final class AssetLicenceManager extends AbstractManager
         $assetLicence->getFlags()
             ->setManualUploadAllowed($newAssetLicence->getFlags()->isManualUploadAllowed())
             ->setDirectUseAllowed($newAssetLicence->getFlags()->isDirectUseAllowed())
+            ->setSingleUseEnforced($newAssetLicence->getFlags()->isSingleUseEnforced())
         ;
         $assetLicence->getAutoDelete()
             ->setActive($newAssetLicence->getAutoDelete()->isActive())
             ->setOlderThanDays($newAssetLicence->getAutoDelete()->getOlderThanDays())
         ;
+        $assetLicence->setDefaultAuthor($newAssetLicence->getDefaultAuthor());
         if (empty($assetLicence->getName())) {
             $assetLicence->setName($assetLicence->getDefaultName());
         }

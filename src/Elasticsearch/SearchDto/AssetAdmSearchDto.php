@@ -117,7 +117,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
     #[Serialize(handler: LicenceCollectionHandler::class, type: AssetLicence::class)]
     #[Assert\Count(
         min: 1,
-        max: 20,
+        max: AssetLicence::COLLECTION_MAX,
         minMessage: ValidationException::ERROR_FIELD_RANGE_MIN,
         maxMessage: ValidationException::ERROR_FIELD_RANGE_MAX
     )]

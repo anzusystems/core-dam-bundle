@@ -279,7 +279,8 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             $this->assertNotSame($copiedImage->getAssetAttributes()->getFilePath(), $imageFile->getAssetAttributes()->getFilePath());
             $this->assertTrue($imageFile->getFlags()->isSingleUse());
             $this->assertSame($imageFile->getFlags()->isSingleUse(), $copiedImage->getFlags()->isSingleUse());
-            $this->assertSame((string) $imageFile->getId(), $copiedImage->getAssetAttributes()->getOriginAssetId());
+            $this->assertSame((string) $imageFile->getId(), $copiedImage->getAssetAttributes()->getTakenOverFromId());
+            $this->assertSame('', $copiedImage->getAssetAttributes()->getOriginAssetId());
             $this->assertCount($imageFile->getResizes()->count(), $copiedImage->getResizes());
             $this->assertCount($imageFile->getRegionsOfInterest()->count(), $copiedImage->getRegionsOfInterest());
             foreach ($imageFile->getAsset()->getSlots() as $slot) {
@@ -411,5 +412,29 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             'asset_not_fully_uploaded',
             json_decode($responseData, true)['detail']
         );
+    }
+
+    #[DataProvider('updateSingleUseAnnouncementDataProvider')]
+    public function testUpdateAnnouncesASingleUseSwitch(bool $singleUse, bool $announced): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $url = (new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->getSingleAssetPath(ImageFixtures::IMAGE_ID_2);
+        $assetId = (string) $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2)->getAsset()->getId();
+        $image = json_decode($client->get($url)->getContent(), true);
+        $image['flags']['singleUse'] = $singleUse;
+        $announcedAssetIds = $this->captureAnnouncedAssetIds();
+
+        $response = $client->put($url, $image);
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        self::assertSame($announced ? [$assetId] : [], $announcedAssetIds->getArrayCopy());
+    }
+
+    public static function updateSingleUseAnnouncementDataProvider(): array
+    {
+        return [
+            'single use switched on' => ['singleUse' => true, 'announced' => true],
+            'single use unchanged' => ['singleUse' => false, 'announced' => false],
+        ];
     }
 }
