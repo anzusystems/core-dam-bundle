@@ -413,4 +413,28 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             json_decode($responseData, true)['detail']
         );
     }
+
+    #[DataProvider('updateSingleUseAnnouncementDataProvider')]
+    public function testUpdateAnnouncesASingleUseSwitch(bool $singleUse, bool $announced): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $url = (new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID))->getSingleAssetPath(ImageFixtures::IMAGE_ID_2);
+        $assetId = (string) $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2)->getAsset()->getId();
+        $image = json_decode($client->get($url)->getContent(), true);
+        $image['flags']['singleUse'] = $singleUse;
+        $announcedAssetIds = $this->captureAnnouncedAssetIds();
+
+        $response = $client->put($url, $image);
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        self::assertSame($announced ? [$assetId] : [], $announcedAssetIds->getArrayCopy());
+    }
+
+    public static function updateSingleUseAnnouncementDataProvider(): array
+    {
+        return [
+            'single use switched on' => ['singleUse' => true, 'announced' => true],
+            'single use unchanged' => ['singleUse' => false, 'announced' => false],
+        ];
+    }
 }

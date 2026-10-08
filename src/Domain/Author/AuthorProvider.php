@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -82,9 +83,10 @@ final readonly class AuthorProvider
      */
     private function authorIds(Asset $asset): array
     {
-        $ids = $asset->getAuthors()
-            ->map(static fn (Author $author): string => (string) $author->getId())
-            ->getValues();
+        $ids = CollectionHelper::traversableToIds(
+            $asset->getAuthors(),
+            static fn (Author $author): string => (string) $author->getId(),
+        );
         sort($ids);
 
         return $ids;

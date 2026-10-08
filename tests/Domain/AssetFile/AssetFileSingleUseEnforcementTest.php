@@ -13,6 +13,8 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackInterface;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
@@ -25,12 +27,17 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\Collection;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
 {
+    private const string CMS_SLUG = 'cms';
+
     private AssetLicenceManager $assetLicenceManager;
     private AssetFactory $assetFactory;
     private ImageFactory $imageFactory;
@@ -143,6 +150,30 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertSame(0, $this->assetFileSingleUseEnforcer->enforceLicence($this->findLicence($licence->getId())));
     }
 
+    /**
+     * The ext system mirrors the flag: a switch it never hears about leaves its copy saying "plain photo".
+     */
+    public function testEnforceLicenceAnnouncesTheSwitchedFilesToTheExtSystem(): void
+    {
+        $licence = $this->createLicence(singleUseEnforced: false);
+        $image = $this->createImage($licence);
+        $imageId = (string) $image->getId();
+        $licence->getFlags()->setSingleUseEnforced(true);
+        $this->entityManager->flush();
+
+        $callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $callback->expects(self::once())
+            ->method('notifyImagesChanged')
+            ->with(self::callback(
+                static fn (Collection $images): bool => [$imageId] === array_map(
+                    static fn (ImageFile $imageFile): string => (string) $imageFile->getId(),
+                    $images->getValues(),
+                ),
+            ));
+
+        self::assertSame(1, $this->enforcerAnnouncingTo($callback)->enforceLicence($licence));
+    }
+
     public function testFlippingSingleUseOnThroughTheAdminArmsTheUsageCheck(): void
     {
         $image = $this->createImage($this->createLicence(singleUseEnforced: false));
@@ -223,12 +254,33 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
     }
 
+    private function enforcerAnnouncingTo(ExtSystemCallbackInterface $callback): AssetFileSingleUseEnforcer
+    {
+        $facade = new ExtSystemCallbackFacade(
+            new ServiceLocator([
+                self::CMS_SLUG => static fn (): ExtSystemCallbackInterface => $callback,
+            ]),
+            $this->getService(DamLogger::class),
+            $this->getService(ExtSystemRepository::class),
+        );
+
+        return new AssetFileSingleUseEnforcer(
+            $this->getService(AssetRepository::class),
+            $this->entityManager,
+            $this->getService(IndexManager::class),
+            $facade,
+            $this->getService(DamLogger::class),
+            false,
+        );
+    }
+
     private function enforcedSingleUseEnforcer(): AssetFileSingleUseEnforcer
     {
         return new AssetFileSingleUseEnforcer(
             $this->getService(AssetRepository::class),
             $this->entityManager,
             $this->getService(IndexManager::class),
+            $this->getService(ExtSystemCallbackFacade::class),
             $this->getService(DamLogger::class),
             true,
         );

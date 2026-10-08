@@ -26,10 +26,7 @@ final class ImageUseResultDto
     #[Serialize]
     private ?string $takenOverFromId = null;
 
-    #[Serialize]
-    private bool $takenOver = false;
-
-    public static function getInstance(AssetFile $assetFile, bool $takenOver): self
+    public static function getInstance(AssetFile $assetFile): self
     {
         $attributes = $assetFile->getAssetAttributes();
 
@@ -38,7 +35,6 @@ final class ImageUseResultDto
             ->setLicenceId((int) $assetFile->getLicence()->getId())
             ->setSingleUse($assetFile->getFlags()->isSingleUse())
             ->setTakenOverFromId($attributes->isTakenOver() ? $attributes->getTakenOverFromId() : null)
-            ->setTakenOver($takenOver)
         ;
     }
 
@@ -86,18 +82,6 @@ final class ImageUseResultDto
     public function setTakenOverFromId(?string $takenOverFromId): self
     {
         $this->takenOverFromId = $takenOverFromId;
-
-        return $this;
-    }
-
-    public function isTakenOver(): bool
-    {
-        return $this->takenOver;
-    }
-
-    public function setTakenOver(bool $takenOver): self
-    {
-        $this->takenOver = $takenOver;
 
         return $this;
     }

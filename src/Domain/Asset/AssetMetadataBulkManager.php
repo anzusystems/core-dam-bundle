@@ -91,14 +91,7 @@ final class AssetMetadataBulkManager extends AbstractManager
 
         $mainFile = $asset->getMainFile();
         if ($mainFile instanceof AssetFile) {
-            $becomesSingleUse = $updateDto->isMainFileSingleUse() && false === $mainFile->getFlags()->isSingleUse();
-            if ($becomesSingleUse && false === $this->assetFileSingleUseEnforcer->allowSwitchToSingleUse($mainFile)) {
-                throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE);
-            }
-            $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
-            if ($becomesSingleUse) {
-                $this->assetFileSingleUseEnforcer->armUsageCheck($mainFile);
-            }
+            $this->assetFileSingleUseEnforcer->switchSingleUse($mainFile, $updateDto->isMainFileSingleUse());
             $this->assetFileSingleUseEnforcer->enforce($mainFile);
         }
     }

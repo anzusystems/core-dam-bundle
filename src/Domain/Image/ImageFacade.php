@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Domain\Image\Crop\CropCache;
 use AnzuSystems\CoreDamBundle\Domain\Image\FileProcessor\OptimalCropsProcessor;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\ManipulatedImageEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
@@ -20,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Repository\AbstractAssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\EventDispatcherAwareTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use RuntimeException;
 use Throwable;
 
@@ -38,6 +40,7 @@ final class ImageFacade extends AbstractAssetFileFacade
         private readonly FileStash $fileStash,
         private readonly CropCache $cropCache,
         private readonly OptimalCropsProcessor $optimalCropsProcessor,
+        private readonly AssetChangedEventDispatcher $assetChangedEventDispatcher,
     ) {
     }
 
@@ -101,12 +104,16 @@ final class ImageFacade extends AbstractAssetFileFacade
             $this->imageManager->beginTransaction();
 
             $dispatchManipulatedImageEvent = $this->shouldDispatchManipulatedEvent($image, $dto);
+            $wasSingleUse = $image->getFlags()->isSingleUse();
             $this->imageManager->updateImage($image, $dto);
             $this->imageManager->updateExisting($image);
             $this->imageManager->commit();
 
             if ($dispatchManipulatedImageEvent) {
                 $this->dispatcher->dispatch($this->createEvent($image));
+            }
+            if ($wasSingleUse !== $image->getFlags()->isSingleUse()) {
+                $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection([$image->getAsset()]));
             }
         } catch (ForbiddenOperationException $exception) {
             // A refused edit is not a failed rotation: repacked below, it reaches the editor as a 500 with

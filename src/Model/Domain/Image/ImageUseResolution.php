@@ -14,18 +14,17 @@ final readonly class ImageUseResolution
     private function __construct(
         private AssetFile $file,
         private AssetFile $requestedFile,
-        private bool $takenOver,
     ) {
     }
 
     public static function directUse(AssetFile $file): self
     {
-        return new self($file, $file, takenOver: false);
+        return new self($file, $file);
     }
 
     public static function takenOver(AssetFile $file, AssetFile $requestedFile): self
     {
-        return new self($file, $requestedFile, takenOver: true);
+        return new self($file, $requestedFile);
     }
 
     public function getFile(): AssetFile
@@ -44,6 +43,6 @@ final readonly class ImageUseResolution
 
     public function isTakenOver(): bool
     {
-        return $this->takenOver;
+        return false === $this->file->is($this->requestedFile);
     }
 }

@@ -54,7 +54,8 @@ final readonly class AssetFileUsageReconciler
     public function reconcile(int $limit): AssetFileUsageReconcileResult
     {
         $now = App::getAppDate();
-        $idFrom = App::EMPTY_STRING;
+        $afterCheckAfter = null;
+        $afterId = App::EMPTY_STRING;
         $checked = App::ZERO;
         $confirmed = App::ZERO;
         $rewritten = App::ZERO;
@@ -63,12 +64,20 @@ final readonly class AssetFileUsageReconciler
         $unanswered = App::ZERO;
 
         while ($checked < $limit) {
-            $due = $this->assetFileRepository->findUsageChecksDue($now, min(self::PAGE_SIZE, $limit - $checked), $idFrom);
+            $due = $this->assetFileRepository->findUsageChecksDue(
+                $now,
+                min(self::PAGE_SIZE, $limit - $checked),
+                $afterCheckAfter,
+                $afterId,
+            );
             if ([] === $due) {
                 break;
             }
 
-            $idFrom = (string) $due[array_key_last($due)]->getId();
+            // Read before the groups are settled: settling moves the check date of these very objects.
+            $last = $due[array_key_last($due)];
+            $afterCheckAfter = $last->getAssetAttributes()->getUsedByCheckAfter();
+            $afterId = (string) $last->getId();
             $checked += count($due);
 
             foreach ($this->usageByRoot($due) as $rootId => $usage) {

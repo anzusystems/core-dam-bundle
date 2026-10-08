@@ -157,25 +157,39 @@ final class AssetFileRepository extends AbstractAssetFileRepository
     }
 
     /**
-     * Single use files whose claim is due for a usage check, oldest id first; rides
-     * IDX_attributes_used_by_check_after. The id cursor is what makes a run resumable: a file the caller
-     * decides to leave alone keeps its due date and would otherwise come back in the very next page.
+     * Single use files whose claim is due for a usage check, in the order of IDX_attributes_used_by_check_after:
+     * the check date, then the id InnoDB appends to every secondary index, so a page stops after its limit
+     * instead of sorting every due row. The (check date, id) cursor is what makes a run resumable: a file the
+     * caller decides to leave alone keeps its due date and would otherwise come back in the very next page.
      *
      * @return list<AssetFile>
      */
-    public function findUsageChecksDue(DateTimeInterface $checkAfter, int $limit, string $idFrom): array
-    {
-        /** @var list<AssetFile> $files */
-        $files = $this->createQueryBuilder('entity')
+    public function findUsageChecksDue(
+        DateTimeInterface $checkAfter,
+        int $limit,
+        ?DateTimeInterface $afterCheckAfter,
+        string $afterId,
+    ): array {
+        $queryBuilder = $this->createQueryBuilder('entity')
             ->where('entity.assetAttributes.usedByCheckAfter <= :checkAfter')
-            ->andWhere('entity.id > :idFrom')
             ->setParameter('checkAfter', $checkAfter)
-            ->setParameter('idFrom', $idFrom)
-            ->orderBy('entity.id', App::ORDER_ASC)
+            ->orderBy('entity.assetAttributes.usedByCheckAfter', App::ORDER_ASC)
+            ->addOrderBy('entity.id', App::ORDER_ASC)
             ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult()
         ;
+        if ($afterCheckAfter instanceof DateTimeInterface) {
+            $queryBuilder
+                ->andWhere(
+                    'entity.assetAttributes.usedByCheckAfter > :afterCheckAfter
+                    OR (entity.assetAttributes.usedByCheckAfter = :afterCheckAfter AND entity.id > :afterId)'
+                )
+                ->setParameter('afterCheckAfter', $afterCheckAfter)
+                ->setParameter('afterId', $afterId)
+            ;
+        }
+
+        /** @var list<AssetFile> $files */
+        $files = $queryBuilder->getQuery()->getResult();
 
         return $files;
     }

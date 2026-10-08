@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Image;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
@@ -18,12 +19,12 @@ final class ImageHolderDto
 {
     #[Serialize]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Length(max: AssetFileAttributes::HOLDER_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $name = App::EMPTY_STRING;
 
     #[Serialize]
     #[NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Length(max: AssetFileAttributes::HOLDER_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $id = App::EMPTY_STRING;
 
     public function getName(): string

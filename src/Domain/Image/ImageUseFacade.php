@@ -85,7 +85,7 @@ final class ImageUseFacade
             foreach ($dto->getItems() as $item) {
                 $resolved[] = $this->resolveItem($item);
             }
-            $this->claimSingleUseFiles($resolved, $dto->getHolder(), $dto->getReleaseFrom(), $dto->isFreeUse());
+            $this->claimSingleUseFiles($resolved, $dto->getHolder(), $dto->isFreeUse());
             $this->assetFileFirstUseFacade->record(
                 array_map(static fn (ImageUseResolution $resolution): AssetFile => $resolution->getFile(), $resolved),
                 App::getAppDate(),
@@ -93,7 +93,7 @@ final class ImageUseFacade
 
             $results = new ArrayCollection();
             foreach ($resolved as $resolution) {
-                $results->add(ImageUseResultDto::getInstance($resolution->getFile(), $resolution->isTakenOver()));
+                $results->add(ImageUseResultDto::getInstance($resolution->getFile()));
             }
             $result = ImageUseResultListDto::getInstance($results);
             $this->assetFileManager->commit();
@@ -109,8 +109,9 @@ final class ImageUseFacade
 
         // After commit, so a rollback leaves no ES orphan; reuse included, so a retry reindexes a target a
         // failed batch never indexed.
-        foreach ($this->takenOverTargetAssets($resolved) as $targetAsset) {
-            $this->indexManager->index($targetAsset);
+        $targetAssets = $this->takenOverTargetAssets($resolved);
+        if ([] !== $targetAssets) {
+            $this->indexManager->indexBulk($targetAssets);
         }
 
         return $result;
@@ -143,7 +144,7 @@ final class ImageUseFacade
     private function resolveItem(ImageUseItemDto $item): ImageUseResolution
     {
         $source = $item->getImageFile();
-        $this->assertUsableSource($source);
+        $this->guardUsableSource($source);
 
         return $this->resolve($item, $source);
     }
@@ -209,9 +210,8 @@ final class ImageUseFacade
         }
 
         if ($prepared->getResult()->is(AssetFileCopyStatus::Exists)) {
-            // The identical file already lives in the target licence — reused for both single use and
-            // shared sources; {@see reuseExisting()} tells a retry of this very take-over apart from a
-            // genuine clash with someone else's group.
+            // The identical file already lives in the target licence; {@see reuseExisting()} decides whether
+            // it is handed back or the take over is refused.
             return $this->reuseExisting($targetMainFile, $source);
         }
 
@@ -272,27 +272,22 @@ final class ImageUseFacade
 
     /**
      * Single use exclusivity belongs to the whole take-over group, not to one file, so the holder is written
-     * on the root and every copy. A group the caller is handing over from is overwritten in the same write,
-     * which is what makes a hand over atomic. Every single use item of the batch is locked in one query
+     * on the root and every copy. Every single use item of the batch is locked in one query
      * {@see AssetFileRepository::findGroupFiles()}, over root ids sorted ascending — deterministic order is
      * the only defense against a deadlock between two concurrent batches that lock an overlapping set of
      * photos in a different order.
      *
      * Every conflict of the batch is collected before anything throws, so the caller learns about all of
      * them at once instead of retrying one item at a time. With enforcement off the conflicts are logged
-     * and their groups left alone instead — one switch decides how strict the register is, and the callers
-     * only relay its answer.
+     * and the claim overwrites them. The switch drives DAM's register only; a host may keep its own
+     * for its own guards.
      *
      * @param list<ImageUseResolution> $resolved
      *
      * @throws ImageUsageConflictException
      */
-    private function claimSingleUseFiles(
-        array $resolved,
-        ?ImageHolderDto $holder,
-        ?ImageHolderDto $releaseFrom,
-        bool $freeUse,
-    ): void {
+    private function claimSingleUseFiles(array $resolved, ?ImageHolderDto $holder, bool $freeUse): void
+    {
         $singleUseResolutions = array_values(array_filter(
             $resolved,
             static fn (ImageUseResolution $resolution): bool => $resolution->getFile()->getFlags()->isSingleUse(),
@@ -317,7 +312,6 @@ final class ImageUseFacade
         sort($rootIds);
 
         $claim = UsageClaim::fromHolder($holder);
-        $handOver = $releaseFrom instanceof ImageHolderDto ? UsageClaim::fromHolder($releaseFrom) : null;
         $group = $this->assetFileRepository->findGroupFiles($rootIds, lock: true);
 
         $groupByRoot = [];
@@ -325,57 +319,38 @@ final class ImageUseFacade
             $groupByRoot[$groupFile->getTakeOverRootId()][] = $groupFile;
         }
 
-        $conflicts = $this->collectConflicts($singleUseResolutions, $groupByRoot, $claim, $handOver);
-        if ([] !== $conflicts && $this->singleUseEnforced) {
-            throw new ImageUsageConflictException($conflicts);
+        $conflicts = $this->collectConflicts($singleUseResolutions, $groupByRoot, $claim);
+        if ([] !== $conflicts) {
+            if ($this->singleUseEnforced) {
+                throw new ImageUsageConflictException($conflicts);
+            }
+            $this->logOverwrittenHolders($conflicts, $holder);
         }
 
-        $refused = $this->refusedRoots($singleUseResolutions, $conflicts);
+        // With enforcement off the register mirrors the ext system's last claim: the ext system owns the
+        // licence and its rows decide, so a conflict is logged and overwritten, never kept.
         foreach ($group as $groupFile) {
-            // The photos somebody else holds keep their holder; the rest of the batch is still claimed, so
-            // a soft mode conflict costs the caller one photo, not the whole save.
-            if (isset($refused[$groupFile->getTakeOverRootId()])) {
-                continue;
-            }
-
             $this->assetFileManager->updateUsage($groupFile, $claim, flush: false);
         }
         $this->assetFileManager->flush();
     }
 
     /**
-     * The groups of the batch that stay with the holder they already have. Empty in enforced mode, where a
-     * conflict has already thrown.
-     *
-     * @param list<ImageUseResolution> $singleUseResolutions
      * @param list<ImageUsageConflictDto> $conflicts
-     *
-     * @return array<string, true> take-over root id
      */
-    private function refusedRoots(array $singleUseResolutions, array $conflicts): array
+    private function logOverwrittenHolders(array $conflicts, ImageHolderDto $holder): void
     {
-        if ([] === $conflicts) {
-            return [];
+        foreach ($conflicts as $conflict) {
+            $this->damLogger->warning(
+                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
+                sprintf('Single use file %s used with a different holder, claim overwrites: enforcement is off', $conflict->getDamId()),
+                [
+                    'damId' => $conflict->getDamId(),
+                    'heldBy' => ['name' => $conflict->getHolderName(), 'id' => $conflict->getHolderId()],
+                    'claimedBy' => ['name' => $holder->getName(), 'id' => $holder->getId()],
+                ],
+            );
         }
-
-        $refusedFileIds = array_fill_keys(
-            array_map(static fn (ImageUsageConflictDto $conflict): string => $conflict->getDamId(), $conflicts),
-            true,
-        );
-
-        $refused = [];
-        foreach ($singleUseResolutions as $resolution) {
-            $file = $resolution->getFile();
-            if (isset($refusedFileIds[(string) $resolution->getRequestedFile()->getId()])) {
-                $refused[$file->getTakeOverRootId()] = true;
-                $this->damLogger->warning(
-                    DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                    sprintf('Single use file %s is held by somebody else, claim ignored: enforcement is off', (string) $file->getId()),
-                );
-            }
-        }
-
-        return $refused;
     }
 
     /**
@@ -417,17 +392,13 @@ final class ImageUseFacade
         array $singleUseResolutions,
         array $groupByRoot,
         UsageClaim $claim,
-        ?UsageClaim $handOver,
     ): array {
         $conflicts = [];
         foreach ($singleUseResolutions as $resolution) {
             $file = $resolution->getFile();
             foreach ($groupByRoot[$file->getTakeOverRootId()] ?? [] as $groupFile) {
                 $attributes = $groupFile->getAssetAttributes();
-                if (App::EMPTY_STRING === $attributes->getUsedByHolderName()
-                    || $claim->matches($attributes)
-                    || $handOver?->matches($attributes)
-                ) {
+                if (App::EMPTY_STRING === $attributes->getUsedByHolderName() || $claim->matches($attributes)) {
                     continue;
                 }
 
@@ -443,7 +414,7 @@ final class ImageUseFacade
     /**
      * @throws ForbiddenOperationException
      */
-    private function assertUsableSource(ImageFile $source): void
+    private function guardUsableSource(ImageFile $source): void
     {
         // A duplicate has no file of its own and a side slot is not what the caller references, so neither
         // can be taken over — the copy would end up on a different file than the one that was asked for.

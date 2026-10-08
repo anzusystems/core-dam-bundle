@@ -45,17 +45,8 @@ final class ImageManager extends AssetFileManager
      */
     public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
     {
-        $this->assertSingleUseSwitchAllowed($image, $dto->getFlags()->isSingleUse());
-        $becomesSingleUse = $dto->getFlags()->isSingleUse() && false === $image->getFlags()->isSingleUse();
-        $image->getFlags()
-            ->setPublic($dto->getFlags()->isPublic())
-            ->setSingleUse($dto->getFlags()->isSingleUse())
-        ;
-        if ($becomesSingleUse) {
-            // The enforcer arms the check itself only for the licence rule; a flag flipped here reaches it
-            // already set and would otherwise leave the file out of the reconcile population.
-            $this->assetFileSingleUseEnforcer->armUsageCheck($image);
-        }
+        $this->assetFileSingleUseEnforcer->switchSingleUse($image, $dto->getFlags()->isSingleUse());
+        $image->getFlags()->setPublic($dto->getFlags()->isPublic());
 
         $this->updateExisting($image, flush: $flush);
 
@@ -102,20 +93,5 @@ final class ImageManager extends AssetFileManager
         $this->regionOfInterestManager->deleteByImage($assetFile);
         $this->optimalResizeManager->deleteByImage($assetFile);
         $this->imagePreviewManager->deleteByImage($assetFile);
-    }
-
-    /**
-     * @throws ForbiddenOperationException
-     */
-    private function assertSingleUseSwitchAllowed(ImageFile $image, bool $requestedSingleUse): void
-    {
-        if (false === $requestedSingleUse || $image->getFlags()->isSingleUse()) {
-            return;
-        }
-        if ($this->assetFileSingleUseEnforcer->allowSwitchToSingleUse($image)) {
-            return;
-        }
-
-        throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\KeywordFixtures;
@@ -213,6 +214,37 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             $firstAsset->getKeywords()->map(fn($author) => $author->getName())->getValues(),
             ["Podcast"]
         );
+    }
+
+    #[DataProvider('metadataBulkUpdateSingleUseAnnouncementDataProvider')]
+    public function testMetadataBulkUpdateAnnouncesASingleUseSwitch(bool $mainFileSingleUse, bool $announced): void
+    {
+        $asset = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2)->getAsset();
+        $assetId = (string) $asset->getId();
+        $announcedAssetIds = $this->captureAnnouncedAssetIds();
+
+        $response = $this->getApiClient(User::ID_ADMIN)->patch(
+            '/api/adm/v1/asset/metadata-bulk-update',
+            [
+                [
+                    'id' => $assetId,
+                    'customData' => $asset->getMetadata()->getCustomData(),
+                    'authors' => CollectionHelper::traversableToIds($asset->getAuthors()),
+                    'mainFileSingleUse' => $mainFileSingleUse,
+                ],
+            ]
+        );
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        self::assertSame($announced ? [$assetId] : [], $announcedAssetIds->getArrayCopy());
+    }
+
+    public static function metadataBulkUpdateSingleUseAnnouncementDataProvider(): array
+    {
+        return [
+            'single use switched on' => ['mainFileSingleUse' => true, 'announced' => true],
+            'single use unchanged' => ['mainFileSingleUse' => false, 'announced' => false],
+        ];
     }
 
     protected function setUp(): void

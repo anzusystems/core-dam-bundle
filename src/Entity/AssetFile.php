@@ -122,9 +122,9 @@ abstract class AssetFile implements
      */
     public function getTakeOverRootId(): string
     {
-        $takenOverFromId = $this->getAssetAttributes()->getTakenOverFromId();
+        $attributes = $this->getAssetAttributes();
 
-        return App::EMPTY_STRING === $takenOverFromId ? (string) $this->getId() : $takenOverFromId;
+        return $attributes->isTakenOver() ? $attributes->getTakenOverFromId() : (string) $this->getId();
     }
 
     /**

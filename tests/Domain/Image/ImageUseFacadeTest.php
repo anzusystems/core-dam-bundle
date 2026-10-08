@@ -73,7 +73,6 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
         $result = $this->useOne($source, $this->createLicence());
 
-        self::assertFalse($result->isTakenOver());
         self::assertSame((string) $source->getId(), $result->getImageFileId());
         self::assertNull($result->getTakenOverFromId());
     }
@@ -85,7 +84,6 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
         $result = $this->useOne($source, $target);
 
-        self::assertTrue($result->isTakenOver());
         self::assertNotSame((string) $source->getId(), $result->getImageFileId());
         self::assertSame((int) $target->getId(), $result->getLicenceId());
         self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
@@ -111,7 +109,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $firstCopy = $this->findImage($this->useOne($source, $firstTarget)->getImageFileId());
         $secondResult = $this->useOne($firstCopy, $this->createLicence());
 
-        self::assertTrue($secondResult->isTakenOver());
+        self::assertNotSame((string) $firstCopy->getId(), $secondResult->getImageFileId());
         self::assertSame((string) $source->getId(), $secondResult->getTakenOverFromId());
     }
 
@@ -136,7 +134,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         // must succeed again instead of being refused.
         $second = $this->useOne($source, $target);
 
-        self::assertTrue($second->isTakenOver());
+        self::assertNotSame((string) $source->getId(), $second->getImageFileId());
         self::assertSame($first->getImageFileId(), $second->getImageFileId());
         $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
     }
@@ -175,7 +173,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
     public function testRequestWithoutTargetOnlyReportsWhetherDirectUseIsAllowed(): void
     {
         $usable = $this->createImage($this->createLicence());
-        self::assertFalse($this->useOne($usable)->isTakenOver());
+        self::assertSame((string) $usable->getId(), $this->useOne($usable)->getImageFileId());
 
         $agencyImage = $this->createImage($this->createLicence(directUseAllowed: false));
 
@@ -246,7 +244,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
         $result = $this->useOne($source, $target);
 
-        self::assertTrue($result->isTakenOver());
+        self::assertNotSame((string) $source->getId(), $result->getImageFileId());
         $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
     }
 
@@ -272,7 +270,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
     }
 
-    public function testForeignHolderIsOnlyLoggedInSoftModeAndTheRestOfTheBatchIsStillClaimed(): void
+    public function testForeignHolderIsOverwrittenInSoftMode(): void
     {
         $heldSource = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
         $freeSource = $this->createImage(
@@ -289,36 +287,8 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
             ], holderId: self::OTHER_HOLDER_ID)
         );
 
-        $this->assertHolder($heldSource, self::HOLDER_NAME, self::HOLDER_ID);
+        $this->assertHolder($heldSource, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
         $this->assertHolder($freeSource, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
-    }
-
-    public function testHandingTheGroupOverOverwritesTheHolderInOneCall(): void
-    {
-        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
-        $target = $this->createLicence();
-        $this->useOne($source, $target);
-
-        $this->enforcedImageUseFacade()->useImages(
-            $this->batchRequest([$this->item($source, $target)], holderId: self::OTHER_HOLDER_ID)
-                ->setReleaseFrom(new ImageHolderDto()->setName(self::HOLDER_NAME)->setId(self::HOLDER_ID))
-        );
-
-        $this->assertHolder($source, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
-    }
-
-    public function testHandingOverFromSomebodyWhoDoesNotHoldItStillConflicts(): void
-    {
-        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
-        $target = $this->createLicence();
-        $this->useOne($source, $target);
-
-        $this->assertConflict(fn (): mixed => $this->enforcedImageUseFacade()->useImages(
-            $this->batchRequest([$this->item($source, $target)], holderId: self::OTHER_HOLDER_ID)
-                ->setReleaseFrom(new ImageHolderDto()->setName(self::HOLDER_NAME)->setId('2f8b0f1e-0000-4000-8000-000000000009'))
-        ));
-
-        $this->assertHolder($source, self::HOLDER_NAME, self::HOLDER_ID);
     }
 
     public function testBatchClaimsEveryItemForTheSameHolder(): void
@@ -402,7 +372,10 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
     public function testFreeUseWithoutAHolderIsNeitherRefusedNorClaimedWhenEnforced(): void
     {
-        $source = $this->createImage($this->createLicence(singleUseEnforced: true));
+        $created = $this->createImage($this->createLicence(singleUseEnforced: true));
+        $this->entityManager->clear();
+        $source = $this->findImage((string) $created->getId());
+        $checkAfter = $source->getAssetAttributes()->getUsedByCheckAfter();
 
         $this->enforcedImageUseFacade()->useImages(
             (new ImageUseRequestDto())->setFreeUse(true)->setItems(new ArrayCollection([$this->item($source)]))
@@ -411,7 +384,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->assertFree($source);
         $this->entityManager->clear();
         $image = $this->findImage((string) $source->getId());
-        self::assertNull($image->getAssetAttributes()->getUsedByCheckAfter());
+        self::assertEquals($checkAfter, $image->getAssetAttributes()->getUsedByCheckAfter());
         self::assertNotNull($image->getFirstUsedAt());
     }
 
@@ -425,17 +398,6 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->entityManager->clear();
 
         self::assertNotNull($this->findImage((string) $source->getId())->getFirstUsedAt());
-    }
-
-    private function assertConflict(callable $operation): void
-    {
-        try {
-            $operation();
-        } catch (ImageUsageConflictException) {
-            return;
-        }
-
-        self::fail('Expected a usage conflict.');
     }
 
     /**

@@ -20,6 +20,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Embeddable]
 class AssetFileAttributes
 {
+    public const int HOLDER_MAX_LENGTH = 64;
+
     #[ORM\Column(type: Types::STRING, length: 64)]
     private string $checksum;
 
@@ -40,11 +42,11 @@ class AssetFileAttributes
      * Effective holder of the photo — the pair a picker compares against when a single use licence allows
      * only one user. Empty means the photo is free.
      */
-    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[ORM\Column(type: Types::STRING, length: self::HOLDER_MAX_LENGTH, options: ['default' => ''])]
     #[Serialize]
     private string $usedByHolderName;
 
-    #[ORM\Column(type: Types::STRING, length: 64, options: ['default' => ''])]
+    #[ORM\Column(type: Types::STRING, length: self::HOLDER_MAX_LENGTH, options: ['default' => ''])]
     #[Serialize]
     private string $usedByHolderId;
 
