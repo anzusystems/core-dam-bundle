@@ -16,12 +16,14 @@ use AnzuSystems\CoreDamBundle\Exception\ImageManipulatorException;
 use AnzuSystems\CoreDamBundle\Exception\InvalidCropException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Helper\FileNameHelper;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\Crop\RequestedCropDto;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\FileHelperTrait;
 use Doctrine\ORM\NonUniqueResultException;
 use League\Flysystem\FilesystemException;
+use League\Flysystem\UnableToReadFile;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,6 +41,7 @@ abstract class AbstractImageController extends AbstractPublicController
     private CropFacade $cropFacade;
     private ConfigurationProvider $configurationProvider;
     private ExtSystemConfigurationProvider $extSystemConfigurationProvider;
+    private DamLogger $damLogger;
 
     #[Required]
     public function setFileSystemProvider(FileSystemProvider $fileSystemProvider): void
@@ -71,6 +74,12 @@ abstract class AbstractImageController extends AbstractPublicController
     }
 
     #[Required]
+    public function setDamLogger(DamLogger $damLogger): void
+    {
+        $this->damLogger = $damLogger;
+    }
+
+    #[Required]
     public function setImageFileRepository(ImageFileRepository $imageFileRepository): void
     {
         $this->imageFileRepository = $imageFileRepository;
@@ -96,8 +105,15 @@ abstract class AbstractImageController extends AbstractPublicController
             }
         }
 
+        // A processed image in the DB without its file on the storage is our data defect, not a missing image
+        // for the client: the client gets the not found image, the defect goes to the log.
+        $content = $this->tryApplyCropPayload($image, $cropPayload, $roi);
+        if (null === $content) {
+            return $this->notFoundImageResponse($cropPayload);
+        }
+
         $response = $this->getImageResponse(
-            content: $this->cropFacade->applyCropPayload($image, $cropPayload, $roi),
+            content: $content,
             assetFile: $image,
         )->setStatusCode(Response::HTTP_OK);
         if ($isAdminDomain) {
@@ -139,9 +155,12 @@ abstract class AbstractImageController extends AbstractPublicController
         }
 
         $notFoundRoi = $notFoundImage->getRegionsOfInterest()->first();
-        if ($notFoundRoi instanceof RegionOfInterest) {
+        $content = $notFoundRoi instanceof RegionOfInterest
+            ? $this->tryApplyCropPayload($notFoundImage, $cropPayload, $notFoundRoi)
+            : null;
+        if (null !== $content) {
             $response = $this->getImageResponse(
-                content: $this->cropFacade->applyCropPayload($notFoundImage, $cropPayload, $notFoundRoi),
+                content: $content,
                 assetFile: $notFoundImage,
             )->setStatusCode(Response::HTTP_OK);
             $this->assetFileCacheManager->setNotFoundCache($response);
@@ -205,5 +224,27 @@ abstract class AbstractImageController extends AbstractPublicController
             $fileName,
             (new UnicodeString($fileName))->ascii()->toString()
         );
+    }
+
+    /**
+     * @return string|null null when the processed image has no file on the storage (logged)
+     *
+     * @throws FilesystemException
+     * @throws ImageManipulatorException
+     * @throws InvalidCropException
+     */
+    private function tryApplyCropPayload(ImageFile $image, RequestedCropDto $cropPayload, RegionOfInterest $roi): ?string
+    {
+        try {
+            return $this->cropFacade->applyCropPayload($image, $cropPayload, $roi);
+        } catch (UnableToReadFile $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_IMAGE_CROP,
+                sprintf('Processed image file (%s) has no file on the storage.', (string) $image->getId()),
+                exception: $exception,
+            );
+
+            return null;
+        }
     }
 }
