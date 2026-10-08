@@ -85,7 +85,7 @@ final class ImageUseFacade
             foreach ($dto->getItems() as $item) {
                 $resolved[] = $this->resolveItem($item);
             }
-            $this->claimSingleUseFiles($resolved, $dto->getHolder(), $dto->getReleaseFrom());
+            $this->claimSingleUseFiles($resolved, $dto->getHolder(), $dto->getReleaseFrom(), $dto->isFreeUse());
             $this->assetFileFirstUseFacade->record(
                 array_map(static fn (ImageUseResolution $resolution): AssetFile => $resolution->getFile(), $resolved),
                 App::getAppDate(),
@@ -287,13 +287,20 @@ final class ImageUseFacade
      *
      * @throws ImageUsageConflictException
      */
-    private function claimSingleUseFiles(array $resolved, ?ImageHolderDto $holder, ?ImageHolderDto $releaseFrom): void
-    {
+    private function claimSingleUseFiles(
+        array $resolved,
+        ?ImageHolderDto $holder,
+        ?ImageHolderDto $releaseFrom,
+        bool $freeUse,
+    ): void {
         $singleUseResolutions = array_values(array_filter(
             $resolved,
             static fn (ImageUseResolution $resolution): bool => $resolution->getFile()->getFlags()->isSingleUse(),
         ));
         if ([] === $singleUseResolutions) {
+            return;
+        }
+        if (null === $holder && $freeUse) {
             return;
         }
         if (null === $holder) {

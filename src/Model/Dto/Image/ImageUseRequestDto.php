@@ -38,6 +38,13 @@ final class ImageUseRequestDto
     #[Assert\Valid]
     private ?ImageHolderDto $releaseFrom = null;
 
+    /**
+     * The caller's owner type takes any photo without holding it: with no holder, a single use item is then
+     * neither refused nor claimed — it is only recorded as used. Ignored when there is a holder.
+     */
+    #[Serialize]
+    private bool $freeUse = false;
+
     #[Serialize(type: ImageUseItemDto::class)]
     #[Assert\Valid]
     #[Assert\Count(
@@ -73,6 +80,18 @@ final class ImageUseRequestDto
     public function setReleaseFrom(?ImageHolderDto $releaseFrom): self
     {
         $this->releaseFrom = $releaseFrom;
+
+        return $this;
+    }
+
+    public function isFreeUse(): bool
+    {
+        return $this->freeUse;
+    }
+
+    public function setFreeUse(bool $freeUse): self
+    {
+        $this->freeUse = $freeUse;
 
         return $this;
     }

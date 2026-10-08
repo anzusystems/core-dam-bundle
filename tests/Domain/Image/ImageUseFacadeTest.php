@@ -400,6 +400,21 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $this->assertFree($source);
     }
 
+    public function testFreeUseWithoutAHolderIsNeitherRefusedNorClaimedWhenEnforced(): void
+    {
+        $source = $this->createImage($this->createLicence(singleUseEnforced: true));
+
+        $this->enforcedImageUseFacade()->useImages(
+            (new ImageUseRequestDto())->setFreeUse(true)->setItems(new ArrayCollection([$this->item($source)]))
+        );
+
+        $this->assertFree($source);
+        $this->entityManager->clear();
+        $image = $this->findImage((string) $source->getId());
+        self::assertNull($image->getAssetAttributes()->getUsedByCheckAfter());
+        self::assertNotNull($image->getFirstUsedAt());
+    }
+
     public function testPlainImageWithoutAHolderIsRecordedAsUsed(): void
     {
         $source = $this->createImage($this->createLicence());
