@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileAdmCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Video\VideoAdmCreateDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 
 /**
  * @extends AbstractAssetFileFactory<VideoFile>
@@ -28,5 +29,15 @@ final class VideoFactory extends AbstractAssetFileFactory
                     ->setChecksum($createDto->getChecksum())
                     ->setMimeType($createDto->getMimeType())
             );
+    }
+
+    public function createFromUrl(AssetLicence $licence, string $url): VideoFile
+    {
+        $videoFile = $this->createBlankVideo($licence);
+        $videoFile->getAssetAttributes()
+            ->setOriginUrl($url)
+            ->setCreateStrategy(AssetFileCreateStrategy::Download);
+
+        return $videoFile;
     }
 }
