@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRouteRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
@@ -135,6 +136,35 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
         $this->assertKeywordExists('New keyword');
         $this->assertAuthorExists('Aarne Ormonde');
         $this->assertAuthorExists('New author');
+    }
+
+    public function testCreateFromUrlDedupKeepsRoute(): void
+    {
+        $client = $this->getApiClient(User::ID_CMS_USER);
+        $url = 'http://core-dam.sme.localhost/download-file?file=50x50&dedup=route';
+        $payload = [
+            'licence' => 100_000,
+            'url' => $url,
+            'customData' => [
+                'title' => 'Titulok',
+                'headline' => 'Headline',
+            ],
+            'generatePublicRoute' => false,
+        ];
+
+        $firstResponse = $client->post(AssetFileSysUrl::createFromUrl(), $payload);
+        $this->assertEquals(Response::HTTP_OK, $firstResponse->getStatusCode(), $firstResponse->getContent());
+        $firstData = json_decode($firstResponse->getContent(), true);
+
+        $secondResponse = $client->post(AssetFileSysUrl::createFromUrl(), [...$payload, 'generatePublicRoute' => true]);
+        $this->assertEquals(Response::HTTP_OK, $secondResponse->getStatusCode(), $secondResponse->getContent());
+        $secondData = json_decode($secondResponse->getContent(), true);
+
+        $this->assertSame($firstData['assetId'], $secondData['assetId']);
+        $this->assertSame($firstData['id'], $secondData['id']);
+        $this->assertNull(
+            static::getContainer()->get(AssetFileRouteRepository::class)->findMainByAssetFile($secondData['id'])
+        );
     }
 
     private function assertKeywordExists(string $keyword): void

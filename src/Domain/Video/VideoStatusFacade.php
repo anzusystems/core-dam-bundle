@@ -69,23 +69,25 @@ final class VideoStatusFacade extends AbstractAssetFileStatusFacade
     {
         $this->attributesProcessor->process($assetFile, $file);
 
-        try {
-            $assetFile->setImagePreview(
-                $this->imagePreviewFactory->createFromImageFile(
-                    imageFile: $this->getPreviewImageFile($assetFile, $file),
-                    flush: false
-                )
-            );
-        } catch (FfmpegException|DomainException $exception) {
-            $this->damLogger->error(
-                DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
-                sprintf(
-                    'Failed create preview image for video id (%s) with message (%s)',
-                    $assetFile->getId(),
-                    $exception->getMessage()
-                )
-            );
-            $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
+        if (null === $assetFile->getImagePreview()) {
+            try {
+                $assetFile->setImagePreview(
+                    $this->imagePreviewFactory->createFromImageFile(
+                        imageFile: $this->getPreviewImageFile($assetFile, $file),
+                        flush: false
+                    )
+                );
+            } catch (FfmpegException|DomainException $exception) {
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                    sprintf(
+                        'Failed create preview image for video id (%s) with message (%s)',
+                        $assetFile->getId(),
+                        $exception->getMessage()
+                    )
+                );
+                $this->appLogger->error($exception->getMessage(), ['exception' => $exception]);
+            }
         }
 
         return $assetFile;

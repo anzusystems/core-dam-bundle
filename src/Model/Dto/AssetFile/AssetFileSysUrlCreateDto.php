@@ -4,57 +4,26 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
-use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
-use Symfony\Component\Validator\Constraints as Assert;
 
-final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
+final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysUrlCreateDto
 {
     #[Serialize]
-    #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Length(max: 2_048, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    #[Assert\Url(message: ValidationException::ERROR_FIELD_INVALID)]
-    private string $url = '';
+    private bool $generatePublicRoute = false;
 
-    #[Serialize]
-    private array $authors = [];
-
-    #[Serialize]
-    private array $keywords = [];
-
-    public function getUrl(): string
+    public function isGeneratePublicRoute(): bool
     {
-        return $this->url;
+        return $this->generatePublicRoute;
     }
 
-    public function setUrl(string $url): self
+    public function setGeneratePublicRoute(bool $generatePublicRoute): void
     {
-        $this->url = $url;
-
-        return $this;
+        $this->generatePublicRoute = $generatePublicRoute;
     }
 
-    public function getAuthors(): array
+    public function getAssetType(): AssetType
     {
-        return $this->authors;
-    }
-
-    public function setAuthors(array $authors): self
-    {
-        $this->authors = $authors;
-
-        return $this;
-    }
-
-    public function getKeywords(): array
-    {
-        return $this->keywords;
-    }
-
-    public function setKeywords(array $keywords): self
-    {
-        $this->keywords = $keywords;
-
-        return $this;
+        return AssetType::Image;
     }
 }

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoDistributionStarter;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
@@ -29,6 +31,7 @@ final class AssetFileChangeStateHandler
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly DamLogger $damLogger,
         private readonly FileSystemProvider $fileSystemProvider,
+        private readonly VideoDistributionStarter $videoDistributionStarter,
     ) {
     }
 
@@ -39,7 +42,40 @@ final class AssetFileChangeStateHandler
     #[AsMessageHandler]
     public function handleVideoFile(VideoFileChangeStateMessage $message): void
     {
-        $this->handleAssetFile($message);
+        $assetFile = $this->handleAssetFile($message);
+        $services = $message->getDistributionServices();
+        if ([] === $services || false === ($assetFile instanceof VideoFile)) {
+            return;
+        }
+
+        $status = $assetFile->getAssetAttributes()->getStatus();
+        if ($status->is(AssetFileProcessStatus::Processed)) {
+            try {
+                $this->videoDistributionStarter->start($assetFile, $services);
+            } catch (Throwable $e) {
+                $this->damLogger->error(
+                    DamLogger::NAMESPACE_ASSET_FILE_CHANGE_STATE,
+                    sprintf('VideoFile (%s) distribution start failed', (string) $assetFile->getId()),
+                    exception: $e
+                );
+
+                throw new RuntimeException(message: $e->getMessage(), previous: $e);
+            }
+
+            return;
+        }
+
+        if ($status->in([AssetFileProcessStatus::Failed, AssetFileProcessStatus::Duplicate])) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_CHANGE_STATE,
+                sprintf(
+                    'VideoFile (%s) in status (%s), requested distributions (%s) not started',
+                    (string) $assetFile->getId(),
+                    $status->toString(),
+                    implode(', ', $services)
+                )
+            );
+        }
     }
 
     /**
@@ -76,12 +112,12 @@ final class AssetFileChangeStateHandler
      * @throws FilesystemException
      * @throws SerializerException
      */
-    private function handleAssetFile(AbstractAssetFileMessage $message): void
+    private function handleAssetFile(AbstractAssetFileMessage $message): ?AssetFile
     {
         $assetFile = $this->assetFileRepository->find($message->getAssetId());
 
         if (null === $assetFile) {
-            return;
+            return null;
         }
 
         try {
@@ -114,6 +150,8 @@ final class AssetFileChangeStateHandler
         }
 
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
+
+        return $assetFile;
     }
 
     /**
