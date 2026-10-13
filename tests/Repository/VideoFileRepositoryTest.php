@@ -45,14 +45,14 @@ final class VideoFileRepositoryTest extends CoreDamKernelTestCase
     }
 
     #[DataProvider('statusDataProvider')]
-    public function testFindOneNotFailedByUrlAndLicenceByStatuses(
+    public function testFindOneInProgressOrProcessedByUrlAndLicenceByStatuses(
         AssetFileProcessStatus $olderStatus,
         AssetFileProcessStatus $newerStatus,
         ?string $expected,
     ): void {
         $this->prepareStatuses($olderStatus, $newerStatus);
 
-        $found = $this->repository->findOneNotFailedByUrlAndLicence(self::URL, $this->older->getLicence());
+        $found = $this->repository->findOneInProgressOrProcessedByUrlAndLicence(self::URL, $this->older->getLicence());
 
         self::assertSame(match ($expected) {
             'older' => $this->older,
@@ -98,14 +98,14 @@ final class VideoFileRepositoryTest extends CoreDamKernelTestCase
     }
 
     #[DataProvider('mismatchDataProvider')]
-    public function testFindOneNotFailedByUrlAndLicenceIgnoresFileWithOtherLicenceOrUrl(
+    public function testFindOneInProgressOrProcessedByUrlAndLicenceIgnoresFileWithOtherLicenceOrUrl(
         bool $otherLicence,
         bool $otherUrl,
     ): void {
         $this->prepareStatuses(AssetFileProcessStatus::Failed, AssetFileProcessStatus::Processed);
         $this->prepareNewerMismatch($otherLicence, $otherUrl);
 
-        self::assertNull($this->repository->findOneNotFailedByUrlAndLicence(self::URL, $this->older->getLicence()));
+        self::assertNull($this->repository->findOneInProgressOrProcessedByUrlAndLicence(self::URL, $this->older->getLicence()));
     }
 
     public static function mismatchDataProvider(): array
@@ -137,7 +137,7 @@ final class VideoFileRepositoryTest extends CoreDamKernelTestCase
     private function findOtherLicence(): AssetLicence
     {
         foreach ($this->getService(AssetLicenceRepository::class)->findAll() as $licence) {
-            if ($licence->getId() !== $this->older->getLicence()->getId()) {
+            if ($licence->isNot($this->older->getLicence())) {
                 return $licence;
             }
         }

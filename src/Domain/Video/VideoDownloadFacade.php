@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
@@ -11,16 +12,28 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
+use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
+use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Closure;
+use Doctrine\ORM\NonUniqueResultException;
 
-final readonly class VideoDownloadFacade
+final class VideoDownloadFacade
 {
+    use MessageBusAwareTrait;
+
     public function __construct(
-        private VideoFactory $videoFactory,
-        private AssetFactory $assetFactory,
-        private VideoManager $videoManager,
-        private ImagePreviewFactory $imagePreviewFactory,
-        private AssetFileStatusManager $assetFileStatusManager,
+        private readonly VideoFactory $videoFactory,
+        private readonly AssetFactory $assetFactory,
+        private readonly VideoManager $videoManager,
+        private readonly ImagePreviewFactory $imagePreviewFactory,
+        private readonly AssetFileStatusManager $assetFileStatusManager,
+        private readonly VideoDistributionFacade $videoDistributionFacade,
+        private readonly VideoFileRepository $videoFileRepository,
+        private readonly DamLogger $damLogger,
     ) {
     }
 
@@ -45,5 +58,123 @@ final readonly class VideoDownloadFacade
         $this->assetFileStatusManager->toUploaded($videoFile);
 
         return $videoFile;
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     *
+     * @throws NonUniqueResultException
+     */
+    public function finishProcessing(VideoFile $videoFile, array $distributionServices): void
+    {
+        if (false === $videoFile->isCreatedByDownload()) {
+            return;
+        }
+
+        match ($videoFile->getAssetAttributes()->getStatus()) {
+            AssetFileProcessStatus::Processed => $this->distributeOrReportFailure($videoFile, $distributionServices),
+            AssetFileProcessStatus::Failed => $this->handleFailed($videoFile, $distributionServices),
+            AssetFileProcessStatus::Duplicate => $this->handleDuplicate($videoFile, $distributionServices),
+            default => null,
+        };
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     *
+     * @throws NonUniqueResultException
+     */
+    private function distributeOrReportFailure(VideoFile $videoFile, array $distributionServices): void
+    {
+        if ($this->tryEnsureDistributed($videoFile, $distributionServices)) {
+            return;
+        }
+
+        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+            $videoFile,
+            MediaStatusType::VideoFailed,
+            MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED,
+        ));
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     *
+     * @throws NonUniqueResultException
+     */
+    private function tryEnsureDistributed(VideoFile $videoFile, array $distributionServices): bool
+    {
+        try {
+            $this->videoDistributionFacade->ensureDistributed($videoFile, $distributionServices);
+
+            return true;
+        } catch (ValidationException $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
+                sprintf('VideoFile (%s) distribution rejected', (string) $videoFile->getId()),
+                exception: $exception
+            );
+
+            return false;
+        }
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     */
+    private function handleFailed(VideoFile $videoFile, array $distributionServices): void
+    {
+        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+            $videoFile,
+            MediaStatusType::VideoFailed,
+            $videoFile->getAssetAttributes()->getFailReason()->toString(),
+        ));
+
+        if ([] !== $distributionServices) {
+            $this->logDistributionNotStarted($videoFile, $distributionServices);
+        }
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     *
+     * @throws NonUniqueResultException
+     */
+    private function handleDuplicate(VideoFile $videoFile, array $distributionServices): void
+    {
+        $originAssetFileId = $videoFile->getAssetAttributes()->getOriginAssetId();
+        $origin = $this->videoFileRepository->find($originAssetFileId);
+        $originProcessed = $origin instanceof VideoFile
+            && $origin->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed);
+
+        if ($originProcessed) {
+            $this->tryEnsureDistributed($origin, $distributionServices);
+        }
+        if (false === $originProcessed && [] !== $distributionServices) {
+            $this->logDistributionNotStarted($videoFile, $distributionServices);
+        }
+
+        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+            $videoFile,
+            MediaStatusType::VideoDuplicate,
+            origin: $origin,
+            originAssetFileId: $originAssetFileId,
+        ));
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     */
+    private function logDistributionNotStarted(VideoFile $videoFile, array $distributionServices): void
+    {
+        $this->damLogger->error(
+            DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
+            sprintf(
+                'VideoFile (%s) in status (%s), requested distributions (%s) not started',
+                (string) $videoFile->getId(),
+                $videoFile->getAssetAttributes()->getStatus()->toString(),
+                implode(', ', $distributionServices)
+            )
+        );
     }
 }

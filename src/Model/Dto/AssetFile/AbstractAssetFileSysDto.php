@@ -57,5 +57,8 @@ abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomData
         return $this;
     }
 
-    abstract public function getAssetType(): AssetType;
+    public function getAssetType(): AssetType
+    {
+        return AssetType::Image;
+    }
 }

@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\VideoFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
+use Doctrine\ORM\NonUniqueResultException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -37,6 +38,7 @@ final class VideoController extends AbstractApiController
      * @throws AppReadOnlyModeException
      * @throws ValidationException
      * @throws AssetFileProcessFailed
+     * @throws NonUniqueResultException
      */
     #[Route('/from-url', 'create_from_url', methods: [Request::METHOD_POST])]
     #[OARequest(VideoFileSysUrlCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]

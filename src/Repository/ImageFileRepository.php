@@ -18,7 +18,6 @@ use Doctrine\Common\Collections\Criteria;
  * @method ImageFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method ImageFile|null findProcessedById(string $id)
  * @method ImageFile|null findProcessedByIdAndFilename(string $id, string $slug)
- * @method ImageFile|null findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence)
  */
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
@@ -42,6 +41,15 @@ final class ImageFileRepository extends AbstractAssetFileRepository
     {
         return $this->findOneBy([
             'id' => $id,
+            'licence' => $licence,
+            'assetAttributes.status' => AssetFileProcessStatus::Processed,
+        ]);
+    }
+
+    public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?ImageFile
+    {
+        return $this->findOneBy([
+            'assetAttributes.originUrl' => $url,
             'licence' => $licence,
             'assetAttributes.status' => AssetFileProcessStatus::Processed,
         ]);

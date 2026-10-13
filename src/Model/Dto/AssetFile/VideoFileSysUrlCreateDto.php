@@ -13,6 +13,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[AppAssert\VideoFileSysUrlCreate]
 final class VideoFileSysUrlCreateDto extends AbstractAssetFileSysUrlCreateDto
 {
+    /**
+     * @var list<string>
+     */
     #[Assert\Unique(message: ValidationException::ERROR_FIELD_UNIQUE)]
     #[Serialize]
     private array $distributionServices = [];
@@ -25,11 +28,17 @@ final class VideoFileSysUrlCreateDto extends AbstractAssetFileSysUrlCreateDto
         return AssetType::Video;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getDistributionServices(): array
     {
         return $this->distributionServices;
     }
 
+    /**
+     * @param list<string> $distributionServices
+     */
     public function setDistributionServices(array $distributionServices): self
     {
         $this->distributionServices = $distributionServices;

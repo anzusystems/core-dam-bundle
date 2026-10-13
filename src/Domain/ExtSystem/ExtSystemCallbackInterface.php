@@ -45,5 +45,6 @@ interface ExtSystemCallbackInterface
         MediaStatusType $status,
         ?string $failureReason,
         ?string $originAssetId = null,
+        ?string $originAssetFileId = null,
     ): void;
 }

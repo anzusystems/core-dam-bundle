@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
@@ -26,10 +27,10 @@ use Throwable;
 
 final class VideoDistributionFacade
 {
-    private const string LOCK_PREFIX_NAME = 'video_distribution_';
-
     use IndexManagerAwareTrait;
     use MessageBusAwareTrait;
+
+    private const string LOCK_PREFIX_NAME = 'video_distribution_';
 
     public function __construct(
         private readonly ModuleProvider $moduleProvider,
@@ -44,6 +45,7 @@ final class VideoDistributionFacade
     /**
      * @param list<string> $distributionServices
      *
+     * @throws ValidationException
      * @throws NonUniqueResultException
      */
     public function ensureDistributed(VideoFile $videoFile, array $distributionServices): void

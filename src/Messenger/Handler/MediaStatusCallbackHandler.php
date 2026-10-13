@@ -25,6 +25,7 @@ final readonly class MediaStatusCallbackHandler
             status: $message->status,
             failureReason: $message->failureReason,
             originAssetId: $message->originAssetId,
+            originAssetFileId: $message->originAssetFileId,
         );
     }
 }

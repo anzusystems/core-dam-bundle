@@ -21,12 +21,14 @@ use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final class VideoDistributionFacadeTest extends CoreDamKernelTestCase
 {
     private const string DISTRIBUTION_SERVICE = 'jw_cms_main';
+    private const string OTHER_DISTRIBUTION_SERVICE = 'jw_cms_other';
 
     private VideoDistributionFacade $facade;
     private DistributionBroker $broker;
@@ -74,6 +76,53 @@ final class VideoDistributionFacadeTest extends CoreDamKernelTestCase
             'waiting' => ['status' => DistributionProcessStatus::Waiting],
             'distributing' => ['status' => DistributionProcessStatus::Distributing],
         ];
+    }
+
+    public function testEnsureDistributedReleasesLockWhenDistributeFails(): void
+    {
+        $distributionRepository = $this->createMock(DistributionRepository::class);
+        $distributionRepository->expects(self::once())
+            ->method('findByAssetFileAndDistributionService')
+            ->willReturn(null);
+        $jwDistributionFacade = $this->createMock(JwDistributionFacade::class);
+        $jwDistributionFacade->expects(self::once())->method('preparePayload')->willReturn(new JwDistribution());
+        $jwDistributionFacade->expects(self::once())
+            ->method('distribute')
+            ->willThrowException(new RuntimeException('jw down'));
+        $facade = $this->createFacade($distributionRepository, $jwDistributionFacade);
+
+        try {
+            $facade->ensureDistributed($this->videoFile, [self::DISTRIBUTION_SERVICE]);
+            self::fail('Expected RuntimeException');
+        } catch (RuntimeException) {
+        }
+
+        $resourceLocker = $this->getService(ResourceLocker::class);
+        $lockName = 'video_distribution_' . $this->videoFile->getId() . '_' . self::DISTRIBUTION_SERVICE;
+        self::assertTrue($resourceLocker->lock($lockName, blocking: false));
+        $resourceLocker->unLock($lockName);
+    }
+
+    public function testEnsureDistributedStartsOnlyMissingServices(): void
+    {
+        $distributionRepository = $this->createMock(DistributionRepository::class);
+        $distributionRepository->expects(self::exactly(2))
+            ->method('findByAssetFileAndDistributionService')
+            ->willReturnCallback(
+                static fn (string $assetFileId, string $service): ?JwDistribution => self::DISTRIBUTION_SERVICE === $service
+                    ? new JwDistribution()
+                    : null
+            );
+        $jwDistributionFacade = $this->createMock(JwDistributionFacade::class);
+        $payload = new JwDistribution();
+        $jwDistributionFacade->expects(self::once())
+            ->method('preparePayload')
+            ->with($this->videoFile, self::OTHER_DISTRIBUTION_SERVICE)
+            ->willReturn($payload);
+        $jwDistributionFacade->expects(self::once())->method('distribute')->with($this->videoFile, $payload);
+
+        $this->createFacade($distributionRepository, $jwDistributionFacade)
+            ->ensureDistributed($this->videoFile, [self::DISTRIBUTION_SERVICE, self::OTHER_DISTRIBUTION_SERVICE]);
     }
 
     public function testEnsureDistributedWithoutServicesDoesNothing(): void

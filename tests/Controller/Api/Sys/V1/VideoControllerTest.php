@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\JwTexts;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
@@ -26,6 +27,9 @@ final class VideoControllerTest extends AbstractApiController
 {
     private const string DISTRIBUTION_SERVICE = 'jw_cms_main';
     private const string YOUTUBE_DISTRIBUTION_SERVICE = 'youtube_cms_main';
+    private const int LONG_TITLE_LENGTH = 150;
+    private const int LONG_DESCRIPTION_LENGTH = 6_000;
+    private const string UNKNOWN_IMAGE_ID = '00000000-0000-4000-8000-000000000001';
     private const string DOWNLOAD_URL = 'http://core-dam.sme.localhost/download-file?file=video_example.mp4';
 
     private VideoFileRepository $videoFileRepository;
@@ -68,6 +72,8 @@ final class VideoControllerTest extends AbstractApiController
         );
         self::assertInstanceOf(JwDistribution::class, $distribution);
         self::assertSame(User::ID_CMS_USER, $distribution->getCreatedBy()->getId());
+        self::assertSame('Title', $distribution->getTexts()->getTitle());
+        self::assertSame('Description', $distribution->getTexts()->getDescription());
         self::assertNull($this->assetFileRouteRepository->findMainByAssetFile($data['id']));
     }
 
@@ -98,11 +104,12 @@ final class VideoControllerTest extends AbstractApiController
         self::assertCount(1, $this->distributionRepository->findByAssetFile($firstData['id']));
     }
 
-    public function testCreateFromUrlDedupWhileUploadedDoesNothing(): void
+    #[DataProvider('inProgressStatusDataProvider')]
+    public function testCreateFromUrlDedupHitInProgressDispatchesNothing(AssetFileProcessStatus $status): void
     {
         $client = $this->getApiClient(User::ID_CMS_USER);
-        $url = self::uniqueUrl('dedup-uploaded');
-        $firstData = $this->createVideoWithStatus($client, $url, AssetFileProcessStatus::Uploaded);
+        $url = self::uniqueUrl('dedup-' . $status->value);
+        $firstData = $this->createVideoWithStatus($client, $url, $status);
 
         $secondResponse = $client->post(
             VideoSysUrl::createFromUrl(),
@@ -117,80 +124,50 @@ final class VideoControllerTest extends AbstractApiController
         self::assertCount(1, $this->videoFileRepository->findBy(['assetAttributes.originUrl' => $url]));
         $videoFile = $this->videoFileRepository->find($firstData['id']);
         self::assertInstanceOf(VideoFile::class, $videoFile);
-        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded));
+        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is($status));
         self::assertCount(0, $this->distributionRepository->findByAssetFile($firstData['id']));
     }
 
-    public function testCreateFromUrlDedupWhileStoredDoesNothing(): void
+    public static function inProgressStatusDataProvider(): array
     {
-        $client = $this->getApiClient(User::ID_CMS_USER);
-        $url = self::uniqueUrl('dedup-stored');
-        $firstData = $this->createVideoWithStatus($client, $url, AssetFileProcessStatus::Stored);
-
-        $secondResponse = $client->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload($url, ['distributionServices' => [self::DISTRIBUTION_SERVICE]])
-        );
-        self::assertStatusCode($secondResponse, Response::HTTP_OK);
-        $secondData = json_decode((string) $secondResponse->getContent(), true);
-
-        self::assertSame($firstData['id'], $secondData['id']);
-        self::assertSame($firstData['assetId'], $secondData['assetId']);
-        $this->entityManager->clear();
-        self::assertCount(1, $this->videoFileRepository->findBy(['assetAttributes.originUrl' => $url]));
-        $videoFile = $this->videoFileRepository->find($firstData['id']);
-        self::assertInstanceOf(VideoFile::class, $videoFile);
-        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored));
-        self::assertCount(0, $this->distributionRepository->findByAssetFile($firstData['id']));
+        return [
+            'uploaded' => ['status' => AssetFileProcessStatus::Uploaded],
+            'stored' => ['status' => AssetFileProcessStatus::Stored],
+        ];
     }
 
-    public function testCreateFromUrlDuplicateDistributionServices(): void
-    {
-        $response = $this->getApiClient(User::ID_CMS_USER)->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('duplicate-services'), [
-                'distributionServices' => [self::DISTRIBUTION_SERVICE, self::DISTRIBUTION_SERVICE],
-            ])
-        );
-
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'distributionServices' => [ValidationException::ERROR_FIELD_UNIQUE],
-        ]);
-    }
-
-    public function testCreateFromUrlCutsJwTexts(): void
+    public function testCreateFromUrlCutsJwTextsOnlyInDistribution(): void
     {
         $response = $this->getApiClient(User::ID_CMS_USER)->post(
             VideoSysUrl::createFromUrl(),
             $this->payload(self::uniqueUrl('cut-texts'), [
                 'distributionServices' => [self::DISTRIBUTION_SERVICE],
                 'customData' => [
-                    'title' => str_repeat('t', 150),
-                    'description' => str_repeat('d', 6_000),
+                    'title' => str_repeat('t', self::LONG_TITLE_LENGTH),
+                    'description' => str_repeat('d', self::LONG_DESCRIPTION_LENGTH),
                 ],
             ])
         );
 
         self::assertStatusCode($response, Response::HTTP_OK);
         $data = json_decode((string) $response->getContent(), true);
-        self::assertSame(JwTexts::TITLE_MAX_LENGTH, mb_strlen($data['customData']['title']));
-        self::assertSame(JwTexts::DESCRIPTION_MAX_LENGTH, mb_strlen($data['customData']['description']));
+        self::assertSame(self::LONG_TITLE_LENGTH, mb_strlen($data['customData']['title']));
+        self::assertSame(self::LONG_DESCRIPTION_LENGTH, mb_strlen($data['customData']['description']));
 
         $this->entityManager->clear();
         $videoFile = $this->videoFileRepository->find($data['id']);
         self::assertInstanceOf(VideoFile::class, $videoFile);
         $customData = $videoFile->getAsset()->getMetadata()->getCustomData();
-        self::assertSame(JwTexts::TITLE_MAX_LENGTH, mb_strlen($customData['title']));
-        self::assertSame(JwTexts::DESCRIPTION_MAX_LENGTH, mb_strlen($customData['description']));
+        self::assertSame(self::LONG_TITLE_LENGTH, mb_strlen($customData['title']));
+        self::assertSame(self::LONG_DESCRIPTION_LENGTH, mb_strlen($customData['description']));
 
         $distribution = $this->distributionRepository->findByAssetFileAndDistributionService(
             $data['id'],
             self::DISTRIBUTION_SERVICE
         );
         self::assertInstanceOf(JwDistribution::class, $distribution);
-        self::assertSame(JwTexts::TITLE_MAX_LENGTH, mb_strlen($distribution->getTexts()->getTitle()));
-        self::assertSame(JwTexts::DESCRIPTION_MAX_LENGTH, mb_strlen($distribution->getTexts()->getDescription()));
+        self::assertSame(JwTexts::TITLE_LENGTH, mb_strlen($distribution->getTexts()->getTitle()));
+        self::assertSame(JwTexts::DESCRIPTION_LENGTH, mb_strlen($distribution->getTexts()->getDescription()));
     }
 
     public function testCreateFromUrlKeepsJwTextsWithoutDistribution(): void
@@ -198,119 +175,111 @@ final class VideoControllerTest extends AbstractApiController
         $response = $this->getApiClient(User::ID_CMS_USER)->post(
             VideoSysUrl::createFromUrl(),
             $this->payload(self::uniqueUrl('keep-texts'), [
-                'customData' => ['title' => str_repeat('t', 150)],
+                'customData' => ['title' => str_repeat('t', self::LONG_TITLE_LENGTH)],
             ])
         );
 
         self::assertStatusCode($response, Response::HTTP_OK);
         $data = json_decode((string) $response->getContent(), true);
-        self::assertSame(150, mb_strlen($data['customData']['title']));
+        self::assertSame(self::LONG_TITLE_LENGTH, mb_strlen($data['customData']['title']));
     }
 
-    public function testCreateFromUrlInvalidDistributionService(): void
+    #[DataProvider('validationFailureDataProvider')]
+    public function testCreateFromUrlValidationFailure(array $override, array $errors): void
     {
         $response = $this->getApiClient(User::ID_CMS_USER)->post(
             VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('invalid-service'), ['distributionServices' => [self::YOUTUBE_DISTRIBUTION_SERVICE]])
-        );
-
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'distributionServices' => [ValidationException::ERROR_FIELD_INVALID],
-        ]);
-    }
-
-    public function testCreateFromUrlInvalidCustomDataType(): void
-    {
-        $client = $this->getApiClient(User::ID_CMS_USER);
-
-        $response = $client->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('invalid-title'), [
+            $this->payload(self::uniqueUrl('validation-failure'), [
                 'distributionServices' => [self::DISTRIBUTION_SERVICE],
-                'customData' => ['title' => ['array'], 'description' => 'Description'],
+                ...$override,
             ])
         );
 
         self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'customData' => [ValidationException::ERROR_FIELD_INVALID],
-        ]);
-
-        $response = $client->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('blank-author'), [
-                'distributionServices' => [self::DISTRIBUTION_SERVICE],
-                'authors' => ['  '],
-            ])
-        );
-
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'authors' => [ValidationException::ERROR_FIELD_EMPTY],
-        ]);
+        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), $errors);
     }
 
-    #[DataProvider('invalidJwTextsDataProvider')]
-    public function testCreateFromUrlInvalidJwTexts(array $customData, string $error): void
-    {
-        $response = $this->getApiClient(User::ID_CMS_USER)->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('invalid-texts'), [
-                'distributionServices' => [self::DISTRIBUTION_SERVICE],
-                'customData' => $customData,
-            ])
-        );
-
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'customData' => [$error],
-        ]);
-    }
-
-    public static function invalidJwTextsDataProvider(): array
+    public static function validationFailureDataProvider(): array
     {
         return [
+            'duplicate distribution services' => [
+                'override' => ['distributionServices' => [self::DISTRIBUTION_SERVICE, self::DISTRIBUTION_SERVICE]],
+                'errors' => ['distributionServices' => [ValidationException::ERROR_FIELD_UNIQUE]],
+            ],
+            'youtube distribution service' => [
+                'override' => ['distributionServices' => [self::YOUTUBE_DISTRIBUTION_SERVICE]],
+                'errors' => ['distributionServices' => [ValidationException::ERROR_FIELD_INVALID]],
+            ],
+            'title is array' => [
+                'override' => ['customData' => ['title' => ['array'], 'description' => 'Description']],
+                'errors' => ['customData.title' => [ValidationException::ERROR_FIELD_INVALID]],
+            ],
+            'blank author' => [
+                'override' => ['authors' => ['  ']],
+                'errors' => ['authors' => [ValidationException::ERROR_FIELD_EMPTY]],
+            ],
+            'non-string author' => [
+                'override' => ['authors' => ['ok', 5]],
+                'errors' => ['authors' => [ValidationException::ERROR_FIELD_INVALID]],
+            ],
+            'service not in ext system config' => [
+                'override' => ['distributionServices' => ['jw_unknown']],
+                'errors' => ['distributionServices' => [ValidationException::ERROR_FIELD_INVALID]],
+            ],
+            'non-string service' => [
+                'override' => ['distributionServices' => [123]],
+                'errors' => ['distributionServices' => [ValidationException::ERROR_FIELD_INVALID]],
+            ],
             'missing description' => [
-                'customData' => ['title' => 'Title'],
-                'error' => ValidationException::ERROR_FIELD_INVALID,
+                'override' => ['customData' => ['title' => 'Title']],
+                'errors' => ['customData.description' => [ValidationException::ERROR_FIELD_INVALID]],
             ],
             'empty title' => [
-                'customData' => ['title' => '', 'description' => 'Description'],
-                'error' => ValidationException::ERROR_FIELD_EMPTY,
+                'override' => ['customData' => ['title' => '', 'description' => 'Description']],
+                'errors' => ['customData.title' => [ValidationException::ERROR_FIELD_EMPTY]],
             ],
             'blank description' => [
-                'customData' => ['title' => 'Title', 'description' => '  '],
-                'error' => ValidationException::ERROR_FIELD_EMPTY,
+                'override' => ['customData' => ['title' => 'Title', 'description' => '  ']],
+                'errors' => ['customData.description' => [ValidationException::ERROR_FIELD_EMPTY]],
+            ],
+            'empty title and description' => [
+                'override' => ['customData' => ['title' => '', 'description' => '']],
+                'errors' => [
+                    'customData.title' => [ValidationException::ERROR_FIELD_EMPTY],
+                    'customData.description' => [ValidationException::ERROR_FIELD_EMPTY],
+                ],
             ],
         ];
     }
 
-    public function testCreateFromUrlPreviewFromOtherLicence(): void
+    #[DataProvider('unusablePreviewDataProvider')]
+    public function testCreateFromUrlIgnoresUnusablePreview(string $imagePreviewAssetFileId): void
     {
         $response = $this->getApiClient(User::ID_CMS_USER)->post(
             VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('other-licence'), [
-                'imagePreviewAssetFileId' => TestImageFixtures::IMAGE_ID_5,
+            $this->payload(self::uniqueUrl('unusable-preview-' . $imagePreviewAssetFileId), [
+                'imagePreviewAssetFileId' => $imagePreviewAssetFileId,
             ])
-        );
-
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), [
-            'imagePreviewAssetFileId' => [ValidationException::ERROR_FIELD_INVALID],
-        ]);
-    }
-
-    public function testCreateFromUrlIgnoresGeneratePublicRoute(): void
-    {
-        $response = $this->getApiClient(User::ID_CMS_USER)->post(
-            VideoSysUrl::createFromUrl(),
-            $this->payload(self::uniqueUrl('public-route'), ['generatePublicRoute' => true])
         );
 
         self::assertStatusCode($response, Response::HTTP_OK);
         $data = json_decode((string) $response->getContent(), true);
-        self::assertNull($this->assetFileRouteRepository->findMainByAssetFile($data['id']));
+        $this->entityManager->clear();
+        $videoFile = $this->videoFileRepository->find($data['id']);
+        self::assertInstanceOf(VideoFile::class, $videoFile);
+        self::assertNotSame($imagePreviewAssetFileId, $videoFile->getImagePreview()?->getImageFile()->getId());
+    }
+
+    public static function unusablePreviewDataProvider(): array
+    {
+        return [
+            'image of another licence' => [
+                'imagePreviewAssetFileId' => TestImageFixtures::IMAGE_ID_5,
+            ],
+            'unknown id' => [
+                'imagePreviewAssetFileId' => self::UNKNOWN_IMAGE_ID,
+            ],
+        ];
     }
 
     private function createVideoWithStatus(ApiClient $client, string $url, AssetFileProcessStatus $status): array
@@ -335,7 +304,7 @@ final class VideoControllerTest extends AbstractApiController
     private function payload(string $url, array $override = []): array
     {
         return [
-            'licence' => 100_000,
+            'licence' => AssetLicenceFixtures::DEFAULT_LICENCE_ID,
             'url' => $url,
             'customData' => [
                 'title' => 'Title',

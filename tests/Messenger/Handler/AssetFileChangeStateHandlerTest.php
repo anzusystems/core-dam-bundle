@@ -5,15 +5,22 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Messenger\Handler;
 
 use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Log\Factory\LogContextFactory;
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusInterface;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\ImagePreview\ImagePreviewFactory;
 use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDistributionFacade;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoFactory;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoManager;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -23,32 +30,38 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileChangeStateHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
+use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\SerializerBundle\Serializer;
-use Exception;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
+use Throwable;
 
 final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
 {
     private const string DISTRIBUTION_SERVICE = 'jw_cms_main';
+    private const string EXAMPLE_FILE_NAME = 'video_example.mp4';
+    private const string DOWNLOAD_URL = 'http://core-dam.sme.localhost/download-file?file=video_example.mp4';
 
     private LoggerInterface&MockObject $journalLogger;
     private JwDistributionFacade&MockObject $jwDistributionFacade;
     private DistributionRepository&MockObject $distributionRepository;
     private MessageBusInterface&MockObject $messageBus;
+    private AssetFileStatusInterface&MockObject $statusFacade;
+    private DamLogger $damLogger;
+    private VideoDownloadFacade $videoDownloadFacade;
     private AssetFileChangeStateHandler $handler;
 
     protected function setUp(): void
@@ -59,19 +72,21 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->jwDistributionFacade = $this->createMock(JwDistributionFacade::class);
         $this->distributionRepository = $this->createMock(DistributionRepository::class);
         $this->messageBus = $this->createMock(MessageBusInterface::class);
+        $this->statusFacade = $this->createMock(AssetFileStatusInterface::class);
 
         $serializer = $this->getService(Serializer::class);
-        $damLogger = new DamLogger(
+        $this->damLogger = new DamLogger(
             $this->journalLogger,
             new LogContextFactory($this->getService(CurrentAnzuUserProvider::class), $serializer),
         );
-        $damLogger->setSerializer($serializer);
+        $this->damLogger->setSerializer($serializer);
 
-        $this->handler = new AssetFileChangeStateHandler(
-            $this->getService(AssetFileRepository::class),
-            new AssetFileStatusFacadeProvider([VideoFile::class => $this->createStub(AssetFileStatusInterface::class)]),
-            $damLogger,
-            $this->getService(FileSystemProvider::class),
+        $this->videoDownloadFacade = new VideoDownloadFacade(
+            $this->getService(VideoFactory::class),
+            $this->getService(AssetFactory::class),
+            $this->getService(VideoManager::class),
+            $this->getService(ImagePreviewFactory::class),
+            $this->getService(AssetFileStatusManager::class),
             new VideoDistributionFacade(
                 $this->getService(ModuleProvider::class),
                 $this->getService(ImageDownloadFacade::class),
@@ -80,9 +95,18 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
                 $this->jwDistributionFacade,
                 $this->getService(ResourceLocker::class),
             ),
-            $this->getService(AssetRepository::class),
+            $this->getService(VideoFileRepository::class),
+            $this->damLogger,
         );
-        $this->handler->setMessageBus($this->messageBus);
+        $this->videoDownloadFacade->setMessageBus($this->messageBus);
+
+        $this->handler = new AssetFileChangeStateHandler(
+            $this->getService(AssetFileRepository::class),
+            new AssetFileStatusFacadeProvider([VideoFile::class => $this->statusFacade]),
+            $this->damLogger,
+            $this->getService(FileSystemProvider::class),
+            $this->videoDownloadFacade,
+        );
     }
 
     public function testProcessedWithServicesStartsDistributionOnce(): void
@@ -103,40 +127,185 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             ->with($videoFile, $distribution);
         $this->journalLogger->expects(self::never())->method('error');
         $this->messageBus->expects(self::never())->method('dispatch');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
     }
 
-    public function testProcessedWithFailingDistributionLogsErrorAndRethrows(): void
+    public function testProcessedWithFailingDistributionRethrowsOriginalException(): void
     {
         $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Processed);
 
-        $this->distributionRepository->expects(self::once())
-            ->method('findByAssetFileAndDistributionService')
-            ->willReturn(null);
-        $this->jwDistributionFacade->expects(self::once())->method('preparePayload')->willReturn(new JwDistribution());
-        $this->jwDistributionFacade->expects(self::once())
-            ->method('distribute')
-            ->willThrowException(new Exception('jw down'));
-        $this->journalLogger->expects(self::once())->method('error');
+        $this->expectDistributionAttempt($videoFile, new RuntimeException('jw down'));
+        $this->journalLogger->expects(self::never())->method('error');
         $this->messageBus->expects(self::never())->method('dispatch');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
 
         $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('jw down');
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
+    public function testProcessedWithRejectedDistributionReportsVideoFailedOnce(): void
+    {
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Processed);
+
+        $this->expectDistributionAttempt($videoFile, new ValidationException());
+        $this->journalLogger->expects(self::once())->method('error');
+        $this->messageBus->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(
+                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                    && $message->assetId === (string) $videoFile->getAsset()->getId()
+                    && $message->status->is(MediaStatusType::VideoFailed)
+                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+                    && null === $message->originAssetId
+                    && null === $message->originAssetFileId
+            ))
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
+    public function testProcessedWithoutServicesDoesNotStart(): void
+    {
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Processed);
+
+        $this->expectNoDistribution();
+        $this->journalLogger->expects(self::never())->method('error');
+        $this->messageBus->expects(self::never())->method('dispatch');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+    }
+
+    public function testDuplicateDispatchesVideoDuplicateCallbackAndDistributesProcessedOrigin(): void
+    {
+        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
+        $videoFile = $this->presetDuplicateVideoFile((string) $origin->getId());
+
+        $this->expectDistributionAttempt($origin);
+        $this->journalLogger->expects(self::never())->method('error');
+        $this->expectDuplicateCallback($videoFile, $origin);
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
+    public function testDuplicateWithRejectedOriginDistributionStillReportsVideoDuplicate(): void
+    {
+        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
+        $videoFile = $this->presetDuplicateVideoFile((string) $origin->getId());
+
+        $this->expectDistributionAttempt($origin, new ValidationException());
+        $this->journalLogger->expects(self::once())->method('error');
+        $this->expectDuplicateCallback($videoFile, $origin);
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
+    public function testDuplicateWithFailingDistributionSendsNoCallback(): void
+    {
+        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
+        $videoFile = $this->presetDuplicateVideoFile((string) $origin->getId());
+
+        $this->expectDistributionAttempt($origin, new RuntimeException('jw down'));
+        $this->journalLogger->expects(self::never())->method('error');
+        $this->messageBus->expects(self::never())->method('dispatch');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('jw down');
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
+    #[DataProvider('duplicateWithoutDistributionDataProvider')]
+    public function testDuplicateDoesNotDistribute(
+        ?AssetFileProcessStatus $originStatus,
+        AssetFileCreateStrategy $createStrategy,
+        array $services,
+        bool $errorLogged,
+    ): void {
+        $origin = null === $originStatus ? null : $this->presetOrigin($originStatus);
+        $originAssetFileId = null === $origin ? Uuid::v4()->toRfc4122() : (string) $origin->getId();
+        $videoFile = $this->presetDuplicateVideoFile($originAssetFileId, $createStrategy);
+
+        $this->expectNoDistribution();
+        $this->journalLogger->expects($errorLogged ? self::once() : self::never())->method('error');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+        if ($createStrategy->isNot(AssetFileCreateStrategy::Download)) {
+            $this->messageBus->expects(self::never())->method('dispatch');
+        } elseif (null === $origin) {
+            $this->expectMissingOriginDuplicateCallback($videoFile, $originAssetFileId);
+        } else {
+            $this->expectDuplicateCallback($videoFile, $origin);
+        }
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
+    }
+
+    public static function duplicateWithoutDistributionDataProvider(): array
+    {
+        return [
+            'origin processed without services' => [
+                'originStatus' => AssetFileProcessStatus::Processed,
+                'createStrategy' => AssetFileCreateStrategy::Download,
+                'services' => [],
+                'errorLogged' => false,
+            ],
+            'origin not processed with services' => [
+                'originStatus' => AssetFileProcessStatus::Uploaded,
+                'createStrategy' => AssetFileCreateStrategy::Download,
+                'services' => [self::DISTRIBUTION_SERVICE],
+                'errorLogged' => true,
+            ],
+            'origin missing without services' => [
+                'originStatus' => null,
+                'createStrategy' => AssetFileCreateStrategy::Download,
+                'services' => [],
+                'errorLogged' => false,
+            ],
+            'origin missing with services' => [
+                'originStatus' => null,
+                'createStrategy' => AssetFileCreateStrategy::Download,
+                'services' => [self::DISTRIBUTION_SERVICE],
+                'errorLogged' => true,
+            ],
+            'non-download without services' => [
+                'originStatus' => AssetFileProcessStatus::Processed,
+                'createStrategy' => AssetFileCreateStrategy::Chunk,
+                'services' => [],
+                'errorLogged' => false,
+            ],
+            'non-download with services' => [
+                'originStatus' => AssetFileProcessStatus::Processed,
+                'createStrategy' => AssetFileCreateStrategy::Chunk,
+                'services' => [self::DISTRIBUTION_SERVICE],
+                'errorLogged' => false,
+            ],
+        ];
     }
 
     #[DataProvider('failedDataProvider')]
     public function testFailedDispatchesVideoFailedCallbackOnlyForDownload(
         array $services,
         AssetFileCreateStrategy $createStrategy,
+        bool $errorLogged,
     ): void {
         $videoFile = $this->presetFailedVideoFile($createStrategy);
-        $this->journalLogger->expects([] === $services ? self::never() : self::once())->method('error');
 
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
-        $this->expectFailedCallback($videoFile, $createStrategy);
+        $this->journalLogger->expects($errorLogged ? self::once() : self::never())->method('error');
+        $this->expectNoDistribution();
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+        if ($createStrategy->is(AssetFileCreateStrategy::Download)) {
+            $this->expectFailedCallback($videoFile);
+        } else {
+            $this->messageBus->expects(self::never())->method('dispatch');
+        }
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
     }
@@ -147,178 +316,159 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             'download without services' => [
                 'services' => [],
                 'createStrategy' => AssetFileCreateStrategy::Download,
+                'errorLogged' => false,
             ],
             'download with services' => [
                 'services' => [self::DISTRIBUTION_SERVICE],
                 'createStrategy' => AssetFileCreateStrategy::Download,
+                'errorLogged' => true,
             ],
             'chunk without services' => [
                 'services' => [],
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
+                'errorLogged' => false,
             ],
             'chunk with services' => [
                 'services' => [self::DISTRIBUTION_SERVICE],
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
+                'errorLogged' => false,
             ],
         ];
     }
 
-    public function testDuplicateDispatchesVideoDuplicateCallbackAndDistributesProcessedOrigin(): void
+    public function testSecondMessageForAlreadyProcessedFileDoesNotStoreAndProcessAgain(): void
     {
-        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
-        $originAssetId = (string) $origin->getAsset()->getId();
-        $videoFile = $this->presetDuplicateVideoFile($originAssetId);
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
+
+        $this->statusFacade->expects(self::once())
+            ->method('storeAndProcess')
+            ->willReturnCallback(static function (VideoFile $assetFile): VideoFile {
+                $assetFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Processed);
+
+                return $assetFile;
+            });
         $this->journalLogger->expects(self::never())->method('error');
-        $distribution = new JwDistribution();
-
-        $this->distributionRepository->expects(self::once())
-            ->method('findByAssetFileAndDistributionService')
-            ->with((string) $origin->getId(), self::DISTRIBUTION_SERVICE)
-            ->willReturn(null);
-        $this->jwDistributionFacade->expects(self::once())
-            ->method('preparePayload')
-            ->with($origin, self::DISTRIBUTION_SERVICE)
-            ->willReturn($distribution);
-        $this->jwDistributionFacade->expects(self::once())
-            ->method('distribute')
-            ->with($origin, $distribution);
-        $this->expectDuplicateCallback($videoFile, $originAssetId);
-
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
-    }
-
-    public function testDuplicateWithFailingDistributionSendsNoCallback(): void
-    {
-        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
-        $videoFile = $this->presetDuplicateVideoFile((string) $origin->getAsset()->getId());
-
-        $this->distributionRepository->expects(self::once())
-            ->method('findByAssetFileAndDistributionService')
-            ->willReturn(null);
-        $this->jwDistributionFacade->expects(self::once())->method('preparePayload')->willReturn(new JwDistribution());
-        $this->jwDistributionFacade->expects(self::once())
-            ->method('distribute')
-            ->willThrowException(new Exception('jw down'));
-        $this->journalLogger->expects(self::once())->method('error');
         $this->messageBus->expects(self::never())->method('dispatch');
-
-        $this->expectException(RuntimeException::class);
-
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
-    }
-
-    public function testDuplicateWithoutServicesOnlyDispatchesCallback(): void
-    {
-        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
-        $originAssetId = (string) $origin->getAsset()->getId();
-        $videoFile = $this->presetDuplicateVideoFile($originAssetId);
-        $this->journalLogger->expects(self::never())->method('error');
-
         $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
         $this->jwDistributionFacade->expects(self::never())->method('distribute');
-        $this->expectDuplicateCallback($videoFile, $originAssetId);
 
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
     }
 
-    public function testDuplicateWithNotProcessedOriginDoesNotDistribute(): void
+    public function testDuplicateCreatedByRealProducerCarriesOriginAssetAndFileIds(): void
     {
-        $origin = $this->presetOrigin(AssetFileProcessStatus::Uploaded);
-        $originAssetId = (string) $origin->getAsset()->getId();
-        $videoFile = $this->presetDuplicateVideoFile($originAssetId);
-        $this->journalLogger->expects(self::once())->method('error');
-
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
-        $this->expectDuplicateCallback($videoFile, $originAssetId);
-
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
-    }
-
-    #[DataProvider('servicesDataProvider')]
-    public function testDuplicateWithMissingOriginAssetDoesNotDistribute(array $services): void
-    {
-        $originAssetId = Uuid::v4()->toRfc4122();
-        $videoFile = $this->presetDuplicateVideoFile($originAssetId);
-        $this->journalLogger->expects([] === $services ? self::never() : self::once())->method('error');
-
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
-        $this->expectDuplicateCallback($videoFile, $originAssetId);
-
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
-    }
-
-    public static function servicesDataProvider(): array
-    {
-        return [
-            'without services' => ['services' => []],
-            'with services' => ['services' => [self::DISTRIBUTION_SERVICE]],
-        ];
-    }
-
-    #[DataProvider('servicesDataProvider')]
-    public function testDuplicateOfNonDownloadDispatchesNothingAndDoesNotDistribute(array $services): void
-    {
-        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
-        $videoFile = $this->presetDuplicateVideoFile(
-            (string) $origin->getAsset()->getId(),
-            AssetFileCreateStrategy::Chunk
+        $realHandler = new AssetFileChangeStateHandler(
+            $this->getService(AssetFileRepository::class),
+            $this->getService(AssetFileStatusFacadeProvider::class),
+            $this->damLogger,
+            $this->getService(FileSystemProvider::class),
+            $this->videoDownloadFacade,
         );
-        $this->journalLogger->expects([] === $services ? self::never() : self::once())->method('error');
+        $origin = $this->createUploadedDownloadVideo('real-producer-origin');
+        $duplicate = $this->createUploadedDownloadVideo('real-producer-duplicate');
 
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
-        $this->messageBus->expects(self::never())->method('dispatch');
-
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
-    }
-
-    public function testMessageWithoutServicesDoesNotStart(): void
-    {
-        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Processed);
-
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
+        $this->expectNoDistribution();
         $this->journalLogger->expects(self::never())->method('error');
-        $this->messageBus->expects(self::never())->method('dispatch');
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+        $this->expectDuplicateCallback($duplicate, $origin);
 
-        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+        $realHandler->handleVideoFile(new VideoFileChangeStateMessage($origin));
+        self::assertTrue($origin->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
+
+        $realHandler->handleVideoFile(new VideoFileChangeStateMessage($duplicate));
+        self::assertTrue($duplicate->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Duplicate));
     }
 
-    private function expectFailedCallback(VideoFile $videoFile, AssetFileCreateStrategy $createStrategy): void
+    private function expectFailedCallback(VideoFile $videoFile): void
     {
-        if ($createStrategy->isNot(AssetFileCreateStrategy::Download)) {
-            $this->messageBus->expects(self::never())->method('dispatch');
-
-            return;
-        }
-
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
                 static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
                     && $message->extSystemId === $videoFile->getExtSystem()->getId()
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
-                    && MediaStatusType::VideoFailed === $message->status
+                    && $message->status->is(MediaStatusType::VideoFailed)
                     && AssetFileFailedType::DownloadFailed->toString() === $message->failureReason
                     && null === $message->originAssetId
+                    && null === $message->originAssetFileId
             ))
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
     }
 
-    private function expectDuplicateCallback(VideoFile $videoFile, string $originAssetId): void
+    private function expectDuplicateCallback(VideoFile $videoFile, VideoFile $origin): void
     {
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
                 static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
-                    && MediaStatusType::VideoDuplicate === $message->status
+                    && $message->status->is(MediaStatusType::VideoDuplicate)
                     && null === $message->failureReason
-                    && $originAssetId === $message->originAssetId
+                    && $message->originAssetId === (string) $origin->getAsset()->getId()
+                    && $message->originAssetFileId === (string) $origin->getId()
             ))
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+    }
+
+    private function expectNoDistribution(): void
+    {
+        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
+        $this->jwDistributionFacade->expects(self::never())->method('distribute');
+    }
+
+    private function expectDistributionAttempt(VideoFile $distributed, ?Throwable $failure = null): void
+    {
+        $distribution = new JwDistribution();
+
+        $this->distributionRepository->expects(self::once())
+            ->method('findByAssetFileAndDistributionService')
+            ->with((string) $distributed->getId(), self::DISTRIBUTION_SERVICE)
+            ->willReturn(null);
+        $this->jwDistributionFacade->expects(self::once())
+            ->method('preparePayload')
+            ->with($distributed, self::DISTRIBUTION_SERVICE)
+            ->willReturn($distribution);
+        $distribute = $this->jwDistributionFacade->expects(self::once())
+            ->method('distribute')
+            ->with($distributed, $distribution);
+        if (null !== $failure) {
+            $distribute->willThrowException($failure);
+        }
+    }
+
+    private function expectMissingOriginDuplicateCallback(VideoFile $videoFile, string $originAssetFileId): void
+    {
+        $this->messageBus->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(
+                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                    && $message->assetId === (string) $videoFile->getAsset()->getId()
+                    && $message->status->is(MediaStatusType::VideoDuplicate)
+                    && null === $message->failureReason
+                    && null === $message->originAssetId
+                    && $message->originAssetFileId === $originAssetFileId
+            ))
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+    }
+
+    private function createUploadedDownloadVideo(string $caseKey): VideoFile
+    {
+        $file = new AdapterFile(
+            path: VideoFixtures::DATA_PATH . self::EXAMPLE_FILE_NAME,
+            adapterPath: self::EXAMPLE_FILE_NAME,
+            filesystem: $this->getService(FileSystemProvider::class)->createLocalFilesystem(VideoFixtures::DATA_PATH),
+        );
+        $licence = $this->getService(AssetLicenceRepository::class)->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        self::assertNotNull($licence);
+        $videoFile = $this->getService(VideoFactory::class)->createFromFile($file, $licence);
+        self::assertInstanceOf(VideoFile::class, $videoFile);
+        $videoFile->getAssetAttributes()
+            ->setStatus(AssetFileProcessStatus::Uploaded)
+            ->setCreateStrategy(AssetFileCreateStrategy::Download)
+            ->setOriginUrl(self::DOWNLOAD_URL . '&case=' . $caseKey);
+
+        return $videoFile;
     }
 
     private function presetOrigin(AssetFileProcessStatus $status): VideoFile
@@ -332,11 +482,11 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
     }
 
     private function presetDuplicateVideoFile(
-        string $originAssetId,
+        string $originAssetFileId,
         AssetFileCreateStrategy $createStrategy = AssetFileCreateStrategy::Download,
     ): VideoFile {
         $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Duplicate, $createStrategy);
-        $videoFile->getAssetAttributes()->setOriginAssetId($originAssetId);
+        $videoFile->getAssetAttributes()->setOriginAssetId($originAssetFileId);
 
         return $videoFile;
     }

@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Interfaces\FileSystemStorableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\NotifiableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
@@ -142,6 +143,11 @@ abstract class AssetFile implements
     public function getAssetAttributes(): AssetFileAttributes
     {
         return $this->assetAttributes;
+    }
+
+    public function isCreatedByDownload(): bool
+    {
+        return $this->assetAttributes->getCreateStrategy()->is(AssetFileCreateStrategy::Download);
     }
 
     public function setAssetAttributes(AssetFileAttributes $assetAttributes): static

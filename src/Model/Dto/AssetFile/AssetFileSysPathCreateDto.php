@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -41,10 +40,5 @@ final class AssetFileSysPathCreateDto extends AbstractAssetFileSysDto
     public function setGeneratePublicRoute(bool $generatePublicRoute): void
     {
         $this->generatePublicRoute = $generatePublicRoute;
-    }
-
-    public function getAssetType(): AssetType
-    {
-        return AssetType::Image;
     }
 }
