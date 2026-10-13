@@ -41,20 +41,10 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
 
     /**
      * @return T|null
-     */
-    public function findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?AssetFile
-    {
-        return $this->findOneBy([
-            'assetAttributes.originUrl' => $url,
-            'licence' => $licence,
-            'assetAttributes.status' => AssetFileProcessStatus::Processed,
-        ]);
-    }
-
-    /**
+     *
      * @throws NonUniqueResultException
      */
-    public function findOneNotFailedByUrlAndLicence(string $url, AssetLicence $licence): ?AssetFile
+    public function findOneInProgressOrProcessedByUrlAndLicence(string $url, AssetLicence $licence): ?AssetFile
     {
         return $this->createQueryBuilder('entity')
             ->andWhere('entity.assetAttributes.originUrl = :url')

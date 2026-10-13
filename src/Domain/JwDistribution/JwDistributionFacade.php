@@ -7,7 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Domain\JwDistribution;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\AbstractDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionBodyBuilder;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\JwTexts;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use Doctrine\ORM\NonUniqueResultException;
 
 class JwDistributionFacade extends AbstractDistributionFacade
@@ -30,6 +32,10 @@ class JwDistributionFacade extends AbstractDistributionFacade
             $assetFile->getAsset(),
             $distribution
         );
+
+        $texts = $distribution->getTexts();
+        $texts->setTitle(StringHelper::parseLength($texts->getTitle(), JwTexts::TITLE_LENGTH));
+        $texts->setDescription(StringHelper::parseLength($texts->getDescription(), JwTexts::DESCRIPTION_LENGTH));
 
         return $distribution;
     }
