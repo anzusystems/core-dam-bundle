@@ -106,6 +106,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
+            $this->getService(ResourceLocker::class),
         );
     }
 
@@ -228,22 +229,15 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         ?AssetFileProcessStatus $originStatus,
         AssetFileCreateStrategy $createStrategy,
         array $services,
-        bool $errorLogged,
     ): void {
         $origin = null === $originStatus ? null : $this->presetOrigin($originStatus);
         $originAssetFileId = null === $origin ? Uuid::v4()->toRfc4122() : (string) $origin->getId();
         $videoFile = $this->presetDuplicateVideoFile($originAssetFileId, $createStrategy);
 
         $this->expectNoDistribution();
-        $this->journalLogger->expects($errorLogged ? self::once() : self::never())->method('error');
+        $this->journalLogger->expects(self::never())->method('error');
         $this->statusFacade->expects(self::never())->method('storeAndProcess');
-        if ($createStrategy->isNot(AssetFileCreateStrategy::Download)) {
-            $this->messageBus->expects(self::never())->method('dispatch');
-        } elseif (null === $origin) {
-            $this->expectMissingOriginDuplicateCallback($videoFile, $originAssetFileId);
-        } else {
-            $this->expectDuplicateCallback($videoFile, $origin);
-        }
+        $this->expectDuplicateOutcome($videoFile, $origin, $createStrategy);
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
     }
@@ -255,37 +249,31 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
                 'originStatus' => AssetFileProcessStatus::Processed,
                 'createStrategy' => AssetFileCreateStrategy::Download,
                 'services' => [],
-                'errorLogged' => false,
             ],
             'origin not processed with services' => [
                 'originStatus' => AssetFileProcessStatus::Uploaded,
                 'createStrategy' => AssetFileCreateStrategy::Download,
                 'services' => [self::DISTRIBUTION_SERVICE],
-                'errorLogged' => true,
             ],
             'origin missing without services' => [
                 'originStatus' => null,
                 'createStrategy' => AssetFileCreateStrategy::Download,
                 'services' => [],
-                'errorLogged' => false,
             ],
             'origin missing with services' => [
                 'originStatus' => null,
                 'createStrategy' => AssetFileCreateStrategy::Download,
                 'services' => [self::DISTRIBUTION_SERVICE],
-                'errorLogged' => true,
             ],
             'non-download without services' => [
                 'originStatus' => AssetFileProcessStatus::Processed,
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
                 'services' => [],
-                'errorLogged' => false,
             ],
             'non-download with services' => [
                 'originStatus' => AssetFileProcessStatus::Processed,
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
                 'services' => [self::DISTRIBUTION_SERVICE],
-                'errorLogged' => false,
             ],
         ];
     }
@@ -294,18 +282,13 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
     public function testFailedDispatchesVideoFailedCallbackOnlyForDownload(
         array $services,
         AssetFileCreateStrategy $createStrategy,
-        bool $errorLogged,
     ): void {
         $videoFile = $this->presetFailedVideoFile($createStrategy);
 
-        $this->journalLogger->expects($errorLogged ? self::once() : self::never())->method('error');
+        $this->journalLogger->expects(self::never())->method('error');
         $this->expectNoDistribution();
         $this->statusFacade->expects(self::never())->method('storeAndProcess');
-        if ($createStrategy->is(AssetFileCreateStrategy::Download)) {
-            $this->expectFailedCallback($videoFile);
-        } else {
-            $this->messageBus->expects(self::never())->method('dispatch');
-        }
+        $this->expectFailedOutcome($videoFile, $createStrategy);
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, $services));
     }
@@ -316,22 +299,18 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             'download without services' => [
                 'services' => [],
                 'createStrategy' => AssetFileCreateStrategy::Download,
-                'errorLogged' => false,
             ],
             'download with services' => [
                 'services' => [self::DISTRIBUTION_SERVICE],
                 'createStrategy' => AssetFileCreateStrategy::Download,
-                'errorLogged' => true,
             ],
             'chunk without services' => [
                 'services' => [],
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
-                'errorLogged' => false,
             ],
             'chunk with services' => [
                 'services' => [self::DISTRIBUTION_SERVICE],
                 'createStrategy' => AssetFileCreateStrategy::Chunk,
-                'errorLogged' => false,
             ],
         ];
     }
@@ -356,6 +335,29 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
     }
 
+    public function testMessageForFileLockedByAnotherDeliveryFailsWithoutProcessing(): void
+    {
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
+        $resourceLocker = $this->getService(ResourceLocker::class);
+        $lockName = AssetFileChangeStateHandler::LOCK_PREFIX . $videoFile->getId();
+        $resourceLocker->lock($lockName, blocking: false);
+
+        $this->statusFacade->expects(self::never())->method('storeAndProcess');
+        $this->journalLogger->expects(self::never())->method('error');
+        $this->messageBus->expects(self::never())->method('dispatch');
+        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
+        $this->jwDistributionFacade->expects(self::never())->method('distribute');
+
+        try {
+            $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+            self::fail('A delivery for a locked file must fail so Pub/Sub retries it later.');
+        } catch (Throwable $exception) {
+            self::assertSame('locked_by_another_process', $exception->getMessage());
+        } finally {
+            $resourceLocker->unLock($lockName);
+        }
+    }
+
     public function testDuplicateCreatedByRealProducerCarriesOriginAssetAndFileIds(): void
     {
         $realHandler = new AssetFileChangeStateHandler(
@@ -364,6 +366,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
+            $this->getService(ResourceLocker::class),
         );
         $origin = $this->createUploadedDownloadVideo('real-producer-origin');
         $duplicate = $this->createUploadedDownloadVideo('real-producer-duplicate');
@@ -437,7 +440,37 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         }
     }
 
-    private function expectMissingOriginDuplicateCallback(VideoFile $videoFile, string $originAssetFileId): void
+    private function expectDuplicateOutcome(
+        VideoFile $videoFile,
+        ?VideoFile $origin,
+        AssetFileCreateStrategy $createStrategy,
+    ): void {
+        if ($createStrategy->isNot(AssetFileCreateStrategy::Download)) {
+            $this->messageBus->expects(self::never())->method('dispatch');
+
+            return;
+        }
+        if (null === $origin) {
+            $this->expectMissingOriginDuplicateCallback($videoFile);
+
+            return;
+        }
+
+        $this->expectDuplicateCallback($videoFile, $origin);
+    }
+
+    private function expectFailedOutcome(VideoFile $videoFile, AssetFileCreateStrategy $createStrategy): void
+    {
+        if ($createStrategy->isNot(AssetFileCreateStrategy::Download)) {
+            $this->messageBus->expects(self::never())->method('dispatch');
+
+            return;
+        }
+
+        $this->expectFailedCallback($videoFile);
+    }
+
+    private function expectMissingOriginDuplicateCallback(VideoFile $videoFile): void
     {
         $this->messageBus->expects(self::once())
             ->method('dispatch')
@@ -447,7 +480,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
                     && $message->status->is(MediaStatusType::VideoDuplicate)
                     && null === $message->failureReason
                     && null === $message->originAssetId
-                    && $message->originAssetFileId === $originAssetFileId
+                    && null === $message->originAssetFileId
             ))
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
     }

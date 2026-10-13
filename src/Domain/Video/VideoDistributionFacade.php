@@ -50,10 +50,6 @@ final class VideoDistributionFacade
      */
     public function ensureDistributed(VideoFile $videoFile, array $distributionServices): void
     {
-        if ([] === $distributionServices) {
-            return;
-        }
-
         foreach ($distributionServices as $distributionService) {
             $lockName = $this->getLockName($videoFile, $distributionService);
             $this->resourceLocker->lock($lockName);

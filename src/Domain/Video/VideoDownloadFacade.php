@@ -72,8 +72,8 @@ final class VideoDownloadFacade
         }
 
         match ($videoFile->getAssetAttributes()->getStatus()) {
-            AssetFileProcessStatus::Processed => $this->distributeOrReportFailure($videoFile, $distributionServices),
-            AssetFileProcessStatus::Failed => $this->handleFailed($videoFile, $distributionServices),
+            AssetFileProcessStatus::Processed => $this->handleProcessed($videoFile, $distributionServices),
+            AssetFileProcessStatus::Failed => $this->handleFailed($videoFile),
             AssetFileProcessStatus::Duplicate => $this->handleDuplicate($videoFile, $distributionServices),
             default => null,
         };
@@ -84,7 +84,7 @@ final class VideoDownloadFacade
      *
      * @throws NonUniqueResultException
      */
-    private function distributeOrReportFailure(VideoFile $videoFile, array $distributionServices): void
+    private function handleProcessed(VideoFile $videoFile, array $distributionServices): void
     {
         if ($this->tryEnsureDistributed($videoFile, $distributionServices)) {
             return;
@@ -119,20 +119,13 @@ final class VideoDownloadFacade
         }
     }
 
-    /**
-     * @param list<string> $distributionServices
-     */
-    private function handleFailed(VideoFile $videoFile, array $distributionServices): void
+    private function handleFailed(VideoFile $videoFile): void
     {
         $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
             $videoFile,
             MediaStatusType::VideoFailed,
             $videoFile->getAssetAttributes()->getFailReason()->toString(),
         ));
-
-        if ([] !== $distributionServices) {
-            $this->logDistributionNotStarted($videoFile, $distributionServices);
-        }
     }
 
     /**
@@ -142,39 +135,15 @@ final class VideoDownloadFacade
      */
     private function handleDuplicate(VideoFile $videoFile, array $distributionServices): void
     {
-        $originAssetFileId = $videoFile->getAssetAttributes()->getOriginAssetId();
-        $origin = $this->videoFileRepository->find($originAssetFileId);
-        $originProcessed = $origin instanceof VideoFile
-            && $origin->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed);
-
-        if ($originProcessed) {
+        $origin = $this->videoFileRepository->find($videoFile->getAssetAttributes()->getOriginAssetId());
+        if ($origin instanceof VideoFile && $origin->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
             $this->tryEnsureDistributed($origin, $distributionServices);
-        }
-        if (false === $originProcessed && [] !== $distributionServices) {
-            $this->logDistributionNotStarted($videoFile, $distributionServices);
         }
 
         $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
             $videoFile,
             MediaStatusType::VideoDuplicate,
             origin: $origin,
-            originAssetFileId: $originAssetFileId,
         ));
-    }
-
-    /**
-     * @param list<string> $distributionServices
-     */
-    private function logDistributionNotStarted(VideoFile $videoFile, array $distributionServices): void
-    {
-        $this->damLogger->error(
-            DamLogger::NAMESPACE_ASSET_FILE_DOWNLOAD,
-            sprintf(
-                'VideoFile (%s) in status (%s), requested distributions (%s) not started',
-                (string) $videoFile->getId(),
-                $videoFile->getAssetAttributes()->getStatus()->toString(),
-                implode(', ', $distributionServices)
-            )
-        );
     }
 }
