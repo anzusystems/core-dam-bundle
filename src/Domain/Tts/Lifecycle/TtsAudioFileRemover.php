@@ -50,12 +50,13 @@ final readonly class TtsAudioFileRemover
         $assetId = $audioFile->hasAsset() ? (string) $audioFile->getAsset()->getId() : 'orphaned';
         $expireAt = $audioFile->getExpireAt()?->format('c');
 
+        $this->entityManager->beginTransaction();
+
         try {
-            $this->entityManager->wrapInTransaction(function () use ($audioFile): void {
-                $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
-                $this->assetFileManager->delete($audioFile, flush: false);
-                $this->entityManager->flush();
-            });
+            $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
+            $this->assetFileManager->delete($audioFile, flush: false);
+            $this->entityManager->flush();
+            $this->entityManager->commit();
 
             $this->logger->info(DamLogger::NAMESPACE_TTS, 'audioFileRemover.removed', [
                 'audioFileId' => $audioFileId,
@@ -65,6 +66,11 @@ final readonly class TtsAudioFileRemover
 
             return true;
         } catch (Throwable $e) {
+            if ($this->entityManager->getConnection()->isTransactionActive()) {
+                $this->entityManager->rollback();
+            }
+            $this->entityManager->detach($audioFile);
+
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'audioFileRemover.removeFailed', [
                 'audioFileId' => $audioFileId,
                 'error' => $e->getMessage(),

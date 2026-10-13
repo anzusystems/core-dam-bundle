@@ -28,8 +28,10 @@ final readonly class AssetFileRouteGenerator
             );
         }
 
-        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAsset(
-            $route->getTargetAssetFile()->getAsset()
+        $assetFile = $route->getTargetAssetFile();
+        $config = $this->extSystemConfigurationProvider->getExtSystemConfigurationByAssetType(
+            $assetFile->getAssetType(),
+            $assetFile->getExtSystem()->getSlug()
         );
 
         if ($config instanceof AssetFileRouteConfigurableInterface) {

@@ -9,10 +9,13 @@ use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Exception\Handler\ValidationExceptionHandler;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
+use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceRetentionFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetSlot\AssetSlotFactory;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioFactory;
+use AnzuSystems\CoreDamBundle\Domain\Audio\AudioManager;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormFactory;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormManager;
 use AnzuSystems\CoreDamBundle\Domain\DistributionCategory\DistributionCategoryManager;
@@ -36,6 +39,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\JobFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\SystemUserFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsExpiredAudioFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsNarrationRequestFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\TtsVoiceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\UserFixtures;
@@ -105,6 +109,15 @@ return static function (ContainerConfigurator $configurator): void {
     $services->set(TtsNarrationRequestFixtures::class)
         ->arg('$dispatchFacade', service(TtsDispatchFacade::class))
         ->arg('$assetLicenceRepository', service(AssetLicenceRepository::class))
+        ->call('setEntityManager', [service(EntityManagerInterface::class)])
+        ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
+
+    $services->set(TtsExpiredAudioFixtures::class)
+        ->arg('$audioFactory', service(AudioFactory::class))
+        ->arg('$audioManager', service(AudioManager::class))
+        ->arg('$assetFileRouteManager', service(AssetFileRouteManager::class))
+        ->arg('$assetLicenceRepository', service(AssetLicenceRepository::class))
+        ->arg('$fileSystemProvider', service(FileSystemProvider::class))
         ->call('setEntityManager', [service(EntityManagerInterface::class)])
         ->tag(AnzuSystemsCommonBundle::TAG_DATA_FIXTURE);
 
