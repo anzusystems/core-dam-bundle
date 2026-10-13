@@ -9,13 +9,15 @@ use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
 use AnzuSystems\CoreDamBundle\Domain\Keyword\KeywordProvider;
-use AnzuSystems\CoreDamBundle\Domain\Video\VideoDistributionStarter;
+use AnzuSystems\CoreDamBundle\Domain\Video\VideoDistributionFacade;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\JwTexts;
 use AnzuSystems\CoreDamBundle\Entity\Keyword;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
@@ -29,8 +31,10 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysUrlCreateD
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\VideoFileSysUrlCreateDto;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
+use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Closure;
@@ -55,7 +59,8 @@ final class AssetSysFacade
         private readonly AuthorProvider $authorProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
         private readonly ImageFileRepository $imageFileRepository,
-        private readonly VideoDistributionStarter $videoDistributionStarter,
+        private readonly VideoFileRepository $videoFileRepository,
+        private readonly VideoDistributionFacade $videoDistributionFacade,
     ) {
     }
 
@@ -125,6 +130,21 @@ final class AssetSysFacade
     public function createVideoFromUrlDto(VideoFileSysUrlCreateDto $dto): VideoFile
     {
         $this->validator->validate($dto);
+
+        $hit = $this->videoFileRepository->findOneNotFailedByUrlAndLicence($dto->getUrl(), $dto->getLicence());
+        if ($hit instanceof VideoFile) {
+            $hitStatus = $hit->getAssetAttributes()->getStatus();
+            if ($hitStatus->is(AssetFileProcessStatus::Processed)) {
+                $this->videoDistributionFacade->ensureDistributed($hit, $dto->getDistributionServices());
+            }
+            if ($hitStatus->is(AssetFileProcessStatus::Uploaded)) {
+                $this->messageBus->dispatch(new VideoFileChangeStateMessage($hit, $dto->getDistributionServices()));
+            }
+
+            return $hit;
+        }
+
+        $this->cutJwTexts($dto);
         $imagePreview = null === $dto->getImagePreviewAssetFileId()
             ? null
             : $this->imageFileRepository->findProcessedByIdAndLicence($dto->getImagePreviewAssetFileId(), $dto->getLicence());
@@ -142,14 +162,8 @@ final class AssetSysFacade
             )
         );
 
-        $status = $videoFile->getAssetAttributes()->getStatus();
-        if ($status->is(AssetFileProcessStatus::Uploaded)) {
+        if ($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded)) {
             $this->messageBus->dispatch(new VideoFileChangeStateMessage($videoFile, $dto->getDistributionServices()));
-
-            return $videoFile;
-        }
-        if ($status->is(AssetFileProcessStatus::Processed) && [] !== $dto->getDistributionServices()) {
-            $this->videoDistributionStarter->start($videoFile, $dto->getDistributionServices());
         }
 
         return $videoFile;
@@ -212,6 +226,21 @@ final class AssetSysFacade
         $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
 
         return $assetFile;
+    }
+
+    private function cutJwTexts(VideoFileSysUrlCreateDto $dto): void
+    {
+        $customData = $dto->getCustomData();
+        foreach ([
+            StringIndexBuilder::TITLE_KEY => JwTexts::TITLE_MAX_LENGTH,
+            StringIndexBuilder::DESCRIPTION_KEY => JwTexts::DESCRIPTION_MAX_LENGTH,
+        ] as $key => $maxLength) {
+            if (is_string($customData[$key] ?? null)) {
+                $customData[$key] = StringHelper::parseLength($customData[$key], $maxLength);
+            }
+        }
+
+        $dto->setCustomData($customData);
     }
 
     private function generatePublicRoute(AssetFile $assetFile, bool $generatePublicRoute): void

@@ -6,8 +6,10 @@ namespace AnzuSystems\CoreDamBundle\Domain\Video;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiParams;
 use AnzuSystems\CommonBundle\ApiFilter\ApiResponseList;
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageDownloadFacade;
+use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
@@ -18,11 +20,14 @@ use AnzuSystems\CoreDamBundle\Repository\DistributionRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\NonUniqueResultException;
 use RuntimeException;
 use Throwable;
 
 final class VideoDistributionFacade
 {
+    private const string LOCK_PREFIX_NAME = 'video_distribution_';
+
     use IndexManagerAwareTrait;
     use MessageBusAwareTrait;
 
@@ -31,7 +36,43 @@ final class VideoDistributionFacade
         private readonly ImageDownloadFacade $imageDownloadFacade,
         private readonly VideoManager $videoManager,
         private readonly DistributionRepository $distributionRepository,
+        private readonly JwDistributionFacade $jwDistributionFacade,
+        private readonly ResourceLocker $resourceLocker,
     ) {
+    }
+
+    /**
+     * @param list<string> $distributionServices
+     *
+     * @throws NonUniqueResultException
+     */
+    public function ensureDistributed(VideoFile $videoFile, array $distributionServices): void
+    {
+        if ([] === $distributionServices) {
+            return;
+        }
+
+        foreach ($distributionServices as $distributionService) {
+            $lockName = $this->getLockName($videoFile, $distributionService);
+            $this->resourceLocker->lock($lockName);
+
+            try {
+                $existing = $this->distributionRepository->findByAssetFileAndDistributionService(
+                    (string) $videoFile->getId(),
+                    $distributionService
+                );
+                if (null !== $existing) {
+                    continue;
+                }
+
+                $this->jwDistributionFacade->distribute(
+                    $videoFile,
+                    $this->jwDistributionFacade->preparePayload($videoFile, $distributionService)
+                );
+            } finally {
+                $this->resourceLocker->unLock($lockName);
+            }
+        }
     }
 
     public function setDistributionPreview(VideoFile $video, Distribution $distribution): ImageFile
@@ -83,5 +124,10 @@ final class VideoDistributionFacade
         return (new ApiResponseList())
             ->setData($previewList)
             ->setTotalCount(count($previewList));
+    }
+
+    private function getLockName(VideoFile $videoFile, string $distributionService): string
+    {
+        return self::LOCK_PREFIX_NAME . $videoFile->getId() . '_' . $distributionService;
     }
 }

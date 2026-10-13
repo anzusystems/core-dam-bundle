@@ -10,8 +10,10 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ServiceLocator;
@@ -107,6 +109,21 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
             'callback_missing' => ['callbackThrows' => false],
             'callback_throws' => ['callbackThrows' => true],
         ];
+    }
+
+    public function testNotifyMediaStatusPassesOriginAssetIdToCallback(): void
+    {
+        $extSystem = $this->getService(ExtSystemRepository::class)->find(ExtSystemFixtures::ID_CMS);
+        self::assertInstanceOf(ExtSystem::class, $extSystem);
+        $callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $callback->expects(self::once())
+            ->method('notifyMediaStatus')
+            ->with('asset-1', MediaStatusType::VideoDuplicate, null, 'origin-asset-1');
+        $facade = $this->createFacade(new ServiceLocator([
+            $extSystem->getSlug() => static fn (): ExtSystemCallbackInterface => $callback,
+        ]));
+
+        $facade->notifyMediaStatus(ExtSystemFixtures::ID_CMS, 'asset-1', MediaStatusType::VideoDuplicate, null, 'origin-asset-1');
     }
 
     private function createFacade(ServiceLocator $locator): ExtSystemCallbackFacade

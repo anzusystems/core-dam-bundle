@@ -9,6 +9,8 @@ use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseCreated;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
+use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetSysFacade;
 use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
@@ -32,6 +34,7 @@ final class VideoController extends AbstractApiController
     }
 
     /**
+     * @throws AppReadOnlyModeException
      * @throws ValidationException
      * @throws AssetFileProcessFailed
      */
@@ -39,6 +42,7 @@ final class VideoController extends AbstractApiController
     #[OARequest(VideoFileSysUrlCreateDto::class), OAResponse(AssetFileSysDetailDecorator::class), OAResponseValidation, OAResponseCreated]
     public function createFromUrl(Request $request, #[SerializeParam] VideoFileSysUrlCreateDto $dto): JsonResponse
     {
+        App::throwOnReadOnlyMode();
         $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $dto);
         $videoFile = $this->assetSysFacade->createVideoFromUrlDto($dto);
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $videoFile);

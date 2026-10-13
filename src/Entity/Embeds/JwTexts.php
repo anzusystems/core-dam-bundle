@@ -13,15 +13,18 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Embeddable]
 class JwTexts
 {
+    public const int TITLE_MAX_LENGTH = 100;
+    public const int DESCRIPTION_MAX_LENGTH = 5_000;
+
     #[ORM\Column(type: Types::STRING, length: 128)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Length(max: 100, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[Assert\Length(max: self::TITLE_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     #[Serialize]
     private string $title;
 
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
-    #[Assert\Length(max: 5_000, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
-    #[ORM\Column(type: Types::STRING, length: 5_000)]
+    #[Assert\Length(max: self::DESCRIPTION_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    #[ORM\Column(type: Types::STRING, length: self::DESCRIPTION_MAX_LENGTH)]
     #[Serialize]
     private string $description;
 

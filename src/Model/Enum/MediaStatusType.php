@@ -11,4 +11,6 @@ namespace AnzuSystems\CoreDamBundle\Model\Enum;
 enum MediaStatusType: string
 {
     case GenerationFailed = 'generationFailed';
+    case VideoFailed = 'videoFailed';
+    case VideoDuplicate = 'videoDuplicate';
 }

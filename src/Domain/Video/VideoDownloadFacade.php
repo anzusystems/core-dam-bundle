@@ -11,13 +11,11 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
-use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
 use Closure;
 
 final readonly class VideoDownloadFacade
 {
     public function __construct(
-        private VideoFileRepository $videoFileRepository,
         private VideoFactory $videoFactory,
         private AssetFactory $assetFactory,
         private VideoManager $videoManager,
@@ -35,11 +33,6 @@ final readonly class VideoDownloadFacade
         ?ImageFile $imagePreview = null,
         ?Closure $setupData = null,
     ): VideoFile {
-        $videoFile = $this->videoFileRepository->findOneProcessedByUrlAndLicence($url, $assetLicence);
-        if ($videoFile) {
-            return $videoFile;
-        }
-
         $videoFile = $this->videoFactory->createFromUrl($assetLicence, $url);
         $this->assetFactory->createForAssetFile($videoFile, $videoFile->getLicence());
         $this->videoManager->create($videoFile, flush: false);

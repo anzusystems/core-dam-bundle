@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
+use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[AppAssert\VideoFileSysUrlCreate]
 final class VideoFileSysUrlCreateDto extends AbstractAssetFileSysUrlCreateDto
 {
+    #[Assert\Unique(message: ValidationException::ERROR_FIELD_UNIQUE)]
     #[Serialize]
     private array $distributionServices = [];
 
