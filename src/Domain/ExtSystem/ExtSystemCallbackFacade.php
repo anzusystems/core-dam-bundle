@@ -148,7 +148,7 @@ final class ExtSystemCallbackFacade
     ): void {
         $extSystem = $this->extSystemRepository->find($extSystemId);
         if (null === $extSystem) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.extSystemNotFound', [
+            $this->logger->warning(DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK, 'extSystemCallback.notifyMediaStatus.extSystemNotFound', [
                 'extSystemId' => $extSystemId,
                 'assetId' => $assetId,
             ]);
@@ -158,7 +158,7 @@ final class ExtSystemCallbackFacade
 
         $callback = $this->getCallback($extSystem->getSlug());
         if (null === $callback) {
-            $this->logger->warning(DamLogger::NAMESPACE_TTS, 'extSystemCallback.notifyMediaStatus.noCallbackRegistered', [
+            $this->logger->warning(DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK, 'extSystemCallback.notifyMediaStatus.noCallbackRegistered', [
                 'extSystemId' => $extSystemId,
                 'slug' => $extSystem->getSlug(),
                 'assetId' => $assetId,

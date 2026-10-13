@@ -130,28 +130,27 @@ final class AssetFileChangeStateHandler
      */
     private function handleDuplicate(VideoFile $videoFile, array $services): void
     {
+        $originMainFile = $this->isCreatedByDownload($videoFile)
+            ? $this->assetRepository->find($videoFile->getAssetAttributes()->getOriginAssetId())?->getMainFile()
+            : null;
+
+        $originProcessed = $originMainFile instanceof VideoFile
+            && $originMainFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed);
+
+        if ($originProcessed) {
+            $this->ensureDistributed($originMainFile, $services);
+        }
+        if (false === $originProcessed && [] !== $services) {
+            $this->logDistributionNotStarted($videoFile, $services);
+        }
+
         if ($this->isCreatedByDownload($videoFile)) {
-            $originAssetId = $videoFile->getAssetAttributes()->getOriginAssetId();
             $this->messageBus->dispatch(new MediaStatusCallbackMessage(
                 extSystemId: $videoFile->getExtSystem()->getId(),
                 assetId: (string) $videoFile->getAsset()->getId(),
                 status: MediaStatusType::VideoDuplicate,
-                originAssetId: $originAssetId,
+                originAssetId: $videoFile->getAssetAttributes()->getOriginAssetId(),
             ));
-
-            $originMainFile = $this->assetRepository->find($originAssetId)?->getMainFile();
-            if (
-                $originMainFile instanceof VideoFile
-                && $originMainFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)
-            ) {
-                $this->ensureDistributed($originMainFile, $services);
-
-                return;
-            }
-        }
-
-        if ([] !== $services) {
-            $this->logDistributionNotStarted($videoFile, $services);
         }
     }
 
