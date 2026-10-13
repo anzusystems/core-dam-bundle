@@ -123,6 +123,6 @@ final class TtsExpiredAudioFixtures extends AbstractFixtures
         $route->setTargetAssetFile($audio);
         $audio->getRoutes()->add($route);
 
-        $this->assetFileRouteManager->create($route, false);
+        $this->assetFileRouteManager->create($route, flush: false);
     }
 }
