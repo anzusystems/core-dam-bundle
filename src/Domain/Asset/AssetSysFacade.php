@@ -24,6 +24,7 @@ use AnzuSystems\CoreDamBundle\Exception\AssetFileProcessFailed;
 use AnzuSystems\CoreDamBundle\Exception\InvalidMimeTypeException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysDto;
@@ -31,7 +32,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysUrlCreateD
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\VideoFileSysUrlCreateDto;
-use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
@@ -133,18 +133,16 @@ final class AssetSysFacade
 
         $hit = $this->videoFileRepository->findOneNotFailedByUrlAndLicence($dto->getUrl(), $dto->getLicence());
         if ($hit instanceof VideoFile) {
-            $hitStatus = $hit->getAssetAttributes()->getStatus();
-            if ($hitStatus->is(AssetFileProcessStatus::Processed)) {
+            if ($hit->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
                 $this->videoDistributionFacade->ensureDistributed($hit, $dto->getDistributionServices());
-            }
-            if ($hitStatus->is(AssetFileProcessStatus::Uploaded)) {
-                $this->messageBus->dispatch(new VideoFileChangeStateMessage($hit, $dto->getDistributionServices()));
             }
 
             return $hit;
         }
 
-        $this->cutJwTexts($dto);
+        if ([] !== $dto->getDistributionServices()) {
+            $this->cutJwTexts($dto);
+        }
         $imagePreview = null === $dto->getImagePreviewAssetFileId()
             ? null
             : $this->imageFileRepository->findProcessedByIdAndLicence($dto->getImagePreviewAssetFileId(), $dto->getLicence());

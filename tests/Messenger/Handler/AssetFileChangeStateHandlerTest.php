@@ -187,6 +187,26 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
     }
 
+    public function testDuplicateWithFailingDistributionSendsNoCallback(): void
+    {
+        $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);
+        $videoFile = $this->presetDuplicateVideoFile((string) $origin->getAsset()->getId());
+
+        $this->distributionRepository->expects(self::once())
+            ->method('findByAssetFileAndDistributionService')
+            ->willReturn(null);
+        $this->jwDistributionFacade->expects(self::once())->method('preparePayload')->willReturn(new JwDistribution());
+        $this->jwDistributionFacade->expects(self::once())
+            ->method('distribute')
+            ->willThrowException(new Exception('jw down'));
+        $this->journalLogger->expects(self::once())->method('error');
+        $this->messageBus->expects(self::never())->method('dispatch');
+
+        $this->expectException(RuntimeException::class);
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
     public function testDuplicateWithoutServicesOnlyDispatchesCallback(): void
     {
         $origin = $this->presetOrigin(AssetFileProcessStatus::Processed);

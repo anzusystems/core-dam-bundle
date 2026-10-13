@@ -98,7 +98,7 @@ final class VideoControllerTest extends AbstractApiController
         self::assertCount(1, $this->distributionRepository->findByAssetFile($firstData['id']));
     }
 
-    public function testCreateFromUrlDedupWhileUploadedRedispatchesAndDistributes(): void
+    public function testCreateFromUrlDedupWhileUploadedDoesNothing(): void
     {
         $client = $this->getApiClient(User::ID_CMS_USER);
         $url = self::uniqueUrl('dedup-uploaded');
@@ -117,8 +117,8 @@ final class VideoControllerTest extends AbstractApiController
         self::assertCount(1, $this->videoFileRepository->findBy(['assetAttributes.originUrl' => $url]));
         $videoFile = $this->videoFileRepository->find($firstData['id']);
         self::assertInstanceOf(VideoFile::class, $videoFile);
-        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
-        self::assertCount(1, $this->distributionRepository->findByAssetFile($firstData['id']));
+        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Uploaded));
+        self::assertCount(0, $this->distributionRepository->findByAssetFile($firstData['id']));
     }
 
     public function testCreateFromUrlDedupWhileStoredDoesNothing(): void
@@ -191,6 +191,20 @@ final class VideoControllerTest extends AbstractApiController
         self::assertInstanceOf(JwDistribution::class, $distribution);
         self::assertSame(JwTexts::TITLE_MAX_LENGTH, mb_strlen($distribution->getTexts()->getTitle()));
         self::assertSame(JwTexts::DESCRIPTION_MAX_LENGTH, mb_strlen($distribution->getTexts()->getDescription()));
+    }
+
+    public function testCreateFromUrlKeepsJwTextsWithoutDistribution(): void
+    {
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(
+            VideoSysUrl::createFromUrl(),
+            $this->payload(self::uniqueUrl('keep-texts'), [
+                'customData' => ['title' => str_repeat('t', 150)],
+            ])
+        );
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        $data = json_decode((string) $response->getContent(), true);
+        self::assertSame(150, mb_strlen($data['customData']['title']));
     }
 
     public function testCreateFromUrlInvalidDistributionService(): void
