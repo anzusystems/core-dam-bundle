@@ -27,7 +27,6 @@ final readonly class MediaStatusCallbackMessage
         MediaStatusType $status,
         ?string $failureReason = null,
         ?VideoFile $origin = null,
-        ?string $originAssetFileId = null,
     ): self {
         return new self(
             extSystemId: $videoFile->getExtSystem()->getId(),
@@ -35,7 +34,7 @@ final readonly class MediaStatusCallbackMessage
             status: $status,
             failureReason: $failureReason,
             originAssetId: $origin instanceof VideoFile ? (string) $origin->getAsset()->getId() : null,
-            originAssetFileId: $origin instanceof VideoFile ? (string) $origin->getId() : $originAssetFileId,
+            originAssetFileId: $origin instanceof VideoFile ? (string) $origin->getId() : null,
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -26,12 +27,18 @@ use Throwable;
 
 final class AssetFileChangeStateHandler
 {
+    public const string LOCK_PREFIX = 'asset_file_change_state_';
+    // Covers a download (UrlFileFactory, 600 s) plus ffmpeg (300 s): a redelivery after the Pub/Sub
+    // ack deadline fails to lock and is retried later instead of processing the same file twice.
+    private const float LOCK_TTL = 1_800.0;
+
     public function __construct(
         private readonly AssetFileRepository $assetFileRepository,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly DamLogger $damLogger,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
+        private readonly ResourceLocker $resourceLocker,
     ) {
     }
 
@@ -86,12 +93,30 @@ final class AssetFileChangeStateHandler
      */
     private function handleAssetFile(AbstractAssetFileMessage $message): ?AssetFile
     {
-        $assetFile = $this->assetFileRepository->find($message->getAssetId());
+        $lockName = self::LOCK_PREFIX . $message->getAssetId();
+        $this->resourceLocker->lock($lockName, blocking: false, ttl: self::LOCK_TTL);
 
-        if (null === $assetFile) {
-            return null;
+        try {
+            $assetFile = $this->assetFileRepository->find($message->getAssetId());
+            if (null === $assetFile) {
+                return null;
+            }
+
+            $this->changeState($assetFile);
+        } finally {
+            $this->resourceLocker->unLock($lockName);
         }
 
+        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
+
+        return $assetFile;
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    private function changeState(AssetFile $assetFile): void
+    {
         try {
             match ($assetFile->getAssetAttributes()->getStatus()) {
                 AssetFileProcessStatus::Uploaded => $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile),
@@ -120,10 +145,6 @@ final class AssetFileChangeStateHandler
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);
         }
-
-        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
-
-        return $assetFile;
     }
 
     /**
