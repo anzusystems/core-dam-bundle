@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
  * @method VideoFile|null findOneBy($id, $lockMode = null, $lockVersion = null)
  * @method VideoFile|null findProcessedById(string $id)
  * @method VideoFile|null findProcessedByIdAndFilename(string $id, string $slug)
- * @method VideoFile|null findOneProcessedByUrlAndLicence(string $url, AssetLicence $licence)
+ * @method VideoFile|null findOneNotFailedByUrlAndLicence(string $url, AssetLicence $licence)
  */
 final class VideoFileRepository extends AbstractAssetFileRepository
 {

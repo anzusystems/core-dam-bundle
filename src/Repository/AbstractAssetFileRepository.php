@@ -54,6 +54,28 @@ abstract class AbstractAssetFileRepository extends AbstractAnzuRepository
     /**
      * @throws NonUniqueResultException
      */
+    public function findOneNotFailedByUrlAndLicence(string $url, AssetLicence $licence): ?AssetFile
+    {
+        return $this->createQueryBuilder('entity')
+            ->andWhere('entity.assetAttributes.originUrl = :url')
+            ->andWhere('entity.licence = :licence')
+            ->andWhere('entity.assetAttributes.status IN (:statuses)')
+            ->setParameter('url', $url)
+            ->setParameter('licence', $licence)
+            ->setParameter('statuses', [
+                AssetFileProcessStatus::Uploaded,
+                AssetFileProcessStatus::Stored,
+                AssetFileProcessStatus::Processed,
+            ])
+            ->addOrderBy('entity.createdAt', Criteria::DESC)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * @throws NonUniqueResultException
+     */
     public function findProcessedById(string $id): ?AssetFile
     {
         return $this->createQueryBuilder('entity')

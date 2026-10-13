@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\IndexBuilder\StringIndexBuilder;
 use AnzuSystems\CoreDamBundle\Domain\CustomForm\CustomFormProvider;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetCustomFormProvidableDto;
@@ -21,11 +22,6 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 final class VideoFileSysUrlCreateValidator extends ConstraintValidator
 {
-    private const int TITLE_MAX_LENGTH = 100;
-    private const int DESCRIPTION_MAX_LENGTH = 5_000;
-    private const string TITLE = 'title';
-    private const string DESCRIPTION = 'description';
-
     public function __construct(
         private readonly ExtSystemConfigurationProvider $extSystemConfigurationProvider,
         private readonly DistributionConfigurationProvider $distributionConfigurationProvider,
@@ -81,11 +77,11 @@ final class VideoFileSysUrlCreateValidator extends ConstraintValidator
 
     private function validateTexts(VideoFileSysUrlCreateDto $dto): void
     {
-        $this->validateText($dto->getCustomData()[self::TITLE] ?? null, self::TITLE_MAX_LENGTH);
-        $this->validateText($dto->getCustomData()[self::DESCRIPTION] ?? null, self::DESCRIPTION_MAX_LENGTH);
+        $this->validateText($dto->getCustomData()[StringIndexBuilder::TITLE_KEY] ?? null);
+        $this->validateText($dto->getCustomData()[StringIndexBuilder::DESCRIPTION_KEY] ?? null);
     }
 
-    private function validateText(mixed $text, int $maxLength): void
+    private function validateText(mixed $text): void
     {
         if (false === is_string($text)) {
             $this->addViolation(ValidationException::ERROR_FIELD_INVALID, 'customData');
@@ -94,11 +90,6 @@ final class VideoFileSysUrlCreateValidator extends ConstraintValidator
         }
         if (App::EMPTY_STRING === trim($text)) {
             $this->addViolation(ValidationException::ERROR_FIELD_EMPTY, 'customData');
-
-            return;
-        }
-        if (mb_strlen($text) > $maxLength) {
-            $this->addViolation(ValidationException::ERROR_FIELD_LENGTH_MAX, 'customData');
         }
     }
 
@@ -128,8 +119,8 @@ final class VideoFileSysUrlCreateValidator extends ConstraintValidator
         }
 
         if (
-            false === in_array(self::TITLE, $properties, true) ||
-            false === in_array(self::DESCRIPTION, $properties, true)
+            false === in_array(StringIndexBuilder::TITLE_KEY, $properties, true) ||
+            false === in_array(StringIndexBuilder::DESCRIPTION_KEY, $properties, true)
         ) {
             $this->addViolation(ValidationException::ERROR_FIELD_INVALID, 'customData');
         }

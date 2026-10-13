@@ -144,6 +144,7 @@ final class ExtSystemCallbackFacade
         string $assetId,
         MediaStatusType $status,
         ?string $failureReason,
+        ?string $originAssetId = null,
     ): void {
         $extSystem = $this->extSystemRepository->find($extSystemId);
         if (null === $extSystem) {
@@ -166,7 +167,7 @@ final class ExtSystemCallbackFacade
             return;
         }
 
-        $callback->notifyMediaStatus($assetId, $status, $failureReason);
+        $callback->notifyMediaStatus($assetId, $status, $failureReason, $originAssetId);
     }
 
     /**
