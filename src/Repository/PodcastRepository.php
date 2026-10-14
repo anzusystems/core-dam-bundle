@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Podcast;
 use AnzuSystems\CoreDamBundle\Model\Enum\PodcastImportMode;
 use Doctrine\Common\Collections\Order;
@@ -43,6 +44,8 @@ class PodcastRepository extends AbstractAnzuRepository
     public function findOneFrom(?string $idFrom = null, ?PodcastImportMode $mode = null): ?Podcast
     {
         $qb = $this->createQueryBuilder('entity')
+            ->andWhere('entity.attributes.rssUrl != :emptyRssUrl')
+            ->setParameter('emptyRssUrl', App::EMPTY_STRING)
             ->setMaxResults(1)
             ->orderBy('entity.id', Order::Ascending->value);
 

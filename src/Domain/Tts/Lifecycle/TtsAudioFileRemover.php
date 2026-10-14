@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetFileRoute\AssetFileRouteFacade;
 use AnzuSystems\CoreDamBundle\Entity\AudioFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Throwable;
 
 /** Hard-removes TTS audio files: CDN purge → file row → stashed master bytes. Per-file transactions; stash flushed once. */
@@ -21,6 +22,7 @@ final readonly class TtsAudioFileRemover
         private FileStash $fileStash,
         private EntityManagerInterface $entityManager,
         private DamLogger $logger,
+        private ManagerRegistry $managerRegistry,
     ) {
     }
 
@@ -47,16 +49,17 @@ final readonly class TtsAudioFileRemover
     private function removeOne(AudioFile $audioFile): bool
     {
         $audioFileId = (string) $audioFile->getId();
-        $assetId = $audioFile->hasAsset() ? (string) $audioFile->getAsset()->getId() : 'orphaned';
-        $expireAt = $audioFile->getExpireAt()?->format('c');
-
-        $this->entityManager->beginTransaction();
 
         try {
-            $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
-            $this->assetFileManager->delete($audioFile, flush: false);
-            $this->entityManager->flush();
-            $this->entityManager->commit();
+            $audioFile = $this->entityManager->getReference(AudioFile::class, $audioFile->getId());
+            $assetId = $audioFile->hasAsset() ? (string) $audioFile->getAsset()->getId() : 'orphaned';
+            $expireAt = $audioFile->getExpireAt()?->format('c');
+
+            $this->entityManager->wrapInTransaction(function () use ($audioFile): void {
+                $this->routeFacade->dispatchRoutePurgeForAssetFiles([$audioFile]);
+                $this->assetFileManager->delete($audioFile, flush: false);
+                $this->entityManager->flush();
+            });
 
             $this->logger->info(DamLogger::NAMESPACE_TTS, 'audioFileRemover.removed', [
                 'audioFileId' => $audioFileId,
@@ -66,10 +69,9 @@ final readonly class TtsAudioFileRemover
 
             return true;
         } catch (Throwable $e) {
-            if ($this->entityManager->getConnection()->isTransactionActive()) {
-                $this->entityManager->rollback();
+            if (false === $this->entityManager->isOpen()) {
+                $this->managerRegistry->resetManager();
             }
-            $this->entityManager->detach($audioFile);
 
             $this->logger->warning(DamLogger::NAMESPACE_TTS, 'audioFileRemover.removeFailed', [
                 'audioFileId' => $audioFileId,
