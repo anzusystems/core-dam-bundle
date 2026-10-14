@@ -26,10 +26,7 @@ final class PodcastRepositoryTest extends CoreDamKernelTestCase
     #[DataProvider('firstPodcastToImportDataProvider')]
     public function testFindOneFromSkipsPodcastWithoutRssUrl(string $firstPodcastRssUrl, string $expectedPodcastId): void
     {
-        $firstPodcast = $this->repository->find(PodcastFixtures::PODCAST_3);
-        self::assertInstanceOf(Podcast::class, $firstPodcast);
-        $firstPodcast->getAttributes()->setRssUrl($firstPodcastRssUrl);
-        $this->entityManager->flush();
+        $this->prepareFirstPodcastRssUrl($firstPodcastRssUrl);
 
         $found = $this->repository->findOneFrom(mode: PodcastImportMode::Import);
 
@@ -49,5 +46,13 @@ final class PodcastRepositoryTest extends CoreDamKernelTestCase
                 'expectedPodcastId' => PodcastFixtures::PODCAST_1,
             ],
         ];
+    }
+
+    private function prepareFirstPodcastRssUrl(string $rssUrl): void
+    {
+        $firstPodcast = $this->repository->find(PodcastFixtures::PODCAST_3);
+        self::assertInstanceOf(Podcast::class, $firstPodcast);
+        $firstPodcast->getAttributes()->setRssUrl($rssUrl);
+        $this->entityManager->flush();
     }
 }
