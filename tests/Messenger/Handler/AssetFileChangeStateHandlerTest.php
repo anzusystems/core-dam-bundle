@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Domain\User\CurrentAnzuUserProvider;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Log\Factory\LogContextFactory;
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Distribution\ModuleProvider;
@@ -333,6 +334,39 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
 
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+    }
+
+    public function testFailedProcessingReleasesLockSoRedeliveryProcessesFile(): void
+    {
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
+        $attempt = App::ZERO;
+
+        $this->statusFacade->expects(self::exactly(2))
+            ->method('storeAndProcess')
+            ->willReturnCallback(static function (VideoFile $assetFile) use (&$attempt): VideoFile {
+                $attempt++;
+                if (1 === $attempt) {
+                    throw new RuntimeException('storage_unavailable');
+                }
+                $assetFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Processed);
+
+                return $assetFile;
+            });
+        $this->journalLogger->expects(self::once())->method('error');
+        $this->messageBus->expects(self::never())->method('dispatch');
+        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
+        $this->jwDistributionFacade->expects(self::never())->method('distribute');
+
+        try {
+            $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+            self::fail('A failed processing must fail the delivery so Pub/Sub retries it.');
+        } catch (RuntimeException $exception) {
+            self::assertSame('storage_unavailable', $exception->getMessage());
+        }
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
+
+        self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
     }
 
     public function testMessageForFileLockedByAnotherDeliveryFailsWithoutProcessing(): void

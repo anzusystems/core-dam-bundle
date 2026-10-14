@@ -24,7 +24,7 @@ use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
  * Seeds two expired TTS audio files for {@see TtsClearExpiredAudioCommandTest}: an orphan (asset FK `NULL`, as left by legacy deletes)
- * with a main route that is reaped first, and a superseded master.
+ * reaped first, and a superseded master; both keep their main route.
  *
  * @extends AbstractFixtures<AudioFile>
  */
@@ -71,7 +71,8 @@ final class TtsExpiredAudioFixtures extends AbstractFixtures
 
         $orphan = $this->createExpiredAudio($licence, self::ORPHAN_AUDIO_ID, '-2 days');
         $superseded = $this->createExpiredAudio($licence, self::SUPERSEDED_AUDIO_ID, '-1 day');
-        $this->createMainRoute($orphan);
+        $this->createMainRoute($orphan, 'tts-expired-orphan');
+        $this->createMainRoute($superseded, 'tts-expired-superseded');
         $this->entityManager->flush();
 
         // Seeds the production states the reaper meets: a legacy orphan (asset row deleted before asset deletion removed
@@ -108,14 +109,14 @@ final class TtsExpiredAudioFixtures extends AbstractFixtures
         return $this->audioManager->create($audio);
     }
 
-    private function createMainRoute(AudioFile $audio): void
+    private function createMainRoute(AudioFile $audio, string $slug): void
     {
         $route = (new AssetFileRoute())
             ->setUri(
                 (new RouteUri())
-                    ->setSlug('tts-expired-orphan')
+                    ->setSlug($slug)
                     ->setMain(true)
-                    ->setPath('tts/expired-orphan.mp3')
+                    ->setPath('tts/' . $slug . '.mp3')
             )
             ->setMode(RouteMode::Direct)
             ->setStatus(RouteStatus::Active)
