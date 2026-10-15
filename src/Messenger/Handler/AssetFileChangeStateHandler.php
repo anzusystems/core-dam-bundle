@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
-use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -27,18 +26,12 @@ use Throwable;
 
 final class AssetFileChangeStateHandler
 {
-    public const string LOCK_PREFIX = 'asset_file_change_state_';
-    // Covers a download (UrlFileFactory::TIMEOUT) plus ffmpeg (FfmpegService::MEASURE_TIMEOUT_SECONDS):
-    // a redelivery after the Pub/Sub ack deadline fails to lock and is retried later.
-    private const float LOCK_TTL = 1_800.0;
-
     public function __construct(
         private readonly AssetFileRepository $assetFileRepository,
         private readonly AssetFileStatusFacadeProvider $facadeProvider,
         private readonly DamLogger $damLogger,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
-        private readonly ResourceLocker $resourceLocker,
     ) {
     }
 
@@ -49,15 +42,7 @@ final class AssetFileChangeStateHandler
     #[AsMessageHandler]
     public function handleVideoFile(VideoFileChangeStateMessage $message): void
     {
-        $lockName = self::LOCK_PREFIX . $message->getAssetId();
-        $this->resourceLocker->lock($lockName, blocking: false, ttl: self::LOCK_TTL);
-
-        try {
-            $assetFile = $this->handleAssetFile($message);
-        } finally {
-            $this->resourceLocker->unLock($lockName);
-        }
-
+        $assetFile = $this->handleAssetFile($message);
         if (false === ($assetFile instanceof VideoFile)) {
             return;
         }

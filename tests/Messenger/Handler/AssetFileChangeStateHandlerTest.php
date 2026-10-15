@@ -107,7 +107,6 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
-            $this->getService(ResourceLocker::class),
         );
     }
 
@@ -336,7 +335,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
     }
 
-    public function testFailedProcessingReleasesLockSoRedeliveryProcessesFile(): void
+    public function testFailedProcessingLetsRedeliveryProcessFile(): void
     {
         $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
         $attempt = App::ZERO;
@@ -369,29 +368,6 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
     }
 
-    public function testMessageForFileLockedByAnotherDeliveryFailsWithoutProcessing(): void
-    {
-        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
-        $resourceLocker = $this->getService(ResourceLocker::class);
-        $lockName = AssetFileChangeStateHandler::LOCK_PREFIX . $videoFile->getId();
-        $resourceLocker->lock($lockName, blocking: false);
-
-        $this->statusFacade->expects(self::never())->method('storeAndProcess');
-        $this->journalLogger->expects(self::never())->method('error');
-        $this->messageBus->expects(self::never())->method('dispatch');
-        $this->distributionRepository->expects(self::never())->method('findByAssetFileAndDistributionService');
-        $this->jwDistributionFacade->expects(self::never())->method('distribute');
-
-        try {
-            $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile));
-            self::fail('A delivery for a locked file must fail so Pub/Sub retries it later.');
-        } catch (Throwable $exception) {
-            self::assertSame('locked_by_another_process', $exception->getMessage());
-        } finally {
-            $resourceLocker->unLock($lockName);
-        }
-    }
-
     public function testDuplicateCreatedByRealProducerCarriesOriginAssetAndFileIds(): void
     {
         $realHandler = new AssetFileChangeStateHandler(
@@ -400,7 +376,6 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
-            $this->getService(ResourceLocker::class),
         );
         $origin = $this->createUploadedDownloadVideo('real-producer-origin');
         $duplicate = $this->createUploadedDownloadVideo('real-producer-duplicate');
