@@ -149,8 +149,21 @@ final class AssetSysFacade
      */
     public function createFromDto(AssetFile $assetFile, AbstractAssetFileSysDto $dto): AssetFile
     {
-        $this->setupCustomData($assetFile, $dto);
-        $this->makePublicIfRequested($assetFile, $dto);
+        $this->assetMetadataManager->updateFromCustomData(
+            $assetFile->getAsset(),
+            [
+                ...$assetFile->getAsset()->getMetadata()->getCustomData(),
+                ...$dto->getCustomData(),
+            ]
+        );
+        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
+
+        if (
+            $dto->isGeneratePublicRoute() &&
+            empty($assetFile->getAssetAttributes()->getOriginAssetId())
+        ) {
+            $this->assetFileRouteFacade->makePublicAssetFile($assetFile);
+        }
 
         return $assetFile;
     }
