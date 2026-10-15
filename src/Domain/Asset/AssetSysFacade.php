@@ -84,17 +84,27 @@ final class AssetSysFacade
     {
         $this->validator->validate($dto);
 
-        return $this->createFromUrl(
-            fn (): AssetFile => $this->imageDownloadFacade->downloadSynchronous(
+        return $this->createFromUrl(function () use ($dto): AssetFile {
+            $createdFile = null;
+            $assetFile = $this->imageDownloadFacade->downloadSynchronous(
                 assetLicence: $dto->getLicence(),
                 url: $dto->getUrl(),
-                setupData: function (AssetFile $assetFile) use ($dto): void {
-                    $this->createFromDto($assetFile, $dto);
+                setupData: function (AssetFile $assetFile) use ($dto, &$createdFile): void {
+                    $createdFile = $assetFile;
+                    $this->setupCustomData($assetFile, $dto);
                     $this->setupKeywords($assetFile, $dto);
                     $this->setupAuthors($assetFile, $dto);
                 }
-            )
-        );
+            );
+
+            // The route needs a processed file, so it is made after the download; a dedup hit or the origin
+            // of a duplicate is an existing file and keeps its routes.
+            if ($createdFile === $assetFile) {
+                $this->makePublicIfRequested($assetFile, $dto);
+            }
+
+            return $assetFile;
+        });
     }
 
     /**
@@ -139,21 +149,8 @@ final class AssetSysFacade
      */
     public function createFromDto(AssetFile $assetFile, AbstractAssetFileSysDto $dto): AssetFile
     {
-        $this->assetMetadataManager->updateFromCustomData(
-            $assetFile->getAsset(),
-            [
-                ...$assetFile->getAsset()->getMetadata()->getCustomData(),
-                ...$dto->getCustomData(),
-            ]
-        );
-        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
-
-        if (
-            $dto->isGeneratePublicRoute() &&
-            empty($assetFile->getAssetAttributes()->getOriginAssetId())
-        ) {
-            $this->assetFileRouteFacade->makePublicAssetFile($assetFile);
-        }
+        $this->setupCustomData($assetFile, $dto);
+        $this->makePublicIfRequested($assetFile, $dto);
 
         return $assetFile;
     }
@@ -225,5 +222,27 @@ final class AssetSysFacade
         $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
 
         return $assetFile;
+    }
+
+    private function setupCustomData(AssetFile $assetFile, AbstractAssetFileSysDto $dto): void
+    {
+        $this->assetMetadataManager->updateFromCustomData(
+            $assetFile->getAsset(),
+            [
+                ...$assetFile->getAsset()->getMetadata()->getCustomData(),
+                ...$dto->getCustomData(),
+            ]
+        );
+        $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
+    }
+
+    private function makePublicIfRequested(AssetFile $assetFile, AbstractAssetFileSysDto $dto): void
+    {
+        if (
+            $dto->isGeneratePublicRoute() &&
+            empty($assetFile->getAssetAttributes()->getOriginAssetId())
+        ) {
+            $this->assetFileRouteFacade->makePublicAssetFile($assetFile);
+        }
     }
 }

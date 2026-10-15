@@ -138,6 +138,26 @@ final class AssetFileControllerTest extends AbstractAssetFileApiController
         $this->assertAuthorExists('New author');
     }
 
+    public function testCreateFromUrlWithPublicRouteMakesProcessedFilePublic(): void
+    {
+        $client = $this->getApiClient(User::ID_CMS_USER);
+        $response = $client->post(AssetFileSysUrl::createFromUrl(), [
+            'licence' => 100_000,
+            'url' => 'http://core-dam.sme.localhost/download-file?file=50x50&route=public',
+            'customData' => [
+                'title' => 'Titulok',
+            ],
+            'generatePublicRoute' => true,
+        ]);
+
+        $this->assertEquals(Response::HTTP_OK, $response->getStatusCode(), $response->getContent());
+        $responseData = json_decode($response->getContent(), true);
+
+        $this->assertNotNull(
+            static::getContainer()->get(AssetFileRouteRepository::class)->findMainByAssetFile($responseData['id'])
+        );
+    }
+
     public function testCreateFromUrlDedupKeepsRoute(): void
     {
         $client = $this->getApiClient(User::ID_CMS_USER);
