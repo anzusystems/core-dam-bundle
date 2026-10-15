@@ -7,6 +7,9 @@ namespace AnzuSystems\CoreDamBundle\Tests\Event\Subscriber;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionManagerProvider;
+use AnzuSystems\CoreDamBundle\Domain\Distribution\DistributionStatusFacade;
+use AnzuSystems\CoreDamBundle\Domain\JwDistribution\JwDistributionFacade;
 use AnzuSystems\CoreDamBundle\Entity\Distribution;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
@@ -29,6 +32,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 final class DistributionStatusEventSubscriberTest extends CoreDamKernelTestCase
 {
     private const string JW_EXT_ID = 'jw-media-1';
+    private const string DISTRIBUTION_SERVICE = 'jw_cms_main';
     private const string ORIGIN_URL = 'http://core-dam.sme.localhost/download-file?file=video_example.mp4';
 
     private DistributionStatusEventSubscriber $subscriber;
@@ -58,21 +62,17 @@ final class DistributionStatusEventSubscriberTest extends CoreDamKernelTestCase
         $this->prepareVideoFile($createStrategy, $originUrl);
         $videoFile = $this->videoFile;
 
-        if ($dispatches) {
-            $this->messageBus->expects(self::once())
-                ->method('dispatch')
-                ->with(self::callback(
-                    static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
-                        && $message->extSystemId === $videoFile->getExtSystem()->getId()
-                        && $message->assetId === (string) $videoFile->getAsset()->getId()
-                        && $message->status->is(MediaStatusType::VideoFailed)
-                        && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
-                        && null === $message->originAssetId
-                ))
-                ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
-        } else {
-            $this->messageBus->expects(self::never())->method('dispatch');
-        }
+        $this->messageBus->expects($dispatches ? self::once() : self::never())
+            ->method('dispatch')
+            ->with(self::callback(
+                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                    && $message->extSystemId === $videoFile->getExtSystem()->getId()
+                    && $message->assetId === (string) $videoFile->getAsset()->getId()
+                    && $message->status->is(MediaStatusType::VideoFailed)
+                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+                    && null === $message->originAssetId
+            ))
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
 
         $this->subscriber->distributionStatusEvent(
             new DistributionStatusEvent($this->createDistribution($this->presetJwDistribution($extId)), $status)
@@ -125,6 +125,27 @@ final class DistributionStatusEventSubscriberTest extends CoreDamKernelTestCase
                 'dispatches' => false,
             ],
         ];
+    }
+
+    public function testDistributionStatusFacadeToFailedDispatchesVideoFailedForDownloadedVideoWithoutExtId(): void
+    {
+        $this->prepareVideoFile(AssetFileCreateStrategy::Download, self::ORIGIN_URL);
+        $videoFile = $this->videoFile;
+        $distribution = $this->getService(JwDistributionFacade::class)
+            ->preparePayload($videoFile, self::DISTRIBUTION_SERVICE);
+        $this->getService(DistributionManagerProvider::class)->get(JwDistribution::class)->create($distribution);
+
+        $this->messageBus->expects(self::once())
+            ->method('dispatch')
+            ->with(self::callback(
+                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                    && $message->assetId === (string) $videoFile->getAsset()->getId()
+                    && $message->status->is(MediaStatusType::VideoFailed)
+                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+            ))
+            ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
+
+        $this->getService(DistributionStatusFacade::class)->toFailed($distribution);
     }
 
     #[DataProvider('notVideoFileDataProvider')]

@@ -11,7 +11,6 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\DistributionConfigurationProv
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\VideoFileSysUrlCreateDto;
-use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -44,7 +43,7 @@ final class VideoFileSysUrlCreateValidator extends ConstraintValidator
     {
         $services = $dto->getDistributionServices();
         $configuration = $this->extSystemConfigurationProvider
-            ->getAssetConfiguration($dto->getExtSystem()->getSlug(), AssetType::Video);
+            ->getAssetConfiguration($dto->getExtSystem()->getSlug(), $dto->getAssetType());
 
         /** @var mixed $service */
         foreach ($services as $service) {

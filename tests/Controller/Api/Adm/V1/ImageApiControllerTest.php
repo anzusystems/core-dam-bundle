@@ -14,8 +14,10 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFileOptimalResize;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\FileSystem\MimeGuesser;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmDetailDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
@@ -25,6 +27,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use League\Flysystem\FilesystemException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ImageApiControllerTest extends AbstractAssetFileApiController
@@ -183,6 +186,55 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
             ],
             json_decode($responseData, true)['fields'],
         );
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUploadInMultipleChunksKeepsChecksum(): void
+    {
+        $firstChunkSize = 5_000;
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $imageUrl = new ImageUrl(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        $file = $this->getFile(self::TEST_DATA_FILENAME);
+        $content = (string) file_get_contents((string) $file->getRealPath());
+        $checksum = MimeGuesser::checksumFromPath((string) $file->getRealPath());
+        $chunkPaths = [];
+
+        try {
+            $id = json_decode(
+                $this->createAsset($client, $imageUrl, $file, Response::HTTP_CREATED)->getContent(),
+                true
+            )['id'];
+
+            $offset = 0;
+            foreach ([substr($content, 0, $firstChunkSize), substr($content, $firstChunkSize)] as $chunkContent) {
+                $chunkPath = (string) tempnam(sys_get_temp_dir(), 'dam_chunk_');
+                $chunkPaths[] = $chunkPath;
+                file_put_contents($chunkPath, $chunkContent);
+                $this->uploadChunk(
+                    $client,
+                    $imageUrl,
+                    new UploadedFile($chunkPath, self::TEST_DATA_FILENAME),
+                    $id,
+                    Response::HTTP_CREATED,
+                    ['offset' => $offset, 'size' => strlen($chunkContent)]
+                );
+                $offset += strlen($chunkContent);
+            }
+
+            $this->finishUpload($client, $imageUrl, $file, $id, Response::HTTP_OK);
+        } finally {
+            foreach ($chunkPaths as $chunkPath) {
+                @unlink($chunkPath);
+            }
+        }
+
+        $imageEntity = $this->entityManager->find(ImageFile::class, $id);
+        $this->assertInstanceOf(ImageFile::class, $imageEntity);
+        $this->assertSame(AssetFileProcessStatus::Processed, $imageEntity->getAssetAttributes()->getStatus());
+        $this->assertSame($checksum, $imageEntity->getAssetAttributes()->getChecksum());
+        $this->assertSame(strlen($content), $imageEntity->getAssetAttributes()->getSize());
     }
 
     #[DataProvider('addChunkFailedDataProvider')]

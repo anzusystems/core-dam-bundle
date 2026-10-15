@@ -28,8 +28,8 @@ use Throwable;
 final class AssetFileChangeStateHandler
 {
     public const string LOCK_PREFIX = 'asset_file_change_state_';
-    // Covers a download (UrlFileFactory, 600 s) plus ffmpeg (300 s): a redelivery after the Pub/Sub
-    // ack deadline fails to lock and is retried later instead of processing the same file twice.
+    // Covers a download (UrlFileFactory::TIMEOUT) plus ffmpeg (FfmpegService::MEASURE_TIMEOUT_SECONDS):
+    // a redelivery after the Pub/Sub ack deadline fails to lock and is retried later.
     private const float LOCK_TTL = 1_800.0;
 
     public function __construct(

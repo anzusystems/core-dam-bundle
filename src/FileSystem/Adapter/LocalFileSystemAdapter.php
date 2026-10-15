@@ -25,7 +25,7 @@ final class LocalFileSystemAdapter extends BaseLocalFilesystemAdapter
     {
         $this->ensureDirectory($path);
         $resource = fopen($path, 'ab+');
-        fwrite($resource, $stream);
+        stream_copy_to_stream($stream, $resource);
         fclose($resource);
     }
 }
