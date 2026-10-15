@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 
 /** Out-of-band media-status notification to ext-system; retried by transport on transient CMS outage. */
-final readonly class MediaStatusCallbackMessage
+final readonly class VideoMediaStatusCallbackMessage
 {
     public const string FAILURE_REASON_DISTRIBUTION_FAILED = 'distribution_failed';
 

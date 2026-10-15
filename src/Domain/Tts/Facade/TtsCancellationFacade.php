@@ -16,7 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\TtsAsset;
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Exception\ImmutableAudioNarrationException;
 use AnzuSystems\CoreDamBundle\Logger\TtsAuditLogger;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\CancelledCallbackData;
 use AnzuSystems\CoreDamBundle\Model\Dto\Tts\Audio\RegenCancelOutcome;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
@@ -172,7 +172,7 @@ final readonly class TtsCancellationFacade
 
     private function dispatchCancelledCallback(CancelledCallbackData $callbackData): void
     {
-        $this->messageBus->dispatch(new MediaStatusCallbackMessage(
+        $this->messageBus->dispatch(new TtsMediaStatusCallbackMessage(
             extSystemId: $callbackData->extSystemId,
             assetId: $callbackData->assetId,
             status: MediaStatusType::GenerationFailed,

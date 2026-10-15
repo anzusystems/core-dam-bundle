@@ -6,7 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Tts\Lifecycle;
 
 use AnzuSystems\CoreDamBundle\Entity\TtsNarrationRequest;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\TtsMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsRequestMode;
@@ -111,7 +111,7 @@ final readonly class TtsRequestFailer
             return;
         }
 
-        $this->messageBus->dispatch(new MediaStatusCallbackMessage(
+        $this->messageBus->dispatch(new TtsMediaStatusCallbackMessage(
             extSystemId: $request->getExtSystemId(),
             assetId: $assetId,
             status: MediaStatusType::GenerationFailed,

@@ -26,7 +26,6 @@ use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Messenger\Message\AssetRefreshPropertiesMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AbstractAssetFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysPathCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\AssetFileSysUrlCreateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\AssetFile\VideoFileSysUrlCreateDto;
@@ -74,10 +73,7 @@ final class AssetSysFacade
         $assetFile = $this->assetSysFactory->createFromDto($dto);
         $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile);
 
-        $this->createFromDto($assetFile, $dto);
-        $this->generatePublicRoute($assetFile, $dto->isGeneratePublicRoute());
-
-        return $assetFile;
+        return $this->createFromDto($assetFile, $dto);
     }
 
     /**
@@ -94,7 +90,6 @@ final class AssetSysFacade
                 url: $dto->getUrl(),
                 setupData: function (AssetFile $assetFile) use ($dto): void {
                     $this->createFromDto($assetFile, $dto);
-                    $this->generatePublicRoute($assetFile, $dto->isGeneratePublicRoute());
                     $this->setupKeywords($assetFile, $dto);
                     $this->setupAuthors($assetFile, $dto);
                 }
@@ -153,10 +148,17 @@ final class AssetSysFacade
         );
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
+        if (
+            $dto->isGeneratePublicRoute() &&
+            empty($assetFile->getAssetAttributes()->getOriginAssetId())
+        ) {
+            $this->assetFileRouteFacade->makePublicAssetFile($assetFile);
+        }
+
         return $assetFile;
     }
 
-    public function setupKeywords(AssetFile $assetFile, AbstractAssetFileSysUrlCreateDto $dto): void
+    public function setupKeywords(AssetFile $assetFile, AssetFileSysUrlCreateDto|VideoFileSysUrlCreateDto $dto): void
     {
         foreach ($dto->getKeywords() as $keywordName) {
             $keyword = $this->keywordProvider->provideKeyword($keywordName, $assetFile->getExtSystem());
@@ -166,7 +168,7 @@ final class AssetSysFacade
         }
     }
 
-    public function setupAuthors(AssetFile $assetFile, AbstractAssetFileSysUrlCreateDto $dto): void
+    public function setupAuthors(AssetFile $assetFile, AssetFileSysUrlCreateDto|VideoFileSysUrlCreateDto $dto): void
     {
         foreach ($dto->getAuthors() as $authorName) {
             $author = $this->authorProvider->provideByTitle($authorName, $assetFile->getExtSystem());
@@ -223,12 +225,5 @@ final class AssetSysFacade
         $this->messageBus->dispatch(new AssetRefreshPropertiesMessage((string) $assetFile->getAsset()->getId()));
 
         return $assetFile;
-    }
-
-    private function generatePublicRoute(AssetFile $assetFile, bool $generatePublicRoute): void
-    {
-        if ($generatePublicRoute && empty($assetFile->getAssetAttributes()->getOriginAssetId())) {
-            $this->assetFileRouteFacade->makePublicAssetFile($assetFile);
-        }
     }
 }

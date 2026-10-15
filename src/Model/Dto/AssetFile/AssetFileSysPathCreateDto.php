@@ -17,9 +17,6 @@ final class AssetFileSysPathCreateDto extends AbstractAssetFileSysDto
     #[Assert\Length(max: 192, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $path = '';
 
-    #[Serialize]
-    private bool $generatePublicRoute = false;
-
     public function getPath(): string
     {
         return $this->path;
@@ -30,15 +27,5 @@ final class AssetFileSysPathCreateDto extends AbstractAssetFileSysDto
         $this->path = $path;
 
         return $this;
-    }
-
-    public function isGeneratePublicRoute(): bool
-    {
-        return $this->generatePublicRoute;
-    }
-
-    public function setGeneratePublicRoute(bool $generatePublicRoute): void
-    {
-        $this->generatePublicRoute = $generatePublicRoute;
     }
 }

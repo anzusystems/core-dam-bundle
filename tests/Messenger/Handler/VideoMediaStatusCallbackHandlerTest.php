@@ -8,8 +8,8 @@ use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackInterface;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Messenger\Handler\MediaStatusCallbackHandler;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Handler\VideoMediaStatusCallbackHandler;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -17,7 +17,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
-final class MediaStatusCallbackHandlerTest extends CoreDamKernelTestCase
+final class VideoMediaStatusCallbackHandlerTest extends CoreDamKernelTestCase
 {
     private const string ASSET_ID = 'asset-1';
     private const string FAILURE_REASON = 'download_failed';
@@ -37,7 +37,7 @@ final class MediaStatusCallbackHandlerTest extends CoreDamKernelTestCase
         $callback->expects(self::once())
             ->method('notifyMediaStatus')
             ->with(self::ASSET_ID, $status, $failureReason, $originAssetId, $originAssetFileId);
-        $handler = new MediaStatusCallbackHandler(new ExtSystemCallbackFacade(
+        $handler = new VideoMediaStatusCallbackHandler(new ExtSystemCallbackFacade(
             new ServiceLocator([
                 $extSystem->getSlug() => static fn (): ExtSystemCallbackInterface => $callback,
             ]),
@@ -45,7 +45,7 @@ final class MediaStatusCallbackHandlerTest extends CoreDamKernelTestCase
             $this->getService(ExtSystemRepository::class),
         ));
 
-        $handler(new MediaStatusCallbackMessage(
+        $handler(new VideoMediaStatusCallbackMessage(
             extSystemId: ExtSystemFixtures::ID_CMS,
             assetId: self::ASSET_ID,
             status: $status,

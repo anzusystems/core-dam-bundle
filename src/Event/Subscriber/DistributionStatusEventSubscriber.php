@@ -8,7 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Event\DistributionStatusEvent;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Notification\DistributionNotificationDispatcher;
@@ -49,10 +49,10 @@ final class DistributionStatusEventSubscriber implements EventSubscriberInterfac
             && $assetFile->isCreatedByDownload()
             && App::EMPTY_STRING === $distribution->getExtId()
         ) {
-            $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+            $this->messageBus->dispatch(VideoMediaStatusCallbackMessage::fromVideoFile(
                 $assetFile,
                 MediaStatusType::VideoFailed,
-                MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED,
+                VideoMediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED,
             ));
         }
     }

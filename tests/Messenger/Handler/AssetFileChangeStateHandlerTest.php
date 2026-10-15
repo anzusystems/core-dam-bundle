@@ -29,7 +29,7 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileChangeStateHandler;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
@@ -158,10 +158,10 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoFailed)
-                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+                    && VideoMediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
                     && null === $message->originAssetId
                     && null === $message->originAssetFileId
             ))
@@ -422,7 +422,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->extSystemId === $videoFile->getExtSystem()->getId()
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoFailed)
@@ -438,7 +438,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoDuplicate)
                     && null === $message->failureReason
@@ -509,7 +509,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoDuplicate)
                     && null === $message->failureReason
