@@ -35,6 +35,7 @@
 * `AssetFileDBALRepository::updateFirstUsedAtIfUnset()` writes `modified_at` from `App::getAppDate()` instead of SQL `NOW()`
 
 ### Fixes
+* `POST /api/sys/v1/asset-file/from-url` with `generatePublicRoute: true` makes the newly downloaded image public after it is processed instead of failing with 500; a dedup hit or the origin of a duplicate keeps its routes, `POST /api/sys/v1/asset-file` is unchanged
 * `FileFactory::createFromChunks()` copies each uploaded chunk into the temporary file as a stream instead of reading the whole chunk (up to `50 MB`) into a string, which lowers the peak memory of the file change state workers; **BC break** for direct callers: `LocalFilesystem::appendTmpStream()` / `LocalFileSystemAdapter::appendTmpStream()` now take a stream resource instead of a string
 * Fix url asset file download refusing redirects for untrusted hosts (`1.48.0` regression) — podcast enclosures are redirect trackers, so the empty `302` body was stored as the audio file and the asset failed on `invalid_mime_type` (`application/x-empty`)
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file
