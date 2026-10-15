@@ -17,7 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Entity\YoutubeDistribution;
 use AnzuSystems\CoreDamBundle\Event\DistributionStatusEvent;
 use AnzuSystems\CoreDamBundle\Event\Subscriber\DistributionStatusEventSubscriber;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
@@ -65,11 +65,11 @@ final class DistributionStatusEventSubscriberTest extends CoreDamKernelTestCase
         $this->messageBus->expects($dispatches ? self::once() : self::never())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->extSystemId === $videoFile->getExtSystem()->getId()
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoFailed)
-                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+                    && VideoMediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
                     && null === $message->originAssetId
             ))
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
@@ -138,10 +138,10 @@ final class DistributionStatusEventSubscriberTest extends CoreDamKernelTestCase
         $this->messageBus->expects(self::once())
             ->method('dispatch')
             ->with(self::callback(
-                static fn (object $message): bool => $message instanceof MediaStatusCallbackMessage
+                static fn (object $message): bool => $message instanceof VideoMediaStatusCallbackMessage
                     && $message->assetId === (string) $videoFile->getAsset()->getId()
                     && $message->status->is(MediaStatusType::VideoFailed)
-                    && MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
+                    && VideoMediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED === $message->failureReason
             ))
             ->willReturnCallback(static fn (object $message): Envelope => new Envelope($message));
 

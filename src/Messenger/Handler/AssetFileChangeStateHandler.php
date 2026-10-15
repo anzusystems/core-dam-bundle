@@ -49,7 +49,15 @@ final class AssetFileChangeStateHandler
     #[AsMessageHandler]
     public function handleVideoFile(VideoFileChangeStateMessage $message): void
     {
-        $assetFile = $this->handleAssetFile($message);
+        $lockName = self::LOCK_PREFIX . $message->getAssetId();
+        $this->resourceLocker->lock($lockName, blocking: false, ttl: self::LOCK_TTL);
+
+        try {
+            $assetFile = $this->handleAssetFile($message);
+        } finally {
+            $this->resourceLocker->unLock($lockName);
+        }
+
         if (false === ($assetFile instanceof VideoFile)) {
             return;
         }
@@ -93,20 +101,12 @@ final class AssetFileChangeStateHandler
      */
     private function handleAssetFile(AbstractAssetFileMessage $message): ?AssetFile
     {
-        $lockName = self::LOCK_PREFIX . $message->getAssetId();
-        $this->resourceLocker->lock($lockName, blocking: false, ttl: self::LOCK_TTL);
-
-        try {
-            $assetFile = $this->assetFileRepository->find($message->getAssetId());
-            if (null === $assetFile) {
-                return null;
-            }
-
-            $this->changeState($assetFile);
-        } finally {
-            $this->resourceLocker->unLock($lockName);
+        $assetFile = $this->assetFileRepository->find($message->getAssetId());
+        if (null === $assetFile) {
+            return null;
         }
 
+        $this->changeState($assetFile);
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
         return $assetFile;

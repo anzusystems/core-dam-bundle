@@ -13,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Messenger\Message\MediaStatusCallbackMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\VideoFileRepository;
@@ -90,10 +90,10 @@ final class VideoDownloadFacade
             return;
         }
 
-        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+        $this->messageBus->dispatch(VideoMediaStatusCallbackMessage::fromVideoFile(
             $videoFile,
             MediaStatusType::VideoFailed,
-            MediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED,
+            VideoMediaStatusCallbackMessage::FAILURE_REASON_DISTRIBUTION_FAILED,
         ));
     }
 
@@ -121,7 +121,7 @@ final class VideoDownloadFacade
 
     private function handleFailed(VideoFile $videoFile): void
     {
-        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+        $this->messageBus->dispatch(VideoMediaStatusCallbackMessage::fromVideoFile(
             $videoFile,
             MediaStatusType::VideoFailed,
             $videoFile->getAssetAttributes()->getFailReason()->toString(),
@@ -141,7 +141,7 @@ final class VideoDownloadFacade
             $this->tryEnsureDistributed($origin, $distributionServices);
         }
 
-        $this->messageBus->dispatch(MediaStatusCallbackMessage::fromVideoFile(
+        $this->messageBus->dispatch(VideoMediaStatusCallbackMessage::fromVideoFile(
             $videoFile,
             MediaStatusType::VideoDuplicate,
             origin: $origin,

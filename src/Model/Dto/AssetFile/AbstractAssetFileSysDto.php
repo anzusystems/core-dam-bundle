@@ -19,6 +19,9 @@ abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomData
     #[Serialize(strategy: Serialize::KEYS_VALUES)]
     protected array $customData = [];
 
+    #[Serialize]
+    protected bool $generatePublicRoute = false;
+
     #[Serialize(handler: EntityIdHandler::class)]
     #[Assert\NotBlank(message: ValidationException::ERROR_FIELD_EMPTY)]
     protected AssetLicence $licence;
@@ -33,11 +36,6 @@ abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomData
         $this->licence = $licence;
 
         return $this;
-    }
-
-    public function hasLicence(): bool
-    {
-        return isset($this->licence);
     }
 
     public function getExtSystem(): ExtSystem
@@ -55,6 +53,16 @@ abstract class AbstractAssetFileSysDto implements ExtSystemInterface, CustomData
         $this->customData = $customData;
 
         return $this;
+    }
+
+    public function isGeneratePublicRoute(): bool
+    {
+        return $this->generatePublicRoute;
+    }
+
+    public function setGeneratePublicRoute(bool $generatePublicRoute): void
+    {
+        $this->generatePublicRoute = $generatePublicRoute;
     }
 
     public function getAssetType(): AssetType
