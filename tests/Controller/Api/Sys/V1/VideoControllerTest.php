@@ -252,6 +252,22 @@ final class VideoControllerTest extends AbstractApiController
         ];
     }
 
+    public function testCreateFromUrlWithoutLicenceFailsValidation(): void
+    {
+        $payload = $this->payload(self::uniqueUrl('missing-licence'), [
+            'distributionServices' => [self::DISTRIBUTION_SERVICE],
+        ]);
+        unset($payload['licence']);
+
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(VideoSysUrl::createFromUrl(), $payload);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(
+            json_decode((string) $response->getContent(), true),
+            ['licence' => [ValidationException::ERROR_FIELD_EMPTY]]
+        );
+    }
+
     #[DataProvider('unusablePreviewDataProvider')]
     public function testCreateFromUrlIgnoresUnusablePreview(string $imagePreviewAssetFileId): void
     {

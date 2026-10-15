@@ -135,7 +135,8 @@ final class VideoDownloadFacade
      */
     private function handleDuplicate(VideoFile $videoFile, array $distributionServices): void
     {
-        $origin = $this->videoFileRepository->find($videoFile->getAssetAttributes()->getOriginAssetId());
+        $originAssetFileId = $videoFile->getAssetAttributes()->getOriginAssetId();
+        $origin = $this->videoFileRepository->find($originAssetFileId);
         if ($origin instanceof VideoFile && $origin->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed)) {
             $this->tryEnsureDistributed($origin, $distributionServices);
         }
