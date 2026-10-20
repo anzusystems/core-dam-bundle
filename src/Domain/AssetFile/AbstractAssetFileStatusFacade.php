@@ -211,6 +211,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $file = $file ?: $this->createFile($assetFile);
                 $this->fileAttributesPostProcessor->processAttributes($assetFile, $file);
                 $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
+                $lockName .= '_' . $assetFile->getAssetAttributes()->getChecksum();
                 // we need to lock process due to duplicity checks
                 $this->resourceLocker->lock($lockName);
                 $this->store($assetFile, $file);
@@ -298,13 +299,14 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      */
     public function process(AssetFile $assetFile, AdapterFile $file, bool $dispatchPropertyRefresh): AssetFile
     {
+        if (false === $assetFile->getFlags()->isProcessedMetadata()) {
+            $this->metadataProcessor->process($assetFile, $file);
+        }
+
         try {
             $this->assetManager->beginTransaction();
 
             $this->processAssetFile($assetFile, $file);
-            if (false === $assetFile->getFlags()->isProcessedMetadata()) {
-                $this->metadataProcessor->process($assetFile, $file);
-            }
             $this->assetStatusManager->toProcessed($assetFile);
             $this->assetManager->commit();
             if ($dispatchPropertyRefresh) {
