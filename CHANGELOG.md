@@ -32,6 +32,7 @@
 * **BC break** (manual construction only, DI unaffected): `Exiftool` requires `ExifTagNormalizer`, `AssetMetadataProcessor` requires `ExifMetadataFilter` and `AssetQueryFactory` requires `AssetFulltextQueryBuilderInterface` as constructor dependencies — the `?Service = null` fallbacks were removed
 * Rename container bind `$searcNext` to `$searchNext` (typo); env `ELASTICSEARCH_NEXT_ENABLED` and behaviour unchanged
 * `AssetFileDBALRepository::updateFirstUsedAtIfUnset()` writes `modified_at` from `App::getAppDate()` instead of SQL `NOW()`
+* Files of one licence are processed in parallel: the store/process lock is per licence and checksum; metadata of `process()` runs outside its transaction and the per-asset suggester lock spans the metadata flush; `MetadataProcessor` requires `ResourceLocker` and `AssetMetadataProcessor` no longer takes it (manual construction only, DI unaffected)
 
 ### Fixes
 * `AssetFileChangeStateHandler` no longer locks a video file while it is processed (added in `1.53.0`): when a worker was killed during processing, the lock stayed in Redis for its 30 minute TTL and every redelivery failed with `locked_by_another_process` until it expired, so the video waited up to 30 minutes; a redelivery now continues the file from its stored state at once, as before `1.53.0`
