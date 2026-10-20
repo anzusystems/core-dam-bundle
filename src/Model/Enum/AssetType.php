@@ -46,4 +46,14 @@ enum AssetType: string implements EnumInterface
             default => false,
         };
     }
+
+    public function getChangeStateAckDeadlineSeconds(): int
+    {
+        return match ($this) {
+            self::Image => 60,
+            self::Document => 120,
+            self::Audio => 300,
+            self::Video => 500,
+        };
+    }
 }
