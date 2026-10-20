@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -32,6 +33,7 @@ final class AssetFileChangeStateHandler
         private readonly DamLogger $damLogger,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
+        private readonly ResourceLocker $resourceLocker,
     ) {
     }
 
@@ -91,7 +93,12 @@ final class AssetFileChangeStateHandler
             return null;
         }
 
-        $this->changeState($assetFile);
+        $this->resourceLocker->lock($assetFile, ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds());
+        try {
+            $this->changeState($assetFile);
+        } finally {
+            $this->resourceLocker->unLock($assetFile);
+        }
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
         return $assetFile;

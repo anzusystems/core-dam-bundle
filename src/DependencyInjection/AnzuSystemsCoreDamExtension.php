@@ -112,6 +112,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
         $assetPropertyRefreshTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetPropertyRefreshTopic}";
         $assetCopyTopic = '%env(MESSENGER_ASSET_COPY_TOPIC)%';
         $assetCopyTopicDsn = "%env(MESSENGER_TRANSPORT_DSN)%/{$assetCopyTopic}";
+        $pullOneMessage = ['maxMessages' => 1];
 
         $container->prependExtensionConfig('framework', [
             'messenger' => [
@@ -134,6 +135,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $distributionRemoteProcessedCheckTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
@@ -166,12 +168,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $imageFileChangeStateTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
                                         'name' => $imageFileChangeStateTopic,
                                     ],
-                                    'ackDeadlineSeconds' => '60s',
+                                    'ackDeadlineSeconds' => AssetType::Image->getChangeStateAckDeadlineSeconds() . 's',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -198,12 +201,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $documentFileChangeStateTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
                                         'name' => $documentFileChangeStateTopic,
                                     ],
-                                    'ackDeadlineSeconds' => '120s',
+                                    'ackDeadlineSeconds' => AssetType::Document->getChangeStateAckDeadlineSeconds() . 's',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -230,12 +234,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $audioFileChangeStateTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
                                         'name' => $audioFileChangeStateTopic,
                                     ],
-                                    'ackDeadlineSeconds' => '300s',
+                                    'ackDeadlineSeconds' => AssetType::Audio->getChangeStateAckDeadlineSeconds() . 's',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -262,12 +267,13 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $videoFileChangeStateTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
                                         'name' => $videoFileChangeStateTopic,
                                     ],
-                                    'ackDeadlineSeconds' => '500s',
+                                    'ackDeadlineSeconds' => AssetType::Video->getChangeStateAckDeadlineSeconds() . 's',
                                     'retryPolicy' => [
                                         'minimumBackoff' => '2s',
                                         'maximumBackoff' => '600s',
@@ -326,6 +332,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $assetFileMetadataProcessTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
@@ -358,6 +365,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $distributionTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,
@@ -414,6 +422,7 @@ final class AnzuSystemsCoreDamExtension extends Extension implements PrependExte
                             ],
                             'subscription' => [
                                 'name' => $assetCopyTopic,
+                                'pull' => $pullOneMessage,
                                 'options' => [
                                     'labels' => [
                                         'application' => $applicationName,

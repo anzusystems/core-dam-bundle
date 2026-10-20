@@ -29,8 +29,8 @@ use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileChangeStateHandler;
-use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Messenger\Message\VideoFileChangeStateMessage;
+use AnzuSystems\CoreDamBundle\Messenger\Message\VideoMediaStatusCallbackMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
@@ -107,6 +107,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
+            $this->getService(ResourceLocker::class),
         );
     }
 
@@ -376,6 +377,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->damLogger,
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
+            $this->getService(ResourceLocker::class),
         );
         $origin = $this->createUploadedDownloadVideo('real-producer-origin');
         $duplicate = $this->createUploadedDownloadVideo('real-producer-duplicate');
