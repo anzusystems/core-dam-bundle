@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
@@ -22,6 +23,7 @@ use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
@@ -247,6 +249,9 @@ final class JwVideoClient
         }
     }
 
+    /**
+     * JW reports the media ready before its delivery API knows the id: it answers 404 for a few minutes.
+     */
     public function getVideoAssetData(JwDistributionServiceConfiguration $configuration, string $jwId): JwVideoMediaCdnDto
     {
         $response = $this->loggedRequest(
@@ -258,8 +263,12 @@ final class JwVideoClient
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
+            notLogErrorResponseCodes: [Response::HTTP_NOT_FOUND],
         );
 
+        if (Response::HTTP_NOT_FOUND === $response->getStatusCode()) {
+            throw new RemoteProcessingWaitingException();
+        }
         if ($response->hasError()) {
             throw new RuntimeException('JwVideoDistribution get cdn video failed');
         }
