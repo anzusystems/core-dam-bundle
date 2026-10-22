@@ -369,6 +369,25 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         self::assertTrue($videoFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
     }
 
+    public function testFileReloadedByFailedProcessingIsUsedForVideoFailedCallback(): void
+    {
+        $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Uploaded);
+        $reloaded = $this->createUploadedDownloadVideo('reloaded-after-failure');
+        $reloaded->getAssetAttributes()
+            ->setStatus(AssetFileProcessStatus::Failed)
+            ->setFailReason(AssetFileFailedType::DownloadFailed);
+
+        $this->statusFacade->expects(self::once())
+            ->method('storeAndProcess')
+            ->with($videoFile)
+            ->willReturn($reloaded);
+        $this->journalLogger->expects(self::never())->method('error');
+        $this->expectNoDistribution();
+        $this->expectFailedCallback($reloaded);
+
+        $this->handler->handleVideoFile(new VideoFileChangeStateMessage($videoFile, [self::DISTRIBUTION_SERVICE]));
+    }
+
     public function testDuplicateCreatedByRealProducerCarriesOriginAssetAndFileIds(): void
     {
         $realHandler = new AssetFileChangeStateHandler(

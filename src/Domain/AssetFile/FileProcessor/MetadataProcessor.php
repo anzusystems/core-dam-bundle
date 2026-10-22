@@ -34,9 +34,8 @@ final readonly class MetadataProcessor
         $asset = $assetFile->getAsset();
 
         // Per-asset scope; author/keyword creation has its own per-name lock in the facades.
-        $this->assetSuggesterLocker->lock($asset);
-
         try {
+            $this->assetSuggesterLocker->lock($asset);
             $this->assetMetadataProvider->provideMetaData($assetFile, $file);
 
             if ($asset->getAssetFlags()->isNotDescribed() && $asset->getAssetFlags()->isNotAutocompletedMetadata()) {
