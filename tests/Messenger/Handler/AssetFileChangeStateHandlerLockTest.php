@@ -62,6 +62,13 @@ final class AssetFileChangeStateHandlerLockTest extends CoreDamKernelTestCase
         );
         self::assertTrue($crashedWorkerLock->acquire());
 
+        try {
+            $this->getService(ResourceLocker::class)->lock($imageFile, blocking: false);
+            self::fail('The hand-made lock must be seen by ResourceLocker.');
+        } catch (RuntimeException $exception) {
+            self::assertSame('locked_by_another_process', $exception->getMessage());
+        }
+
         $this->getService(AssetFileChangeStateHandler::class)->handleImageFile(new ImageFileChangeStateMessage($imageFile));
 
         self::assertTrue($imageFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));

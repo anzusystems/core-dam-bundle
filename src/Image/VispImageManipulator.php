@@ -27,6 +27,7 @@ final class VispImageManipulator extends AbstractImageManipulator
     private const int DEFAULT_QUALITY = 100;
 
     private ?Image $image = null;
+    private ?Image $retained = null;
     private int $quality;
     private static bool $initialized = false;
 
@@ -44,6 +45,29 @@ final class VispImageManipulator extends AbstractImageManipulator
     {
         $this->disableCache();
         $this->image = Image::thumbnail($path, $width);
+    }
+
+    public function retain(): void
+    {
+        $this->ensureImage();
+        $this->retained = $this->image = $this->image->copyMemory();
+    }
+
+    /**
+     * @throws ImageManipulatorException
+     */
+    public function loadRetainedThumbnail(int $width): void
+    {
+        if (null === $this->retained) {
+            throw new ImageManipulatorException(ImageManipulatorException::ERROR_FILE_CLOSED);
+        }
+
+        $this->image = $this->retained->thumbnail_image($width);
+    }
+
+    public function releaseRetained(): void
+    {
+        $this->retained = null;
     }
 
     /**
@@ -172,8 +196,10 @@ final class VispImageManipulator extends AbstractImageManipulator
     public function resize(int $width, int $height): void
     {
         $this->ensureImage();
-        $scale = $height / (int) $this->image->height;
-        $this->image = $this->image->resize($scale);
+        $this->image = $this->image->resize(
+            $width / (int) $this->image->width,
+            ['vscale' => $height / (int) $this->image->height],
+        );
     }
 
     /**

@@ -33,6 +33,7 @@ final class AssetMetadataBulkFacade
         private readonly AccessDenier $accessDenier,
         private readonly AssetMetadataBulkManager $assetMetadataBulkManager,
         private readonly AssetChangedEventDispatcher $assetMetadataBulkEventDispatcher,
+        private readonly AssetSuggesterLocker $assetSuggesterLocker,
     ) {
     }
 
@@ -50,21 +51,30 @@ final class AssetMetadataBulkFacade
         $updated = [];
         /** @var Asset[] $affectedAssets */
         $affectedAssets = [];
+        $assets = $list->map(
+            static fn (FormProvidableMetadataBulkUpdateDto $dto): Asset => $dto->getAsset()
+        )->toArray();
 
-        foreach ($list as $updateDto) {
-            $this->checkPermissions($updateDto);
-            $asset = $updateDto->getAsset();
+        try {
+            $this->assetSuggesterLocker->lockAll($assets);
 
-            if ($this->isAssetChanged($asset, $updateDto)) {
-                $affectedAssets[] = $asset;
+            foreach ($list as $updateDto) {
+                $this->checkPermissions($updateDto);
+                $asset = $updateDto->getAsset();
+
+                if ($this->isAssetChanged($asset, $updateDto)) {
+                    $affectedAssets[] = $asset;
+                }
+
+                $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
+                    asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, flush: false)
+                );
             }
 
-            $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
-                asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, false)
-            );
+            $this->assetManager->flush();
+        } finally {
+            $this->assetSuggesterLocker->unLockAll($assets);
         }
-
-        $this->assetManager->flush();
 
         if (false === empty($affectedAssets)) {
             $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(

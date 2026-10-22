@@ -19,6 +19,20 @@ interface ImageManipulatorInterface
 
     public function loadThumbnail(string $path, int $width): void;
 
+    /**
+     * Keeps the current image decoded in memory, so smaller thumbnails can be made from it.
+     *
+     * @throws ImageManipulatorException
+     */
+    public function retain(): void;
+
+    /**
+     * @throws ImageManipulatorException
+     */
+    public function loadRetainedThumbnail(int $width): void;
+
+    public function releaseRetained(): void;
+
     public function setQuality(int $quality): self;
 
     /**

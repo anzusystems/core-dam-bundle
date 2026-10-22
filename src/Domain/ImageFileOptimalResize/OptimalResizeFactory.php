@@ -59,10 +59,7 @@ final class OptimalResizeFactory extends AbstractManager
      */
     public function createCrop(ImageFile $imageFile, AdapterFile $file, int $size): ImageFileOptimalResize
     {
-        $optimalResize = (new ImageFileOptimalResize())
-            ->setRequestedSize($size)
-            ->setImage($imageFile)
-        ;
+        $optimalResize = $this->buildResize($imageFile, $size);
 
         $this->processOptimalResize($optimalResize, $file);
         $imageFile->getResizes()->add($optimalResize);
@@ -70,11 +67,70 @@ final class OptimalResizeFactory extends AbstractManager
         return $this->optimalResizeManager->create($optimalResize, false);
     }
 
+    /**
+     * The largest size is made from the original, every smaller one from the largest resize kept in memory.
+     * The encoded resize file must not be the source (it would add a second lossy JPEG generation) and the main crop
+     * must not be kept in memory (original resolution, ~120 MB), so only the largest resize is held.
+     *
+     * @param list<int> $sizes
+     *
+     * @throws ImageManipulatorException
+     * @throws FilesystemExceptionAlias
+     */
+    public function createCrops(ImageFile $imageFile, AdapterFile $file, array $sizes): void
+    {
+        if ([] === $sizes) {
+            return;
+        }
+
+        rsort($sizes);
+        $largestSize = array_shift($sizes);
+        $largest = $this->buildResize($imageFile, $largestSize);
+        $resizes = [$largest];
+
+        try {
+            $this->imageManipulator->loadThumbnail($file->getRealPath(), $largestSize);
+            $this->imageManipulator->autorotate();
+            if ([] !== $sizes) {
+                $this->imageManipulator->retain();
+            }
+            $this->writeResize($largest);
+
+            foreach ($sizes as $size) {
+                $resize = $this->buildResize($imageFile, $size);
+                $this->imageManipulator->loadRetainedThumbnail($size);
+                $this->writeResize($resize);
+                $resizes[] = $resize;
+            }
+        } finally {
+            $this->imageManipulator->releaseRetained();
+        }
+
+        foreach (array_reverse($resizes) as $resize) {
+            $imageFile->getResizes()->add($resize);
+            $this->optimalResizeManager->create($resize, false);
+        }
+    }
+
     public function processOptimalResize(ImageFileOptimalResize $resize, AdapterFile $file): void
     {
         $this->imageManipulator->loadThumbnail($file->getRealPath(), $resize->getRequestedSize());
-        $this->imageManipulator->setQuality(self::OPTIMAL_RESIZE_QUALITY);
         $this->imageManipulator->autorotate();
+
+        $this->writeResize($resize);
+    }
+
+    private function buildResize(ImageFile $imageFile, int $size): ImageFileOptimalResize
+    {
+        return (new ImageFileOptimalResize())
+            ->setRequestedSize($size)
+            ->setImage($imageFile)
+        ;
+    }
+
+    private function writeResize(ImageFileOptimalResize $resize): void
+    {
+        $this->imageManipulator->setQuality(self::OPTIMAL_RESIZE_QUALITY);
 
         // Prepare path and folder for Visp to write crop file
         $tmpFilesystem = $this->fileSystemProvider->getTmpFileSystem();

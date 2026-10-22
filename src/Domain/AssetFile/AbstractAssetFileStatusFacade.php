@@ -34,6 +34,7 @@ use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Traits\MessageBusAwareTrait;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Doctrine\ORM\NonUniqueResultException;
+use Doctrine\Persistence\ManagerRegistry;
 use League\Flysystem\FilesystemException;
 use Psr\Cache\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
@@ -66,6 +67,7 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
     protected AssetFileCounter $assetFileCounter;
     protected ChunkFileManager $chunkFileManager;
     protected ResourceLocker $resourceLocker;
+    protected ManagerRegistry $managerRegistry;
 
     #[Required]
     public function setAssetFileCounter(AssetFileCounter $assetFileCounter): void
@@ -181,6 +183,12 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
         $this->resourceLocker = $resourceLocker;
     }
 
+    #[Required]
+    public function setManagerRegistry(ManagerRegistry $managerRegistry): void
+    {
+        $this->managerRegistry = $managerRegistry;
+    }
+
     /**
      * @throws SerializerException
      * @throws ValidationException
@@ -213,7 +221,10 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
                 $this->fileAttributesPostProcessor->processChecksum($assetFile, $file);
                 $lockName .= '_' . $assetFile->getAssetAttributes()->getChecksum();
                 // we need to lock process due to duplicity checks
-                $this->resourceLocker->lock($lockName);
+                $this->resourceLocker->lock(
+                    $lockName,
+                    ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds(),
+                );
                 $this->store($assetFile, $file);
             }
             if (null === $file) {
@@ -237,20 +248,14 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
             $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (AssetFileProcessFailed $assetFileProcessFailed) {
             $this->resourceLocker->unLock($lockName);
-            $this->assetStatusManager->toFailed(
+            $assetFile = $this->storeFailed(
                 $assetFile,
                 $assetFileProcessFailed->getAssetFileFailedType(),
                 $assetFileProcessFailed
             );
-            $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
         } catch (Throwable $exception) {
             $this->resourceLocker->unLock($lockName);
-            $this->assetStatusManager->toFailed(
-                $assetFile,
-                AssetFileFailedType::Unknown,
-                $exception
-            );
-            $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+            $assetFile = $this->storeFailed($assetFile, AssetFileFailedType::Unknown, $exception);
         } finally {
             $this->resourceLocker->unLock($lockName);
         }
@@ -332,6 +337,25 @@ abstract class AbstractAssetFileStatusFacade implements AssetFileStatusInterface
      * @throws NonUniqueResultException
      */
     abstract protected function checkDuplicate(AssetFile $assetFile): ?AssetFile;
+
+    /**
+     * @throws SerializerException
+     */
+    private function storeFailed(AssetFile $assetFile, AssetFileFailedType $failedType, Throwable $exception): AssetFile
+    {
+        $entityManager = $this->assetStatusManager->getEntityManager();
+        if (false === $entityManager->isOpen()) {
+            // Doctrine never reopens a closed EntityManager; the file is loaded again into the recreated one.
+            $this->managerRegistry->resetManager();
+            $assetFile = $entityManager->find($assetFile::class, $assetFile->getId())
+                ?? throw new RuntimeException(sprintf('AssetFile (%s) vanished after the EntityManager was closed', (string) $assetFile->getId()), previous: $exception);
+        }
+
+        $this->assetStatusManager->toFailed($assetFile, $failedType, $exception);
+        $this->assetFileEventDispatcher->dispatchAssetFileChanged($assetFile);
+
+        return $assetFile;
+    }
 
     /**
      * @throws ForbiddenOperationException
