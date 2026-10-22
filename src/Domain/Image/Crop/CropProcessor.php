@@ -96,12 +96,17 @@ final class CropProcessor
      */
     private function getOptimalResize(ImageFile $imageFile, ImageCropDto $imageCrop): ImageFileOptimalResize
     {
+        $origin = $imageFile->getImageAttributes();
         $lastResize = null;
         foreach ($imageFile->getResizes() as $imageResize) {
             $lastResize = $imageResize;
+            // The cropped region inside the resize, not the whole resize, must cover the requested size.
+            // CropFactory truncates the crop to whole origin pixels, so one pixel is allowed in each check.
             if (
-                $imageResize->getWidth() >= $imageCrop->getRequestWidth() &&
-                $imageResize->getHeight() >= $imageCrop->getRequestHeight()
+                $imageResize->getWidth() * ($imageCrop->getWidth() + 1)
+                    >= $imageCrop->getRequestWidth() * $origin->getWidth() &&
+                $imageResize->getHeight() * ($imageCrop->getHeight() + 1)
+                    >= $imageCrop->getRequestHeight() * $origin->getHeight()
             ) {
                 return $imageResize;
             }

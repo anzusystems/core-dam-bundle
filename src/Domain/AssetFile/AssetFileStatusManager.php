@@ -80,8 +80,7 @@ final class AssetFileStatusManager extends AssetFileManager
      */
     public function toFailed(AssetFile $assetFile, AssetFileFailedType $failedType, ?Throwable $throwable = null): AssetFile
     {
-        $this->changeTransition($assetFile, AssetFileProcessStatus::Failed, $failedType);
-
+        // Logged first: when the failure closed the EntityManager, the transition flush throws and would hide it.
         $this->damLogger->error(
             namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
             message: sprintf(
@@ -93,7 +92,7 @@ final class AssetFileStatusManager extends AssetFileManager
             exception: $throwable
         );
 
-        return $assetFile;
+        return $this->changeTransition($assetFile, AssetFileProcessStatus::Failed, $failedType);
     }
 
     /**
