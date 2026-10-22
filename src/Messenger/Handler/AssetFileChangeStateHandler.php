@@ -95,7 +95,7 @@ final class AssetFileChangeStateHandler
 
         $this->resourceLocker->lock($assetFile, ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds());
         try {
-            $this->changeState($assetFile);
+            $assetFile = $this->changeState($assetFile);
         } finally {
             $this->resourceLocker->unLock($assetFile);
         }
@@ -107,21 +107,14 @@ final class AssetFileChangeStateHandler
     /**
      * @throws RuntimeException
      */
-    private function changeState(AssetFile $assetFile): void
+    private function changeState(AssetFile $assetFile): AssetFile
     {
         try {
-            match ($assetFile->getAssetAttributes()->getStatus()) {
+            return match ($assetFile->getAssetAttributes()->getStatus()) {
                 AssetFileProcessStatus::Uploaded => $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile),
                 AssetFileProcessStatus::Stored => $this->handleStored($assetFile),
 
-                default => $this->damLogger->info(
-                    DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
-                    sprintf(
-                        'AssetFile (%s) change state to (%s) not suitable for handle',
-                        (string) $assetFile->getId(),
-                        $assetFile->getAssetAttributes()->getStatus()->toString()
-                    ),
-                )
+                default => $this->logNotSuitable($assetFile),
             };
         } catch (Throwable $e) {
             $this->damLogger->error(
@@ -137,6 +130,20 @@ final class AssetFileChangeStateHandler
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);
         }
+    }
+
+    private function logNotSuitable(AssetFile $assetFile): AssetFile
+    {
+        $this->damLogger->info(
+            DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
+            sprintf(
+                'AssetFile (%s) change state to (%s) not suitable for handle',
+                (string) $assetFile->getId(),
+                $assetFile->getAssetAttributes()->getStatus()->toString()
+            ),
+        );
+
+        return $assetFile;
     }
 
     /**

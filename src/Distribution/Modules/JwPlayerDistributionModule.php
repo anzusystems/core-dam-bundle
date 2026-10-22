@@ -82,17 +82,18 @@ final class JwPlayerDistributionModule extends AbstractDistributionModule implem
         $config = $this->distributionConfigurationProvider->getJwDistributionService($distribution->getDistributionService());
         $video = $this->jwVideoClient->getVideoObject($config, $distribution);
 
+        if ($video->getStatus()->is(JwMediaStatus::Failed)) {
+            throw new RemoteProcessingFailedException(message: (string) $video->getErrorMessage());
+        }
+
+        $this->throwWhenRemoteProcessingExpired($distribution);
+
         if ($video->getStatus()->is(JwMediaStatus::Ready)) {
             $this->jwDirectSourceUrlProvider->provideDirectSourceUrl($config, $distribution);
             $distribution->setDistributionData($this->customDataFactory->createDistributionData($distribution));
 
             return;
         }
-        if ($video->getStatus()->is(JwMediaStatus::Failed)) {
-            throw new RemoteProcessingFailedException(message: (string) $video->getErrorMessage());
-        }
-
-        $this->throwWhenRemoteProcessingExpired($distribution);
 
         throw new RemoteProcessingWaitingException();
     }

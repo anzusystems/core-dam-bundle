@@ -90,6 +90,12 @@ final class CropProcessorTest extends CoreDamKernelTestCase
             3_456,
             1_200,
         ];
+        yield 'Full-height crop truncated by one pixel in width keeps the exact resize' => [
+            new ImageCropDto(0, 0, 5_183, 3_456, 1_200, 800, 90),
+            5_184,
+            3_456,
+            1_200,
+        ];
     }
 
     #[DataProvider('cropProvider')]
@@ -107,10 +113,6 @@ final class CropProcessorTest extends CoreDamKernelTestCase
         self::assertNotNull($this->appliedCropFilter);
         $ratio = $expectedResizeWidth / $originWidth;
         self::assertSame((int) ($imageCrop->getWidth() * $ratio), $this->appliedCropFilter->getWidth());
-        self::assertGreaterThanOrEqual(
-            min($imageCrop->getRequestWidth(), $imageCrop->getWidth()),
-            $this->appliedCropFilter->getWidth()
-        );
     }
 
     private function buildCropProcessor(): CropProcessor

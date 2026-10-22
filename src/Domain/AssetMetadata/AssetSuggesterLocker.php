@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
-use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class AssetSuggesterLocker
 {
@@ -14,7 +14,7 @@ final readonly class AssetSuggesterLocker
 
     public function __construct(
         private ResourceLocker $resourceLocker,
-        private AssetManager $assetManager,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -56,9 +56,8 @@ final readonly class AssetSuggesterLocker
 
     private function refresh(Asset $asset): void
     {
-        $entityManager = $this->assetManager->getEntityManager();
-        $entityManager->refresh($asset);
-        $entityManager->refresh($asset->getMetadata());
+        $this->entityManager->refresh($asset);
+        $this->entityManager->refresh($asset->getMetadata());
     }
 
     /**
