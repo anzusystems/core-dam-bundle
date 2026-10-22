@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\HttpClient;
 
+use AnzuSystems\CommonBundle\Log\Factory\LogContextFactory;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\HttpClient\JwVideoClient;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\JwVideo\VideoUploadPayloadDto;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\SerializerBundle\Serializer;
@@ -15,6 +18,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 final class JwVideoClientTest extends CoreDamKernelTestCase
@@ -68,12 +72,27 @@ final class JwVideoClientTest extends CoreDamKernelTestCase
         );
     }
 
-    private function buildClient(): JwVideoClient
+    public function testMediaUnknownToDeliveryApiIsWaitedForWithoutError(): void
+    {
+        $journalLogger = $this->createMock(LoggerInterface::class);
+        $journalLogger->expects(self::never())->method('error');
+        $client = $this->buildClient(
+            new MockHttpClient(new MockResponse('{"message":"Invalid media id"}', ['http_code' => Response::HTTP_NOT_FOUND]))
+        );
+        $client->setJournalLogger($journalLogger);
+        $client->setContextFactory($this->getService(LogContextFactory::class));
+
+        $this->expectException(RemoteProcessingWaitingException::class);
+
+        $client->getVideoAssetData(JwDistributionServiceConfiguration::getFromArrayConfiguration([]), 'jw-id');
+    }
+
+    private function buildClient(?HttpClientInterface $cdnClient = null): JwVideoClient
     {
         $client = new JwVideoClient(
             new MockHttpClient(fn (string $method, string $url, array $options): MockResponse => $this->respond($url, $options)),
             $this->createStub(HttpClientInterface::class),
-            $this->createStub(HttpClientInterface::class),
+            $cdnClient ?? $this->createStub(HttpClientInterface::class),
             $this->getService(DamLogger::class),
             $this->createStub(LoggerInterface::class),
         );
