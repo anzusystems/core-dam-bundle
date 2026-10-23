@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Messenger\Handler;
 
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\Video\VideoDownloadFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -20,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
@@ -32,6 +34,8 @@ final class AssetFileChangeStateHandler
         private readonly DamLogger $damLogger,
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
+        private readonly ResourceLocker $resourceLocker,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -91,7 +95,14 @@ final class AssetFileChangeStateHandler
             return null;
         }
 
-        $this->changeState($assetFile);
+        $this->resourceLocker->lock($assetFile, ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds());
+        try {
+            // ResourceLocker refreshes the entity only on a contended acquire; a released lock leaves a stale one.
+            $this->entityManager->refresh($assetFile);
+            $assetFile = $this->changeState($assetFile);
+        } finally {
+            $this->resourceLocker->unLock($assetFile);
+        }
         $this->fileSystemProvider->getTmpFileSystem()->clearPaths();
 
         return $assetFile;
@@ -100,21 +111,14 @@ final class AssetFileChangeStateHandler
     /**
      * @throws RuntimeException
      */
-    private function changeState(AssetFile $assetFile): void
+    private function changeState(AssetFile $assetFile): AssetFile
     {
         try {
-            match ($assetFile->getAssetAttributes()->getStatus()) {
+            return match ($assetFile->getAssetAttributes()->getStatus()) {
                 AssetFileProcessStatus::Uploaded => $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile),
                 AssetFileProcessStatus::Stored => $this->handleStored($assetFile),
 
-                default => $this->damLogger->info(
-                    DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
-                    sprintf(
-                        'AssetFile (%s) change state to (%s) not suitable for handle',
-                        (string) $assetFile->getId(),
-                        $assetFile->getAssetAttributes()->getStatus()->toString()
-                    ),
-                )
+                default => $this->logNotSuitable($assetFile),
             };
         } catch (Throwable $e) {
             $this->damLogger->error(
@@ -130,6 +134,20 @@ final class AssetFileChangeStateHandler
 
             throw new RuntimeException(message: $e->getMessage(), previous: $e);
         }
+    }
+
+    private function logNotSuitable(AssetFile $assetFile): AssetFile
+    {
+        $this->damLogger->info(
+            DamLogger::NAMESPACE_ASSET_CHANGE_STATE,
+            sprintf(
+                'AssetFile (%s) change state to (%s) not suitable for handle',
+                (string) $assetFile->getId(),
+                $assetFile->getAssetAttributes()->getStatus()->toString()
+            ),
+        );
+
+        return $assetFile;
     }
 
     /**

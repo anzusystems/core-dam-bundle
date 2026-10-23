@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataAutocomplete;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataProcessor;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetSuggesterLocker;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
@@ -20,6 +21,7 @@ final readonly class MetadataProcessor
         private AssetMetadataAutocomplete $assetMetadataAutocomplete,
         private AssetFileEventDispatcher $dispatcher,
         private AssetFileManager $assetFileManager,
+        private AssetSuggesterLocker $assetSuggesterLocker,
     ) {
     }
 
@@ -30,16 +32,25 @@ final readonly class MetadataProcessor
     public function process(AssetFile $assetFile, BaseFile $file): AssetFile
     {
         $asset = $assetFile->getAsset();
-        $this->assetMetadataProvider->provideMetaData($assetFile, $file);
 
-        if ($asset->getAssetFlags()->isNotDescribed() && $asset->getAssetFlags()->isNotAutocompletedMetadata()) {
-            $this->assetMetadataAutocomplete->autocompleteMetadata($assetFile);
+        // Per-asset scope; author/keyword creation has its own per-name lock in the facades.
+        try {
+            $this->assetSuggesterLocker->lock($asset);
+            $this->assetMetadataProvider->provideMetaData($assetFile, $file);
+
+            if ($asset->getAssetFlags()->isNotDescribed() && $asset->getAssetFlags()->isNotAutocompletedMetadata()) {
+                $this->assetMetadataAutocomplete->autocompleteMetadata($assetFile);
+            }
+
+            $assetFile->getFlags()->setProcessedMetadata(true);
+            $this->assetFileManager->updateExisting(
+                assetFile: $assetFile,
+                trackModification: false
+            );
+        } finally {
+            $this->assetSuggesterLocker->unLock($asset);
         }
 
-        $this->assetFileManager->updateExisting(
-            assetFile: $assetFile,
-            trackModification: false
-        );
         $this->dispatcher->dispatchMetadataProcessed($assetFile);
 
         return $assetFile;

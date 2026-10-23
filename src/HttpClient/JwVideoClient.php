@@ -6,7 +6,9 @@ namespace AnzuSystems\CoreDamBundle\HttpClient;
 
 use AnzuSystems\CommonBundle\Traits\LoggerAwareRequest;
 use AnzuSystems\CommonBundle\Traits\SerializerAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\JwDistribution;
+use AnzuSystems\CoreDamBundle\Exception\RemoteProcessingWaitingException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\JwDistributionServiceConfiguration;
@@ -21,6 +23,7 @@ use JsonException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Throwable;
 
@@ -211,10 +214,9 @@ final class JwVideoClient
             }
 
             try {
+                $fileSize = (int) $file->getSize();
                 foreach ($listData->getParts() as $part) {
-                    $chunk = fread($handle, self::CHUNK_SIZE);
-
-                    $this->uploadFile($part->getLink(), $chunk);
+                    $this->uploadPart($part->getLink(), $handle, (int) min(self::CHUNK_SIZE, $fileSize - ftell($handle)));
                 }
             } finally {
                 if (is_resource($handle)) {
@@ -247,6 +249,9 @@ final class JwVideoClient
         }
     }
 
+    /**
+     * JW reports the media ready before its delivery API knows the id: it answers 404 for a few minutes.
+     */
     public function getVideoAssetData(JwDistributionServiceConfiguration $configuration, string $jwId): JwVideoMediaCdnDto
     {
         $response = $this->loggedRequest(
@@ -258,8 +263,12 @@ final class JwVideoClient
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ],
+            notLogErrorResponseCodes: [Response::HTTP_NOT_FOUND],
         );
 
+        if (Response::HTTP_NOT_FOUND === $response->getStatusCode()) {
+            throw new RemoteProcessingWaitingException();
+        }
         if ($response->hasError()) {
             throw new RuntimeException('JwVideoDistribution get cdn video failed');
         }
@@ -289,5 +298,38 @@ final class JwVideoClient
         }
 
         return $this->serializer->deserialize($response->getContent(), JwVideoMediaGetDto::class);
+    }
+
+    /**
+     * Streamed from the file: a 100 MB part held as a string plus its cURL copy exceeded the 256 MB worker limit.
+     *
+     * @param resource $handle
+     */
+    private function uploadPart(string $link, $handle, int $size): void
+    {
+        $remaining = $size;
+        $response = $this->client->request(
+            Request::METHOD_PUT,
+            $link,
+            [
+                'body' => static function (int $length) use ($handle, &$remaining): string {
+                    if (App::ZERO >= $remaining) {
+                        return App::EMPTY_STRING;
+                    }
+                    $data = (string) fread($handle, min($length, $remaining));
+                    $remaining -= strlen($data);
+
+                    return $data;
+                },
+                'headers' => [
+                    'Content-Length' => $size,
+                    'Content-Type' => '',
+                ],
+                'timeout' => self::UPLOAD_TIMEOUT,
+                'max_duration' => self::UPLOAD_DURATION,
+            ]
+        );
+
+        $response->getContent();
     }
 }

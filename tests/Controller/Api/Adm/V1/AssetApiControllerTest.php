@@ -5,12 +5,14 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
+use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\KeywordFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
@@ -19,8 +21,12 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Closure;
+use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Events;
 use League\Flysystem\FilesystemException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV4;
@@ -29,6 +35,8 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
 {
     private const string TEST_DATA_FILENAME = 'metadata_image.jpeg';
     private const string TEST_DATA_2_FILENAME = 'solid_image.jpeg';
+    private const string SUGGESTER_LOCK_PREFIX = 'lock_suggester_';
+    private const string SAVED_TITLE = 'Title saved by user';
 
     protected ImageUrlFactory $imageUrlFactory;
 
@@ -215,6 +223,41 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         );
     }
 
+    public function testMetadataBulkUpdateFlushesUnderSuggesterLock(): void
+    {
+        $assetIds = array_map(
+            fn (string $imageId): string => (string) $this->entityManager->find(ImageFile::class, $imageId)?->getAsset()->getId(),
+            [ImageFixtures::IMAGE_ID_1_1, ImageFixtures::IMAGE_ID_1_2]
+        );
+        $lockedMetadataFlushes = [];
+        $this->onMetadataFlush(function () use (&$lockedMetadataFlushes, $assetIds): void {
+            $lockedMetadataFlushes[] = [] === array_filter(
+                $assetIds,
+                fn (string $assetId): bool => false === $this->isSuggesterLockHeld($assetId)
+            );
+        });
+
+        $response = $this->getApiClient(User::ID_ADMIN)->patch(
+            '/api/adm/v1/asset/metadata-bulk-update',
+            array_map(
+                static fn (string $assetId): array => [
+                    'id' => $assetId,
+                    'customData' => ['title' => self::SAVED_TITLE],
+                ],
+                $assetIds
+            )
+        );
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        self::assertSame([true], $lockedMetadataFlushes);
+        foreach ($assetIds as $assetId) {
+            self::assertFalse($this->isSuggesterLockHeld($assetId));
+        }
+        $this->entityManager->clear();
+        $asset = $this->entityManager->find(Asset::class, $assetIds[0]);
+        self::assertSame(self::SAVED_TITLE, $asset?->getMetadata()->getCustomData()['title'] ?? null);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -279,5 +322,44 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         return [
             ['image'],
         ];
+    }
+
+    private function onMetadataFlush(Closure $callback): void
+    {
+        $this->entityManager->getEventManager()->addEventListener(
+            Events::onFlush,
+            new readonly class($callback) {
+                public function __construct(
+                    private Closure $callback
+                ) {
+                }
+
+                public function onFlush(OnFlushEventArgs $args): void
+                {
+                    foreach ($args->getObjectManager()->getUnitOfWork()->getScheduledEntityUpdates() as $entity) {
+                        if ($entity instanceof AssetMetadata) {
+                            ($this->callback)();
+
+                            return;
+                        }
+                    }
+                }
+            }
+        );
+    }
+
+    private function isSuggesterLockHeld(string $assetId): bool
+    {
+        $locker = static::getContainer()->get(ResourceLocker::class);
+        $lockName = self::SUGGESTER_LOCK_PREFIX . $assetId;
+
+        try {
+            $locker->lock($lockName, blocking: false);
+        } catch (RuntimeException) {
+            return true;
+        }
+        $locker->unLock($lockName);
+
+        return false;
     }
 }

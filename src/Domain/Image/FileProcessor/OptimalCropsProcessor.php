@@ -57,11 +57,14 @@ final readonly class OptimalCropsProcessor
         // Main crop can be rotated (it respects exif orientation metadata) but have original resolution
         $this->setSizeAttributes($assetFile, $mainCrop->getWidth(), $mainCrop->getHeight());
 
-        foreach ($this->configurationProvider->getImageOptimalResizes() as $imageOptimalResize) {
-            if ($this->shouldCreateCrop($assetFile, $imageOptimalResize)) {
-                $this->optimalResizeFactory->createCrop($assetFile, $file, $imageOptimalResize);
-            }
-        }
+        $this->optimalResizeFactory->createCrops(
+            $assetFile,
+            $file,
+            array_values(array_filter(
+                $this->configurationProvider->getImageOptimalResizes(),
+                fn (int $size): bool => $this->shouldCreateCrop($assetFile, $size)
+            ))
+        );
 
         return $assetFile;
     }

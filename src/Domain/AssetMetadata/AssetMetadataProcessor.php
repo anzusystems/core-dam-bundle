@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata;
 
-use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion\DataSuggesterInterface;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
@@ -15,8 +14,6 @@ use Symfony\Component\HttpFoundation\File\File as BaseFile;
 
 final class AssetMetadataProcessor
 {
-    private const string DATA_SUGGESTER_LOCK_PREFIX = 'lock_suggester_';
-
     /**
      * @var iterable<DataSuggesterInterface>
      */
@@ -26,7 +23,6 @@ final class AssetMetadataProcessor
         private readonly array $exifImageMetadata,
         private readonly array $exifCommonMetadata,
         private readonly Exiftool $exiftool,
-        private readonly ResourceLocker $resourceLocker,
         private readonly ExifMetadataFilter $exifMetadataFilter,
         #[AutowireIterator(tag: DataSuggesterInterface::class, indexAttribute: 'key')]
         iterable $dataSuggesters,
@@ -49,28 +45,18 @@ final class AssetMetadataProcessor
             );
         }
         $assetFile->getMetadata()->setExifData($metadata);
-        $assetFile->getFlags()->setProcessedMetadata(true);
 
         $this->runSuggesters($assetFile, $metadata);
 
         return $assetFile;
     }
 
-    // Per-asset scope; author/keyword creation has its own per-name lock in the facades.
     private function runSuggesters(AssetFile $assetFile, array $metadata): void
     {
-        $lockName = self::DATA_SUGGESTER_LOCK_PREFIX . (string) $assetFile->getAsset()->getId();
-        $this->resourceLocker->lock($lockName);
-
-        try {
-            foreach ($this->dataSuggesters as $dataSuggester) {
-                if ($dataSuggester->supports($assetFile)) {
-                    $dataSuggester->suggest($assetFile, $metadata);
-                }
+        foreach ($this->dataSuggesters as $dataSuggester) {
+            if ($dataSuggester->supports($assetFile)) {
+                $dataSuggester->suggest($assetFile, $metadata);
             }
-        } finally {
-            $this->resourceLocker->unLock($lockName);
         }
     }
-
 }
