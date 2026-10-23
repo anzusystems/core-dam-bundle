@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\MetadataProcessor;
+use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -43,6 +44,19 @@ final class MetadataProcessorTest extends CoreDamKernelTestCase
         self::assertSame($userCustomData, $asset->getMetadata()->getCustomData());
         self::assertTrue($asset->getAssetFlags()->isDescribed());
         self::assertTrue($asset->getAssetFlags()->isNotAutocompletedMetadata());
+    }
+
+    public function testProcessedMetadataFlagIsSetOnlyAfterSuggestersFinished(): void
+    {
+        $imageFile = $this->createImage();
+
+        $this->getService(AssetMetadataProcessor::class)->provideMetaData($imageFile, $this->getFile());
+
+        self::assertFalse($imageFile->getFlags()->isProcessedMetadata(), 'A flush inside the suggesters must not commit the flag.');
+
+        $this->getService(MetadataProcessor::class)->process($imageFile, $this->getFile());
+
+        self::assertTrue($imageFile->getFlags()->isProcessedMetadata());
     }
 
     private function getFile(): AdapterFile

@@ -45,7 +45,6 @@ final class AssetMetadataProcessor
             );
         }
         $assetFile->getMetadata()->setExifData($metadata);
-        $assetFile->getFlags()->setProcessedMetadata(true);
 
         $this->runSuggesters($assetFile, $metadata);
 

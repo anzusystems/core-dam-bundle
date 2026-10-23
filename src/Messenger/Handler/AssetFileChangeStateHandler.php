@@ -21,6 +21,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
+use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemException;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Throwable;
@@ -34,6 +35,7 @@ final class AssetFileChangeStateHandler
         private readonly FileSystemProvider $fileSystemProvider,
         private readonly VideoDownloadFacade $videoDownloadFacade,
         private readonly ResourceLocker $resourceLocker,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -95,6 +97,8 @@ final class AssetFileChangeStateHandler
 
         $this->resourceLocker->lock($assetFile, ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds());
         try {
+            // ResourceLocker refreshes the entity only on a contended acquire; a released lock leaves a stale one.
+            $this->entityManager->refresh($assetFile);
             $assetFile = $this->changeState($assetFile);
         } finally {
             $this->resourceLocker->unLock($assetFile);

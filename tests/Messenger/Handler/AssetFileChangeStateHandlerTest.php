@@ -108,6 +108,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
             $this->getService(ResourceLocker::class),
+            $this->entityManager,
         );
     }
 
@@ -322,8 +323,9 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
 
         $this->statusFacade->expects(self::once())
             ->method('storeAndProcess')
-            ->willReturnCallback(static function (VideoFile $assetFile): VideoFile {
+            ->willReturnCallback(function (VideoFile $assetFile): VideoFile {
                 $assetFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Processed);
+                $this->entityManager->flush();
 
                 return $assetFile;
             });
@@ -343,12 +345,13 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
 
         $this->statusFacade->expects(self::exactly(2))
             ->method('storeAndProcess')
-            ->willReturnCallback(static function (VideoFile $assetFile) use (&$attempt): VideoFile {
+            ->willReturnCallback(function (VideoFile $assetFile) use (&$attempt): VideoFile {
                 $attempt++;
                 if (1 === $attempt) {
                     throw new RuntimeException('storage_unavailable');
                 }
                 $assetFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Processed);
+                $this->entityManager->flush();
 
                 return $assetFile;
             });
@@ -397,6 +400,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             $this->getService(FileSystemProvider::class),
             $this->videoDownloadFacade,
             $this->getService(ResourceLocker::class),
+            $this->entityManager,
         );
         $origin = $this->createUploadedDownloadVideo('real-producer-origin');
         $duplicate = $this->createUploadedDownloadVideo('real-producer-duplicate');
@@ -530,6 +534,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
             ->setStatus(AssetFileProcessStatus::Uploaded)
             ->setCreateStrategy(AssetFileCreateStrategy::Download)
             ->setOriginUrl(self::DOWNLOAD_URL . '&case=' . $caseKey);
+        $this->entityManager->flush();
 
         return $videoFile;
     }
@@ -540,6 +545,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         self::assertInstanceOf(VideoFile::class, $origin);
         self::assertSame($origin, $origin->getAsset()->getMainFile());
         $origin->getAssetAttributes()->setStatus($status);
+        $this->entityManager->flush();
 
         return $origin;
     }
@@ -550,6 +556,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
     ): VideoFile {
         $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Duplicate, $createStrategy);
         $videoFile->getAssetAttributes()->setOriginAssetId($originAssetFileId);
+        $this->entityManager->flush();
 
         return $videoFile;
     }
@@ -558,6 +565,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
     {
         $videoFile = $this->presetVideoFile(AssetFileProcessStatus::Failed, $createStrategy);
         $videoFile->getAssetAttributes()->setFailReason(AssetFileFailedType::DownloadFailed);
+        $this->entityManager->flush();
 
         return $videoFile;
     }
@@ -569,6 +577,7 @@ final class AssetFileChangeStateHandlerTest extends CoreDamKernelTestCase
         $videoFile = $this->getService(VideoFileRepository::class)->find(VideoFixtures::VIDEO_ID_1);
         self::assertInstanceOf(VideoFile::class, $videoFile);
         $videoFile->getAssetAttributes()->setStatus($status)->setCreateStrategy($createStrategy);
+        $this->entityManager->flush();
 
         return $videoFile;
     }

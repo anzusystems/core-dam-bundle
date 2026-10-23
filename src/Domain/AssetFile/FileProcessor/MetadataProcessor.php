@@ -42,6 +42,7 @@ final readonly class MetadataProcessor
                 $this->assetMetadataAutocomplete->autocompleteMetadata($assetFile);
             }
 
+            $assetFile->getFlags()->setProcessedMetadata(true);
             $this->assetFileManager->updateExisting(
                 assetFile: $assetFile,
                 trackModification: false
