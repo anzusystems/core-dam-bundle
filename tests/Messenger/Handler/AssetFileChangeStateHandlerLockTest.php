@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Messenger\Handler;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\AssetFileStorageOperator;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\FileProcessor\FileAttributesProcessor;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
@@ -16,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Messenger\Handler\AssetFileChangeStateHandler;
 use AnzuSystems\CoreDamBundle\Messenger\Message\ImageFileChangeStateMessage;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -52,6 +54,27 @@ final class AssetFileChangeStateHandlerLockTest extends CoreDamKernelTestCase
         self::assertTrue($imageFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
     }
 
+    public function testStaleSnapshotOfFileProcessedByAnotherWorkerIsReloadedAfterFreeLock(): void
+    {
+        $imageFile = $this->createStaleStoredImageProcessedByAnotherWorker();
+        $imageId = $imageFile->getId();
+        $metadataProcessed = 0;
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            MetadataProcessedEvent::class,
+            function () use (&$metadataProcessed): void {
+                ++$metadataProcessed;
+            }
+        );
+
+        $this->getService(AssetFileChangeStateHandler::class)->handleImageFile(new ImageFileChangeStateMessage($imageFile));
+
+        self::assertSame(App::ZERO, $metadataProcessed);
+        $this->entityManager->clear();
+        $reloaded = $this->getService(AssetFileRepository::class)->find($imageId);
+        self::assertNotNull($reloaded);
+        self::assertTrue($reloaded->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
+    }
+
     public function testExpiredFileLockOfCrashedWorkerDoesNotBlock(): void
     {
         $imageFile = $this->createStoredImage();
@@ -72,6 +95,17 @@ final class AssetFileChangeStateHandlerLockTest extends CoreDamKernelTestCase
         $this->getService(AssetFileChangeStateHandler::class)->handleImageFile(new ImageFileChangeStateMessage($imageFile));
 
         self::assertTrue($imageFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Processed));
+    }
+
+    private function createStaleStoredImageProcessedByAnotherWorker(): ImageFile
+    {
+        $imageFile = $this->createStoredImage();
+        $imageFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Processed);
+        $this->entityManager->flush();
+        $imageFile->getAssetAttributes()->setStatus(AssetFileProcessStatus::Stored);
+        self::assertTrue($imageFile->getAssetAttributes()->getStatus()->is(AssetFileProcessStatus::Stored), 'The handler must start with the stale snapshot.');
+
+        return $imageFile;
     }
 
     private function createStoredImage(): ImageFile
