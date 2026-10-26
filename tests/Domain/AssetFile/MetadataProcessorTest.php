@@ -76,10 +76,12 @@ final class MetadataProcessorTest extends CoreDamKernelTestCase
         $imageFile = $this->createImage();
         $assetId = (string) $imageFile->getAsset()->getId();
         $lockHeldOnKeywordInsert = [];
+        $createdKeywords = [];
         $this->entityManager->getEventManager()->addEventListener(
             Events::onFlush,
-            new readonly class(function () use (&$lockHeldOnKeywordInsert, $assetId): void {
+            new readonly class(function (Keyword $keyword) use (&$lockHeldOnKeywordInsert, &$createdKeywords, $assetId): void {
                 $lockHeldOnKeywordInsert[] = $this->isSuggesterLockHeld($assetId);
+                $createdKeywords[] = $keyword;
             }) {
                 public function __construct(
                     private Closure $callback
@@ -90,7 +92,7 @@ final class MetadataProcessorTest extends CoreDamKernelTestCase
                 {
                     foreach ($args->getObjectManager()->getUnitOfWork()->getScheduledEntityInsertions() as $entity) {
                         if ($entity instanceof Keyword) {
-                            ($this->callback)();
+                            ($this->callback)($entity);
                         }
                     }
                 }
@@ -101,6 +103,9 @@ final class MetadataProcessorTest extends CoreDamKernelTestCase
 
         self::assertNotEmpty($lockHeldOnKeywordInsert, 'The exif keywords must be created.');
         self::assertNotContains(true, $lockHeldOnKeywordInsert);
+        foreach ($createdKeywords as $keyword) {
+            self::assertTrue($imageFile->getAsset()->getKeywords()->contains($keyword), 'A keyword created from exif must be added to the asset.');
+        }
         self::assertFalse($this->isSuggesterLockHeld($assetId));
     }
 

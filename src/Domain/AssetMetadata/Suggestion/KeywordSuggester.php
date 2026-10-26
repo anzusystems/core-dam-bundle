@@ -65,6 +65,7 @@ final class KeywordSuggester extends AbstractSuggester
 
         try {
             $this->keywordFacade->create($keyword);
+            $ids[] = (string) $keyword->getId();
         } catch (KeywordExistsException $exception) {
             $ids[] = (string) $exception->getExistingKeyword()->getId();
         } catch (Throwable $exception) {

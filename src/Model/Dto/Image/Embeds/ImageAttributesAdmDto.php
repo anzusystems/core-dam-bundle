@@ -37,7 +37,7 @@ final class ImageAttributesAdmDto
             ->setRatioHeight($attributes->getRatioHeight())
             ->setWidth($attributes->getWidth())
             ->setHeight($attributes->getHeight())
-            ->setRotation($attributes->getRatioWidth())
+            ->setRotation($attributes->getRotation())
             ->setMostDominantColor($attributes->getMostDominantColor()->toString())
             ->setAnimated($attributes->isAnimated())
         ;
