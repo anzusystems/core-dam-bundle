@@ -35,14 +35,25 @@ final class JwPlayerDistributionModuleTest extends CoreDamKernelTestCase
     {
         $this->expectException(RemoteProcessingFailedException::class);
 
-        $this->buildModule()->checkDistributionStatus($this->createDistribution(App::getAppDate()->modify('-4 hours')));
+        $this->buildModule(new MockResponse('{"message":"Invalid media id"}', ['http_code' => Response::HTTP_NOT_FOUND]))
+            ->checkDistributionStatus($this->createDistribution(App::getAppDate()->modify('-4 hours')));
     }
 
     public function testReadyVideoUnknownToDeliveryApiKeepsWaitingWithinRemoteProcessingLimit(): void
     {
         $this->expectException(RemoteProcessingWaitingException::class);
 
-        $this->buildModule()->checkDistributionStatus($this->createDistribution(App::getAppDate()->modify('-2 hours')));
+        $this->buildModule(new MockResponse('{"message":"Invalid media id"}', ['http_code' => Response::HTTP_NOT_FOUND]))
+            ->checkDistributionStatus($this->createDistribution(App::getAppDate()->modify('-2 hours')));
+    }
+
+    public function testReadyVideoKnownToDeliveryApiIsDistributedAfterRemoteProcessingLimit(): void
+    {
+        $distribution = $this->createDistribution(App::getAppDate()->modify('-4 hours'));
+
+        $this->buildModule(new MockResponse('{"playlist":[]}'))->checkDistributionStatus($distribution);
+
+        self::assertNotEmpty($distribution->getDistributionData());
     }
 
     private function createDistribution(DateTimeImmutable $modifiedAt): JwDistribution
@@ -55,12 +66,12 @@ final class JwPlayerDistributionModuleTest extends CoreDamKernelTestCase
         return $distribution;
     }
 
-    private function buildModule(): JwPlayerDistributionModule
+    private function buildModule(MockResponse $deliveryApiResponse): JwPlayerDistributionModule
     {
         $client = new JwVideoClient(
             $this->createStub(HttpClientInterface::class),
             new MockHttpClient(new MockResponse('{"status":"ready"}')),
-            new MockHttpClient(new MockResponse('{"message":"Invalid media id"}', ['http_code' => Response::HTTP_NOT_FOUND])),
+            new MockHttpClient($deliveryApiResponse),
             $this->getService(DamLogger::class),
             $this->createStub(LoggerInterface::class),
         );
