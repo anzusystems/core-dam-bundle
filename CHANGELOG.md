@@ -54,6 +54,8 @@
 * Fail url asset file download on any non-`2xx` status instead of writing an empty file
 * Fix TTS expired-audio cleanup failing the whole batch on an orphaned audio file (asset row gone): `AssetFileRouteGenerator::getFullUrl()` no longer reads the asset, and `TtsAudioFileRemover` continues after a failed file with a new EntityManager (`ManagerRegistry::resetManager()`, as Doctrine recommends after a failed transaction) so the rest of the batch is still removed
 * Podcast full sync skips podcasts with an empty `rssUrl` instead of requesting an empty URL and logging an error on every run
+* A keyword created from the exif metadata of a file is added to that asset; before, only the other assets with the same keyword got it
+* The adm image API returns the stored `imageAttributes.rotation` instead of the ratio width
 
 ## [1.40.0](https://github.com/anzusystems/core-dam-bundle/compare/1.39.0...1.40.0) (2025-09-22)
 

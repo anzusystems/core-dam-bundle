@@ -71,6 +71,8 @@ final class ImageApiControllerTest extends AbstractAssetFileApiController
 
         $response = $client->patch($imageUrl->getSingleAssetPath($image->getId()) . "/rotate/{$rotation}");
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
+        $rotatedImage = $this->serializer->deserialize($response->getContent(), ImageFileAdmDetailDto::class);
+        $this->assertSame($rotation, $rotatedImage->getImageAttributes()->getRotation());
 
         $originImageAttrs = clone $imageEntity->getImageAttributes();
         $imageEntity = $this->entityManager->find(ImageFile::class, $image->getId());
