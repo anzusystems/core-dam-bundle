@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\KeywordFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUrlFactory;
@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
-use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl\ImageUrl;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Closure;
@@ -28,7 +27,6 @@ use League\Flysystem\FilesystemException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV4;
 
 final class AssetApiControllerTest extends AbstractAssetFileApiController
@@ -40,6 +38,14 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
 
     protected ImageUrlFactory $imageUrlFactory;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        /** @var ImageUrlFactory $imageUrlFactory */
+        $imageUrlFactory = static::getContainer()->get(ImageUrlFactory::class);
+        $this->imageUrlFactory = $imageUrlFactory;
+    }
+
     #[DataProvider('updateDataProvider')]
     public function testUpdate(int $statusCode, ?string $categoryId = null): void
     {
@@ -47,10 +53,10 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
 
         $response = $client->put(
-            '/api/adm/v1/asset/'. $video->getAsset()->getId(),
+            '/api/adm/v1/asset/' . $video->getAsset()->getId(),
             [
                 'id' => $video->getAsset()->getId(),
-                'distributionCategory' => $categoryId
+                'distributionCategory' => $categoryId,
             ]
         );
 
@@ -91,7 +97,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             [
                 [
                     'id' => (new UuidV4())->toRfc4122(),
-                ]
+                ],
             ]
         );
 
@@ -102,7 +108,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             [
                 [
                     'id' => $firstAsset->getId(),
-                ]
+                ],
             ]
         );
 
@@ -117,12 +123,12 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $this->assertSame($firstAsset->getAssetFlags()->isDescribed(), true);
         $this->assertSame($firstAsset->getMainFile()->getFlags()->isSingleUse(), true);
         $this->assertSame(
-            $firstAsset->getAuthors()->map(fn($author) => $author->getName())->getValues(),
-            ["Larry Queen"]
+            $firstAsset->getAuthors()->map(fn ($author) => $author->getName())->getValues(),
+            ['Larry Queen']
         );
         $this->assertSame(
-            $firstAsset->getKeywords()->map(fn($author) => $author->getName())->getValues(),
-            ["Politics"]
+            $firstAsset->getKeywords()->map(fn ($author) => $author->getName())->getValues(),
+            ['Politics']
         );
 
         $response = $client->patch(
@@ -135,7 +141,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
                     'customData' => [],
                     'keywords' => [],
                     'authors' => [],
-                ]
+                ],
             ]
         );
 
@@ -155,7 +161,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
                     'id' => $firstAsset->getId(),
                     'described' => true,
                     'mainFileSingleUse' => true,
-                ]
+                ],
             ]
         );
 
@@ -174,8 +180,8 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
                         'title' => 'Title',
                         'headline' => 'Headline',
                         'description' => 'Description',
-                    ]
-                ]
+                    ],
+                ],
             ]
         );
 
@@ -196,12 +202,12 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
                 [
                     'id' => $firstAsset->getId(),
                     'keywords' => [
-                        KeywordFixtures::KEYWORD_2
+                        KeywordFixtures::KEYWORD_2,
                     ],
                     'authors' => [
-                        AuthorFixtures::AUTHOR_2
+                        AuthorFixtures::AUTHOR_2,
                     ],
-                ]
+                ],
             ]
         );
 
@@ -214,27 +220,27 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             'description' => 'Description',
         ]);
         $this->assertSame(
-            $firstAsset->getAuthors()->map(fn($author) => $author->getName())->getValues(),
-            ["Aarne Ormonde"]
+            $firstAsset->getAuthors()->map(fn ($author) => $author->getName())->getValues(),
+            ['Aarne Ormonde']
         );
         $this->assertSame(
-            $firstAsset->getKeywords()->map(fn($author) => $author->getName())->getValues(),
-            ["Podcast"]
+            $firstAsset->getKeywords()->map(fn ($author) => $author->getName())->getValues(),
+            ['Podcast']
         );
     }
 
-    public function testMetadataBulkUpdateFlushesUnderSuggesterLock(): void
+    public function testMetadataBulkUpdateFlushesEachAssetUnderItsOwnSuggesterLock(): void
     {
         $assetIds = array_map(
             fn (string $imageId): string => (string) $this->entityManager->find(ImageFile::class, $imageId)?->getAsset()->getId(),
             [ImageFixtures::IMAGE_ID_1_1, ImageFixtures::IMAGE_ID_1_2]
         );
-        $lockedMetadataFlushes = [];
-        $this->onMetadataFlush(function () use (&$lockedMetadataFlushes, $assetIds): void {
-            $lockedMetadataFlushes[] = [] === array_filter(
+        $lockedAssetIdsPerFlush = [];
+        $this->onMetadataFlush(function () use (&$lockedAssetIdsPerFlush, $assetIds): void {
+            $lockedAssetIdsPerFlush[] = array_values(array_filter(
                 $assetIds,
-                fn (string $assetId): bool => false === $this->isSuggesterLockHeld($assetId)
-            );
+                fn (string $assetId): bool => $this->isSuggesterLockHeld($assetId)
+            ));
         });
 
         $response = $this->getApiClient(User::ID_ADMIN)->patch(
@@ -249,21 +255,13 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         );
 
         self::assertStatusCode($response, Response::HTTP_OK);
-        self::assertSame([true], $lockedMetadataFlushes);
+        self::assertSame([[$assetIds[0]], [$assetIds[1]]], $lockedAssetIdsPerFlush);
         foreach ($assetIds as $assetId) {
             self::assertFalse($this->isSuggesterLockHeld($assetId));
         }
         $this->entityManager->clear();
         $asset = $this->entityManager->find(Asset::class, $assetIds[0]);
         self::assertSame(self::SAVED_TITLE, $asset?->getMetadata()->getCustomData()['title'] ?? null);
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        /** @var ImageUrlFactory $imageUrlFactory */
-        $imageUrlFactory = static::getContainer()->get(ImageUrlFactory::class);
-        $this->imageUrlFactory = $imageUrlFactory;
     }
 
     /**
@@ -292,7 +290,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         $this->addToSlot($client, $imageUrl, $secondFile, $assetId, 'free', Response::HTTP_CREATED);
 
         $this->entityManager->getRepository(ImageFile::class)->findBy([
-            'asset' => $assetId
+            'asset' => $assetId,
         ]);
         $this->entityManager->find(Asset::class, $assetId);
 
@@ -301,7 +299,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         );
         $this->assertEquals(Response::HTTP_OK, $response->getStatusCode());
 
-        $response = $client->delete('/api/adm/v1/asset/'. $imageEntity->getAsset()->getId());
+        $response = $client->delete('/api/adm/v1/asset/' . $imageEntity->getAsset()->getId());
         $this->assertEquals(Response::HTTP_NO_CONTENT, $response->getStatusCode());
 
         $this->assertEquals(0, count($filesystem->listContents($originImagePath->getDir())->toArray()));
@@ -312,7 +310,7 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
     public function testCreate(string $type): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
-        $response = $client->post('/api/adm/v1/asset/licence/'.AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
+        $response = $client->post('/api/adm/v1/asset/licence/' . AssetLicenceFixtures::DEFAULT_LICENCE_ID, ['type' => $type]);
 
         $this->assertEquals(Response::HTTP_CREATED, $response->getStatusCode(), $response->getContent());
     }

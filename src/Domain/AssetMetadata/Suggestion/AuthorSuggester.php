@@ -14,6 +14,8 @@ use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\DataSuggestionsDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\AuthorCleanPhrase\AuthorCleanResultDto;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\ORMException;
@@ -31,23 +33,41 @@ final class AuthorSuggester extends AbstractSuggester
     ) {
     }
 
-    public function suggest(AssetFile $assetFile, array $metadata): void
+    public function provideSuggestions(AssetFile $assetFile, array $metadata): DataSuggestionsDto
     {
         $configuration = $this->getConfiguration($assetFile);
 
         $authorsSuggestions = [];
+        $cleanPhraseAuthors = [];
         foreach ($configuration->getAutocompleteFromMetadataTags() as $tagName => $separator) {
             if (empty($metadata[$tagName])) {
                 continue;
             }
 
-            $authorsSuggestions = array_merge(
-                $authorsSuggestions,
-                $this->suggestOnMetadataValue($assetFile, $metadata[$tagName])
-            );
+            $cleanResult = $this->cleanMetadataValue($assetFile, $metadata[$tagName]);
+            if (null === $cleanResult) {
+                continue;
+            }
+
+            $authorsSuggestions = array_merge($authorsSuggestions, $cleanResult->getAuthorNames());
+            foreach ($cleanResult->getAuthors() as $author) {
+                $cleanPhraseAuthors[] = $author;
+            }
         }
 
-        $this->suggestWithTags($assetFile, array_unique($authorsSuggestions));
+        return new DataSuggestionsDto(
+            suggestions: $this->suggestWithTags($assetFile, array_unique($authorsSuggestions)),
+            authors: $cleanPhraseAuthors,
+        );
+    }
+
+    public function applySuggestions(AssetFile $assetFile, DataSuggestionsDto $suggestions): void
+    {
+        foreach ($suggestions->getAuthors() as $author) {
+            $assetFile->getAsset()->addAuthor($author);
+        }
+
+        parent::applySuggestions($assetFile, $suggestions);
     }
 
     /**
@@ -106,15 +126,10 @@ final class AuthorSuggester extends AbstractSuggester
     /**
      * @param non-empty-string $metadataValue
      */
-    private function suggestOnMetadataValue(AssetFile $assetFile, string $metadataValue): array
+    private function cleanMetadataValue(AssetFile $assetFile, string $metadataValue): ?AuthorCleanResultDto
     {
         try {
-            $processStringDto = $this->authorCleanPhraseProcessor->processString($metadataValue, $assetFile->getExtSystem());
-            $processStringDto->getAuthors()->map(
-                fn (Author $author) => $assetFile->getAsset()->addAuthor($author)
-            );
-
-            return $processStringDto->getAuthorNames();
+            return $this->authorCleanPhraseProcessor->processString($metadataValue, $assetFile->getExtSystem());
         } catch (Throwable $exception) {
             $this->damLogger->error(
                 namespace: DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
@@ -123,6 +138,6 @@ final class AuthorSuggester extends AbstractSuggester
             );
         }
 
-        return [];
+        return null;
     }
 }

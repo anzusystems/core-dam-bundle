@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\DataSuggestionsDto;
 use Symfony\Contracts\Service\Attribute\Required;
 
 abstract class AbstractSuggester implements DataSuggesterInterface
@@ -30,14 +31,19 @@ abstract class AbstractSuggester implements DataSuggesterInterface
         $this->extSystemConfigurationProvider = $configurationProvider;
     }
 
-    public function suggest(AssetFile $assetFile, array $metadata): void
+    public function provideSuggestions(AssetFile $assetFile, array $metadata): DataSuggestionsDto
     {
         $tags = $this->suggestionTagParser->parse(
             configuration: $this->getConfiguration($assetFile),
             metadata: $metadata
         );
 
-        $this->suggestWithTags($assetFile, $tags);
+        return new DataSuggestionsDto($this->suggestWithTags($assetFile, $tags));
+    }
+
+    public function applySuggestions(AssetFile $assetFile, DataSuggestionsDto $suggestions): void
+    {
+        $this->storeSuggestionsOnAsset($assetFile->getAsset(), $suggestions->getSuggestions());
     }
 
     public function supports(AssetFile $assetFile): bool
@@ -49,7 +55,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             && false === empty($authorSettings->getAutocompleteFromMetadataTags());
     }
 
-    protected function suggestWithTags(AssetFile $assetFile, array $tags): void
+    protected function suggestWithTags(AssetFile $assetFile, array $tags): array
     {
         $originAsset = $assetFile->getAsset();
         $suggestions = [];
@@ -64,7 +70,7 @@ abstract class AbstractSuggester implements DataSuggesterInterface
             ++$iteration;
         }
 
-        $this->storeSuggestionsOnAsset($originAsset, $suggestions);
+        return $suggestions;
     }
 
     abstract protected function storeSuggestionsOnAsset(Asset $asset, array $suggestions): void;
