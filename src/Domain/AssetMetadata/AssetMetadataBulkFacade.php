@@ -51,16 +51,16 @@ final class AssetMetadataBulkFacade
         $updated = [];
         /** @var Asset[] $affectedAssets */
         $affectedAssets = [];
-        $assets = $list->map(
-            static fn (FormProvidableMetadataBulkUpdateDto $dto): Asset => $dto->getAsset()
-        )->toArray();
 
-        try {
-            $this->assetSuggesterLocker->lockAll($assets);
+        foreach ($list as $updateDto) {
+            $this->checkPermissions($updateDto);
+        }
 
-            foreach ($list as $updateDto) {
-                $this->checkPermissions($updateDto);
-                $asset = $updateDto->getAsset();
+        foreach ($list as $updateDto) {
+            $asset = $updateDto->getAsset();
+
+            try {
+                $this->assetSuggesterLocker->lock($asset);
 
                 if ($this->isAssetChanged($asset, $updateDto)) {
                     $affectedAssets[] = $asset;
@@ -69,11 +69,10 @@ final class AssetMetadataBulkFacade
                 $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
                     asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, flush: false)
                 );
+                $this->assetManager->flush();
+            } finally {
+                $this->assetSuggesterLocker->unLock($asset);
             }
-
-            $this->assetManager->flush();
-        } finally {
-            $this->assetSuggesterLocker->unLockAll($assets);
         }
 
         if (false === empty($affectedAssets)) {

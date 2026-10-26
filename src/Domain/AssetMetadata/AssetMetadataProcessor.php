@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion\DataSuggesterInter
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
+use AnzuSystems\CoreDamBundle\Model\Dto\AssetMetadata\DataSuggestionsDto;
 use AnzuSystems\SerializerBundle\Exception\SerializerException;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\File\File as BaseFile;
@@ -33,7 +34,7 @@ final class AssetMetadataProcessor
     /**
      * @throws SerializerException
      */
-    public function provideMetaData(AssetFile $assetFile, BaseFile $file): AssetFile
+    public function readExifData(AssetFile $assetFile, BaseFile $file): array
     {
         $rawMetadata = $this->exiftool->getTags($file->getRealPath());
 
@@ -46,16 +47,36 @@ final class AssetMetadataProcessor
         }
         $assetFile->getMetadata()->setExifData($metadata);
 
-        $this->runSuggesters($assetFile, $metadata);
-
-        return $assetFile;
+        return $metadata;
     }
 
-    private function runSuggesters(AssetFile $assetFile, array $metadata): void
+    /**
+     * Creates missing authors and keywords; call it before the asset lock.
+     *
+     * @return array<string, DataSuggestionsDto>
+     */
+    public function provideSuggestions(AssetFile $assetFile, array $metadata): array
     {
-        foreach ($this->dataSuggesters as $dataSuggester) {
+        $suggestions = [];
+        foreach ($this->dataSuggesters as $key => $dataSuggester) {
             if ($dataSuggester->supports($assetFile)) {
-                $dataSuggester->suggest($assetFile, $metadata);
+                $suggestions[$key] = $dataSuggester->provideSuggestions($assetFile, $metadata);
+            }
+        }
+
+        return $suggestions;
+    }
+
+    /**
+     * Call it under the asset lock, after the asset was refreshed.
+     *
+     * @param array<string, DataSuggestionsDto> $suggestions
+     */
+    public function applySuggestions(AssetFile $assetFile, array $suggestions): void
+    {
+        foreach ($this->dataSuggesters as $key => $dataSuggester) {
+            if (isset($suggestions[$key]) && $dataSuggester->supports($assetFile)) {
+                $dataSuggester->applySuggestions($assetFile, $suggestions[$key]);
             }
         }
     }

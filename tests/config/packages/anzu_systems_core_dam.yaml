@@ -262,6 +262,10 @@ anzu_systems_core_dam:
         file_slots:
           default: default
           slots: [ default, test ]
+        keywords:
+          enabled: true
+          autocomplete_from_exif_metadata_tags:
+            Keywords: ','
   asset_licence_storage_overrides:
     100004: # AssetLicenceFixtures::LICENCE_NO_UPLOAD_ID
       storage_name: 'blog.image'

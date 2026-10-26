@@ -11,6 +11,9 @@ use Doctrine\ORM\EntityManagerInterface;
 final readonly class AssetSuggesterLocker
 {
     private const string LOCK_PREFIX = 'lock_suggester_';
+    // Spans refresh, suggestions, autocomplete and flush only. A killed holder must release it well before
+    // the 30 s admin request timeout.
+    private const float TTL = 5.0;
 
     public function __construct(
         private ResourceLocker $resourceLocker,
@@ -20,33 +23,13 @@ final readonly class AssetSuggesterLocker
 
     public function lock(Asset $asset): void
     {
-        $this->resourceLocker->lock(self::getLockName($asset));
+        $this->resourceLocker->lock(self::getLockName($asset), ttl: self::TTL);
         $this->refresh($asset);
     }
 
     public function unLock(Asset $asset): void
     {
         $this->resourceLocker->unLock(self::getLockName($asset));
-    }
-
-    /**
-     * @param iterable<Asset> $assets
-     */
-    public function lockAll(iterable $assets): void
-    {
-        foreach ($this->sortedUnique($assets) as $asset) {
-            $this->lock($asset);
-        }
-    }
-
-    /**
-     * @param iterable<Asset> $assets
-     */
-    public function unLockAll(iterable $assets): void
-    {
-        foreach ($this->sortedUnique($assets) as $asset) {
-            $this->unLock($asset);
-        }
     }
 
     private static function getLockName(Asset $asset): string
@@ -58,23 +41,5 @@ final readonly class AssetSuggesterLocker
     {
         $this->entityManager->refresh($asset);
         $this->entityManager->refresh($asset->getMetadata());
-    }
-
-    /**
-     * Ascending by id, so two bulk requests lock the same assets in the same order.
-     *
-     * @param iterable<Asset> $assets
-     *
-     * @return array<string, Asset>
-     */
-    private function sortedUnique(iterable $assets): array
-    {
-        $sorted = [];
-        foreach ($assets as $asset) {
-            $sorted[(string) $asset->getId()] = $asset;
-        }
-        ksort($sorted);
-
-        return $sorted;
     }
 }

@@ -32,11 +32,14 @@ final readonly class MetadataProcessor
     public function process(AssetFile $assetFile, BaseFile $file): AssetFile
     {
         $asset = $assetFile->getAsset();
+        $exifData = $this->assetMetadataProvider->readExifData($assetFile, $file);
 
-        // Per-asset scope; author/keyword creation has its own per-name lock in the facades.
+        $suggestions = $this->assetMetadataProvider->provideSuggestions($assetFile, $exifData);
+
+        // Per-asset scope: refresh, suggestions, autocomplete and flush. Authors and keywords are created before it.
         try {
             $this->assetSuggesterLocker->lock($asset);
-            $this->assetMetadataProvider->provideMetaData($assetFile, $file);
+            $this->assetMetadataProvider->applySuggestions($assetFile, $suggestions);
 
             if ($asset->getAssetFlags()->isNotDescribed() && $asset->getAssetFlags()->isNotAutocompletedMetadata()) {
                 $this->assetMetadataAutocomplete->autocompleteMetadata($assetFile);
