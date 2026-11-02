@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -31,6 +33,12 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
             return;
         }
 
+        if ($value instanceof ImageUseItemDto) {
+            $this->validateImageUseItemDto($value);
+
+            return;
+        }
+
         throw new UnexpectedTypeException($value, ImageCopyDto::class);
     }
 
@@ -41,6 +49,25 @@ final class AssetCopyEqualExtSystemValidator extends ConstraintValidator
         }
 
         if ($value->getAsset()->getLicence()->getExtSystem()->isNot($value->getTargetAssetLicence()->getExtSystem())) {
+            $this->context
+                ->buildViolation(ValidationException::ERROR_INVALID_LICENCE)
+                ->atPath('targetAssetLicence')
+                ->addViolation();
+        }
+    }
+
+    private function validateImageUseItemDto(ImageUseItemDto $value): void
+    {
+        $targetAssetLicence = $value->getTargetAssetLicence();
+        if (
+            null === $value->getImageFile()->getId()
+            || false === $targetAssetLicence instanceof AssetLicence
+            || null === $targetAssetLicence->getId()
+        ) {
+            return;
+        }
+
+        if ($value->getImageFile()->getExtSystem()->isNot($targetAssetLicence->getExtSystem())) {
             $this->context
                 ->buildViolation(ValidationException::ERROR_INVALID_LICENCE)
                 ->atPath('targetAssetLicence')

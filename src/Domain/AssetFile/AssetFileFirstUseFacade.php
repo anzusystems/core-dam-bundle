@@ -4,79 +4,68 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
-use AnzuSystems\CommonBundle\Exception\ValidationException;
-use AnzuSystems\CommonBundle\Helper\CollectionHelper;
-use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\CoreDamBundle\Security\AccessDenier;
-use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
+use DateTimeImmutable;
 
 final readonly class AssetFileFirstUseFacade
 {
     public function __construct(
         private AssetFileRepository $assetFileRepository,
         private AssetFileManager $assetFileManager,
-        private AccessDenier $accessDenier,
-        private Validator $validator,
-        private DamLogger $damLogger,
     ) {
     }
 
     /**
-     * Partial-success semantics: unknown damIds and items in licences the caller is not
-     * authorized for are skipped (skips are logged as warning), valid items are written.
-     * A 4xx here would make the CMS drop the whole batch permanently.
-     *
-     * @throws ValidationException
+     * @param list<AssetFile> $assetFiles
      */
-    public function processBatch(ImageFirstUseRequestDto $dto): void
+    public function record(array $assetFiles, DateTimeImmutable $firstUsedAt): void
     {
-        $this->validator->validate($dto);
-
-        $damIds = CollectionHelper::traversableToIds(
-            $dto->getItems(),
-            static fn (ImageFirstUseItemDto $item): string => $item->getDamId(),
-        );
-
         $assetFilesByDamId = [];
-        foreach ($this->assetFileRepository->findByIds($damIds) as $assetFile) {
+        foreach ($assetFiles as $assetFile) {
             $assetFilesByDamId[$assetFile->getId()] = $assetFile;
         }
-        $this->logUnknownDamIds($damIds, $assetFilesByDamId);
-        $assetFilesByDamId = $this->filterAuthorized($assetFilesByDamId);
+        $roots = $this->findTakeOverRoots($assetFilesByDamId);
 
-        foreach ($dto->getItems() as $item) {
-            $assetFile = $assetFilesByDamId[$item->getDamId()] ?? null;
-            // Write-once: the first recorded use date is never overwritten.
-            if ($assetFile instanceof AssetFile && null === $assetFile->getFirstUsedAt()) {
-                $assetFile->setFirstUsedAt($item->getFirstUsedAt());
-                $this->assetFileManager->updateExisting($assetFile, flush: false);
-            }
+        foreach ($assetFilesByDamId as $assetFile) {
+            $this->stampFirstUse($assetFile, $roots, $firstUsedAt);
         }
 
         $this->assetFileManager->flush();
     }
 
     /**
-     * @param string[] $damIds
-     * @param array<string, AssetFile> $assetFilesByDamId
+     * @param array<string, AssetFile> $roots
      */
-    private function logUnknownDamIds(array $damIds, array $assetFilesByDamId): void
+    private function stampFirstUse(AssetFile $assetFile, array $roots, ?DateTimeImmutable $firstUsedAt): void
     {
-        // Unknown ids signal CMS<->DAM drift, so they surface in logs even though the batch succeeds.
-        $unknownDamIds = array_diff($damIds, array_keys($assetFilesByDamId));
-        if ([] === $unknownDamIds) {
+        // Write-once: the first recorded use date is never overwritten.
+        if (null === $assetFile->getFirstUsedAt()) {
+            $assetFile->setFirstUsedAt($firstUsedAt);
+            $this->assetFileManager->updateExisting($assetFile, flush: false);
+        }
+        $this->stampTakeOverRoot($assetFile, $roots, $firstUsedAt);
+    }
+
+    /**
+     * A take-over is the same photo as the file it came from, so the original counts as used from the first use
+     * of any of them — the child's own recorded date wins, the incoming one is used only when the child has
+     * none. A root absent from the loaded set may be gone (retention deletes agency originals while their
+     * take-overs live on), which is an expected state, not an error.
+     *
+     * @param array<string, AssetFile> $roots
+     */
+    private function stampTakeOverRoot(AssetFile $assetFile, array $roots, ?DateTimeImmutable $itemFirstUsedAt): void
+    {
+        $rootId = $assetFile->getAssetAttributes()
+            ->getTakenOverFromId();
+        $root = $roots[$rootId] ?? null;
+        if (false === $root instanceof AssetFile || null !== $root->getFirstUsedAt()) {
             return;
         }
 
-        $this->damLogger->warning(
-            DamLogger::NAMESPACE_ASSET_FILE_FIRST_USE,
-            sprintf('First-use batch skipped %d unknown damId(s) (%s)', count($unknownDamIds), implode(',', $unknownDamIds)),
-        );
+        $root->setFirstUsedAt($assetFile->getFirstUsedAt() ?? $itemFirstUsedAt);
+        $this->assetFileManager->updateExisting($root, flush: false);
     }
 
     /**
@@ -84,36 +73,28 @@ final readonly class AssetFileFirstUseFacade
      *
      * @return array<string, AssetFile>
      */
-    private function filterAuthorized(array $assetFilesByDamId): array
+    private function findTakeOverRoots(array $assetFilesByDamId): array
     {
-        $grantedByLicenceId = [];
-        $deniedLicenceIds = [];
-        $authorized = [];
-
-        foreach ($assetFilesByDamId as $damId => $assetFile) {
-            $licence = $assetFile->getLicence();
-            $licenceId = (int) $licence->getId();
-            $grantedByLicenceId[$licenceId] ??= $this->accessDenier->isGranted(DamPermissions::DAM_IMAGE_UPDATE, $licence);
-
-            if ($grantedByLicenceId[$licenceId]) {
-                $authorized[$damId] = $assetFile;
-
+        $rootIds = [];
+        foreach ($assetFilesByDamId as $assetFile) {
+            $attributes = $assetFile->getAssetAttributes();
+            if (false === $attributes->isTakenOver()) {
                 continue;
             }
-            $deniedLicenceIds[$licenceId] = true;
+
+            $rootIds[$attributes->getTakenOverFromId()] = true;
         }
 
-        if ([] !== $deniedLicenceIds) {
-            $this->damLogger->warning(
-                DamLogger::NAMESPACE_ASSET_FILE_FIRST_USE,
-                sprintf(
-                    'First-use batch skipped %d item(s) in unauthorized licences (%s)',
-                    count($assetFilesByDamId) - count($authorized),
-                    implode(',', array_keys($deniedLicenceIds)),
-                ),
-            );
+        if ([] === $rootIds) {
+            return [];
         }
 
-        return $authorized;
+        $roots = [];
+        foreach ($this->assetFileRepository->findByIds(array_keys($rootIds)) as $root) {
+            $roots[$root->getId()] = $root;
+        }
+
+        return $roots;
     }
+
 }

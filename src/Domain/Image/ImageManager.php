@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Domain\RegionOfInterest\RegionOfInterestManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\RegionOfInterest;
+use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
 
 /**
@@ -39,15 +40,15 @@ final class ImageManager extends AssetFileManager
         return $image;
     }
 
+    /**
+     * @throws ForbiddenOperationException
+     */
     public function updateImage(ImageFile $image, ImageFileAdmDetailDto $dto, bool $flush = true): ImageFile
     {
-        $image->getFlags()
-            ->setPublic($dto->getFlags()->isPublic())
-            ->setSingleUse($dto->getFlags()->isSingleUse())
-        ;
+        $this->assetFileSingleUseEnforcer->switchSingleUse($image, $dto->getFlags()->isSingleUse());
+        $image->getFlags()->setPublic($dto->getFlags()->isPublic());
 
-        $this->trackModification($image);
-        $this->flush($flush);
+        $this->updateExisting($image, flush: $flush);
 
         return $image;
     }
@@ -76,9 +77,9 @@ final class ImageManager extends AssetFileManager
             return $result;
         }
 
-        $usageMap = $this->extSystemCallbackFacade->isImageFileUsedBulk($toCheck);
+        $usageMap = $this->extSystemCallbackFacade->resolveImageFileUsage($toCheck);
         foreach ($toCheck as $assetFile) {
-            $result[(string) $assetFile->getId()] = false === ($usageMap[(string) $assetFile->getId()] ?? true);
+            $result[(string) $assetFile->getId()] = false === (($usageMap[(string) $assetFile->getId()] ?? null)?->isUsed() ?? true);
         }
 
         return $result;

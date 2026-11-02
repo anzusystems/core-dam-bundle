@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Exiftool;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
+use AnzuSystems\CoreDamBundle\Model\Enum\ExifCharset;
 
 /**
  * Turns one decoded exiftool JSON object into the flat tag => value map, so every caller
@@ -13,6 +14,8 @@ use AnzuSystems\CoreDamBundle\Helper\StringHelper;
  */
 final readonly class ExifTagNormalizer
 {
+    private const string ABOVE_LATIN1_PATTERN = '/[^\x{00}-\x{FF}]/u';
+
     // Undo of exiftool's "latin1" (really cp1252, see exiftool Charset/Latin.pm) mappings above U+00FF,
     // restoring true 1:1 byte passthrough for normalizeIptcCharset(); exercised in ExifTagNormalizerTest.
     private const array LATIN_CHARSET_OVERRIDE_UNDO = [
@@ -81,6 +84,29 @@ final readonly class ExifTagNormalizer
         return $tagList;
     }
 
+    /**
+     * Raw IPTC bytes to UTF-8: valid UTF-8 stays, anything else goes through the fallback charset;
+     * null when the fallback cannot decode them either.
+     */
+    public function recoverBytes(string $bytes): ?string
+    {
+        if (false === $this->isCharsetRecoveryEnabled()) {
+            return null;
+        }
+        if (mb_check_encoding($bytes, ExifCharset::Utf8->value)) {
+            return $bytes;
+        }
+
+        $recovered = iconv((string) $this->iptcFallbackCharset, ExifCharset::Utf8->value, $bytes);
+
+        return false === $recovered ? null : $recovered;
+    }
+
+    private function isCharsetRecoveryEnabled(): bool
+    {
+        return null !== $this->iptcFallbackCharset && App::EMPTY_STRING !== $this->iptcFallbackCharset;
+    }
+
     private function normalizeValue(string $value, bool $recoverCharset): string
     {
         return $recoverCharset ? $this->normalizeIptcCharset($value) : $value;
@@ -90,26 +116,21 @@ final readonly class ExifTagNormalizer
     // Passthrough bytes valid as UTF-8 mean undeclared UTF-8; anything else recovers via the fallback charset.
     private function normalizeIptcCharset(string $value): string
     {
-        if (null === $this->iptcFallbackCharset || App::EMPTY_STRING === $this->iptcFallbackCharset) {
+        if (false === $this->isCharsetRecoveryEnabled()) {
             return $value;
         }
 
-        if (mb_check_encoding($value, 'ASCII')) {
+        if (mb_check_encoding($value, ExifCharset::Ascii->value)) {
             return $value;
         }
 
         $passthrough = strtr($value, self::LATIN_CHARSET_OVERRIDE_UNDO);
-        if (1 === preg_match('/[^\x{00}-\x{FF}]/u', $passthrough)) {
+        if (1 === preg_match(self::ABOVE_LATIN1_PATTERN, $passthrough)) {
             return $value;
         }
 
-        $bytes = mb_convert_encoding($passthrough, 'ISO-8859-1', 'UTF-8');
-        if (mb_check_encoding($bytes, 'UTF-8')) {
-            return $bytes;
-        }
-
-        $recovered = iconv($this->iptcFallbackCharset, 'UTF-8', $bytes);
-
-        return false === $recovered ? $value : $recovered;
+        return $this->recoverBytes(
+            mb_convert_encoding($passthrough, ExifCharset::BytePassthrough->value, ExifCharset::Utf8->value)
+        ) ?? $value;
     }
 }
