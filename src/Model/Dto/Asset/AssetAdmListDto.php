@@ -14,6 +14,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetTextsAdmListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\ApiViewType;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
+use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetAutoDeleteAtHandler;
 use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
@@ -139,9 +140,9 @@ class AssetAdmListDto extends AbstractEntityDto
         return $this->asset->getDates()->getUploadedAt();
     }
 
-    #[Serialize]
-    public function getAutoDeleteAt(): ?DateTimeImmutable
+    #[Serialize(handler: AssetAutoDeleteAtHandler::class)]
+    public function getAutoDeleteAt(): Asset
     {
-        return $this->asset->getLicence()->getAutoDelete()->getDeleteAt($this->asset->getCreatedAt());
+        return $this->asset;
     }
 }
