@@ -52,7 +52,7 @@ final readonly class AuthorProvider
             $changedCurrentAuthors = true;
 
             foreach ($assetAuthor->getCurrentAuthors() as $currentAuthor) {
-                $asset->getAuthors()->add($currentAuthor);
+                $asset->addAuthor($currentAuthor);
             }
 
             if (false === $assetAuthor->getFlags()->isReviewed()) {
