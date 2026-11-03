@@ -12,4 +12,9 @@ final class ImageSysUrl
     {
         return sprintf('/api/sys/v%d/image/first-use', self::API_VERSION);
     }
+
+    public static function copyJob(): string
+    {
+        return sprintf('/api/sys/v%d/image/copy-job', self::API_VERSION);
+    }
 }

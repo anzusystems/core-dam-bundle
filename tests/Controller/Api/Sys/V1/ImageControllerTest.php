@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
 use AnzuSystems\Contracts\Security\Grant;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as BlogImageFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\ImageSysUrl;
 use DateTimeImmutable;
@@ -162,6 +165,35 @@ final class ImageControllerTest extends AbstractApiController
                 'requestUserId' => User::ID_CMS_USER,
                 'itemDamIds' => [ImageFixtures::IMAGE_ID_1_1, BlogImageFixtures::IMAGE_ID_1],
                 'expectedWrittenDamIds' => [ImageFixtures::IMAGE_ID_1_1],
+            ],
+        ];
+    }
+
+    #[DataProvider('copyJobValidationFailureDataProvider')]
+    public function testCopyJobValidationFailure(array $requestJson, array $validationErrors): void
+    {
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(ImageSysUrl::copyJob(), $requestJson);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode((string) $response->getContent(), true), $validationErrors);
+    }
+
+    public static function copyJobValidationFailureDataProvider(): array
+    {
+        return [
+            'photo unknown or deleted in DAM' => [
+                'requestJson' => [
+                    'targetAssetLicence' => BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID,
+                    'items' => [['imageFile' => Uuid::v4()->toRfc4122()]],
+                ],
+                'validationErrors' => ['items[0].imageFile' => [ValidationException::ERROR_FIELD_EMPTY]],
+            ],
+            'photo of another ext system than the target licence' => [
+                'requestJson' => [
+                    'targetAssetLicence' => AssetLicenceFixtures::LICENCE_ID,
+                    'items' => [['imageFile' => ImageFixtures::IMAGE_ID_1_1]],
+                ],
+                'validationErrors' => ['targetAssetLicence' => [ValidationException::ERROR_INVALID_LICENCE]],
             ],
         ];
     }
