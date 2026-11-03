@@ -138,4 +138,10 @@ class AssetAdmListDto extends AbstractEntityDto
     {
         return $this->asset->getDates()->getUploadedAt();
     }
+
+    #[Serialize]
+    public function getAutoDeleteAt(): ?DateTimeImmutable
+    {
+        return $this->asset->getLicence()->getAutoDelete()->getDeleteAt($this->asset->getCreatedAt());
+    }
 }

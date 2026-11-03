@@ -47,7 +47,7 @@ final class AssetLicenceRetentionFacade
         foreach ($this->assetLicenceRepository->findAllWithAutoDeleteActive() as $licence) {
             $licenceId = $licence->getId();
 
-            if ($licence->getAutoDelete()->getOlderThanDays() < AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS) {
+            if (false === $licence->getAutoDelete()->isEffective()) {
                 $this->damLogger->warning(
                     DamLogger::NAMESPACE_ASSET_LICENCE_RETENTION,
                     sprintf('Licence (%d) skipped, olderThanDays below %d', $licenceId, AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS),
@@ -69,8 +69,12 @@ final class AssetLicenceRetentionFacade
         $licence = $this->assetLicenceRepository->find($licenceId);
 
         while ($licence instanceof AssetLicence && $licence->getAutoDelete()->isActive()) {
-            $createdBefore = App::getAppDate()->modify(sprintf('-%d days', $licence->getAutoDelete()->getOlderThanDays()));
-            $assets = $this->assetRepository->findByLicenceRetention($licence, $createdBefore, $this->bulkSize, $idFrom);
+            $assets = $this->assetRepository->findByLicenceRetention(
+                $licence,
+                $licence->getAutoDelete()->getCreatedBefore(),
+                $this->bulkSize,
+                $idFrom
+            );
             if ($assets->isEmpty()) {
                 return $deleted;
             }
