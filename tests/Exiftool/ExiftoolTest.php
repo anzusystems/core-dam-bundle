@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Exiftool;
 
+use AnzuSystems\CoreDamBundle\Exiftool\ExifTagNormalizer;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -14,6 +16,7 @@ final class ExiftoolTest extends CoreDamKernelTestCase
     private const string IPTC_CP1250_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250Undeclared.jpg';
     private const string IPTC_UTF8_UNDECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Undeclared.jpg';
     private const string IPTC_UTF8_DECLARED_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcUtf8Declared.jpg';
+    private const string IPTC_CP1250_MISDECLARED_UTF8_FIXTURE = __DIR__ . '/../data/Files/exifTagsIptcCp1250MisdeclaredUtf8.jpg';
 
     private Exiftool $exiftool;
 
@@ -75,6 +78,36 @@ final class ExiftoolTest extends CoreDamKernelTestCase
 
         self::assertSame('£50 note', $tags['By-line'] ?? null);
         self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
+    }
+
+    public function testIptcMisdeclaredAsUtf8IsRecovered(): void
+    {
+        $tags = $this->exiftool->getTags(self::IPTC_CP1250_MISDECLARED_UTF8_FIXTURE);
+
+        self::assertSame('UTF8', $tags['CodedCharacterSet'] ?? null);
+        self::assertSame('Peter Žákovič', $tags['By-line'] ?? null);
+        self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
+        self::assertSame('Žák, beta', $tags['Keywords'] ?? null);
+    }
+
+    /**
+     * Charset recovery is opt-in through the configured fallback charset: without it a file that declares
+     * UTF8 over cp1250 bytes keeps what exiftool alone reads, the lossy "?" for every invalid byte.
+     */
+    public function testIptcMisdeclaredAsUtf8IsNotRecoveredWithoutFallbackCharset(): void
+    {
+        $exiftool = new Exiftool(
+            (string) static::getContainer()->getParameter('kernel.project_dir') . '/vendor/phpexiftool/exiftool/exiftool',
+            $this->getService(DamLogger::class),
+            new ExifTagNormalizer(null),
+            null,
+        );
+
+        $tags = $exiftool->getTags(self::IPTC_CP1250_MISDECLARED_UTF8_FIXTURE);
+
+        self::assertSame('UTF8', $tags['CodedCharacterSet'] ?? null);
+        self::assertStringContainsString('?', $tags['By-line'] ?? '');
+        self::assertNotSame('Peter Žákovič', $tags['By-line'] ?? null);
     }
 
     public static function undeclaredIptcCharsetFixtureProvider(): array
