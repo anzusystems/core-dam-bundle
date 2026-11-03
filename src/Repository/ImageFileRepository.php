@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Repository;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
@@ -21,6 +22,29 @@ use Doctrine\Common\Collections\Criteria;
  */
 final class ImageFileRepository extends AbstractAssetFileRepository
 {
+    /**
+     * Single use images in id order, a page after the given id: the primary key is the cursor, so a page stops
+     * after its limit instead of sorting every single use row.
+     *
+     * @return list<ImageFile>
+     */
+    public function findSingleUseAfter(string $afterId, int $limit): array
+    {
+        /** @var list<ImageFile> $imageFiles */
+        $imageFiles = $this->createQueryBuilder('entity')
+            ->where('entity.flags.singleUse = :singleUse')
+            ->andWhere('entity.id > :afterId')
+            ->setParameter('singleUse', true)
+            ->setParameter('afterId', $afterId)
+            ->orderBy('entity.id', App::ORDER_ASC)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult()
+        ;
+
+        return $imageFiles;
+    }
+
     /**
      * @return Collection<int, ImageFile>
      */

@@ -157,6 +157,26 @@ final class AssetFileRepository extends AbstractAssetFileRepository
     }
 
     /**
+     * {@see findGroupFiles()} grouped by take-over root. The root ids are queried in ascending order, the same
+     * for every caller: the only defense against a deadlock between the writers locking overlapping sets.
+     *
+     * @param string[] $rootIds
+     *
+     * @return array<string, list<AssetFile>> take-over root id => files of the group
+     */
+    public function findGroupFilesByRoot(array $rootIds, bool $lock = false): array
+    {
+        sort($rootIds);
+
+        $groupByRoot = [];
+        foreach ($this->findGroupFiles($rootIds, $lock) as $file) {
+            $groupByRoot[$file->getTakeOverRootId()][] = $file;
+        }
+
+        return $groupByRoot;
+    }
+
+    /**
      * Single use files whose claim is due for a usage check, in the order of IDX_attributes_used_by_check_after:
      * the check date, then the id InnoDB appends to every secondary index, so a page stops after its limit
      * instead of sorting every due row. The (check date, id) cursor is what makes a run resumable: a file the

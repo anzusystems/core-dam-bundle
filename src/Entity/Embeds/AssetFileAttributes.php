@@ -52,7 +52,9 @@ class AssetFileAttributes
 
     /**
      * When the holder above becomes due for a usage check, so that a claim CMS never committed does not hold
-     * the photo forever. Null once the check confirmed the use, and on release.
+     * the photo forever. Written by AssetFileManager (updateUsage() with the holder, updateUsageCheck() alone when
+     * only the check moves) and by the single use enforcer when it turns a file single use; null until a file is
+     * first armed, and on a release the reconcile finds nothing pointing at.
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     private ?DateTimeImmutable $usedByCheckAfter = null;

@@ -48,6 +48,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'IDX_attributes_origin_storage_status', fields: ['assetAttributes.originStorage', 'assetAttributes.status'])]
 #[ORM\Index(name: 'IDX_attributes_taken_over_from', fields: ['assetAttributes.takenOverFromId'])]
 #[ORM\Index(name: 'IDX_attributes_used_by_check_after', fields: ['assetAttributes.usedByCheckAfter'])]
+#[ORM\Index(name: 'IDX_flags_single_use', fields: ['flags.singleUse'])]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,

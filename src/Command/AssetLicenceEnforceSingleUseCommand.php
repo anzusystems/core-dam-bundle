@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceSingleUseFacade;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use Symfony\Component\Console\Attribute\Argument;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -19,7 +19,7 @@ final readonly class AssetLicenceEnforceSingleUseCommand
 {
     public function __construct(
         private AssetLicenceRepository $assetLicenceRepository,
-        private AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
+        private AssetLicenceSingleUseFacade $assetLicenceSingleUseFacade,
     ) {
     }
 
@@ -40,7 +40,7 @@ final readonly class AssetLicenceEnforceSingleUseCommand
             return Command::FAILURE;
         }
 
-        $enforcedCount = $this->assetFileSingleUseEnforcer->enforceLicence($licence);
+        $enforcedCount = $this->assetLicenceSingleUseFacade->enforce($licence);
         $io->success(sprintf('Switched %d asset file(s) of licence %d to single use', $enforcedCount, $licence->getId()));
 
         return Command::SUCCESS;

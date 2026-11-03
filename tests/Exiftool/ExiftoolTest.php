@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Exiftool;
 
+use AnzuSystems\CoreDamBundle\Exiftool\ExifTagNormalizer;
 use AnzuSystems\CoreDamBundle\Exiftool\Exiftool;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -78,10 +80,6 @@ final class ExiftoolTest extends CoreDamKernelTestCase
         self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
     }
 
-    /**
-     * TASR/AP feed shape: IPTC:CodedCharacterSet=UTF8 declared over cp1250 bytes. Exiftool alone yields
-     * "Peter ??kovi?"; the raw-bytes re-read must restore the text.
-     */
     public function testIptcMisdeclaredAsUtf8IsRecovered(): void
     {
         $tags = $this->exiftool->getTags(self::IPTC_CP1250_MISDECLARED_UTF8_FIXTURE);
@@ -90,6 +88,26 @@ final class ExiftoolTest extends CoreDamKernelTestCase
         self::assertSame('Peter Žákovič', $tags['By-line'] ?? null);
         self::assertSame('Peter Žákovič, Ľupča', $tags['Caption-Abstract'] ?? null);
         self::assertSame('Žák, beta', $tags['Keywords'] ?? null);
+    }
+
+    /**
+     * Charset recovery is opt-in through the configured fallback charset: without it a file that declares
+     * UTF8 over cp1250 bytes keeps what exiftool alone reads, the lossy "?" for every invalid byte.
+     */
+    public function testIptcMisdeclaredAsUtf8IsNotRecoveredWithoutFallbackCharset(): void
+    {
+        $exiftool = new Exiftool(
+            (string) static::getContainer()->getParameter('kernel.project_dir') . '/vendor/phpexiftool/exiftool/exiftool',
+            $this->getService(DamLogger::class),
+            new ExifTagNormalizer(null),
+            null,
+        );
+
+        $tags = $exiftool->getTags(self::IPTC_CP1250_MISDECLARED_UTF8_FIXTURE);
+
+        self::assertSame('UTF8', $tags['CodedCharacterSet'] ?? null);
+        self::assertStringContainsString('?', $tags['By-line'] ?? '');
+        self::assertNotSame('Peter Žákovič', $tags['By-line'] ?? null);
     }
 
     public static function undeclaredIptcCharsetFixtureProvider(): array

@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
+use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -52,6 +53,92 @@ final class AssetListViewRepository extends AbstractAnzuRepository
             ->leftJoin('entity.licences', 'licences')
             ->addSelect('licences')
             ->andWhere('groups.id IS NULL')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Views targeted at licence groups that list at least one of the licences, with all their licences.
+     *
+     * @param list<int> $licenceIds
+     *
+     * @return list<AssetListView>
+     */
+    public function findTargetedByLicences(array $licenceIds): array
+    {
+        if ([] === $licenceIds) {
+            return [];
+        }
+
+        return $this->createOrderedQueryBuilder()
+            ->distinct()
+            ->innerJoin('entity.groups', 'groups')
+            ->leftJoin('entity.licences', 'licences')
+            ->addSelect('licences')
+            ->innerJoin(
+                join: 'entity.licences',
+                alias: 'targetedLicence',
+                conditionType: Expr\Join::WITH,
+                condition: 'targetedLicence.id IN (:licenceIds)'
+            )
+            ->setParameter('licenceIds', $licenceIds)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Licences of the given views that some group of the view other than the excluded one still reaches.
+     *
+     * @param list<int> $viewIds
+     * @param list<int> $licenceIds
+     *
+     * @return array<int, list<int>> view id => licence ids
+     */
+    public function findLicenceIdsReachedByOtherGroups(array $viewIds, array $licenceIds, int $excludedGroupId): array
+    {
+        if ([] === $viewIds || [] === $licenceIds) {
+            return [];
+        }
+
+        /** @var list<array{viewId: int|string, licenceId: int|string}> $rows */
+        $rows = $this->createQueryBuilder('entity')
+            ->select('DISTINCT entity.id AS viewId, licence.id AS licenceId')
+            ->innerJoin('entity.groups', 'reachingGroup')
+            ->innerJoin('reachingGroup.licences', 'licence')
+            ->where('entity.id IN (:viewIds)')
+            ->andWhere('reachingGroup.id != :excludedGroupId')
+            ->andWhere('licence.id IN (:licenceIds)')
+            ->setParameter('viewIds', $viewIds)
+            ->setParameter('licenceIds', $licenceIds)
+            ->setParameter('excludedGroupId', $excludedGroupId)
+            ->getQuery()
+            ->getArrayResult()
+        ;
+
+        $reached = [];
+        foreach ($rows as $row) {
+            $reached[(int) $row['viewId']][] = (int) $row['licenceId'];
+        }
+
+        return $reached;
+    }
+
+    /**
+     * @param list<int> $licenceIds
+     *
+     * @return list<AssetListView>
+     */
+    public function findByUploadLicenceIds(array $licenceIds): array
+    {
+        if ([] === $licenceIds) {
+            return [];
+        }
+
+        return $this->createQueryBuilder('entity')
+            ->where('IDENTITY(entity.uploadLicence) IN (:licenceIds)')
+            ->setParameter('licenceIds', $licenceIds)
             ->getQuery()
             ->getResult()
         ;

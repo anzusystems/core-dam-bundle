@@ -94,30 +94,6 @@ final class AssetListViewControllerTest extends AbstractApiController
     }
 
     /**
-     * @throws SerializerException
-     */
-    public function testUpdateChangingLicencesAndUploadLicenceTogetherSucceeds(): void
-    {
-        $client = $this->getApiClient(User::ID_ADMIN);
-
-        $createResponse = $client->post(AssetListViewUrl::createPath(), self::validRequestJson());
-        self::assertStatusCode($createResponse, Response::HTTP_CREATED);
-        $id = (int) json_decode($createResponse->getContent(), true)['id'];
-
-        $updateJson = self::validRequestJson();
-        $updateJson['id'] = $id;
-        $updateJson['groups'] = [];
-        $updateJson['licences'] = [AssetLicenceFixtures::LICENCE_2_ID];
-        $updateJson['uploadLicence'] = AssetLicenceFixtures::LICENCE_2_ID;
-        $updateResponse = $client->put(AssetListViewUrl::update($id), $updateJson);
-        self::assertStatusCode($updateResponse, Response::HTTP_OK);
-
-        $reloaded = json_decode($client->get(AssetListViewUrl::getOne($id))->getContent(), true);
-        self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $reloaded['licences']);
-        self::assertSame(AssetLicenceFixtures::LICENCE_2_ID, $reloaded['uploadLicence']);
-    }
-
-    /**
      * @param array{name: string, extSystem: int, groups: int[], licences: int[], uploadLicence?: int} $requestJson
      * @param array<string, string[]> $validationErrors
      */

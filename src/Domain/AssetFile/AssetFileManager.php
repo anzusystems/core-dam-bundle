@@ -79,20 +79,35 @@ class AssetFileManager extends AbstractManager
     /**
      * Deliberately not routed through {@see updateExisting()}: the single use enforcer lazy loads the licence
      * of every touched file, and a usage claim changes no licence and no flag — it is not a user edit either,
-     * so no modification tracking.
+     * so no modification tracking. The holder and the date it becomes due for a check are written together; the
+     * caller knows how soon its own write has to be verified, null when nothing is left to verify.
      *
      * @param T $assetFile
      *
      * @return T
      */
-    public function updateUsage(AssetFile $assetFile, UsageClaim $claim, bool $flush = true): AssetFile
-    {
-        $attributes = $assetFile->getAssetAttributes();
-        $attributes
+    public function updateUsage(
+        AssetFile $assetFile,
+        UsageClaim $claim,
+        ?DateTimeImmutable $usedByCheckAfter,
+        bool $flush = true,
+    ): AssetFile {
+        $assetFile->getAssetAttributes()
             ->setUsedByHolderName($claim->getHolderName())
             ->setUsedByHolderId($claim->getHolderId())
-            ->setUsedByCheckAfter($claim->isReleased() ? null : self::nextUsageCheck())
         ;
+
+        return $this->updateUsageCheck($assetFile, $usedByCheckAfter, $flush);
+    }
+
+    /**
+     * @param T $assetFile
+     *
+     * @return T
+     */
+    public function updateUsageCheck(AssetFile $assetFile, ?DateTimeImmutable $usedByCheckAfter, bool $flush = true): AssetFile
+    {
+        $assetFile->getAssetAttributes()->setUsedByCheckAfter($usedByCheckAfter);
         $this->flush($flush);
 
         return $assetFile;

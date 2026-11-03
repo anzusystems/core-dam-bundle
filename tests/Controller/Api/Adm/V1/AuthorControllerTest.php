@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Exception\Handler\DependencyExistsExceptionHandler;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
@@ -192,5 +195,27 @@ final class AuthorControllerTest extends AbstractApiController
                 'expectedResponseStatusCode' => Response::HTTP_OK,
             ],
         ];
+    }
+
+    public function testDeleteOfTheDefaultAuthorOfALicenceIsRefused(): void
+    {
+        $this->makeDefaultAuthorOfLicence(AuthorFixtures::AUTHOR_1, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
+        $response = $this->getApiClient(User::ID_ADMIN)->delete(AuthorUrl::delete(AuthorFixtures::AUTHOR_1));
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $content = json_decode((string) $response->getContent(), true);
+        self::assertSame(DependencyExistsExceptionHandler::ERROR, $content['error']);
+        self::assertSame([AssetLicence::class], $content['dependencies']);
+        $this->entityManager->clear();
+        self::assertInstanceOf(Author::class, $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1));
+    }
+
+    private function makeDefaultAuthorOfLicence(string $authorId, int $licenceId): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, $licenceId);
+        $licence->setDefaultAuthor($this->entityManager->find(Author::class, $authorId));
+        $this->entityManager->flush();
     }
 }

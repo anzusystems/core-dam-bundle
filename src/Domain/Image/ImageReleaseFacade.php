@@ -47,18 +47,14 @@ final class ImageReleaseFacade
         if ([] === $rootIds) {
             return;
         }
-        // Deterministic ascending order, the same {@see ImageUseFacade::claimSingleUseFiles()} relies on:
-        // the only defense against a deadlock between a release and a use racing over an overlapping set.
-        sort($rootIds);
-
         $claim = UsageClaim::fromHolder($dto->getHolder());
 
         try {
             $this->assetFileManager->beginTransaction();
             // Same lock ImageUseFacade takes: a use racing this release must see one consistent state,
             // holder either already gone or still here to compare against.
-            $group = $this->assetFileRepository->findGroupFiles($rootIds, lock: true);
-            $this->releaseGroupsHeldBy($group, $claim);
+            $groupByRoot = $this->assetFileRepository->findGroupFilesByRoot($rootIds, lock: true);
+            $this->releaseGroupsHeldBy($groupByRoot, $claim);
             $this->assetFileManager->flush();
             $this->assetFileManager->commit();
         } catch (Throwable $exception) {
@@ -71,28 +67,22 @@ final class ImageReleaseFacade
     }
 
     /**
-     * @param list<AssetFile> $group
+     * @param array<string, list<AssetFile>> $groupByRoot
      */
-    private function releaseGroupsHeldBy(array $group, UsageClaim $claim): void
+    private function releaseGroupsHeldBy(array $groupByRoot, UsageClaim $claim): void
     {
-        $byRoot = [];
-        foreach ($group as $file) {
-            $byRoot[$file->getTakeOverRootId()][] = $file;
-        }
-
         $released = UsageClaim::released();
-        foreach ($byRoot as $rootGroup) {
+        foreach ($groupByRoot as $rootGroup) {
             if (false === $this->isHeldBy($rootGroup, $claim)) {
                 continue;
             }
 
             foreach ($rootGroup as $file) {
-                $this->assetFileManager->updateUsage($file, $released, flush: false);
                 // The caller decided from its own state, which may have moved on since — a photo it dropped
                 // and took again reads as unused right up to the commit. One more question to the ext system
                 // turns a wrong release into a holder the reconcile writes back, instead of a photo offered
                 // as free with no check date left to notice it.
-                $file->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
+                $this->assetFileManager->updateUsage($file, $released, usedByCheckAfter: AssetFileManager::nextUsageCheck(), flush: false);
             }
         }
     }

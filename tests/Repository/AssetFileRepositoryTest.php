@@ -17,8 +17,8 @@ use DateTimeImmutable;
 final class AssetFileRepositoryTest extends CoreDamKernelTestCase
 {
     private const string STORAGE_NAME = 'inbox.storage';
-    private const string IMPORTED_PATH = 'tasr/photo.jpg';
-    private const string OTHER_PATH = 'tasr/other-photo.jpg';
+    private const string IMPORTED_PATH = 'agency/photo.jpg';
+    private const string OTHER_PATH = 'agency/other-photo.jpg';
 
     private AssetFileRepository $repository;
     private ImageFileRepository $imageFileRepository;

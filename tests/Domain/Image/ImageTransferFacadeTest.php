@@ -67,7 +67,6 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
 
         $this->assertHolder($source, self::RECEIVER_NAME, self::RECEIVER_ID);
         $this->assertHolder($copy, self::RECEIVER_NAME, self::RECEIVER_ID);
-        self::assertSame([(string) $copy->getId()], $result->getTransferred());
         self::assertCount(0, $result->getNotHeldByFrom());
     }
 
@@ -79,10 +78,9 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
         $result = $this->transfer([$source]);
 
         $this->assertHolder($source, self::HOLDER_NAME, self::OTHER_HOLDER_ID);
-        self::assertSame([], $result->getTransferred());
         $notHeld = $result->getNotHeldByFrom()->first();
         self::assertNotFalse($notHeld);
-        self::assertSame((string) $source->getId(), $notHeld->getDamId());
+        self::assertSame((string) $source->getId(), $notHeld->getImageFileId());
         self::assertSame(self::OTHER_HOLDER_ID, $notHeld->getHolderId());
     }
 
@@ -103,10 +101,9 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
     {
         $source = $this->createImage($this->singleUseLicence());
 
-        $result = $this->transfer([$source]);
+        $this->transfer([$source]);
 
         $this->assertHolder($source, self::RECEIVER_NAME, self::RECEIVER_ID);
-        self::assertSame([(string) $source->getId()], $result->getTransferred());
     }
 
     public function testRepeatedTransferIsIdempotent(): void
@@ -118,15 +115,12 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
         $repeated = $this->transfer([$copy]);
 
         $this->assertHolder($source, self::RECEIVER_NAME, self::RECEIVER_ID);
-        self::assertSame([(string) $copy->getId()], $repeated->getTransferred());
         self::assertCount(0, $repeated->getNotHeldByFrom());
     }
 
     public function testTransferArmsTheUsageCheck(): void
     {
-        $source = $this->createImage($this->singleUseLicence());
-        $source->getAssetAttributes()->setUsedByCheckAfter(null);
-        $this->entityManager->flush();
+        $source = $this->createImageWithoutUsageCheck($this->singleUseLicence());
 
         $this->transfer([$source]);
 
@@ -141,7 +135,6 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
         $result = $this->transfer([$plain]);
 
         $this->assertHolder($plain, App::EMPTY_STRING, App::EMPTY_STRING);
-        self::assertSame([], $result->getTransferred());
         self::assertCount(0, $result->getNotHeldByFrom());
     }
 
@@ -149,7 +142,6 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
     {
         $result = $this->transfer([]);
 
-        self::assertSame([], $result->getTransferred());
         self::assertCount(0, $result->getNotHeldByFrom());
     }
 
@@ -216,6 +208,15 @@ final class ImageTransferFacadeTest extends CoreDamKernelTestCase
         ;
 
         return $this->assetLicenceManager->create($licence);
+    }
+
+    private function createImageWithoutUsageCheck(AssetLicence $licence): ImageFile
+    {
+        $image = $this->createImage($licence);
+        $image->getAssetAttributes()->setUsedByCheckAfter(null);
+        $this->entityManager->flush();
+
+        return $image;
     }
 
     private function createImage(AssetLicence $licence): ImageFile

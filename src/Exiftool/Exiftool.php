@@ -135,7 +135,7 @@ final class Exiftool
     }
 
     /**
-     * Agency feeds (TASR/AP) declare IPTC as UTF8 while writing cp1250 bytes. Exiftool trusts the
+     * Agency feeds declare IPTC as UTF8 while writing cp1250 bytes. Exiftool trusts the
      * declaration, the -charset iptc override is ignored for declared files, and every invalid byte
      * comes back as "?" — lossy, so the raw bytes are re-read: with -b exiftool base64-encodes exactly
      * the values that are not valid UTF-8, which is the proof the declaration lied. A declared
@@ -191,7 +191,7 @@ final class Exiftool
         if (false === str_starts_with($rawValue, self::BASE64_PREFIX)) {
             return null;
         }
-        $bytes = base64_decode(substr($rawValue, strlen(self::BASE64_PREFIX)), true);
+        $bytes = base64_decode(substr($rawValue, strlen(self::BASE64_PREFIX)), strict: true);
 
         return false === $bytes ? null : $this->tagNormalizer->recoverBytes($bytes);
     }

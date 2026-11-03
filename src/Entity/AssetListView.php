@@ -86,7 +86,6 @@ class AssetListView implements
     private Collection $licences;
 
     #[ORM\ManyToOne(targetEntity: AssetLicence::class)]
-    #[ORM\JoinColumn(onDelete: 'SET NULL')]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?AssetLicence $uploadLicence;
 

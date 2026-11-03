@@ -20,6 +20,11 @@ final class AssetUrl
         );
     }
 
+    public static function getOne(string $assetId): string
+    {
+        return sprintf('/api/adm/v%d/asset/%s', self::API_VERSION, $assetId);
+    }
+
     /**
      * @param list<int> $licenceIds
      */

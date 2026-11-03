@@ -24,8 +24,7 @@ interface ExtSystemCallbackInterface
     /**
      * @param iterable<ImageFile> $imageFiles
      *
-     * @return array<string, ImageFileUsage> image file id => what the ext system points at it with; an id
-     *                                       it cannot answer for is left out
+     * @return array<string, ImageFileUsage> image file id => what the ext system points at it with; an id it cannot answer for is left out
      */
     public function resolveImageFileUsage(iterable $imageFiles): array;
 

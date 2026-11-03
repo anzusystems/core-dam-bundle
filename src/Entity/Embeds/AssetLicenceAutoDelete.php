@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Entity\Embeds;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -51,5 +52,24 @@ class AssetLicenceAutoDelete
         $this->olderThanDays = $olderThanDays;
 
         return $this;
+    }
+
+    public function isEffective(): bool
+    {
+        return $this->active && $this->olderThanDays >= self::MIN_OLDER_THAN_DAYS;
+    }
+
+    public function getDeleteAt(DateTimeImmutable $createdAt): ?DateTimeImmutable
+    {
+        if (false === $this->isEffective()) {
+            return null;
+        }
+
+        return $createdAt->modify(sprintf('+%d days', $this->olderThanDays));
+    }
+
+    public function getCreatedBefore(): DateTimeImmutable
+    {
+        return App::getAppDate()->modify(sprintf('-%d days', $this->olderThanDays));
     }
 }

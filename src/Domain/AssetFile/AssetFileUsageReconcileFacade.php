@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetFileAttributes;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileGroupUsage;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetFile\AssetFileUsageReconcileResult;
@@ -26,7 +25,7 @@ use Throwable;
  * back, or a hand over DAM never heard about, settles here. The whole take-over group is asked about at
  * once, because a copy is what the ext system points at once a photo was taken over.
  */
-final readonly class AssetFileUsageReconciler
+final readonly class AssetFileUsageReconcileFacade
 {
     private const int PAGE_SIZE = 100;
 
@@ -43,7 +42,7 @@ final readonly class AssetFileUsageReconciler
     public function __construct(
         private AssetFileRepository $assetFileRepository,
         private AssetFileManager $assetFileManager,
-        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private AssetFileGroupUsageReader $assetFileGroupUsageReader,
         private DamLogger $damLogger,
     ) {
     }
@@ -65,10 +64,10 @@ final readonly class AssetFileUsageReconciler
 
         while ($checked < $limit) {
             $due = $this->assetFileRepository->findUsageChecksDue(
-                $now,
-                min(self::PAGE_SIZE, $limit - $checked),
-                $afterCheckAfter,
-                $afterId,
+                checkAfter: $now,
+                limit: min(self::PAGE_SIZE, $limit - $checked),
+                afterCheckAfter: $afterCheckAfter,
+                afterId: $afterId,
             );
             if ([] === $due) {
                 break;
@@ -80,8 +79,8 @@ final readonly class AssetFileUsageReconciler
             $afterId = (string) $last->getId();
             $checked += count($due);
 
-            foreach ($this->usageByRoot($due) as $rootId => $usage) {
-                $outcome = $this->settleGroup($rootId, $usage, $now);
+            foreach ($this->assetFileGroupUsageReader->readByRoot($due) as $rootId => $usage) {
+                $outcome = $this->settleGroup(rootId: $rootId, usage: $usage, now: $now);
                 match ($outcome) {
                     AssetFileUsageReconcileOutcome::Skipped => $skipped++,
                     AssetFileUsageReconcileOutcome::Unanswered => $unanswered++,
@@ -104,58 +103,14 @@ final readonly class AssetFileUsageReconciler
             );
         }
 
-        return new AssetFileUsageReconcileResult($checked, $confirmed, $rewritten, $released, $skipped, $unanswered);
-    }
-
-    /**
-     * Used beats unanswered beats unused: one file the ext system still points at holds the whole group,
-     * and one it did not answer for is enough to leave the group alone. Holders are collected across the
-     * group and deduplicated — every file of a take-over group is the same photo.
-     *
-     * @param list<AssetFile> $due
-     *
-     * @return array<string, AssetFileGroupUsage>
-     */
-    private function usageByRoot(array $due): array
-    {
-        $rootIds = array_values(array_unique(array_map(
-            static fn (AssetFile $assetFile): string => $assetFile->getTakeOverRootId(),
-            $due,
-        )));
-
-        $group = $this->assetFileRepository->findGroupFiles($rootIds);
-        $imageFiles = array_filter($group, static fn (AssetFile $assetFile): bool => $assetFile instanceof ImageFile);
-        $answer = $this->extSystemCallbackFacade->resolveImageFileUsage($imageFiles);
-
-        $usedByRoot = array_fill_keys($rootIds, false);
-        $holdersByRoot = array_fill_keys($rootIds, null);
-        foreach ($imageFiles as $imageFile) {
-            $rootId = $imageFile->getTakeOverRootId();
-            $usage = $answer[(string) $imageFile->getId()] ?? null;
-
-            if (null === $usage) {
-                $usedByRoot[$rootId] = true === $usedByRoot[$rootId] ? true : null;
-
-                continue;
-            }
-            if ($usage->isUsed() && true !== $usedByRoot[$rootId]) {
-                $usedByRoot[$rootId] = true;
-            }
-            foreach ($usage->getHolders() ?? [] as $holder) {
-                $holdersByRoot[$rootId][$holder->getName() . '/' . $holder->getId()] = $holder;
-            }
-        }
-
-        $usageByRoot = [];
-        foreach ($rootIds as $rootId) {
-            $holders = $holdersByRoot[$rootId];
-            $usageByRoot[$rootId] = new AssetFileGroupUsage(
-                $usedByRoot[$rootId],
-                null === $holders ? null : array_values($holders),
-            );
-        }
-
-        return $usageByRoot;
+        return new AssetFileUsageReconcileResult(
+            checked: $checked,
+            confirmed: $confirmed,
+            rewritten: $rewritten,
+            released: $released,
+            skipped: $skipped,
+            unanswered: $unanswered,
+        );
     }
 
     /**
@@ -179,25 +134,27 @@ final readonly class AssetFileUsageReconciler
                 return AssetFileUsageReconcileOutcome::Skipped;
             }
 
-            $attributes = $group[array_key_first($group)]->getAssetAttributes();
-            $recordedHolder = $attributes->getUsedByHolderName() . '/' . $attributes->getUsedByHolderId();
+            $attributes = self::recordedAttributes($group);
+            $recordedHolder = ImageHolderDto::keyOf($attributes->getUsedByHolderName(), $attributes->getUsedByHolderId());
             $claim = null === $holder ? null : UsageClaim::fromHolder($holder);
             $rewriteTo = null !== $claim && false === $claim->matches($attributes) ? $claim : null;
 
             $checkAgainAfter = $now->add(new DateInterval(self::RECHECK_DELAY));
             foreach ($group as $assetFile) {
                 if (false === $used) {
-                    $this->assetFileManager->updateUsage($assetFile, UsageClaim::released(), flush: false);
+                    $this->assetFileManager->updateUsage($assetFile, UsageClaim::released(), usedByCheckAfter: null, flush: false);
 
                     continue;
                 }
+                // This group was just verified against the ext system, so the next question is due a day from
+                // now, not in fifteen minutes like after a claim.
                 if (null !== $rewriteTo) {
-                    $this->assetFileManager->updateUsage($assetFile, $rewriteTo, flush: false);
+                    $this->assetFileManager->updateUsage($assetFile, $rewriteTo, usedByCheckAfter: $checkAgainAfter, flush: false);
+
+                    continue;
                 }
 
-                // After updateUsage, which arms the short post-claim check: this group was just verified
-                // against the ext system, so the next question is due a day from now, not in fifteen minutes.
-                $assetFile->getAssetAttributes()->setUsedByCheckAfter($checkAgainAfter);
+                $this->assetFileManager->updateUsageCheck($assetFile, $checkAgainAfter, flush: false);
             }
             $this->assetFileManager->flush();
             $this->assetFileManager->commit();
@@ -209,14 +166,13 @@ final readonly class AssetFileUsageReconciler
             throw $exception;
         }
 
-        return $this->reportOutcome($rootId, $used, $holders, null !== $rewriteTo, $recordedHolder);
+        return $this->reportOutcome(rootId: $rootId, usage: $usage, rewrites: null !== $rewriteTo, recordedHolder: $recordedHolder);
     }
 
-    /**
-     * @param list<ImageHolderDto>|null $holders
-     */
-    private function reportOutcome(string $rootId, ?bool $used, ?array $holders, bool $rewrites, string $recordedHolder): AssetFileUsageReconcileOutcome
+    private function reportOutcome(string $rootId, AssetFileGroupUsage $usage, bool $rewrites, string $recordedHolder): AssetFileUsageReconcileOutcome
     {
+        $used = $usage->isUsed();
+        $holders = $usage->getHolders();
         if (null === $used) {
             return AssetFileUsageReconcileOutcome::Unanswered;
         }
@@ -236,7 +192,7 @@ final readonly class AssetFileUsageReconciler
                     $rootId,
                     count($holders),
                     implode(', ', array_map(
-                        static fn (ImageHolderDto $dto): string => $dto->getName() . '/' . $dto->getId(),
+                        static fn (ImageHolderDto $dto): string => $dto->getKey(),
                         $holders,
                     )),
                 ),
@@ -252,6 +208,21 @@ final readonly class AssetFileUsageReconciler
         }
 
         return AssetFileUsageReconcileOutcome::Confirmed;
+    }
+
+    /**
+     * @param non-empty-list<AssetFile> $group
+     */
+    private static function recordedAttributes(array $group): AssetFileAttributes
+    {
+        foreach ($group as $assetFile) {
+            $attributes = $assetFile->getAssetAttributes();
+            if (App::EMPTY_STRING !== $attributes->getUsedByHolderName()) {
+                return $attributes;
+            }
+        }
+
+        return $group[array_key_first($group)]->getAssetAttributes();
     }
 
     private static function isDue(AssetFile $assetFile, DateTimeImmutable $now): bool

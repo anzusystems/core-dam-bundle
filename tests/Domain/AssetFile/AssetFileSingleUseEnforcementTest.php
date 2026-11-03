@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Command\AssetLicenceEnforceSingleUseCommand;
+use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceSingleUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
@@ -26,17 +30,24 @@ use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFileAdmDetailDto;
+use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\Collection;
+use Monolog\Handler\TestHandler;
+use Monolog\Level;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
 {
     private const string CMS_SLUG = 'cms';
+    private const string SWITCH_AFTER_FIRST_USE_LOG = 'switched to single use after its first use';
 
     private AssetLicenceManager $assetLicenceManager;
     private AssetFactory $assetFactory;
@@ -57,13 +68,28 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $this->assetFileSingleUseEnforcer = $this->getService(AssetFileSingleUseEnforcer::class);
     }
 
-    public function testCreateUnderEnforcedLicenceForcesSingleUse(): void
+    #[DataProvider('createUnderLicenceDataProvider')]
+    public function testCreateTakesSingleUseFromTheLicence(bool $singleUseEnforced, bool $expectedSingleUse): void
     {
-        $image = $this->createImage($this->createLicence(singleUseEnforced: true));
+        $image = $this->createImage($this->createLicence(singleUseEnforced: $singleUseEnforced));
         $imageId = (string) $image->getId();
         $this->entityManager->clear();
 
-        self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
+        self::assertSame($expectedSingleUse, $this->findImage($imageId)->getFlags()->isSingleUse());
+    }
+
+    public static function createUnderLicenceDataProvider(): array
+    {
+        return [
+            'licence enforcing single use' => [
+                'singleUseEnforced' => true,
+                'expectedSingleUse' => true,
+            ],
+            'plain licence' => [
+                'singleUseEnforced' => false,
+                'expectedSingleUse' => false,
+            ],
+        ];
     }
 
     public function testBecomingSingleUseJoinsTheUsageCheckPopulation(): void
@@ -76,15 +102,6 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
             $this->findImage($imageId)->getAssetAttributes()->getUsedByCheckAfter(),
             'Without a check date the reconcile never asks the ext system who really holds this photo.',
         );
-    }
-
-    public function testCreateUnderPlainLicenceKeepsSingleUseOff(): void
-    {
-        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
-        $imageId = (string) $image->getId();
-        $this->entityManager->clear();
-
-        self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
     }
 
     public function testUpdateCannotSwitchSingleUseOffUnderEnforcedLicence(): void
@@ -141,25 +158,44 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $image = $this->createImage($licence);
         $imageId = (string) $image->getId();
         self::assertFalse($image->getFlags()->isSingleUse());
+        $this->enforceSingleUseAfterUpload($licence);
 
-        $licence->getFlags()->setSingleUseEnforced(true);
-        $this->entityManager->flush();
+        $first = $this->runEnforceSingleUse((int) $licence->getId(), Command::SUCCESS);
+        $second = $this->runEnforceSingleUse((int) $licence->getId(), Command::SUCCESS);
 
-        self::assertSame(1, $this->assetFileSingleUseEnforcer->enforceLicence($licence));
+        self::assertStringContainsString(sprintf('Switched 1 asset file(s) of licence %d', $licence->getId()), $first);
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
-        self::assertSame(0, $this->assetFileSingleUseEnforcer->enforceLicence($this->findLicence($licence->getId())));
+        self::assertStringContainsString(sprintf('Switched 0 asset file(s) of licence %d', $licence->getId()), $second);
     }
 
-    /**
-     * The ext system mirrors the flag: a switch it never hears about leaves its copy saying "plain photo".
-     */
+    #[DataProvider('enforceSingleUseRefusalDataProvider')]
+    public function testEnforceSingleUseCommandRefusesALicenceItCannotEnforce(int $licenceId, string $expectedError): void
+    {
+        $display = $this->runEnforceSingleUse($licenceId, Command::FAILURE);
+
+        self::assertStringContainsString($expectedError, $display);
+    }
+
+    public static function enforceSingleUseRefusalDataProvider(): array
+    {
+        return [
+            'unknown licence' => [
+                'licenceId' => App::ZERO,
+                'expectedError' => 'Asset licence not found',
+            ],
+            'licence without single use enforcement' => [
+                'licenceId' => AssetLicenceFixtures::DEFAULT_LICENCE_ID,
+                'expectedError' => 'Asset licence does not enforce single use',
+            ],
+        ];
+    }
+
     public function testEnforceLicenceAnnouncesTheSwitchedFilesToTheExtSystem(): void
     {
         $licence = $this->createLicence(singleUseEnforced: false);
         $image = $this->createImage($licence);
         $imageId = (string) $image->getId();
-        $licence->getFlags()->setSingleUseEnforced(true);
-        $this->entityManager->flush();
+        $this->enforceSingleUseAfterUpload($licence);
 
         $callback = $this->createMock(ExtSystemCallbackInterface::class);
         $callback->expects(self::once())
@@ -171,7 +207,7 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
                 ),
             ));
 
-        self::assertSame(1, $this->enforcerAnnouncingTo($callback)->enforceLicence($licence));
+        self::assertSame(1, $this->licenceFacadeAnnouncingTo($callback)->enforce($licence));
     }
 
     public function testFlippingSingleUseOnThroughTheAdminArmsTheUsageCheck(): void
@@ -197,10 +233,8 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
 
     public function testRefusingTheSwitchAfterFirstUseKeepsItsOwnReasonInsteadOfARotateError(): void
     {
-        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
-        $image->setFirstUsedAt(new DateTimeImmutable());
-        $this->entityManager->flush();
-        $this->imageManager->setAssetFileSingleUseEnforcer($this->enforcedSingleUseEnforcer());
+        $image = $this->createUsedImage($this->createLicence(singleUseEnforced: false));
+        $this->imageManager->setAssetFileSingleUseEnforcer($this->singleUseEnforcer(enforced: true));
 
         $dto = new ImageFileAdmDetailDto();
         $dto->getFlags()
@@ -218,17 +252,17 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
 
     public function testBulkEditRefusesTheSwitchAfterFirstUse(): void
     {
-        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
-        $image->setFirstUsedAt(new DateTimeImmutable());
-        $this->entityManager->flush();
+        $image = $this->createUsedImage($this->createLicence(singleUseEnforced: false));
         $imageId = (string) $image->getId();
         $asset = $image->getAsset();
 
         $dto = FormProvidableMetadataBulkUpdateDto::getInstance($asset)
             ->setMainFileSingleUse(true);
+        $journal = new TestHandler();
 
         try {
-            $this->enforcedAssetMetadataBulkManager()->updateFromMetadataBulkDto($asset, $dto);
+            $this->assetMetadataBulkManagerWith($this->singleUseEnforcer(enforced: true, journal: $journal))
+                ->updateFromMetadataBulkDto($asset, $dto);
             self::fail('The switch had to be refused.');
         } catch (ForbiddenOperationException $exception) {
             self::assertSame(ForbiddenOperationException::IMAGE_SINGLE_USE_AFTER_FIRST_USE, $exception->getDetail());
@@ -236,25 +270,50 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $this->entityManager->clear();
 
         self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
+        self::assertFalse($journal->hasWarningThatContains(self::SWITCH_AFTER_FIRST_USE_LOG));
     }
 
     public function testBulkEditSwitchAfterFirstUsePassesInSoftMode(): void
     {
-        $image = $this->createImage($this->createLicence(singleUseEnforced: false));
-        $image->setFirstUsedAt(new DateTimeImmutable());
-        $this->entityManager->flush();
+        $image = $this->createUsedImage($this->createLicence(singleUseEnforced: false));
         $imageId = (string) $image->getId();
         $asset = $image->getAsset();
 
         $dto = FormProvidableMetadataBulkUpdateDto::getInstance($asset)
             ->setMainFileSingleUse(true);
-        $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $dto);
+        $journal = new TestHandler();
+        $this->assetMetadataBulkManagerWith($this->singleUseEnforcer(enforced: false, journal: $journal))
+            ->updateFromMetadataBulkDto($asset, $dto);
         $this->entityManager->clear();
 
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
+        self::assertTrue($journal->hasRecordThatContains(
+            sprintf('Asset file %s %s', $imageId, self::SWITCH_AFTER_FIRST_USE_LOG),
+            Level::Warning,
+        ));
     }
 
-    private function enforcerAnnouncingTo(ExtSystemCallbackInterface $callback): AssetFileSingleUseEnforcer
+    private function runEnforceSingleUse(int $licenceId, int $expectedExitCode): string
+    {
+        $command = new AssetLicenceEnforceSingleUseCommand(
+            $this->getService(AssetLicenceRepository::class),
+            $this->getService(AssetLicenceSingleUseFacade::class),
+        );
+        $tester = new CommandTester(new Command(code: $command));
+        $exitCode = $tester->execute(['licence_id' => $licenceId]);
+        $display = $tester->getDisplay();
+        self::assertSame($expectedExitCode, $exitCode, $display);
+
+        return $display;
+    }
+
+    private function enforceSingleUseAfterUpload(AssetLicence $licence): void
+    {
+        $licence->getFlags()->setSingleUseEnforced(true);
+        $this->entityManager->flush();
+    }
+
+    private function licenceFacadeAnnouncingTo(ExtSystemCallbackInterface $callback): AssetLicenceSingleUseFacade
     {
         $facade = new ExtSystemCallbackFacade(
             new ServiceLocator([
@@ -264,45 +323,34 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
             $this->getService(ExtSystemRepository::class),
         );
 
-        return new AssetFileSingleUseEnforcer(
+        return new AssetLicenceSingleUseFacade(
             $this->getService(AssetRepository::class),
-            $this->entityManager,
+            $this->getService(AssetFileManager::class),
             $this->getService(IndexManager::class),
             $facade,
-            $this->getService(DamLogger::class),
-            false,
+            $this->assetFileSingleUseEnforcer,
         );
     }
 
-    private function enforcedSingleUseEnforcer(): AssetFileSingleUseEnforcer
+    private function singleUseEnforcer(bool $enforced, ?TestHandler $journal = null): AssetFileSingleUseEnforcer
     {
-        return new AssetFileSingleUseEnforcer(
-            $this->getService(AssetRepository::class),
-            $this->entityManager,
-            $this->getService(IndexManager::class),
-            $this->getService(ExtSystemCallbackFacade::class),
-            $this->getService(DamLogger::class),
-            true,
-        );
+        $damLogger = $this->getService(DamLogger::class);
+        if ($journal instanceof TestHandler) {
+            $damLogger = $this->recordingDamLogger($journal);
+        }
+
+        return new AssetFileSingleUseEnforcer($damLogger, singleUseEnforced: $enforced);
     }
 
-    private function enforcedAssetMetadataBulkManager(): AssetMetadataBulkManager
+    private function assetMetadataBulkManagerWith(AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer): AssetMetadataBulkManager
     {
         return new AssetMetadataBulkManager(
             $this->getService(AssetManager::class),
             $this->getService(AssetMetadataManager::class),
             $this->getService(AuthorProvider::class),
             $this->getService(AssetFileInternalRuleEvaluator::class),
-            $this->enforcedSingleUseEnforcer(),
+            $assetFileSingleUseEnforcer,
         );
-    }
-
-    private function findLicence(int $licenceId): AssetLicence
-    {
-        /** @var AssetLicence $licence */
-        $licence = $this->entityManager->find(AssetLicence::class, $licenceId);
-
-        return $licence;
     }
 
     private function findImage(string $imageId): ImageFile
@@ -323,6 +371,15 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $licence->getFlags()->setSingleUseEnforced($singleUseEnforced);
 
         return $this->assetLicenceManager->create($licence);
+    }
+
+    private function createUsedImage(AssetLicence $licence): ImageFile
+    {
+        $image = $this->createImage($licence);
+        $image->setFirstUsedAt(new DateTimeImmutable());
+        $this->entityManager->flush();
+
+        return $image;
     }
 
     private function createImage(AssetLicence $licence): ImageFile

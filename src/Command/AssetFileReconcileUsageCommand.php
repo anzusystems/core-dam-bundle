@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileUsageReconciler;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileUsageReconcileFacade;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
@@ -20,7 +20,7 @@ final readonly class AssetFileReconcileUsageCommand
     private const int DEFAULT_LIMIT = 10_000;
 
     public function __construct(
-        private AssetFileUsageReconciler $assetFileUsageReconciler,
+        private AssetFileUsageReconcileFacade $assetFileUsageReconcileFacade,
     ) {
     }
 
@@ -32,7 +32,7 @@ final readonly class AssetFileReconcileUsageCommand
         #[Option(description: 'How many due asset files to check in this run')]
         int $limit = self::DEFAULT_LIMIT,
     ): int {
-        $result = $this->assetFileUsageReconciler->reconcile($limit);
+        $result = $this->assetFileUsageReconcileFacade->reconcile($limit);
 
         $io->success(sprintf(
             'Checked %d asset file(s): %d group(s) confirmed, %d holder(s) rewritten, %d released, %d unanswered, %d left to the next run',

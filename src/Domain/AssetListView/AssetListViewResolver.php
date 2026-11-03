@@ -27,14 +27,7 @@ final readonly class AssetListViewResolver
      */
     public function resolveForUser(DamUser $user): array
     {
-        // Warm up EXTRA_LAZY collections up front - initialized containsKey() stays in memory,
-        // an uninitialized one hits the DB on every call inside the loop below.
-        $user->getAdminToExtSystems()->toArray();
-        $user->getUserToExtSystems()->toArray();
-        $user->getAssetLicences()->toArray();
-        foreach ($user->getLicenceGroups() as $licenceGroup) {
-            $licenceGroup->getLicences()->toArray();
-        }
+        $user->warmUpLicenceAccess();
 
         $views = [
             ...$this->assetListViewRepository->findByGroups($user->getLicenceGroups()->getKeys()),

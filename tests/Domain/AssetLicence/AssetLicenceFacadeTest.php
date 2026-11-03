@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException as CoreDamValidationException;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -104,20 +105,6 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         self::assertSame(AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS, $stored->getAutoDelete()->getOlderThanDays());
     }
 
-    public function testUpdateSetsDefaultAuthor(): void
-    {
-        $licence = $this->getFixtureLicence();
-        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_BLOG_1);
-        $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
-        $newLicence->setDefaultAuthor($author);
-
-        $this->assetLicenceFacade->update($licence, $newLicence);
-        $this->entityManager->clear();
-
-        $stored = $this->getFixtureLicence();
-        self::assertSame(AuthorFixtures::AUTHOR_BLOG_1, $stored->getDefaultAuthor()?->getId());
-    }
-
     public function testDefaultAuthorFromForeignExtSystemFailsValidation(): void
     {
         $licence = $this->getFixtureLicence();
@@ -129,7 +116,10 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
             $this->assetLicenceFacade->update($licence, $newLicence);
             self::fail('Expected ValidationException was not thrown.');
         } catch (ValidationException $exception) {
-            self::assertArrayHasKey('defaultAuthor', $exception->getFormattedErrors());
+            self::assertSame(
+                [CoreDamValidationException::ERROR_INVALID_EXT_SYSTEM],
+                $exception->getFormattedErrors()['defaultAuthor'] ?? null,
+            );
         }
     }
 

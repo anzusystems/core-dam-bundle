@@ -75,11 +75,11 @@ final class CropResizeExactSizeTest extends CoreDamKernelTestCase
     public static function cropProvider(): array
     {
         return [
-            'TASR portrait 1390x2000, full ROI, w1200-h630 (crop 1390x729 -> 1201 without force)' => [1390, 2000, 1.0, 1.0, 0, 0, 1200, 630],
-            'TASR portrait 1390x2000, full ROI, w800-h450 (crop 1390x781 -> 801 without force)' => [1390, 2000, 1.0, 1.0, 0, 0, 800, 450],
-            'small ROI 565x297 inside 1600x900, upscaled to w1200-h630 (-> 1198 without force)' => [1600, 900, 0.33, 0.33, 700, 300, 1200, 630],
-            'landscape 6000x4000, full ROI, w1200-h630 (ratio already exact)' => [6000, 4000, 1.0, 1.0, 0, 0, 1200, 630],
-            '800x600 upscaled to w1200-h630 (ratio exact, upscaling must be allowed)' => [800, 600, 1.0, 1.0, 0, 0, 1200, 630],
+            'Agency portrait 1390x2000, full ROI, w1200-h630 (crop 1390x729 -> 1201 without force)' => [1_390, 2_000, 1.0, 1.0, 0, 0, 1_200, 630],
+            'Agency portrait 1390x2000, full ROI, w800-h450 (crop 1390x781 -> 801 without force)' => [1_390, 2_000, 1.0, 1.0, 0, 0, 800, 450],
+            'small ROI 565x297 inside 1600x900, upscaled to w1200-h630 (-> 1198 without force)' => [1_600, 900, 0.33, 0.33, 700, 300, 1_200, 630],
+            'landscape 6000x4000, full ROI, w1200-h630 (ratio already exact)' => [6_000, 4_000, 1.0, 1.0, 0, 0, 1_200, 630],
+            '800x600 upscaled to w1200-h630 (ratio exact, upscaling must be allowed)' => [800, 600, 1.0, 1.0, 0, 0, 1_200, 630],
         ];
     }
 }

@@ -44,12 +44,8 @@ final readonly class JobImageCopyFacade
         return $job;
     }
 
-    /**
-     * @throws ValidationException
-     */
     public function createFromCopyList(JobImageCopyRequestDto $dto): JobImageCopy
     {
-        $this->validator->validate($dto);
         $job = $this->imageCopyFactory->createFromCopyList($dto);
 
         $this->manager->create($job);

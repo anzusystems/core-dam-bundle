@@ -260,9 +260,7 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
         $keptLicence = $this->findLicence(TestAssetLicenceFixtures::LICENCE_2_ID);
         $this->attachLicenceToGroup($keptLicence, $group100);
 
-        $view = $this->createListView('View using the removed licence as upload licence', [$group100], [$licence, $keptLicence]);
-        $view->setUploadLicence($licence);
-        $this->entityManager->flush();
+        $view = $this->createListView('View using the removed licence as upload licence', [$group100], [$licence, $keptLicence], $licence);
         $viewId = (int) $view->getId();
 
         $response = $this->getApiClient(User::ID_ADMIN)->put(AssetLicenceGroupUrl::update(AssetLicenceGroupFixtures::LICENCE_GROUP_ID), [
@@ -342,7 +340,7 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
      * @param list<AssetLicenceGroup> $groups
      * @param list<AssetLicence> $licences
      */
-    private function createListView(string $name, array $groups, array $licences): AssetListView
+    private function createListView(string $name, array $groups, array $licences, ?AssetLicence $uploadLicence = null): AssetListView
     {
         /** @var User $author */
         $author = $this->entityManager->find(User::class, User::ID_ADMIN);
@@ -354,6 +352,7 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
             ->setExtSystem($extSystem)
             ->setGroups(new ArrayCollection($groups))
             ->setLicences(new ArrayCollection($licences))
+            ->setUploadLicence($uploadLicence)
             ->setCreatedAt(App::getAppDate())
             ->setModifiedAt(App::getAppDate())
             ->setCreatedBy($author)

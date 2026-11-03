@@ -54,34 +54,26 @@ final class ImageTransferFacade
             return $result;
         }
         $rootIds = array_keys($requestedByRoot);
-        // The same ascending order ImageUseFacade and ImageReleaseFacade lock in: a deadlock defense.
-        sort($rootIds);
 
         $from = UsageClaim::fromHolder($dto->getFrom());
         $to = UsageClaim::fromHolder($dto->getTo());
 
         try {
             $this->assetFileManager->beginTransaction();
-            $groupByRoot = [];
-            foreach ($this->assetFileRepository->findGroupFiles($rootIds, lock: true) as $file) {
-                $groupByRoot[$file->getTakeOverRootId()][] = $file;
-            }
+            $groupByRoot = $this->assetFileRepository->findGroupFilesByRoot($rootIds, lock: true);
 
             foreach ($groupByRoot as $rootId => $group) {
                 $recorded = self::recordedHolder($group);
                 if (null !== $recorded && false === $from->matches($recorded) && false === $to->matches($recorded)) {
-                    foreach ($requestedByRoot[$rootId] ?? [] as $damId) {
-                        $result->addNotHeldByFrom(ImageUsageConflictDto::getInstance($damId, $recorded));
+                    foreach ($requestedByRoot[$rootId] ?? [] as $imageFileId) {
+                        $result->addNotHeldByFrom(ImageUsageConflictDto::getInstance($imageFileId, $recorded));
                     }
 
                     continue;
                 }
 
                 foreach ($group as $file) {
-                    $this->assetFileManager->updateUsage($file, $to, flush: false);
-                }
-                foreach ($requestedByRoot[$rootId] ?? [] as $damId) {
-                    $result->addTransferred($damId);
+                    $this->assetFileManager->updateUsage($file, $to, usedByCheckAfter: AssetFileManager::nextUsageCheck(), flush: false);
                 }
             }
 

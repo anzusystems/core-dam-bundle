@@ -10,33 +10,12 @@ use Doctrine\Common\Collections\Collection;
 
 final class ImageTransferResultDto
 {
-    /**
-     * @var list<string>
-     */
-    #[Serialize]
-    private array $transferred = [];
-
     #[Serialize(type: ImageUsageConflictDto::class)]
     private Collection $notHeldByFrom;
 
     public function __construct()
     {
         $this->notHeldByFrom = new ArrayCollection();
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function getTransferred(): array
-    {
-        return $this->transferred;
-    }
-
-    public function addTransferred(string $damId): self
-    {
-        $this->transferred[] = $damId;
-
-        return $this;
     }
 
     /**

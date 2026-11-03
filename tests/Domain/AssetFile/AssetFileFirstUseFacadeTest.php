@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Uid\Uuid;
 
 final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
@@ -37,24 +38,38 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         $this->imageManager = $this->getService(ImageManager::class);
     }
 
-    public function testFirstUseOfATakeOverAlsoStampsTheOriginal(): void
+    /**
+     * @return iterable<string, array{takeOverFirstUsedAt: ?string, expectedFirstUsedAt: string}>
+     */
+    public static function takeOverFirstUseDataProvider(): iterable
+    {
+        yield 'take-over used for the first time' => [
+            'takeOverFirstUsedAt' => null,
+            'expectedFirstUsedAt' => self::USED_AT,
+        ];
+        yield 'take-over used before its original was stamped' => [
+            'takeOverFirstUsedAt' => self::EARLIER_USED_AT,
+            'expectedFirstUsedAt' => self::EARLIER_USED_AT,
+        ];
+    }
+
+    #[DataProvider('takeOverFirstUseDataProvider')]
+    public function testFirstUseOfATakeOverAlsoStampsTheOriginal(?string $takeOverFirstUsedAt, string $expectedFirstUsedAt): void
     {
         $original = $this->createImage();
-        $takeOver = $this->createTakeOverOf($original);
+        $takeOver = $this->createTakeOverOf((string) $original->getId(), $takeOverFirstUsedAt);
 
         $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
 
-        self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($takeOver));
-        // First use belongs to the photo, not to the file the article happens to reference.
-        self::assertSame(self::USED_AT, $this->reloadFirstUsedAt($original));
+        self::assertSame($expectedFirstUsedAt, $this->reloadFirstUsedAt($takeOver));
+        self::assertSame($expectedFirstUsedAt, $this->reloadFirstUsedAt($original));
     }
 
     public function testOriginalKeepsItsEarlierFirstUse(): void
     {
-        $original = $this->createImage();
-        $original->setFirstUsedAt(new DateTimeImmutable(self::EARLIER_USED_AT));
-        $takeOver = $this->createTakeOverOf($original);
+        $original = $this->createImageFirstUsedAt(self::EARLIER_USED_AT);
+        $takeOver = $this->createTakeOverOf((string) $original->getId());
 
         $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
@@ -64,9 +79,7 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
 
     public function testTakeOverOfAnOriginalDeletedByRetentionIsStillStamped(): void
     {
-        $takeOver = $this->createImage();
-        $takeOver->getAssetAttributes()->setTakenOverFromId(Uuid::v7()->toRfc4122());
-        $this->entityManager->flush();
+        $takeOver = $this->createTakeOverOf(Uuid::v7()->toRfc4122());
 
         $this->firstUseFacade->record([$takeOver], new DateTimeImmutable(self::USED_AT));
         $this->entityManager->clear();
@@ -82,13 +95,23 @@ final class AssetFileFirstUseFacadeTest extends CoreDamKernelTestCase
         return $reloaded->getFirstUsedAt()?->format('Y-m-d H:i:s');
     }
 
-    private function createTakeOverOf(ImageFile $original): ImageFile
+    private function createTakeOverOf(string $originalId, ?string $firstUsedAt = null): ImageFile
     {
         $takeOver = $this->createImage();
-        $takeOver->getAssetAttributes()->setTakenOverFromId((string) $original->getId());
+        $takeOver->getAssetAttributes()->setTakenOverFromId($originalId);
+        $takeOver->setFirstUsedAt(null === $firstUsedAt ? null : new DateTimeImmutable($firstUsedAt));
         $this->entityManager->flush();
 
         return $takeOver;
+    }
+
+    private function createImageFirstUsedAt(string $firstUsedAt): ImageFile
+    {
+        $image = $this->createImage();
+        $image->setFirstUsedAt(new DateTimeImmutable($firstUsedAt));
+        $this->entityManager->flush();
+
+        return $image;
     }
 
     private function createImage(): ImageFile

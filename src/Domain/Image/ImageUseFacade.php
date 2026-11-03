@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
-use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
@@ -50,7 +49,6 @@ use Throwable;
  */
 final class ImageUseFacade
 {
-    use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
 
     /**
@@ -75,8 +73,6 @@ final class ImageUseFacade
      */
     public function useImages(ImageUseRequestDto $dto): ImageUseResultListDto
     {
-        $this->validator->validate($dto);
-
         try {
             $this->assetFileManager->beginTransaction();
             // The whole batch — resolution and, for single use items, the claim — runs under one
@@ -85,7 +81,7 @@ final class ImageUseFacade
             foreach ($dto->getItems() as $item) {
                 $resolved[] = $this->resolveItem($item);
             }
-            $this->claimSingleUseFiles($resolved, $dto->getHolder(), $dto->isFreeUse());
+            $this->claimSingleUseFiles(resolved: $resolved, holder: $dto->getHolder(), freeUse: $dto->isFreeUse());
             $this->assetFileFirstUseFacade->record(
                 array_map(static fn (ImageUseResolution $resolution): AssetFile => $resolution->getFile(), $resolved),
                 App::getAppDate(),
@@ -309,17 +305,11 @@ final class ImageUseFacade
             $rootIds[$resolution->getFile()->getTakeOverRootId()] = true;
         }
         $rootIds = array_keys($rootIds);
-        sort($rootIds);
 
         $claim = UsageClaim::fromHolder($holder);
-        $group = $this->assetFileRepository->findGroupFiles($rootIds, lock: true);
+        $groupByRoot = $this->assetFileRepository->findGroupFilesByRoot($rootIds, lock: true);
 
-        $groupByRoot = [];
-        foreach ($group as $groupFile) {
-            $groupByRoot[$groupFile->getTakeOverRootId()][] = $groupFile;
-        }
-
-        $conflicts = $this->collectConflicts($singleUseResolutions, $groupByRoot, $claim);
+        $conflicts = $this->collectConflicts(singleUseResolutions: $singleUseResolutions, groupByRoot: $groupByRoot, claim: $claim);
         if ([] !== $conflicts) {
             if ($this->singleUseEnforced) {
                 throw new ImageUsageConflictException($conflicts);
@@ -329,8 +319,10 @@ final class ImageUseFacade
 
         // With enforcement off the register mirrors the ext system's last claim: the ext system owns the
         // licence and its rows decide, so a conflict is logged and overwritten, never kept.
-        foreach ($group as $groupFile) {
-            $this->assetFileManager->updateUsage($groupFile, $claim, flush: false);
+        foreach ($groupByRoot as $rootGroup) {
+            foreach ($rootGroup as $groupFile) {
+                $this->assetFileManager->updateUsage($groupFile, $claim, usedByCheckAfter: AssetFileManager::nextUsageCheck(), flush: false);
+            }
         }
         $this->assetFileManager->flush();
     }
@@ -343,9 +335,9 @@ final class ImageUseFacade
         foreach ($conflicts as $conflict) {
             $this->damLogger->warning(
                 DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                sprintf('Single use file %s used with a different holder, claim overwrites: enforcement is off', $conflict->getDamId()),
+                sprintf('Single use file %s used with a different holder, claim overwrites: enforcement is off', $conflict->getImageFileId()),
                 [
-                    'damId' => $conflict->getDamId(),
+                    'imageFileId' => $conflict->getImageFileId(),
                     'heldBy' => ['name' => $conflict->getHolderName(), 'id' => $conflict->getHolderId()],
                     'claimedBy' => ['name' => $holder->getName(), 'id' => $holder->getId()],
                 ],
@@ -377,7 +369,7 @@ final class ImageUseFacade
         // Used, but claimed for nobody. Without a check date the group would never reach the reconcile, so
         // the holder the ext system does know about could never be written back.
         foreach ($singleUseResolutions as $resolution) {
-            $resolution->getFile()->getAssetAttributes()->setUsedByCheckAfter(AssetFileManager::nextUsageCheck());
+            $this->assetFileManager->updateUsageCheck($resolution->getFile(), AssetFileManager::nextUsageCheck(), flush: false);
         }
         $this->assetFileManager->flush();
     }

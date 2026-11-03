@@ -123,7 +123,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     private Collection $internalRuleUsers;
 
     #[ORM\ManyToOne(targetEntity: Author::class)]
-    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    #[ORM\JoinColumn(nullable: true)]
     #[Serialize(handler: EntityIdHandler::class)]
     #[AppAssert\EqualExtSystem]
     private ?Author $defaultAuthor = null;

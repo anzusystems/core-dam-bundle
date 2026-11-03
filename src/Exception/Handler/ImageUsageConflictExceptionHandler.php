@@ -7,12 +7,17 @@ namespace AnzuSystems\CoreDamBundle\Exception\Handler;
 use AnzuSystems\CommonBundle\Exception\Handler\ExceptionHandlerInterface;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\ImageUsageConflictException;
-use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUsageConflictDto;
+use AnzuSystems\SerializerBundle\Serializer;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Throwable;
 
 final class ImageUsageConflictExceptionHandler implements ExceptionHandlerInterface
 {
+    public function __construct(
+        private readonly Serializer $serializer,
+    ) {
+    }
+
     /**
      * @param ImageUsageConflictException $exception
      */
@@ -21,14 +26,7 @@ final class ImageUsageConflictExceptionHandler implements ExceptionHandlerInterf
         return new JsonResponse(
             [
                 'error' => $exception->getMessage(),
-                'conflicts' => array_map(
-                    static fn (ImageUsageConflictDto $conflict): array => [
-                        'damId' => $conflict->getDamId(),
-                        'holderName' => $conflict->getHolderName(),
-                        'holderId' => $conflict->getHolderId(),
-                    ],
-                    $exception->getConflicts(),
-                ),
+                'conflicts' => $this->serializer->toArray($exception->getConflicts()),
                 'contextId' => App::getContextId(),
             ],
             // 409, not 422: a refused take over (ForbiddenOperationException) already answers 422, and the

@@ -86,7 +86,6 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $this->entityManager->flush();
         $this->entityManager->clear();
 
-        // The resolver works on hydrated users; entities built in memory carry uninitialized collections.
         $this->userMember = $this->reloadUser(self::USER_MEMBER_ID);
         $this->userOutsider = $this->reloadUser(self::USER_OUTSIDER_ID);
         $this->userGlobalOnly = $this->reloadUser(self::USER_GLOBAL_ONLY_ID);

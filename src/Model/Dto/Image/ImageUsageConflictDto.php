@@ -14,7 +14,7 @@ use AnzuSystems\SerializerBundle\Attributes\Serialize;
 final class ImageUsageConflictDto
 {
     #[Serialize]
-    private string $damId = App::EMPTY_STRING;
+    private string $imageFileId = App::EMPTY_STRING;
 
     #[Serialize]
     private string $holderName = App::EMPTY_STRING;
@@ -22,23 +22,23 @@ final class ImageUsageConflictDto
     #[Serialize]
     private string $holderId = App::EMPTY_STRING;
 
-    public static function getInstance(string $damId, AssetFileAttributes $holder): self
+    public static function getInstance(string $imageFileId, AssetFileAttributes $holder): self
     {
         return (new self())
-            ->setDamId($damId)
+            ->setImageFileId($imageFileId)
             ->setHolderName($holder->getUsedByHolderName())
             ->setHolderId($holder->getUsedByHolderId())
         ;
     }
 
-    public function getDamId(): string
+    public function getImageFileId(): string
     {
-        return $this->damId;
+        return $this->imageFileId;
     }
 
-    public function setDamId(string $damId): self
+    public function setImageFileId(string $imageFileId): self
     {
-        $this->damId = $damId;
+        $this->imageFileId = $imageFileId;
 
         return $this;
     }

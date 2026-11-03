@@ -22,7 +22,10 @@ final class ImageUseRequestDto
     /**
      * The caller claiming the images, written onto the whole take-over group of every single use item
      * ({@see ImageUseFacade}). Null when the caller has nothing that may hold a photo — the batch is then
-     * resolved and recorded as used, but nothing is claimed, and a single use item is refused.
+     * resolved and recorded as used, but nothing is claimed. Without a holder and without {@see self::$freeUse},
+     * a single use item is logged, and refused when SINGLE_USE_ENFORCED is on; with {@see self::$freeUse}
+     * nothing is logged and nothing is refused, in either mode. With a holder, a group held by someone else is
+     * refused when SINGLE_USE_ENFORCED is on, otherwise logged and overwritten.
      */
     #[Serialize]
     #[Assert\Valid]

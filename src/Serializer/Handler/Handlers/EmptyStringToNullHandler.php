@@ -8,29 +8,24 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\SerializerBundle\Context\SerializationContext;
 use AnzuSystems\SerializerBundle\Handler\Handlers\AbstractHandler;
 use AnzuSystems\SerializerBundle\Metadata\Metadata;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
- * Admin text inputs submit "" when a field is cleared; the default BasicHandler would cast that to 0 / ""
- * instead of null — use on nullable scalar fields where "unset" must round-trip as null.
+ * Admin text inputs submit "" when a field is cleared; the default BasicHandler would keep the empty string
+ * instead of null — use on nullable string fields where "unset" must round-trip as null.
  */
 final class EmptyStringToNullHandler extends AbstractHandler
 {
-    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): string|int|float|null
+    public function serialize(mixed $value, Metadata $metadata, SerializationContext $context): ?string
     {
         return $value;
     }
 
-    public function deserialize(mixed $value, Metadata $metadata): string|int|float|null
+    public function deserialize(mixed $value, Metadata $metadata): ?string
     {
         if (null === $value || (is_string($value) && App::EMPTY_STRING === trim($value))) {
             return null;
         }
 
-        return match ($metadata->type) {
-            TypeIdentifier::INT->value => (int) $value,
-            TypeIdentifier::FLOAT->value => (float) $value,
-            default => (string) $value,
-        };
+        return (string) $value;
     }
 }

@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetListView;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
-use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetListViewDBALRepository;
-use Doctrine\DBAL\Exception;
+use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 
 final class AssetListViewManager extends AbstractManager
 {
     public function __construct(
-        private readonly AssetListViewDBALRepository $assetListViewDBALRepository,
+        private readonly AssetListViewRepository $assetListViewRepository,
     ) {
     }
 
@@ -52,19 +52,63 @@ final class AssetListViewManager extends AbstractManager
      * Drops the licences from every targeted view that no longer reaches them through any of its other groups,
      * and nulls the view's upload licence when it no longer belongs to the view's remaining licences.
      * Excluding the edited group makes the result independent of whether its own change is already flushed.
+     * Only the views listing these licences are loaded.
      *
      * @param list<int> $licenceIds
-     *
-     * @throws Exception
      */
-    public function removeUnreachableLicences(array $licenceIds, AssetLicenceGroup $excludedGroup): void
+    public function removeUnreachableLicences(array $licenceIds, AssetLicenceGroup $excludedGroup, bool $flush = true): void
     {
-        if ([] === $licenceIds) {
+        $views = $this->assetListViewRepository->findTargetedByLicences($licenceIds);
+        if ([] === $views) {
             return;
         }
 
-        $excludedGroupId = (int) $excludedGroup->getId();
-        $this->assetListViewDBALRepository->deleteLicencesUnreachableByOtherGroups($licenceIds, $excludedGroupId);
-        $this->assetListViewDBALRepository->clearUploadLicenceNotInView($licenceIds);
+        $reachedByView = $this->assetListViewRepository->findLicenceIdsReachedByOtherGroups(
+            viewIds: array_map(static fn (AssetListView $view): int => (int) $view->getId(), $views),
+            licenceIds: $licenceIds,
+            excludedGroupId: (int) $excludedGroup->getId(),
+        );
+        $checked = array_flip($licenceIds);
+
+        foreach ($views as $view) {
+            $reached = array_flip($reachedByView[(int) $view->getId()] ?? []);
+            $modified = false;
+            foreach ($view->getLicences()->toArray() as $licence) {
+                $licenceId = (int) $licence->getId();
+                if (isset($checked[$licenceId]) && false === isset($reached[$licenceId])) {
+                    $view->getLicences()->removeElement($licence);
+                    $modified = true;
+                }
+            }
+
+            $uploadLicence = $view->getUploadLicence();
+            if (
+                $uploadLicence instanceof AssetLicence
+                && isset($checked[(int) $uploadLicence->getId()])
+                && false === $view->getLicences()->contains($uploadLicence)
+            ) {
+                $view->setUploadLicence(null);
+                $modified = true;
+            }
+
+            if ($modified) {
+                $this->trackModification($view);
+            }
+        }
+        $this->flush($flush);
+    }
+
+    /**
+     * What the former ON DELETE SET NULL did: a licence about to be deleted stops being any view's upload licence.
+     *
+     * @param list<int> $licenceIds
+     */
+    public function unsetUploadLicences(array $licenceIds, bool $flush = true): void
+    {
+        foreach ($this->assetListViewRepository->findByUploadLicenceIds($licenceIds) as $view) {
+            $view->setUploadLicence(null);
+            $this->trackModification($view);
+        }
+        $this->flush($flush);
     }
 }

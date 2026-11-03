@@ -171,4 +171,18 @@ abstract class DamUser extends AnzuUser
 
         return $this;
     }
+
+    /**
+     * Initializes the EXTRA_LAZY collections the licence voters read, so an access check inside a loop
+     * stays in memory instead of querying once per call.
+     */
+    public function warmUpLicenceAccess(): void
+    {
+        $this->adminToExtSystems->toArray();
+        $this->userToExtSystems->toArray();
+        $this->assetLicences->toArray();
+        foreach ($this->licenceGroups as $licenceGroup) {
+            $licenceGroup->getLicences()->toArray();
+        }
+    }
 }

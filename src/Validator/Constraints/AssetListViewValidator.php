@@ -25,56 +25,47 @@ final class AssetListViewValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, EntityAssetListView::class);
         }
 
-        $extSystem = $value->getExtSystem();
+        $invalidPath = $this->findInvalidPath($value);
+        if (null !== $invalidPath) {
+            $this->addViolation($invalidPath);
+        }
+    }
 
-        foreach ($value->getGroups() as $group) {
+    private function findInvalidPath(EntityAssetListView $view): ?string
+    {
+        $extSystem = $view->getExtSystem();
+
+        foreach ($view->getGroups() as $group) {
             if ($group->getExtSystem()->isNot($extSystem)) {
-                $this->addViolation('groups');
-
-                return;
+                return 'groups';
             }
         }
 
-        foreach ($value->getLicences() as $licence) {
+        $licenceIds = [];
+        foreach ($view->getLicences() as $licence) {
             if ($licence->getExtSystem()->isNot($extSystem)) {
-                $this->addViolation('licences');
-
-                return;
+                return 'licences';
             }
+            $licenceIds[(int) $licence->getId()] = true;
         }
 
-        $uploadLicence = $value->getUploadLicence();
-        if (null !== $uploadLicence) {
-            $licenceIds = [];
-            foreach ($value->getLicences() as $licence) {
-                $licenceIds[(int) $licence->getId()] = true;
-            }
-
-            if (false === isset($licenceIds[(int) $uploadLicence->getId()])) {
-                $this->addViolation('uploadLicence');
-
-                return;
-            }
+        $uploadLicence = $view->getUploadLicence();
+        if (null !== $uploadLicence && false === isset($licenceIds[(int) $uploadLicence->getId()])) {
+            return 'uploadLicence';
         }
 
-        if ($value->getGroups()->isEmpty()) {
-            return;
+        if ($view->getGroups()->isEmpty()) {
+            return null;
         }
 
         $reachableLicenceIds = [];
-        foreach ($value->getGroups() as $group) {
+        foreach ($view->getGroups() as $group) {
             foreach ($group->getLicences() as $licence) {
                 $reachableLicenceIds[(int) $licence->getId()] = true;
             }
         }
 
-        foreach ($value->getLicences() as $licence) {
-            if (false === isset($reachableLicenceIds[(int) $licence->getId()])) {
-                $this->addViolation('licences');
-
-                return;
-            }
-        }
+        return [] === array_diff_key($licenceIds, $reachableLicenceIds) ? null : 'licences';
     }
 
     private function addViolation(string $path): void

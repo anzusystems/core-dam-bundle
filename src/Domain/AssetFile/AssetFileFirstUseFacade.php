@@ -28,7 +28,7 @@ final readonly class AssetFileFirstUseFacade
         $roots = $this->findTakeOverRoots($assetFilesByDamId);
 
         foreach ($assetFilesByDamId as $assetFile) {
-            $this->stampFirstUse($assetFile, $roots, $firstUsedAt);
+            $this->stampFirstUse(assetFile: $assetFile, roots: $roots, firstUsedAt: $firstUsedAt);
         }
 
         $this->assetFileManager->flush();
@@ -37,25 +37,25 @@ final readonly class AssetFileFirstUseFacade
     /**
      * @param array<string, AssetFile> $roots
      */
-    private function stampFirstUse(AssetFile $assetFile, array $roots, ?DateTimeImmutable $firstUsedAt): void
+    private function stampFirstUse(AssetFile $assetFile, array $roots, DateTimeImmutable $firstUsedAt): void
     {
         // Write-once: the first recorded use date is never overwritten.
         if (null === $assetFile->getFirstUsedAt()) {
             $assetFile->setFirstUsedAt($firstUsedAt);
             $this->assetFileManager->updateExisting($assetFile, flush: false);
         }
-        $this->stampTakeOverRoot($assetFile, $roots, $firstUsedAt);
+        $this->stampTakeOverRoot(assetFile: $assetFile, roots: $roots);
     }
 
     /**
      * A take-over is the same photo as the file it came from, so the original counts as used from the first use
-     * of any of them — the child's own recorded date wins, the incoming one is used only when the child has
-     * none. A root absent from the loaded set may be gone (retention deletes agency originals while their
-     * take-overs live on), which is an expected state, not an error.
+     * of any of them, so it takes the child's recorded date. A root absent from the loaded set may be gone
+     * (retention deletes agency originals while their take-overs live on), which is an expected state, not
+     * an error.
      *
      * @param array<string, AssetFile> $roots
      */
-    private function stampTakeOverRoot(AssetFile $assetFile, array $roots, ?DateTimeImmutable $itemFirstUsedAt): void
+    private function stampTakeOverRoot(AssetFile $assetFile, array $roots): void
     {
         $rootId = $assetFile->getAssetAttributes()
             ->getTakenOverFromId();
@@ -64,7 +64,7 @@ final readonly class AssetFileFirstUseFacade
             return;
         }
 
-        $root->setFirstUsedAt($assetFile->getFirstUsedAt() ?? $itemFirstUsedAt);
+        $root->setFirstUsedAt($assetFile->getFirstUsedAt());
         $this->assetFileManager->updateExisting($root, flush: false);
     }
 

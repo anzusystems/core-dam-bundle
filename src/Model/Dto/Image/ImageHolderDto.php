@@ -27,6 +27,16 @@ final class ImageHolderDto
     #[Length(max: AssetFileAttributes::HOLDER_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $id = App::EMPTY_STRING;
 
+    public static function keyOf(string $name, string $id): string
+    {
+        return $name . '/' . $id;
+    }
+
+    public function getKey(): string
+    {
+        return self::keyOf($this->name, $this->id);
+    }
+
     public function getName(): string
     {
         return $this->name;
