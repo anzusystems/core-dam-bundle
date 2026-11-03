@@ -7,10 +7,13 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Model\Enum\TtsAudioStatus;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
+use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures as TestAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\TtsNarrationRequestSysUrl;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 
 /** SYS dispatch: validation, sync synthesis (full pipeline), and content-addressed deduplication. */
@@ -78,5 +81,34 @@ final class TtsNarrationRequestControllerTest extends AbstractApiController
         $secondData = json_decode((string) $second->getContent(), true);
         self::assertSame('duplicate', $secondData['status']);
         self::assertSame($firstAssetId, $secondData['existingAssetId']);
+    }
+
+    #[DataProvider('dispatchAclDataProvider')]
+    public function testDispatchAcl(int $licenceId, int $expectedStatus): void
+    {
+        $this->enableAclCheck();
+        $this->grantPermission(User::ID_CMS_USER, DamPermissions::DAM_ASSET_CREATE);
+
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(TtsNarrationRequestSysUrl::dispatch(), [
+            'text' => 'Narration text dispatched under the ACL check.',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'assetLicence' => $licenceId,
+        ]);
+
+        self::assertStatusCode($response, $expectedStatus);
+    }
+
+    public static function dispatchAclDataProvider(): array
+    {
+        return [
+            'licence within user scope' => [
+                'licenceId' => self::LICENCE_ID,
+                'expectedStatus' => Response::HTTP_ACCEPTED,
+            ],
+            'licence outside user scope' => [
+                'licenceId' => TestAssetLicenceFixtures::LICENCE_ID,
+                'expectedStatus' => Response::HTTP_FORBIDDEN,
+            ],
+        ];
     }
 }

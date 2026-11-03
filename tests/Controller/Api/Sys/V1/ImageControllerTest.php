@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
-use AnzuSystems\Contracts\Security\Grant;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
-use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
-use AnzuSystems\CoreDamBundle\Model\Configuration\SettingsConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -20,7 +17,6 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures as BlogImageFixt
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\ImageSysUrl;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
-use ReflectionProperty;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 
@@ -279,51 +275,5 @@ final class ImageControllerTest extends AbstractApiController
         self::assertNotNull($assetFile);
 
         return $assetFile->getFirstUsedAt()?->format('Y-m-d H:i:s');
-    }
-
-    /**
-     * ACL checks are disabled by default in the test environment (tests/config/packages/anzu_systems_core_dam.yaml).
-     * Rebuild the real settings with acl_check_enabled flipped on and swap them into the shared
-     * ConfigurationProvider singleton, so this test method exercises the real voter chain.
-     */
-    private function enableAclCheck(): void
-    {
-        /** @var ConfigurationProvider $configurationProvider */
-        $configurationProvider = static::getContainer()->get(ConfigurationProvider::class);
-        $settings = $configurationProvider->getSettings();
-
-        $aclEnabledSettings = new SettingsConfiguration(
-            elasticIndexPrefix: $settings->getElasticIndexPrefix(),
-            notificationsConfig: $settings->getNotificationsConfig(),
-            elasticLanguageDictionaries: $settings->getElasticLanguageDictionaries(),
-            apiDomainKey: $settings->getApiDomainKey(),
-            redirectDomain: $settings->getRedirectDomain(),
-            youtubeApiKey: $settings->getYoutubeApiKey(),
-            defaultExtSystemId: $settings->getDefaultExtSystemId(),
-            defaultAssetLicenceId: $settings->getDefaultAssetLicenceId(),
-            allowSelectExtSystem: $settings->isAllowSelectExtSystem(),
-            allowSelectLicenceId: $settings->isAllowSelectLicenceId(),
-            maxBulkItemCount: $settings->getMaxBulkItemCount(),
-            imageChunkConfig: $settings->getImageChunkConfig(),
-            aclCheckEnabled: true,
-            userAuthType: $settings->getUserAuthType(),
-            adminAllowListName: $settings->getAdminAllowListName(),
-            distributionAuthRedirectUrl: $settings->getDistributionAuthRedirectUrl(),
-            limitedAssetLicenceFilesCount: $settings->getLimitedAssetLicenceFilesCount(),
-            notFoundImageId: $settings->getNotFoundImageId(),
-        );
-
-        $settingsConfigurationProperty = new ReflectionProperty(ConfigurationProvider::class, 'settingsConfiguration');
-        $settingsConfigurationProperty->setValue($configurationProvider, $aclEnabledSettings);
-    }
-
-    private function grantPermission(int $userId, string ...$permissions): void
-    {
-        /** @var User|null $user */
-        $user = $this->entityManager->getRepository(User::class)->find($userId);
-        self::assertNotNull($user);
-
-        $user->setPermissions(array_fill_keys($permissions, Grant::ALLOW));
-        $this->entityManager->flush();
     }
 }
