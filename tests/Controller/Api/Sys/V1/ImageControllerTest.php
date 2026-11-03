@@ -199,6 +199,47 @@ final class ImageControllerTest extends AbstractApiController
     }
 
     /**
+     * @param list<string> $permissions
+     */
+    #[DataProvider('copyJobAclDataProvider')]
+    public function testCopyJobAcl(array $permissions, int $targetLicenceId, string $imageFileId, int $expectedStatus): void
+    {
+        $this->enableAclCheck();
+        $this->grantPermission(User::ID_CMS_USER, ...$permissions);
+
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(ImageSysUrl::copyJob(), [
+            'targetAssetLicence' => $targetLicenceId,
+            'items' => [['imageFile' => $imageFileId]],
+        ]);
+
+        self::assertStatusCode($response, $expectedStatus);
+    }
+
+    public static function copyJobAclDataProvider(): array
+    {
+        return [
+            'without permission' => [
+                'permissions' => [],
+                'targetLicenceId' => BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID,
+                'imageFileId' => ImageFixtures::IMAGE_ID_1_1,
+                'expectedStatus' => Response::HTTP_FORBIDDEN,
+            ],
+            'licences within user scope' => [
+                'permissions' => [DamPermissions::DAM_ASSET_CREATE, DamPermissions::DAM_ASSET_READ],
+                'targetLicenceId' => BaseAssetLicenceFixtures::DEFAULT_LICENCE_ID,
+                'imageFileId' => ImageFixtures::IMAGE_ID_1_1,
+                'expectedStatus' => Response::HTTP_OK,
+            ],
+            'licences outside user scope' => [
+                'permissions' => [DamPermissions::DAM_ASSET_CREATE, DamPermissions::DAM_ASSET_READ],
+                'targetLicenceId' => AssetLicenceFixtures::LICENCE_ID,
+                'imageFileId' => BlogImageFixtures::IMAGE_ID_1,
+                'expectedStatus' => Response::HTTP_FORBIDDEN,
+            ],
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     private static function item(string $damId): array
@@ -276,13 +317,13 @@ final class ImageControllerTest extends AbstractApiController
         $settingsConfigurationProperty->setValue($configurationProvider, $aclEnabledSettings);
     }
 
-    private function grantPermission(int $userId, string $permission): void
+    private function grantPermission(int $userId, string ...$permissions): void
     {
         /** @var User|null $user */
         $user = $this->entityManager->getRepository(User::class)->find($userId);
         self::assertNotNull($user);
 
-        $user->setPermissions([$permission => Grant::ALLOW]);
+        $user->setPermissions(array_fill_keys($permissions, Grant::ALLOW));
         $this->entityManager->flush();
     }
 }

@@ -9,23 +9,18 @@ use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Log\Helper\AuditLogResourceHelper;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponseValidation;
-use AnzuSystems\CommonBundle\Validator\Validator;
 use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
-use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestItemDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest as OADamRequest;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -40,8 +35,6 @@ final class ImageController extends AbstractApiController
     public function __construct(
         private readonly JobImageCopyFacade $imageCopyFacade,
         private readonly AssetFileFirstUseFacade $firstUseFacade,
-        private readonly AssetRepository $assetRepository,
-        private readonly Validator $validator,
     ) {
     }
 
@@ -58,16 +51,6 @@ final class ImageController extends AbstractApiController
     #[OADamRequest(JobImageCopyRequestDto::class), OAResponse(JobImageCopy::class), OAResponseValidation]
     public function createCopyJob(#[SerializeParam] JobImageCopyRequestDto $copyDto): JsonResponse
     {
-        $this->validator->validate($copyDto);
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $copyDto->getTargetAssetLicence());
-        $this->warmUpAccessCheck(array_map(
-            static fn (JobImageCopyRequestItemDto $item): ImageFile => $item->getImageFile(),
-            $copyDto->getItems()->toArray(),
-        ));
-        foreach ($copyDto->getItems() as $item) {
-            $this->denyAccessUnlessGranted(DamPermissions::DAM_ASSET_READ, $item->getImageFile()->getAsset());
-        }
-
         return $this->okResponse(
             $this->imageCopyFacade->createFromCopyList($copyDto)
         );
@@ -98,24 +81,5 @@ final class ImageController extends AbstractApiController
         $this->firstUseFacade->processBatch($dto);
 
         return $this->noContentResponse();
-    }
-
-    /**
-     * The voter runs once per photo and reads the user's EXTRA_LAZY licence collections and the lazy asset of
-     * every call, so a batch of 1 000 photos would otherwise cost thousands of queries.
-     *
-     * @param list<ImageFile> $imageFiles
-     */
-    private function warmUpAccessCheck(array $imageFiles): void
-    {
-        $this->getUser()->warmUpLicenceAccess();
-
-        $assetIds = [];
-        foreach ($imageFiles as $imageFile) {
-            $assetIds[(string) $imageFile->getAsset()->getId()] = true;
-        }
-        if ([] !== $assetIds) {
-            $this->assetRepository->findByIds(array_keys($assetIds));
-        }
     }
 }
