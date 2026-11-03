@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Tests\Entity\Embeds;
+namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetLicence;
 
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceAutoDeleteResolver;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-final class AssetLicenceAutoDeleteTest extends TestCase
+final class AssetLicenceAutoDeleteResolverTest extends TestCase
 {
     private const string CREATED_AT = '2026-10-01T08:00:00+00:00';
 
@@ -19,12 +22,12 @@ final class AssetLicenceAutoDeleteTest extends TestCase
         $autoDelete = (new AssetLicenceAutoDelete())
             ->setActive($active)
             ->setOlderThanDays($olderThanDays);
+        $asset = (new Asset())->setLicence((new AssetLicence())->setAutoDelete($autoDelete));
+        $asset->setCreatedAt(new DateTimeImmutable(self::CREATED_AT));
+        $resolver = new AssetLicenceAutoDeleteResolver();
 
-        self::assertSame(null !== $expectedDeleteAt, $autoDelete->isEffective());
-        self::assertSame(
-            $expectedDeleteAt,
-            $autoDelete->getDeleteAt(new DateTimeImmutable(self::CREATED_AT))?->format(DATE_ATOM)
-        );
+        self::assertSame(null !== $expectedDeleteAt, $resolver->isEffective($autoDelete));
+        self::assertSame($expectedDeleteAt, $resolver->getDeleteAt($asset)?->format(DATE_ATOM));
     }
 
     public static function provideDeleteAt(): iterable
