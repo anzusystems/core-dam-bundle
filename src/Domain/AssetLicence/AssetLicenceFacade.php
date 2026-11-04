@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetLicence;
 
-use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
+use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 use Doctrine\Common\Collections\ReadableCollection;
 
 final class AssetLicenceFacade
@@ -15,6 +18,8 @@ final class AssetLicenceFacade
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
+        private readonly AssetListViewRepository $assetListViewRepository,
+        private readonly AssetListViewManager $assetListViewManager,
     ) {
     }
 
@@ -34,6 +39,12 @@ final class AssetLicenceFacade
     public function update(AssetLicence $assetLicence, AssetLicence $newAssetLicence): AssetLicence
     {
         $this->validator->validate($newAssetLicence, $assetLicence);
+        if (
+            $assetLicence->getExtSystem()->isNot($newAssetLicence->getExtSystem())
+            && $this->assetListViewRepository->isLicenceUsed($assetLicence)
+        ) {
+            throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW);
+        }
 
         return $this->assetLicenceManager->update($assetLicence, $newAssetLicence);
     }
@@ -43,6 +54,7 @@ final class AssetLicenceFacade
      */
     public function deleteBulk(ReadableCollection $licences): void
     {
+        $this->assetListViewManager->unsetUploadLicences(CollectionHelper::traversableToIds($licences), flush: false);
         foreach ($licences as $licence) {
             $this->assetLicenceManager->delete($licence, false);
         }
