@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Security;
 
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 
@@ -23,6 +24,19 @@ final class AccessDenier
         }
 
         return $this->authorizationChecker->isGranted($attribute, $subject);
+    }
+
+    /**
+     * @template TKey of array-key
+     * @template T
+     *
+     * @param Collection<TKey, T> $subjects
+     *
+     * @return Collection<TKey, T> keys of the subjects are kept
+     */
+    public function filterGranted(string $attribute, Collection $subjects): Collection
+    {
+        return $subjects->filter(fn (mixed $subject): bool => $this->isGranted($attribute, $subject));
     }
 
     /**
