@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Features
+* Add `AccessDenier::filterGranted()` and `AbstractApiController::filterGranted()`: keep only the subjects the caller is granted an attribute on (keys kept), through the same voters and `acl_check_enabled` setting as `denyAccessUnlessGranted()`
 * Add `autoDeleteAt` to the adm asset list and detail (`AssetAdmListDto`): the date the retention cron deletes the asset, `null` when its licence does not delete automatically. It is computed on read, not stored, by `AssetLicenceAutoDeleteResolver`, the same rule `AssetLicenceRetentionFacade` deletes by
 * The duplicate-check lock of one licence and checksum also lasts as long as the ack deadline of the file type, so two identical large videos uploaded at once no longer both get processed while the first one is processed within that deadline
 * A redelivered file change state message now waits for the per-file lock (TTL = the transport's ack deadline) and then reloads the file after taking the lock (also when the lock was free) so it sees the current status, so a file whose processing fits in the ack deadline is not processed twice and a late redelivery no longer marks a processed file as failed; after a killed worker a redelivery waits until the lock expires (up to the ack deadline, 500 s for a video) instead of continuing at once as in `1.53.1`; `AssetType::getChangeStateAckDeadlineSeconds()` is the single source of the four change state ack deadlines
