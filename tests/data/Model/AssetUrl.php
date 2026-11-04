@@ -24,4 +24,16 @@ final class AssetUrl
     {
         return sprintf('/api/adm/v%d/asset/%s', self::API_VERSION, $assetId);
     }
+
+    /**
+     * @param list<int> $licenceIds
+     */
+    public static function licenceSearch(array $licenceIds): string
+    {
+        return sprintf(
+            '/api/adm/v%d/asset/licence/search?licences=%s',
+            self::API_VERSION,
+            implode(',', $licenceIds)
+        );
+    }
 }
