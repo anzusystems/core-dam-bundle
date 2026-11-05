@@ -49,7 +49,7 @@
 * Add `AssetLicence::$badge` (up to `AssetLicence::BADGE_MAX_LENGTH` = 4 characters `A-Z0-9`, default empty), editable through the adm licence API. Hosts need a migration that adds `badge VARCHAR(4) DEFAULT '' NOT NULL` to `asset_licence`
 * Add `AssetListView`: a named set of licence groups and licences of one ext system with an optional upload licence, managed through the adm `asset-list-view` API (`dam_assetListView_*` permissions). `AssetListViewResolver` returns the views a user may select. Hosts need a migration that creates its tables
 * `AssetListView::$uploadLicence` foreign key is RESTRICT. Deleting licences in bulk (the user data deletion job) first unsets them as the upload licence of their asset list views
-* Adm licence `PUT` answers `422` with `error_ext_system_locked_by_list_view` on `extSystem` when it changes the ext system of a licence that an asset list view uses
+* Adm licence `PUT` answers `422` with `error_ext_system_locked` on `extSystem` when it changes the ext system of a licence that an asset list view or a licence group uses
 * Adm licence group `PUT` removes the licences it drops from every asset list view that targets the group and reaches them through no other of its groups, and unsets such a licence as the view's upload licence
 * Require `anzusystems/serializer-bundle` `^6.1`
 
