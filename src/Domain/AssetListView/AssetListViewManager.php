@@ -99,7 +99,7 @@ final class AssetListViewManager extends AbstractManager
     }
 
     /**
-     * What the former ON DELETE SET NULL did: a licence about to be deleted stops being any view's upload licence.
+     * The upload licence FK is RESTRICT, so a licence about to be deleted first stops being any view's upload licence.
      *
      * @param list<int> $licenceIds
      */

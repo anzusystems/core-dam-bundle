@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
-use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -193,19 +194,32 @@ final class AssetListViewControllerTest extends AbstractApiController
                     'uploadLicence' => [ValidationException::ERROR_FIELD_INVALID],
                 ],
             ],
-            'position_out_of_smallint_range' => [
-                'requestJson' => [
-                    'name' => 'Far away',
-                    'extSystem' => ExtSystemFixtures::ID_BLOG,
-                    'position' => 40_000,
-                    'groups' => [],
-                    'licences' => [AssetLicenceFixtures::LICENCE_ID],
-                ],
-                'validationErrors' => [
-                    'position' => [ValidationException::ERROR_FIELD_INVALID],
-                ],
-            ],
         ];
+    }
+
+    public function testCreateWithMoreLicencesThanCollectionMaxFails(): void
+    {
+        /** @var ExtSystem $blogExtSystem */
+        $blogExtSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
+        $assetLicenceManager = $this->getService(AssetLicenceManager::class);
+        $licenceIds = [];
+        foreach (range(1, AssetLicence::COLLECTION_MAX + 1) as $number) {
+            $licenceIds[] = (int) $assetLicenceManager->create(
+                (new AssetLicence())->setName('Over cap ' . $number)->setExtSystem($blogExtSystem)
+            )->getId();
+        }
+
+        $response = $this->getApiClient(User::ID_ADMIN)->post(AssetListViewUrl::createPath(), [
+            'name' => 'Over licence cap',
+            'extSystem' => ExtSystemFixtures::ID_BLOG,
+            'groups' => [],
+            'licences' => $licenceIds,
+        ]);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'licences' => [ValidationException::ERROR_FIELD_RANGE_MAX],
+        ]);
     }
 
     /**
@@ -228,25 +242,11 @@ final class AssetListViewControllerTest extends AbstractApiController
         /** @var AssetLicence $licence */
         $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
 
-        $view = (new AssetListView())
-            ->setName(self::EXISTING_VIEW_NAME)
-            ->setExtSystem($blogExtSystem)
-            ->setLicences(new ArrayCollection([$licence]))
-        ;
-        $this->trackAsAdmin($view);
-        $this->entityManager->persist($view);
-        $this->entityManager->flush();
-    }
-
-    private function trackAsAdmin(AssetListView $entity): void
-    {
-        /** @var User $admin */
-        $admin = $this->entityManager->find(User::class, User::ID_ADMIN);
-        $entity
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($admin)
-            ->setModifiedBy($admin)
-        ;
+        $this->getService(AssetListViewManager::class)->create(
+            (new AssetListView())
+                ->setName(self::EXISTING_VIEW_NAME)
+                ->setExtSystem($blogExtSystem)
+                ->setLicences(new ArrayCollection([$licence]))
+        );
     }
 }

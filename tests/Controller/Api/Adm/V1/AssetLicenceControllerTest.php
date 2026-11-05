@@ -104,6 +104,14 @@ final class AssetLicenceControllerTest extends AbstractApiController
                 ],
                 'expectedResponseStatusCode' => Response::HTTP_CREATED,
             ],
+            [
+                'requestJson' => [
+                    'name' => 'ab',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                ],
+                'expectedResponseStatusCode' => Response::HTTP_CREATED,
+            ],
         ];
     }
 
@@ -171,6 +179,7 @@ final class AssetLicenceControllerTest extends AbstractApiController
         $this->assertSame($requestJson['id'], $assetLicence->getId());
         $this->assertSame($requestJson['name'], $assetLicence->getName());
         $this->assertSame($requestJson['extId'], $assetLicence->getExtId());
+        $this->assertSame($requestJson['extSystem'], $assetLicence->getExtSystem()->getId());
     }
 
     public static function updateSuccessDataProvider(): array
@@ -186,6 +195,15 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     'name' => 'test (updated)',
                     'extSystem' => $existingAssetLicence->getExtSystem()->getId(),
                     'extId' => 'updated',
+                ],
+                'expectedResponseStatusCode' => Response::HTTP_OK,
+            ],
+            [
+                'requestJson' => [
+                    'id' => TestAssetLicenceFixtures::LICENCE_ID,
+                    'name' => 'licence in no list view',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => 'moved',
                 ],
                 'expectedResponseStatusCode' => Response::HTTP_OK,
             ],

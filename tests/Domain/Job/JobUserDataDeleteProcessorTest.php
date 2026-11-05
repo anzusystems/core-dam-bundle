@@ -8,9 +8,9 @@ use AnzuSystems\CommonBundle\Domain\Job\JobManager;
 use AnzuSystems\CommonBundle\Domain\Job\JobProcessor;
 use AnzuSystems\CommonBundle\Entity\JobUserDataDelete;
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobUserDataDeleteProcessor;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
@@ -118,21 +118,12 @@ final class JobUserDataDeleteProcessorTest extends CoreDamKernelTestCase
 
     private function createListViewUploadingInto(AssetLicence $licence): AssetListView
     {
-        /** @var User $admin */
-        $admin = $this->entityManager->find(User::class, User::ID_ADMIN);
-        $view = (new AssetListView())
-            ->setName('View uploading into the licence')
-            ->setExtSystem($licence->getExtSystem())
-            ->setLicences(new ArrayCollection([$licence]))
-            ->setUploadLicence($licence)
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($admin)
-            ->setModifiedBy($admin)
-        ;
-        $this->entityManager->persist($view);
-        $this->entityManager->flush();
-
-        return $view;
+        return $this->getService(AssetListViewManager::class)->create(
+            (new AssetListView())
+                ->setName('View uploading into the licence')
+                ->setExtSystem($licence->getExtSystem())
+                ->setLicences(new ArrayCollection([$licence]))
+                ->setUploadLicence($licence)
+        );
     }
 }

@@ -9,10 +9,12 @@ use AnzuSystems\CommonBundle\Validator\Constraints as BaseAppAssert;
 use AnzuSystems\Contracts\Entity\Interfaces\IdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\TimeTrackingInterface;
 use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
-use AnzuSystems\Contracts\Entity\Traits\IdentityTrait;
+use AnzuSystems\Contracts\Entity\Traits\IdentityIntTrait;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\Interfaces\PositionableInterface;
+use AnzuSystems\CoreDamBundle\Entity\Traits\PositionTrait;
 use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
@@ -30,14 +32,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 class AssetListView implements
     IdentifiableInterface,
     UserTrackingInterface,
-    TimeTrackingInterface
+    TimeTrackingInterface,
+    PositionableInterface
 {
-    use IdentityTrait;
+    use IdentityIntTrait;
     use TimeTrackingTrait;
     use UserTrackingTrait;
-
-    private const int POSITION_MIN = -32_768;
-    private const int POSITION_MAX = 32_767;
+    use PositionTrait;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
@@ -53,18 +54,6 @@ class AssetListView implements
     #[Serialize(handler: EntityIdHandler::class)]
     #[BaseAppAssert\NotEmptyId]
     private ExtSystem $extSystem;
-
-    /**
-     * Lower position wins when more views apply to the same user.
-     */
-    #[ORM\Column(type: Types::SMALLINT, options: ['default' => App::ZERO])]
-    #[Assert\Range(
-        min: self::POSITION_MIN,
-        max: self::POSITION_MAX,
-        notInRangeMessage: ValidationException::ERROR_FIELD_INVALID
-    )]
-    #[Serialize]
-    private int $position;
 
     /**
      * Users of these licence groups get the view. Empty collection targets whole external system.
@@ -93,7 +82,6 @@ class AssetListView implements
     {
         $this->setName(App::EMPTY_STRING);
         $this->setExtSystem(new ExtSystem());
-        $this->setPosition(App::ZERO);
         $this->setGroups(new ArrayCollection());
         $this->setLicences(new ArrayCollection());
         $this->setUploadLicence(null);
@@ -119,18 +107,6 @@ class AssetListView implements
     public function setExtSystem(ExtSystem $extSystem): self
     {
         $this->extSystem = $extSystem;
-
-        return $this;
-    }
-
-    public function getPosition(): int
-    {
-        return $this->position;
-    }
-
-    public function setPosition(int $position): self
-    {
-        $this->position = $position;
 
         return $this;
     }
