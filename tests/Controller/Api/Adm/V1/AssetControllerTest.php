@@ -31,6 +31,9 @@ final class AssetControllerTest extends AbstractApiController
         ]));
 
         self::assertStatusCode($response, Response::HTTP_OK);
+        $licenceIds = array_column(json_decode($response->getContent(), true)['data'], 'licence');
+        $this->assertContains(AssetLicenceFixtures::LICENCE_ID, $licenceIds);
+        $this->assertContains(AssetLicenceFixtures::LICENCE_2_ID, $licenceIds);
     }
 
     public function testLicenceSearchRejectsOversizedCollectionBeforeQuerying(): void

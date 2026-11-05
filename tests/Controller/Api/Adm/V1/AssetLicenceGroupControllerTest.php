@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\ApiFilter\ApiInfiniteResponseList;
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
@@ -313,27 +314,15 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
      */
     private function createLicenceGroup(string $name, array $licences): AssetLicenceGroup
     {
-        /** @var User $author */
-        $author = $this->entityManager->find(User::class, User::ID_ADMIN);
         /** @var ExtSystem $extSystem */
         $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
 
-        $group = (new AssetLicenceGroup())
-            ->setName($name)
-            ->setExtSystem($extSystem)
-            ->setLicences(new ArrayCollection($licences))
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($author)
-            ->setModifiedBy($author)
-        ;
-        foreach ($licences as $licence) {
-            $licence->getGroups()->add($group);
-        }
-        $this->entityManager->persist($group);
-        $this->entityManager->flush();
-
-        return $group;
+        return $this->getService(AssetLicenceGroupManager::class)->create(
+            (new AssetLicenceGroup())
+                ->setName($name)
+                ->setExtSystem($extSystem)
+                ->setLicences(new ArrayCollection($licences))
+        );
     }
 
     /**
@@ -342,25 +331,16 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
      */
     private function createListView(string $name, array $groups, array $licences, ?AssetLicence $uploadLicence = null): AssetListView
     {
-        /** @var User $author */
-        $author = $this->entityManager->find(User::class, User::ID_ADMIN);
         /** @var ExtSystem $extSystem */
         $extSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
 
-        $view = (new AssetListView())
-            ->setName($name)
-            ->setExtSystem($extSystem)
-            ->setGroups(new ArrayCollection($groups))
-            ->setLicences(new ArrayCollection($licences))
-            ->setUploadLicence($uploadLicence)
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($author)
-            ->setModifiedBy($author)
-        ;
-        $this->entityManager->persist($view);
-        $this->entityManager->flush();
-
-        return $view;
+        return $this->getService(AssetListViewManager::class)->create(
+            (new AssetListView())
+                ->setName($name)
+                ->setExtSystem($extSystem)
+                ->setGroups(new ArrayCollection($groups))
+                ->setLicences(new ArrayCollection($licences))
+                ->setUploadLicence($uploadLicence)
+        );
     }
 }

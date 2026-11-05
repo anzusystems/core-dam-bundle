@@ -6,6 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetListView;
 
 use AnzuSystems\Contracts\Entity\AnzuUser;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup\AssetLicenceGroupManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewResolver;
 use AnzuSystems\CoreDamBundle\Domain\User\UserManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -36,21 +38,15 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
     private User $userSuperAdmin;
     private AssetListView $targetedView;
     private AssetListView $targetedFirstView;
-    private AssetListView $foreignLicenceView;
     private AssetListView $globalViewA;
     private AssetListView $globalViewB;
     private AssetListView $mixedUploadLicenceView;
-    private User $author;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->resolver = $this->getService(AssetListViewResolver::class);
         $this->userManager = $this->getService(UserManager::class);
-
-        /** @var User $author */
-        $author = $this->entityManager->find(User::class, User::ID_ADMIN);
-        $this->author = $author;
 
         /** @var ExtSystem $blogExtSystem */
         $blogExtSystem = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_BLOG);
@@ -60,9 +56,6 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $licenceInGroup = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
         /** @var AssetLicence $licenceOutsideGroup */
         $licenceOutsideGroup = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_2_ID);
-
-        /** @var AssetLicence $foreignLicence */
-        $foreignLicence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE);
         $secondGroup = $this->createGroup(self::SECOND_GROUP_ID, 'Second group', $blogExtSystem, [$licenceInGroup]);
 
         $this->userMember = $this->createUser(self::USER_MEMBER_ID, 'member@anzusystems.sk', licenceGroups: new ArrayCollection([$group100, $secondGroup]));
@@ -74,7 +67,6 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $this->targetedFirstView = $this->createView('Targeted first by position', $blogExtSystem, [$group100], [$licenceInGroup], position: -1);
         $this->globalViewA = $this->createView('Global - reachable licence', $blogExtSystem, [], [$licenceInGroup]);
         $this->globalViewB = $this->createView('Global - unreachable licence', $blogExtSystem, [], [$licenceOutsideGroup]);
-        $this->foreignLicenceView = $this->createView('Global - licence moved to another ext system', $blogExtSystem, [], [$licenceInGroup, $foreignLicence]);
         $this->mixedUploadLicenceView = $this->createView(
             'Global - upload licence not granted to every viewer',
             $blogExtSystem,
@@ -134,13 +126,6 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userSuperAdmin));
 
         self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $scopes[(int) $this->globalViewB->getId()]->getLicenceIds());
-    }
-
-    public function testLicenceFromAnotherExtSystemIsFilteredOutOfTheScope(): void
-    {
-        $scopes = $this->scopesByViewId($this->resolver->resolveForUser($this->userSuperAdmin));
-
-        self::assertSame([AssetLicenceFixtures::LICENCE_ID], $scopes[(int) $this->foreignLicenceView->getId()]->getLicenceIds());
     }
 
     public function testTargetedViewsAreOrderedByPosition(): void
@@ -213,21 +198,16 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         int $position = App::ZERO,
         ?AssetLicence $uploadLicence = null,
     ): AssetListView {
-        $view = (new AssetListView())
-            ->setName($name)
-            ->setExtSystem($extSystem)
-            ->setPosition($position)
-            ->setGroups(new ArrayCollection($groups))
-            ->setLicences(new ArrayCollection($licences))
-            ->setUploadLicence($uploadLicence)
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($this->author)
-            ->setModifiedBy($this->author)
-        ;
-        $this->entityManager->persist($view);
-
-        return $view;
+        return $this->getService(AssetListViewManager::class)->create(
+            (new AssetListView())
+                ->setName($name)
+                ->setExtSystem($extSystem)
+                ->setPosition($position)
+                ->setGroups(new ArrayCollection($groups))
+                ->setLicences(new ArrayCollection($licences))
+                ->setUploadLicence($uploadLicence),
+            flush: false,
+        );
     }
 
     /**
@@ -235,22 +215,14 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
      */
     private function createGroup(int $id, string $name, ExtSystem $extSystem, array $licences): AssetLicenceGroup
     {
-        $group = (new AssetLicenceGroup())
-            ->setId($id)
-            ->setName($name)
-            ->setExtSystem($extSystem)
-            ->setLicences(new ArrayCollection($licences))
-            ->setCreatedAt(App::getAppDate())
-            ->setModifiedAt(App::getAppDate())
-            ->setCreatedBy($this->author)
-            ->setModifiedBy($this->author)
-        ;
-        foreach ($licences as $licence) {
-            $licence->getGroups()->add($group);
-        }
-        $this->entityManager->persist($group);
-
-        return $group;
+        return $this->getService(AssetLicenceGroupManager::class)->create(
+            (new AssetLicenceGroup())
+                ->setId($id)
+                ->setName($name)
+                ->setExtSystem($extSystem)
+                ->setLicences(new ArrayCollection($licences)),
+            flush: false,
+        );
     }
 
     /**

@@ -42,7 +42,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     use UserTrackingTrait;
 
     /**
-     * Upper bound shared by the licence-collection search DTOs and AssetListView::$licences.
+     * Upper bound of a licence collection.
      */
     public const int COLLECTION_MAX = 20;
 

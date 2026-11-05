@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\QueryBuilder;
 
@@ -59,7 +60,7 @@ final class AssetListViewRepository extends AbstractAnzuRepository
     }
 
     /**
-     * Views targeted at licence groups that list at least one of the licences, with all their licences.
+     * Views with at least one group that list at least one of the licences, with all their licences.
      *
      * @param list<int> $licenceIds
      *
@@ -149,7 +150,7 @@ final class AssetListViewRepository extends AbstractAnzuRepository
         return (int) $this->createQueryBuilder('entity')
             ->select('COUNT(entity.id)')
             ->leftJoin('entity.licences', 'licence')
-            ->where('licence = :licence OR entity.uploadLicence = :licence')
+            ->where('licence = :licence')
             ->setParameter('licence', $licence)
             ->getQuery()
             ->getSingleScalarResult() > App::ZERO;
@@ -163,8 +164,8 @@ final class AssetListViewRepository extends AbstractAnzuRepository
     private function createOrderedQueryBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('entity')
-            ->orderBy('entity.position', App::ORDER_ASC)
-            ->addOrderBy('entity.id', App::ORDER_ASC)
+            ->orderBy('entity.position', Order::Ascending->value)
+            ->addOrderBy('entity.id', Order::Ascending->value)
         ;
     }
 }
