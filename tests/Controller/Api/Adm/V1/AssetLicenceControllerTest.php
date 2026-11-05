@@ -200,8 +200,8 @@ final class AssetLicenceControllerTest extends AbstractApiController
             ],
             [
                 'requestJson' => [
-                    'id' => TestAssetLicenceFixtures::LICENCE_ID,
-                    'name' => 'licence in no list view',
+                    'id' => TestAssetLicenceFixtures::LICENCE_2_ID,
+                    'name' => 'licence in no list view or group',
                     'extSystem' => ExtSystemFixtures::ID_CMS,
                     'extId' => 'moved',
                 ],
@@ -233,7 +233,23 @@ final class AssetLicenceControllerTest extends AbstractApiController
 
         self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->assertValidationErrors(json_decode($response->getContent(), true), [
-            'extSystem' => [ValidationException::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW],
+            'extSystem' => [ValidationException::ERROR_EXT_SYSTEM_LOCKED],
+        ]);
+    }
+
+    public function testUpdateRejectsExtSystemChangeWhileLicenceIsInGroup(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $response = $client->put(AssetLicenceUrl::update(TestAssetLicenceFixtures::LICENCE_ID), [
+            'id' => TestAssetLicenceFixtures::LICENCE_ID,
+            'name' => 'moved licence',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+            'extId' => 'moved',
+        ]);
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'extSystem' => [ValidationException::ERROR_EXT_SYSTEM_LOCKED],
         ]);
     }
 

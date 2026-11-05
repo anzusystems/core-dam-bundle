@@ -41,9 +41,9 @@ final class AssetLicenceFacade
         $this->validator->validate($newAssetLicence, $assetLicence);
         if (
             $assetLicence->getExtSystem()->isNot($newAssetLicence->getExtSystem())
-            && $this->assetListViewRepository->isLicenceUsed($assetLicence)
+            && (false === $assetLicence->getGroups()->isEmpty() || $this->assetListViewRepository->isLicenceUsed($assetLicence))
         ) {
-            throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_EXT_SYSTEM_LOCKED_BY_LIST_VIEW);
+            throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_EXT_SYSTEM_LOCKED);
         }
 
         return $this->assetLicenceManager->update($assetLicence, $newAssetLicence);
