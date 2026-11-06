@@ -188,6 +188,17 @@ final class AssetLicenceGroupControllerTest extends AbstractApiController
         $this->assertSame($requestJson['licences'], $assetLicenceGroup->getLicences()->map(
             fn (AssetLicence $licence): int => (int) $licence->getId()
         )->toArray());
+
+        $this->entityManager->clear();
+        $storedGroup = $this->findGroup($id);
+        $storedLicenceIds = $storedGroup->getLicences()->map(
+            fn (AssetLicence $licence): int => (int) $licence->getId()
+        )->getValues();
+        sort($storedLicenceIds);
+        $expectedLicenceIds = $requestJson['licences'];
+        sort($expectedLicenceIds);
+        $this->assertSame($requestJson['name'], $storedGroup->getName());
+        $this->assertSame($expectedLicenceIds, $storedLicenceIds);
     }
 
     public static function updateSuccessDataProvider(): array
