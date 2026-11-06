@@ -6,9 +6,12 @@ namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -17,6 +20,49 @@ use Symfony\Component\HttpFoundation\Response;
 final class AssetControllerTest extends AbstractApiController
 {
     private const int AUTO_DELETE_DAYS = 30;
+
+    public function testLicenceSearchReturnsResultsForEveryRequestedLicence(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->get(AssetUrl::licenceSearch([
+            AssetLicenceFixtures::LICENCE_ID,
+            AssetLicenceFixtures::LICENCE_2_ID,
+        ]));
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        $licenceIds = array_column(json_decode($response->getContent(), true)['data'], 'licence');
+        $this->assertContains(AssetLicenceFixtures::LICENCE_ID, $licenceIds);
+        $this->assertContains(AssetLicenceFixtures::LICENCE_2_ID, $licenceIds);
+    }
+
+    public function testLicenceSearchRejectsOversizedCollectionBeforeQuerying(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->get(AssetUrl::licenceSearch(range(1, AssetLicence::COLLECTION_MAX + 1)));
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'licences' => [ValidationException::ERROR_FIELD_RANGE_MAX],
+        ]);
+    }
+
+    public function testLicenceSearchRejectsLicencesFromDifferentExtSystems(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->get(AssetUrl::licenceSearch([
+            AssetLicenceFixtures::LICENCE_ID,
+            AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
+        ]));
+
+        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
+        $content = json_decode($response->getContent(), true);
+        $this->assertValidationErrors($content, [
+            'licences' => [ValidationException::ERROR_FIELD_INVALID],
+        ]);
+    }
 
     #[DataProvider('autoDeleteAtDataProvider')]
     public function testGetOneShowsWhenTheLicenceDeletesTheAsset(bool $autoDeleteActive, ?string $expectedDeleteAfter): void

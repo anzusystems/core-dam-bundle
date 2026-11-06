@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetLicenceGroup;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 
 final class AssetLicenceGroupFacade
@@ -14,6 +16,7 @@ final class AssetLicenceGroupFacade
 
     public function __construct(
         private readonly AssetLicenceGroupManager $assetLicenceGroupManager,
+        private readonly AssetListViewManager $assetListViewManager,
     ) {
     }
 
@@ -34,6 +37,16 @@ final class AssetLicenceGroupFacade
     {
         $this->validator->validate($newAssetLicenceGroup, $assetLicenceGroup);
 
-        return $this->assetLicenceGroupManager->update($assetLicenceGroup, $newAssetLicenceGroup);
+        $removedLicenceIds = CollectionHelper::traversableToIds(
+            CollectionHelper::colDiff($assetLicenceGroup->getLicences(), $newAssetLicenceGroup->getLicences())
+        );
+
+        $this->assetLicenceGroupManager->update($assetLicenceGroup, $newAssetLicenceGroup, flush: false);
+        // A view can end up without licences here. That is an administrator's mistake, not a broken
+        // state: the resolver stops offering the view until a licence is put back.
+        $this->assetListViewManager->removeUnreachableLicences($removedLicenceIds, $assetLicenceGroup, flush: false);
+        $this->assetLicenceGroupManager->flush();
+
+        return $assetLicenceGroup;
     }
 }

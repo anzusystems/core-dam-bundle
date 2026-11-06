@@ -41,6 +41,11 @@ abstract class DamUser extends AnzuUser
     #[Serialize(handler: EntityIdHandler::class, type: ExtSystem::class)]
     protected Collection $licenceGroups;
 
+    /**
+     * Cache of the ext systems of the user's licences and licence groups; the host application derives it, never set by hand.
+     * It grants ext system wide entities (keywords, authors, podcasts, custom forms...) through ExtSystemAwareVoter.
+     * LicenceVoterTrait also reads it as access to every licence of the ext system.
+     */
     #[ORM\ManyToMany(targetEntity: ExtSystem::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     #[ORM\JoinTable(name: 'users_to_ext_systems')]
     #[ORM\JoinColumn(name: 'user_id', onDelete: 'cascade')]
@@ -170,5 +175,19 @@ abstract class DamUser extends AnzuUser
         $this->licenceGroups = $licenceGroups;
 
         return $this;
+    }
+
+    /**
+     * Initializes the EXTRA_LAZY collections the licence voters read, so an access check inside a loop
+     * stays in memory instead of querying once per call.
+     */
+    public function warmUpLicenceAccess(): void
+    {
+        $this->adminToExtSystems->toArray();
+        $this->userToExtSystems->toArray();
+        $this->assetLicences->toArray();
+        foreach ($this->licenceGroups as $licenceGroup) {
+            $licenceGroup->getLicences()->toArray();
+        }
     }
 }
