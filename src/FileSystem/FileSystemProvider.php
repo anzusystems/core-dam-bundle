@@ -18,7 +18,6 @@ use AnzuSystems\CoreDamBundle\FileSystem\NameGenerator\NameGenerator;
 use AnzuSystems\CoreDamBundle\Model\Configuration\AssetFileRoutePublicStorageInterface;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemImageTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
-use Doctrine\Common\Util\ClassUtils;
 
 final class FileSystemProvider
 {
@@ -137,7 +136,7 @@ final class FileSystemProvider
             $storable->getAssetType(),
         );
 
-        if (AssetFileRoute::class === ClassUtils::getRealClass($storable::class)) {
+        if (AssetFileRoute::class === $storable::class) {
             if ($extSystemConfig instanceof AssetFileRoutePublicStorageInterface) {
                 return $extSystemConfig->getPublicStorage();
             }
@@ -147,7 +146,7 @@ final class FileSystemProvider
             );
         }
 
-        if (Chunk::class === ClassUtils::getRealClass($storable::class)) {
+        if (Chunk::class === $storable::class) {
             return $extSystemConfig->getChunkStorageName();
         }
 
