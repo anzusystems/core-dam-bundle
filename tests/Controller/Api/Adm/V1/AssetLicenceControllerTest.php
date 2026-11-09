@@ -364,6 +364,19 @@ final class AssetLicenceControllerTest extends AbstractApiController
                     ],
                 ],
             ],
+            [
+                'requestJson' => [
+                    'name' => 'badge-trailing-newline',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'extId' => (string) Uuid::v7(),
+                    'badge' => "ABC\n",
+                ],
+                'validationErrors' => [
+                    'badge' => [
+                        ValidationException::ERROR_FIELD_INVALID,
+                    ],
+                ],
+            ],
         ];
     }
 
