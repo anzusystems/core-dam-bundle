@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Elasticsearch;
 use AnzuSystems\CoreDamBundle\Elasticsearch\QueryFactory\QueryFactoryInterface;
 use AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto\SearchDtoInterface;
 use AnzuSystems\CoreDamBundle\Exception\DomainException;
-use Doctrine\Common\Util\ClassUtils;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final class QueryFactoryProvider
@@ -27,7 +26,7 @@ final class QueryFactoryProvider
     public function getQueryFactory(SearchDtoInterface $searchDto): QueryFactoryInterface
     {
         foreach ($this->queryFactories as $queryFactory) {
-            if (in_array(ClassUtils::getRealClass($searchDto::class), $queryFactory->getSupportedSearchDtoClasses(), true)) {
+            if (in_array($searchDto::class, $queryFactory->getSupportedSearchDtoClasses(), true)) {
                 return $queryFactory;
             }
         }
