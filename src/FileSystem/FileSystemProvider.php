@@ -136,7 +136,7 @@ final class FileSystemProvider
             $storable->getAssetType(),
         );
 
-        if (AssetFileRoute::class === $storable::class) {
+        if ($storable instanceof AssetFileRoute) {
             if ($extSystemConfig instanceof AssetFileRoutePublicStorageInterface) {
                 return $extSystemConfig->getPublicStorage();
             }
@@ -146,7 +146,7 @@ final class FileSystemProvider
             );
         }
 
-        if (Chunk::class === $storable::class) {
+        if ($storable instanceof Chunk) {
             return $extSystemConfig->getChunkStorageName();
         }
 

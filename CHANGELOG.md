@@ -52,7 +52,7 @@
 * Adm licence `PUT` answers `422` with `error_ext_system_locked` on `extSystem` when it changes the ext system of the licence. The ext system of a licence is set only on create, because the files of the licence are stored in the storage of its ext system
 * Adm licence group `PUT` removes the licences it drops from every asset list view that targets the group and reaches them through no other of its groups, and unsets such a licence as the view's upload licence
 * Require `anzusystems/serializer-bundle` `^6.1`
-* `FileSystemProvider` and `QueryFactoryProvider` compare `$object::class` instead of `ClassUtils::getRealClass()` of the abandoned `doctrine/common`. A Doctrine proxy is an instance of the real class only with native lazy objects (always on in DoctrineBundle 3, `enable_native_lazy_objects: true` in DoctrineBundle 2). `composer audit` ignores the abandonment of `doctrine/common`, which `anzusystems/serializer-bundle` still requires
+* `FileSystemProvider` checks `instanceof` and `QueryFactoryProvider` compares the search DTO `::class` instead of `ClassUtils::getRealClass()` of the abandoned `doctrine/common`. `composer audit` ignores the abandonment of `doctrine/common`, which `anzusystems/serializer-bundle` still requires
 
 ### Fixes
 * `LicenceCollectionHandler` loads the requested licences through `EntityIdHandler::prepareDeserializeBatch()`, so the adm asset and distribution search no longer silently drop the licence ids that are not loaded yet
