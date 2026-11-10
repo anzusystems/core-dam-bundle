@@ -128,6 +128,16 @@ final class AssetListViewResolverTest extends CoreDamKernelTestCase
         self::assertSame([AssetLicenceFixtures::LICENCE_2_ID], $scopes[(int) $this->globalViewB->getId()]->getLicenceIds());
     }
 
+    public function testLicenceIsGrantedToSuperAdminAndGroupMemberOnly(): void
+    {
+        /** @var AssetLicence $licence */
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::LICENCE_ID);
+
+        self::assertTrue($this->resolver->isLicenceGranted($licence, $this->userSuperAdmin));
+        self::assertTrue($this->resolver->isLicenceGranted($licence, $this->userMember));
+        self::assertFalse($this->resolver->isLicenceGranted($licence, $this->userOutsider));
+    }
+
     public function testTargetedViewsAreOrderedByPosition(): void
     {
         $viewIds = $this->scopeViewIds($this->resolver->resolveForUser($this->userMember));
