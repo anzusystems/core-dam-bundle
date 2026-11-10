@@ -158,4 +158,21 @@ class AssetListView implements
 
         return $this;
     }
+
+    /**
+     * A view with groups may list only the licences its groups reach.
+     *
+     * @return array<int, AssetLicence> licence id => licence
+     */
+    public function getReachableLicences(): array
+    {
+        $licences = [];
+        foreach ($this->groups as $group) {
+            foreach ($group->getLicences() as $licence) {
+                $licences[(int) $licence->getId()] = $licence;
+            }
+        }
+
+        return $licences;
+    }
 }

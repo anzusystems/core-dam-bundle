@@ -49,9 +49,10 @@
 * Add `AssetLicence::$badge` (up to `AssetLicence::BADGE_MAX_LENGTH` = 4 characters `A-Z0-9`, default empty), editable through the adm licence API. Hosts need a migration that adds `badge VARCHAR(4) DEFAULT '' NOT NULL` to `asset_licence`
 * Add `AssetListView`: a named set of licence groups and licences of one ext system with an optional upload licence, managed through the adm `asset-list-view` API (`dam_assetListView_*` permissions). `AssetListViewResolver` returns the views a user may select. Hosts need a migration that creates its tables
 * `AssetListView::$uploadLicence` foreign key is RESTRICT. Deleting licences in bulk (the user data deletion job) first unsets them as the upload licence of their asset list views
-* Adm licence `PUT` answers `422` with `error_ext_system_locked` on `extSystem` when it changes the ext system of a licence that an asset list view or a licence group uses
+* Adm licence `PUT` answers `422` with `error_ext_system_locked` on `extSystem` when it changes the ext system of the licence. The ext system of a licence is set only on create, because the files of the licence are stored in the storage of its ext system
 * Adm licence group `PUT` removes the licences it drops from every asset list view that targets the group and reaches them through no other of its groups, and unsets such a licence as the view's upload licence
 * Require `anzusystems/serializer-bundle` `^6.1`
+* `FileSystemProvider` and `QueryFactoryProvider` compare `$object::class` instead of `ClassUtils::getRealClass()` of the abandoned `doctrine/common`. A Doctrine proxy is an instance of the real class only with native lazy objects (always on in DoctrineBundle 3, `enable_native_lazy_objects: true` in DoctrineBundle 2). `composer audit` ignores the abandonment of `doctrine/common`, which `anzusystems/serializer-bundle` still requires
 
 ### Fixes
 * `LicenceCollectionHandler` loads the requested licences through `EntityIdHandler::prepareDeserializeBatch()`, so the adm asset and distribution search no longer silently drop the licence ids that are not loaded yet

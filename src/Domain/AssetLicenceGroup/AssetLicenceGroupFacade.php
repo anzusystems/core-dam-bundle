@@ -44,7 +44,7 @@ final class AssetLicenceGroupFacade
         $this->assetLicenceGroupManager->update($assetLicenceGroup, $newAssetLicenceGroup, flush: false);
         // A view can end up without licences here. That is an administrator's mistake, not a broken
         // state: the resolver stops offering the view until a licence is put back.
-        $this->assetListViewManager->removeUnreachableLicences($removedLicenceIds, $assetLicenceGroup, flush: false);
+        $this->assetListViewManager->removeUnreachableLicences($removedLicenceIds, flush: false);
         $this->assetLicenceGroupManager->flush();
 
         return $assetLicenceGroup;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetListView;
 
 use AnzuSystems\Contracts\Entity\AnzuUser;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
 use AnzuSystems\CoreDamBundle\Entity\DamUser;
 use AnzuSystems\CoreDamBundle\Model\Domain\AssetListView\AssetListViewScope;
@@ -27,7 +28,7 @@ final readonly class AssetListViewResolver
      */
     public function resolveForUser(DamUser $user): array
     {
-        $user->warmUpLicenceAccess();
+        $this->preloadLicenceAccess($user);
 
         $views = [
             ...$this->assetListViewRepository->findByGroups($user->getLicenceGroups()->getKeys()),
@@ -48,19 +49,30 @@ final readonly class AssetListViewResolver
     }
 
     /**
+     * The licence voter checks EXTRA_LAZY collections, where each containsKey() is one query.
+     * Loading them first keeps the access checks of all views in memory.
+     */
+    private function preloadLicenceAccess(DamUser $user): void
+    {
+        $user->getAdminToExtSystems()->toArray();
+        $user->getUserToExtSystems()->toArray();
+        $user->getAssetLicences()->toArray();
+        foreach ($user->getLicenceGroups() as $licenceGroup) {
+            $licenceGroup->getLicences()->toArray();
+        }
+    }
+
+    /**
      * @return list<int>
      */
     private function getGrantedLicenceIds(AssetListView $view, DamUser $user): array
     {
         $superAdmin = in_array(AnzuUser::ROLE_SUPER_ADMIN, $user->getRoles(), true);
 
-        $licenceIds = [];
-        foreach ($view->getLicences() as $licence) {
-            if ($superAdmin || $this->licencePermissionGranted($licence, $user)) {
-                $licenceIds[] = (int) $licence->getId();
-            }
-        }
-
-        return $licenceIds;
+        return $view->getLicences()
+            ->filter(fn (AssetLicence $licence): bool => $superAdmin || $this->licencePermissionGranted($licence, $user))
+            ->map(static fn (AssetLicence $licence): int => (int) $licence->getId())
+            ->getValues()
+        ;
     }
 }

@@ -27,7 +27,6 @@ final class AssetLicenceManager extends AbstractManager
         $assetLicence
             ->setName($newAssetLicence->getName())
             ->setExtId($newAssetLicence->getExtId())
-            ->setExtSystem($newAssetLicence->getExtSystem())
             ->setBadge($newAssetLicence->getBadge())
         ;
         $assetLicence->getInternalRule()
