@@ -49,6 +49,15 @@ final readonly class AssetListViewResolver
     }
 
     /**
+     * The licences a user may read or select. Voters grant the super admin before they reach the licence check.
+     */
+    public function isLicenceGranted(AssetLicence $licence, DamUser $user): bool
+    {
+        return in_array(AnzuUser::ROLE_SUPER_ADMIN, $user->getRoles(), true)
+            || $this->licencePermissionGranted($licence, $user);
+    }
+
+    /**
      * The licence voter checks EXTRA_LAZY collections, where each containsKey() is one query.
      * Loading them first keeps the access checks of all views in memory.
      */
@@ -67,10 +76,8 @@ final readonly class AssetListViewResolver
      */
     private function getGrantedLicenceIds(AssetListView $view, DamUser $user): array
     {
-        $superAdmin = in_array(AnzuUser::ROLE_SUPER_ADMIN, $user->getRoles(), true);
-
         return $view->getLicences()
-            ->filter(fn (AssetLicence $licence): bool => $superAdmin || $this->licencePermissionGranted($licence, $user))
+            ->filter(fn (AssetLicence $licence): bool => $this->isLicenceGranted($licence, $user))
             ->map(static fn (AssetLicence $licence): int => (int) $licence->getId())
             ->getValues()
         ;
