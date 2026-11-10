@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Domain\AssetListView\AssetListViewManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
-use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 use Doctrine\Common\Collections\ReadableCollection;
 
 final class AssetLicenceFacade
@@ -18,7 +17,6 @@ final class AssetLicenceFacade
 
     public function __construct(
         private readonly AssetLicenceManager $assetLicenceManager,
-        private readonly AssetListViewRepository $assetListViewRepository,
         private readonly AssetListViewManager $assetListViewManager,
     ) {
     }
@@ -39,10 +37,7 @@ final class AssetLicenceFacade
     public function update(AssetLicence $assetLicence, AssetLicence $newAssetLicence): AssetLicence
     {
         $this->validator->validate($newAssetLicence, $assetLicence);
-        if (
-            $assetLicence->getExtSystem()->isNot($newAssetLicence->getExtSystem())
-            && (false === $assetLicence->getGroups()->isEmpty() || $this->assetListViewRepository->isLicenceUsed($assetLicence))
-        ) {
+        if ($assetLicence->getExtSystem()->isNot($newAssetLicence->getExtSystem())) {
             throw (new ValidationException())->addFormattedError('extSystem', ValidationException::ERROR_EXT_SYSTEM_LOCKED);
         }
 

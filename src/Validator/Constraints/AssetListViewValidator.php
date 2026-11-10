@@ -58,14 +58,7 @@ final class AssetListViewValidator extends ConstraintValidator
             return null;
         }
 
-        $reachableLicenceIds = [];
-        foreach ($view->getGroups() as $group) {
-            foreach ($group->getLicences() as $licence) {
-                $reachableLicenceIds[(int) $licence->getId()] = true;
-            }
-        }
-
-        return [] === array_diff_key($licenceIds, $reachableLicenceIds) ? null : 'licences';
+        return [] === array_diff_key($licenceIds, $view->getReachableLicences()) ? null : 'licences';
     }
 
     private function addViolation(string $path): void

@@ -6,7 +6,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetListView;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicenceGroup;
 use AnzuSystems\CoreDamBundle\Entity\AssetListView;
 use AnzuSystems\CoreDamBundle\Repository\AssetListViewRepository;
 
@@ -49,44 +48,26 @@ final class AssetListViewManager extends AbstractManager
     }
 
     /**
-     * Drops the licences from every targeted view that no longer reaches them through any of its other groups,
+     * Drops the licences that its groups no longer reach from every targeted view listing one of the licences,
      * and nulls the view's upload licence when it no longer belongs to the view's remaining licences.
-     * Excluding the edited group makes the result independent of whether its own change is already flushed.
-     * Only the views listing these licences are loaded.
+     * Call it after the group update: the edited group comes from the identity map with its unflushed licences.
      *
      * @param list<int> $licenceIds
      */
-    public function removeUnreachableLicences(array $licenceIds, AssetLicenceGroup $excludedGroup, bool $flush = true): void
+    public function removeUnreachableLicences(array $licenceIds, bool $flush = true): void
     {
-        $views = $this->assetListViewRepository->findTargetedByLicences($licenceIds);
-        if ([] === $views) {
-            return;
-        }
-
-        $reachedByView = $this->assetListViewRepository->findLicenceIdsReachedByOtherGroups(
-            viewIds: array_map(static fn (AssetListView $view): int => (int) $view->getId(), $views),
-            licenceIds: $licenceIds,
-            excludedGroupId: (int) $excludedGroup->getId(),
-        );
-        $checked = array_flip($licenceIds);
-
-        foreach ($views as $view) {
-            $reached = array_flip($reachedByView[(int) $view->getId()] ?? []);
+        foreach ($this->assetListViewRepository->findTargetedByLicences($licenceIds) as $view) {
+            $reachable = $view->getReachableLicences();
             $modified = false;
             foreach ($view->getLicences()->toArray() as $licence) {
-                $licenceId = (int) $licence->getId();
-                if (isset($checked[$licenceId]) && false === isset($reached[$licenceId])) {
+                if (false === isset($reachable[(int) $licence->getId()])) {
                     $view->getLicences()->removeElement($licence);
                     $modified = true;
                 }
             }
 
             $uploadLicence = $view->getUploadLicence();
-            if (
-                $uploadLicence instanceof AssetLicence
-                && isset($checked[(int) $uploadLicence->getId()])
-                && false === $view->getLicences()->contains($uploadLicence)
-            ) {
+            if ($uploadLicence instanceof AssetLicence && false === $view->getLicences()->contains($uploadLicence)) {
                 $view->setUploadLicence(null);
                 $modified = true;
             }

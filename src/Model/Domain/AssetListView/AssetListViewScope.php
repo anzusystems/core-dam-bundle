@@ -32,16 +32,8 @@ final readonly class AssetListViewScope
 
     public function getUploadLicenceId(): ?int
     {
-        $uploadLicence = $this->view->getUploadLicence();
-        if (null === $uploadLicence) {
-            return null;
-        }
+        $uploadLicenceId = $this->view->getUploadLicence()?->getId();
 
-        $uploadLicenceId = (int) $uploadLicence->getId();
-        if (false === in_array($uploadLicenceId, $this->licenceIds, true)) {
-            return null;
-        }
-
-        return $uploadLicenceId;
+        return in_array($uploadLicenceId, $this->licenceIds, true) ? $uploadLicenceId : null;
     }
 }
