@@ -16,6 +16,7 @@ final readonly class AssetFileCopyBuilder
     public function __construct(
         private AssetFileStorageOperator $assetFileStorageOperator,
         private ImageFileCopyBuilder $imageFileCopyBuilder,
+        private AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
     }
 
@@ -27,6 +28,7 @@ final readonly class AssetFileCopyBuilder
         $targetAssetFile->setAssetAttributes(clone $assetFile->getAssetAttributes());
         $targetAssetFile->getAssetAttributes()->setOriginAssetId((string) $assetFile->getId());
         $targetAssetFile->getFlags()->setSingleUse($assetFile->getFlags()->isSingleUse());
+        $this->assetFileSingleUseEnforcer->enforce($targetAssetFile);
         $this->assetFileStorageOperator->copyToAssetFile($assetFile, $targetAssetFile);
         if ($assetFile instanceof ImageFile && $targetAssetFile instanceof ImageFile) {
             $this->imageFileCopyBuilder->copy($assetFile, $targetAssetFile);

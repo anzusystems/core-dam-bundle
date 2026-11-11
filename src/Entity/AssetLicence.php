@@ -122,6 +122,12 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[Serialize(handler: EntityIdHandler::class, type: new ContainerParam(DamUser::class))]
     private Collection $internalRuleUsers;
 
+    #[ORM\ManyToOne(targetEntity: Author::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Serialize(handler: EntityIdHandler::class)]
+    #[AppAssert\EqualExtSystem]
+    private ?Author $defaultAuthor = null;
+
     public function __construct()
     {
         $this->setName('');
@@ -136,6 +142,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setAutoDelete(new AssetLicenceAutoDelete());
         $this->internalRuleAuthors = new ArrayCollection();
         $this->internalRuleUsers = new ArrayCollection();
+        $this->setDefaultAuthor(null);
     }
 
     public function getName(): string
@@ -332,6 +339,18 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         if (false === $this->internalRuleUsers->contains($user)) {
             $this->internalRuleUsers->add($user);
         }
+
+        return $this;
+    }
+
+    public function getDefaultAuthor(): ?Author
+    {
+        return $this->defaultAuthor;
+    }
+
+    public function setDefaultAuthor(?Author $defaultAuthor): self
+    {
+        $this->defaultAuthor = $defaultAuthor;
 
         return $this;
     }

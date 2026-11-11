@@ -23,6 +23,7 @@ class AssetFileManager extends AbstractManager
     protected AssetSlotManager $assetSlotManager;
     protected ChunkFileManager $chunkFileManager;
     protected AssetFileRouteManager $assetFileRouteManager;
+    protected AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer;
 
     #[Required]
     public function setAssetSlotManager(AssetSlotManager $assetSlotManager): void
@@ -42,6 +43,12 @@ class AssetFileManager extends AbstractManager
         $this->assetFileRouteManager = $assetFileRouteManager;
     }
 
+    #[Required]
+    public function setAssetFileSingleUseEnforcer(AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer): void
+    {
+        $this->assetFileSingleUseEnforcer = $assetFileSingleUseEnforcer;
+    }
+
     /**
      * @param T $assetFile
      *
@@ -49,6 +56,7 @@ class AssetFileManager extends AbstractManager
      */
     public function updateExisting(AssetFile $assetFile, bool $flush = true, bool $trackModification = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         if ($trackModification) {
             $this->trackModification($assetFile);
         }
@@ -87,6 +95,7 @@ class AssetFileManager extends AbstractManager
      */
     public function create(AssetFile $assetFile, bool $flush = true): AssetFile
     {
+        $this->assetFileSingleUseEnforcer->enforce($assetFile);
         $this->trackCreation($assetFile);
         $this->entityManager->persist($assetFile);
         $this->flush($flush);

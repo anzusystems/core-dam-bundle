@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -48,6 +49,17 @@ final class AssetLicenceRepository extends AbstractAnzuRepository
                 ->getQuery()
                 ->getResult()
         );
+    }
+
+    public function existsByDefaultAuthor(Author $author): bool
+    {
+        return (bool) $this->createQueryBuilder('entity')
+            ->select('1')
+            ->where('entity.defaultAuthor = :author')
+            ->setParameter('author', $author)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     protected function getEntityClass(): string

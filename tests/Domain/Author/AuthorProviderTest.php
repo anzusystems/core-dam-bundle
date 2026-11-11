@@ -213,6 +213,31 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
         yield 'several children and roots together' => [$tree, ['child', 'reviewedChild', 'root'], true, ['agency', 'photographer', 'root']];
     }
 
+    public function testProvideAuthorToCollResolvesAnAliasWithoutDuplicates(): void
+    {
+        $authors = $this->createAuthorTree($this->cms, [
+            'first' => ['name' => 'Prvý Autor', 'reviewed' => true],
+            'second' => ['name' => 'Druhý Autor', 'reviewed' => true],
+            'alias' => ['name' => 'Prvý Autor / Druhý Autor', 'parents' => ['first', 'second']],
+        ]);
+        $asset = $this->createImageAsset();
+        $asset->addAuthor($authors['alias']);
+
+        self::assertTrue($this->authorProvider->provideAuthorToColl($asset, $authors['first']));
+        self::assertSame(['first', 'second'], $this->toTreeKeys($authors, $asset->getAuthors()));
+
+        self::assertFalse($this->authorProvider->provideAuthorToColl($asset, $authors['first']));
+        self::assertSame(['first', 'second'], $this->toTreeKeys($authors, $asset->getAuthors()));
+    }
+
+    private function createImageAsset(): Asset
+    {
+        $asset = (new Asset())->setExtSystem($this->cms);
+        $asset->getAttributes()->setAssetType(AssetType::Image);
+
+        return $asset;
+    }
+
     /**
      * @param array<string, Author> $authors
      * @param list<string> $acceptableKeys
