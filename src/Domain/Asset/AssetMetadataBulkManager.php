@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\AssetMetadata\AssetMetadataManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -19,6 +20,7 @@ final class AssetMetadataBulkManager extends AbstractManager
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AuthorProvider $authorProvider,
         private readonly AssetFileInternalRuleEvaluator $evaluator,
+        private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
     }
 
@@ -83,6 +85,7 @@ final class AssetMetadataBulkManager extends AbstractManager
         $mainFile = $asset->getMainFile();
         if ($mainFile instanceof AssetFile) {
             $mainFile->getFlags()->setSingleUse($updateDto->isMainFileSingleUse());
+            $this->assetFileSingleUseEnforcer->enforce($mainFile);
         }
     }
 

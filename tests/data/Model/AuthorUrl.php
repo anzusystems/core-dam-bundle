@@ -18,6 +18,11 @@ final class AuthorUrl
         return sprintf('/api/adm/v%d/author/%s', self::API_VERSION, $id);
     }
 
+    public static function delete(string $id): string
+    {
+        return sprintf('/api/adm/v%d/author/%s', self::API_VERSION, $id);
+    }
+
     public static function searchByExtSystem(int $extSystemId): string
     {
         return sprintf('/api/adm/v%d/author/ext-system/%d/search', self::API_VERSION, $extSystemId);
