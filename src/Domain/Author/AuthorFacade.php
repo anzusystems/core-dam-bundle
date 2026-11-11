@@ -9,11 +9,14 @@ use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorNameReindex;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
+use AnzuSystems\CoreDamBundle\Exception\DependencyExistsException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
 
@@ -28,6 +31,7 @@ final class AuthorFacade
     public function __construct(
         private readonly AuthorManager $authorManager,
         private readonly AuthorProvider $authorProvider,
+        private readonly AssetLicenceRepository $assetLicenceRepository,
         private readonly JobFacade $jobFacade,
         private readonly DamLogger $damLogger,
     ) {
@@ -98,8 +102,15 @@ final class AuthorFacade
         return $author;
     }
 
+    /**
+     * @throws DependencyExistsException
+     */
     public function delete(Author $author): bool
     {
+        if ($this->assetLicenceRepository->existsByDefaultAuthor($author)) {
+            throw (new DependencyExistsException())->addDependency(AssetLicence::class);
+        }
+
         try {
             $deletedId = (string) $author->getId();
             $this->authorManager->beginTransaction();
