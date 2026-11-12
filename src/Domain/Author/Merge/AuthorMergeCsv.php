@@ -72,7 +72,8 @@ final class AuthorMergeCsv
     ];
 
     private const string LIST_SEPARATOR = ' + ';
-    private const string DELIMITER = ';';
+    private const string DELIMITER = ',';
+    private const string EXCEL_DELIMITER = ';';
     private const string ENCLOSURE = '"';
     private const string ESCAPE = '';
     private const string BOM = "\u{FEFF}";
@@ -144,14 +145,26 @@ final class AuthorMergeCsv
             throw new InvalidArgumentException('Cannot open memory stream');
         }
 
+        $content = str_starts_with($content, self::BOM) ? substr($content, strlen(self::BOM)) : $content;
+
         try {
-            fwrite($handle, str_starts_with($content, self::BOM) ? substr($content, strlen(self::BOM)) : $content);
+            fwrite($handle, $content);
             rewind($handle);
 
-            return self::readRows($handle);
+            return self::readRows(handle: $handle, delimiter: self::findDelimiter($content));
         } finally {
             fclose($handle);
         }
+    }
+
+    /**
+     * Excel with a Slovak list separator saves the file with semicolons; the column names hold neither delimiter.
+     */
+    private static function findDelimiter(string $content): string
+    {
+        $header = strstr($content, "\n", true) ?: $content;
+
+        return str_contains($header, self::EXCEL_DELIMITER) ? self::EXCEL_DELIMITER : self::DELIMITER;
     }
 
     /**
@@ -159,9 +172,9 @@ final class AuthorMergeCsv
      *
      * @return array<int, array<string, string>>
      */
-    private static function readRows($handle): array
+    private static function readRows($handle, string $delimiter): array
     {
-        $header = fgetcsv($handle, null, self::DELIMITER, self::ENCLOSURE, self::ESCAPE);
+        $header = fgetcsv($handle, null, $delimiter, self::ENCLOSURE, self::ESCAPE);
         $header = false === $header ? [] : array_map(static fn (?string $column): string => trim((string) $column), $header);
         $missing = array_diff(self::REQUIRED_COLUMNS, $header);
         if (false === empty($missing)) {
@@ -170,7 +183,7 @@ final class AuthorMergeCsv
 
         $rows = [];
         $rowNumber = 1;
-        while (false !== ($values = fgetcsv($handle, null, self::DELIMITER, self::ENCLOSURE, self::ESCAPE))) {
+        while (false !== ($values = fgetcsv($handle, null, $delimiter, self::ENCLOSURE, self::ESCAPE))) {
             ++$rowNumber;
             if ([null] === $values) {
                 continue;
