@@ -186,6 +186,7 @@ final class AssetSysFacade
                 $assetFile->getAsset()->addAuthor($author);
             }
         }
+        $this->authorProvider->provideCurrentAuthorToColl($assetFile->getAsset());
     }
 
     private function findImagePreview(VideoFileSysUrlCreateDto $dto): ?ImageFile

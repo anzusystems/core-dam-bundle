@@ -19,15 +19,34 @@ final readonly class AuthorProvider
     ) {
     }
 
+    /**
+     * Null when nothing matches or the matches lead to different authors with not exactly one of them reviewed:
+     * such data waits for the clean-up, nothing is merged by a guess.
+     */
     public function resolve(string $name, ExtSystem $extSystem, string $identifier = App::EMPTY_STRING): ?Author
     {
-        $identifierFilter = App::EMPTY_STRING === $identifier ? null : $identifier;
-        $author = $this->repository->findOneByNameAndExtSystem($name, $extSystem, $identifierFilter);
-        if ($author instanceof Author) {
-            return $author;
+        $identifierFilter = self::toIdentifierFilter($identifier);
+        $exactMatches = $this->repository->findByNameAndExtSystem($name, $extSystem, $identifierFilter);
+        if ([] !== $exactMatches) {
+            return $this->chooseMatch($exactMatches);
         }
 
-        return $this->resolveByNormalizedName($name, $extSystem, $identifierFilter);
+        return $this->chooseMatch($this->repository->findByNormalizedNameAndExtSystem(
+            nameNormalized: AuthorNameNormalizer::normalize($name),
+            extSystem: $extSystem,
+            identifier: $identifierFilter,
+        ));
+    }
+
+    /**
+     * For callers that create the author otherwise: the unique key forbids a second author with an existing name,
+     * so an undecided exact match falls back to the first one, reviewed first.
+     */
+    public function findExisting(string $name, ExtSystem $extSystem, string $identifier = App::EMPTY_STRING): ?Author
+    {
+        return $this->resolve($name, $extSystem, $identifier)
+            ?? $this->repository->findByNameAndExtSystem($name, $extSystem, self::toIdentifierFilter($identifier))[App::ZERO]
+            ?? null;
     }
 
     public function provideByTitle(string $title, ExtSystem $extSystem, bool $flush = true): ?Author
@@ -37,7 +56,7 @@ final readonly class AuthorProvider
             return null;
         }
 
-        $author = $this->resolve($title, $extSystem);
+        $author = $this->findExisting($title, $extSystem);
         if ($author instanceof Author) {
             return $author;
         }
@@ -73,22 +92,59 @@ final readonly class AuthorProvider
     }
 
     /**
-     * Null when no safe single author matches: ambiguous matches are left for the caller to handle as no match.
+     * A match leads to itself, or to all its current authors, never to a part of them.
+     *
+     * @param list<Author> $matches
      */
-    private function resolveByNormalizedName(string $name, ExtSystem $extSystem, ?string $identifier): ?Author
+    private function chooseMatch(array $matches): ?Author
     {
-        $candidates = $this->repository->findByNormalizedNameAndExtSystem(
-            nameNormalized: AuthorNameNormalizer::normalize($name),
-            extSystem: $extSystem,
-            identifier: $identifier,
-        );
-
-        if (1 === count($candidates)) {
-            return $candidates[App::ZERO];
+        $matchByTarget = [];
+        foreach ($matches as $match) {
+            $targetKey = $this->getTargetKey($match);
+            $isRoot = $match->getCurrentAuthors()->isEmpty();
+            if ($isRoot || false === isset($matchByTarget[$targetKey])) {
+                $matchByTarget[$targetKey] = $match;
+            }
         }
 
-        $reviewed = array_filter($candidates, static fn (Author $author): bool => $author->getFlags()->isReviewed());
+        if (1 === count($matchByTarget)) {
+            return array_values($matchByTarget)[App::ZERO];
+        }
+
+        $reviewed = array_filter($matchByTarget, $this->isTargetReviewed(...));
 
         return 1 === count($reviewed) ? array_values($reviewed)[App::ZERO] : null;
+    }
+
+    /**
+     * @return list<Author>
+     */
+    private function getTargets(Author $match): array
+    {
+        return $match->getCurrentAuthors()->isEmpty() ? [$match] : $match->getCurrentAuthors()->getValues();
+    }
+
+    private function getTargetKey(Author $match): string
+    {
+        $targetIds = array_map(static fn (Author $target): string => (string) $target->getId(), $this->getTargets($match));
+        sort($targetIds);
+
+        return implode(',', $targetIds);
+    }
+
+    private function isTargetReviewed(Author $match): bool
+    {
+        foreach ($this->getTargets($match) as $target) {
+            if (false === $target->getFlags()->isReviewed()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static function toIdentifierFilter(string $identifier): ?string
+    {
+        return App::EMPTY_STRING === $identifier ? null : $identifier;
     }
 }

@@ -23,12 +23,15 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsAssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsNarrationRequestRepository;
 use AnzuSystems\CoreDamBundle\Repository\TtsSynthesisChunkRepository;
+use AnzuSystems\CoreDamBundle\Tests\Domain\Author\AuthorTreeTrait;
 use AnzuSystems\CoreDamBundle\Tests\HttpClient\ElevenlabsClientMock;
 use Throwable;
 
 /** End-to-end TTS pipeline: dispatch → chunk → ElevenLabs mock → concat → assert duration. */
 final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
 {
+    use AuthorTreeTrait;
+
     private TtsNarrationRequestHandler $planHandler;
     private TtsSynthChunkHandler $chunkHandler;
     private TtsSynthesisChunkRepository $chunkRepo;
@@ -202,6 +205,30 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         );
     }
 
+    public function testAuthorsAreResolvedAndReplacedByTheirCurrentAuthors(): void
+    {
+        $extSystem = $this->buildSynthesizeDto('')->getAssetLicence()->getExtSystem();
+        $authors = $this->createAuthorTree($extSystem, [
+            'agency' => [
+                'name' => 'Agentúra',
+                'reviewed' => true,
+            ],
+            'photographer' => [
+                'name' => 'Fotograf',
+            ],
+            'child' => [
+                'name' => 'Agentúra / Fotograf',
+                'parents' => ['agency', 'photographer'],
+            ],
+            'kuchta' => ['name' => 'Gabriel Kuchta', 'reviewed' => true],
+            'kuchtaDot' => ['name' => 'Gabriel Kuchta.'],
+        ]);
+
+        $asset = $this->dispatchAndProcess('A narration with credits.', authors: ['Agentúra/Fotograf.', 'GABRIEL  KUCHTA', 'Nový Autor']);
+
+        self::assertSame(['agency', 'kuchta', 'name:Nový Autor', 'photographer'], $this->toTreeKeys($authors, $asset->getAuthors()));
+    }
+
     public function testRegenerateViaSysDispatchUpdatesSnapshotAndHash(): void
     {
         $mainImageFileId = '018e0000-0000-7000-8000-000000000001';
@@ -253,9 +280,12 @@ final class TtsSynthesisFunctionalTest extends AbstractTtsFunctionalTestCase
         self::fail('A transient provider error must be rethrown for transport redelivery.');
     }
 
-    private function dispatchAndProcess(string $text, ?string $mainImageFileId = null): Asset
+    /**
+     * @param list<string> $authors
+     */
+    private function dispatchAndProcess(string $text, ?string $mainImageFileId = null, array $authors = []): Asset
     {
-        $dto = $this->buildSynthesizeDto($text)->setMainImageFileId($mainImageFileId);
+        $dto = $this->buildSynthesizeDto($text)->setMainImageFileId($mainImageFileId)->setAuthors($authors);
         $result = $this->dispatchFacade->synthesize($dto, enqueue: false);
         self::assertNotNull($result->narrationRequest, 'Initial dispatch should produce a request.');
 

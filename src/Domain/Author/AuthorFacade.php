@@ -43,7 +43,7 @@ final class AuthorFacade
         $this->resourceLocker->lock($lockName);
 
         try {
-            $existingAuthor = $this->authorProvider->resolve($author->getName(), $author->getExtSystem(), $author->getIdentifier());
+            $existingAuthor = $this->authorProvider->findExisting($author->getName(), $author->getExtSystem(), $author->getIdentifier());
             if ($existingAuthor) {
                 throw new AuthorExistsException($existingAuthor);
             }

@@ -155,6 +155,11 @@ anzu_systems_core_dam:
         title: ['customData:title']
         custom_metadata_pinned_amount: 3
         public_domain: web_cms
+        authors:
+          enabled: true
+          autocomplete_from_exif_metadata_tags:
+            Artist: ','
+            Creator: ','
         admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'

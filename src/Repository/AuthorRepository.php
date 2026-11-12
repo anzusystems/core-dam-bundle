@@ -7,6 +7,8 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use Doctrine\Common\Collections\Order;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends AbstractAnzuRepository<Author>
@@ -16,17 +18,16 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
  */
 final class AuthorRepository extends AbstractAnzuRepository
 {
-    public function findOneByNameAndExtSystem(string $name, ExtSystem $extSystem, ?string $identifier = null): ?Author
+    /**
+     * @return list<Author>
+     */
+    public function findByNameAndExtSystem(string $name, ExtSystem $extSystem, ?string $identifier = null): array
     {
-        $criteria = [
-            'name' => $name,
-            'extSystem' => $extSystem,
-        ];
-        if (null !== $identifier) {
-            $criteria['identifier'] = $identifier;
-        }
-
-        return $this->findOneBy($criteria);
+        return $this->createMatchQueryBuilder($extSystem, $identifier)
+            ->andWhere('author.name = :name')
+            ->setParameter('name', $name)
+            ->getQuery()
+            ->getResult();
     }
 
     /**
@@ -38,17 +39,11 @@ final class AuthorRepository extends AbstractAnzuRepository
             return [];
         }
 
-        $qb = $this->createQueryBuilder('author')
-            ->where('author.nameNormalized = :nameNormalized')
-            ->andWhere('IDENTITY(author.extSystem) = :extSystemId')
+        return $this->createMatchQueryBuilder($extSystem, $identifier)
+            ->andWhere('author.nameNormalized = :nameNormalized')
             ->setParameter('nameNormalized', $nameNormalized)
-            ->setParameter('extSystemId', (int) $extSystem->getId())
-        ;
-        if (null !== $identifier) {
-            $qb->andWhere('author.identifier = :identifier')->setParameter('identifier', $identifier);
-        }
-
-        return $qb->getQuery()->getResult();
+            ->getQuery()
+            ->getResult();
     }
 
     /**
@@ -69,5 +64,20 @@ final class AuthorRepository extends AbstractAnzuRepository
     protected function getEntityClass(): string
     {
         return Author::class;
+    }
+
+    private function createMatchQueryBuilder(ExtSystem $extSystem, ?string $identifier): QueryBuilder
+    {
+        $queryBuilder = $this->createQueryBuilder('author')
+            ->addSelect('currentAuthor')
+            ->leftJoin('author.currentAuthors', 'currentAuthor')
+            ->where('IDENTITY(author.extSystem) = :extSystemId')
+            ->setParameter('extSystemId', (int) $extSystem->getId())
+            ->orderBy('author.flags.reviewed', Order::Descending->value);
+        if (null !== $identifier) {
+            $queryBuilder->andWhere('author.identifier = :identifier')->setParameter('identifier', $identifier);
+        }
+
+        return $queryBuilder;
     }
 }
