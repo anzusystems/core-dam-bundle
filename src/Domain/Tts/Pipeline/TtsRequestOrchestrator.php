@@ -485,6 +485,9 @@ final readonly class TtsRequestOrchestrator
                 $changed = true;
             }
         }
+        if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
+            $changed = true;
+        }
 
         if ($changed) {
             $this->entityManager->flush();

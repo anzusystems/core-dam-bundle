@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFactory;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -30,6 +31,7 @@ final class AuthorSuggester extends AbstractSuggester
         private readonly EntityManagerInterface $entityManager,
         private readonly DamLogger $damLogger,
         private readonly AuthorCleanPhraseProcessor $authorCleanPhraseProcessor,
+        private readonly AuthorProvider $authorProvider,
     ) {
     }
 
@@ -68,6 +70,7 @@ final class AuthorSuggester extends AbstractSuggester
         }
 
         parent::applySuggestions($assetFile, $suggestions);
+        $this->authorProvider->provideCurrentAuthorToColl($assetFile->getAsset());
     }
 
     /**
@@ -92,6 +95,11 @@ final class AuthorSuggester extends AbstractSuggester
     protected function suggestIdsByTag(string $name, Asset $asset): array
     {
         $extSystem = $asset->getExtSystem();
+        $author = $this->authorProvider->resolve($name, $extSystem);
+        if ($author instanceof Author) {
+            return [(string) $author->getId()];
+        }
+
         $ids = $this->authorRepo->findIdsByNameAndExtSystem(
             name: $name,
             extSystem: $extSystem
