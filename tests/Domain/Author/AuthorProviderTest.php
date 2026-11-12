@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\Author;
 
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -82,6 +83,16 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
             $second->getId(),
             $this->authorProvider->resolve('Resolver Identified,', $this->extSystem, 'second')?->getId()
         );
+    }
+
+    public function testReviewedChildIsReplacedByItsCurrentAuthorOnAsset(): void
+    {
+        $parent = $this->createAuthor('Resolver Asset Parent');
+        $child = $this->createAuthor('Resolver Asset Child', [$parent], reviewed: true);
+        $asset = (new Asset())->addAuthor($child);
+
+        self::assertTrue($this->authorProvider->provideCurrentAuthorToColl($asset));
+        self::assertSame([$parent->getId()], $asset->getAuthors()->map(static fn (Author $author): ?string => $author->getId())->getValues());
     }
 
     /**

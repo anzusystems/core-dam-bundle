@@ -8,6 +8,7 @@ use AnzuSystems\CommonBundle\Domain\Job\JobFacade;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorNameReindex;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
@@ -21,6 +22,8 @@ final class AuthorFacade
     use ValidatorAwareTrait;
     use IndexManagerAwareTrait;
     use ResourceLockerAwareTrait;
+
+    private const string LOCK_PREFIX = 'author_create_';
 
     public function __construct(
         private readonly AuthorManager $authorManager,
@@ -36,7 +39,7 @@ final class AuthorFacade
      */
     public function create(Author $author): Author
     {
-        $lockName = AuthorProvider::createLockName($author->getName(), $author->getExtSystem());
+        $lockName = $this->createLockName($author);
         $this->resourceLocker->lock($lockName);
 
         try {
@@ -125,5 +128,16 @@ final class AuthorFacade
                 exception: $exception,
             );
         }
+    }
+
+    private function createLockName(Author $author): string
+    {
+        // Falls back to the lowercased name: the DB unique check is collation case-insensitive, the lock key must match.
+        $key = $author->getNameNormalized();
+        if (App::EMPTY_STRING === $key) {
+            $key = mb_strtolower($author->getName());
+        }
+
+        return self::LOCK_PREFIX . $key . '_' . (string) $author->getExtSystem()->getId();
     }
 }
