@@ -34,12 +34,25 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
     private const string COMMAND = 'anzu-dam:author:merge';
     private const array TREE = [
-        'main' => ['name' => 'Jozef Jakubčo'],
-        'reviewed' => ['name' => 'Jozef Jakubčo.', 'reviewed' => true],
-        'spaces' => ['name' => 'Jozef  Jakubčo'],
-        'skipped' => ['name' => 'Jozef Jakubčo,'],
-        'other' => ['name' => 'Peter Novák'],
-        'otherDot' => ['name' => 'Peter Novák.'],
+        'main' => [
+            'name' => 'Jozef Jakubčo',
+        ],
+        'reviewed' => [
+            'name' => 'Jozef Jakubčo.',
+            'reviewed' => true,
+        ],
+        'spaces' => [
+            'name' => 'Jozef  Jakubčo',
+        ],
+        'skipped' => [
+            'name' => 'Jozef Jakubčo,',
+        ],
+        'other' => [
+            'name' => 'Peter Novák',
+        ],
+        'otherDot' => [
+            'name' => 'Peter Novák.',
+        ],
     ];
 
     private string $file;
@@ -81,13 +94,21 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
                 ->setAuthorReplacement($this->authors['spaces'])
         );
         $this->writeCsv([
-            '1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny', 'skipped' => 'vynechat'],
-            '2' => ['other' => 'nezlucovat', 'otherDot' => ''],
+            '1' => [
+                'main' => 'hlavny',
+                'reviewed' => 'podriadeny',
+                'spaces' => 'podriadeny',
+                'skipped' => 'vynechat',
+            ],
+            '2' => [
+                'other' => 'nezlucovat',
+                'otherDot' => '',
+            ],
         ]);
 
         $display = $this->execute(Command::SUCCESS);
 
-        self::assertMatchesRegularExpression('/merged 1 groups \(2 variants, 2 asset links, 1 clean phrases\), 1 jobs, 0 groups already merged, 0 skipped/', $display);
+        self::assertMatchesRegularExpression('/merged 1 groups \(2 variants, 2 asset link snapshots, 1 clean phrases\), 1 jobs, 0 groups already merged, 0 skipped/', $display);
         $main = $this->findAuthor('main');
         self::assertTrue($main->getFlags()->isReviewed());
         self::assertTrue($main->getFlags()->isCanBeCurrentAuthor());
@@ -150,7 +171,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
         $display = $this->execute(Command::SUCCESS);
 
-        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, 2 asset links, 0 clean phrases\), 2 jobs/', $display);
+        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, 2 asset link snapshots, 0 clean phrases\), 2 jobs/', $display);
         self::assertSame(['lipa', 'sme'], $this->toTreeKeys($this->authors, $this->findAuthor('variant')->getCurrentAuthors()));
         self::assertCount(2, array_filter($this->fetchLogs(), fn (array $log): bool => (string) $this->authors['variant']->getId() === $log['variant_id']));
         self::assertEqualsCanonicalizing(
@@ -248,17 +269,44 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         ];
         yield 'target author that does not exist' => [
             ['1' => $valid],
-            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => '00000000-0000-0000-0000-000000000000']],
+            static fn (array $rows): array => array_map(static fn (array $row): array => [...$row, AuthorMergeCsv::TARGET_IDS => '00000000-0000-0000-0000-000000000000'], $rows),
             'Row 2: author "00000000-0000-0000-0000-000000000000" does not exist',
         ];
         yield 'variant as the target author' => [
             ['1' => $valid],
-            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]]],
-            'cannot be a target author of its group',
+            static fn (array $rows): array => array_map(static fn (array $row): array => [...$row, AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]], $rows),
+            'Group 1: target author',
+        ];
+        yield 'variant of another group as the target author' => [
+            ['1' => $valid, '2' => ['other' => 'hlavny', 'otherDot' => 'podriadeny']],
+            static fn (array $rows): array => [
+                ...$rows,
+                2 => [...$rows[2], AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]],
+                3 => [...$rows[3], AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]],
+            ],
+            'is a variant of group 1',
+        ];
+        yield 'target author changed on a variant row' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [...$rows, 1 => [...$rows[1], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + 00000000-0000-0000-0000-000000000000']],
+            'Row 3: "nadriadeny_id" of a variant differs from its main author',
         ];
         yield 'missing decision column' => [
             ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: rozhodnutie',
         ];
+    }
+
+    public function testEmptyTargetsOnTheMainRowMeanTheMainAuthor(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, self::TREE);
+        $this->writeCsv(
+            ['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny']],
+            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => '']],
+        );
+
+        $this->execute(Command::SUCCESS);
+
+        self::assertSame(['main'], $this->toTreeKeys($this->authors, $this->findAuthor('reviewed')->getCurrentAuthors()));
     }
 
     public function testFileNotSavedAsUtf8ChangesNothing(): void
