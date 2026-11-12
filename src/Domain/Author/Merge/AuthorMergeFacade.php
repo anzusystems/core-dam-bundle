@@ -329,15 +329,15 @@ final class AuthorMergeFacade
         if (count($names) > 1) {
             $errors[] = sprintf('Group %s: merges different authors (%s), rows %s', $groupName, implode(', ', $names), implode(', ', array_keys($rows)));
         }
-        $main = array_values($mains)[App::ZERO] ?? null;
-        if (null === $main) {
+        $mainRowNumber = array_key_first($mains);
+        if (null === $mainRowNumber) {
             return $errors;
         }
-        $mainTargetIds = $this->findMainTargetIds($main);
+        $mainTargetIds = $this->findMainTargetIds($mains[$mainRowNumber]);
         foreach ($variants as $rowNumber => $variant) {
             $targetIds = $this->findTargetIds($variant);
             if (false === empty($targetIds) && $targetIds !== $mainTargetIds) {
-                $errors[] = sprintf('Row %d: "%s" of a variant differs from its main author; set it on the row "%s"', $rowNumber, AuthorMergeCsv::TARGET_IDS, AuthorMergeDecision::Main->value);
+                $errors[] = sprintf('Row %d: "%s" differs from the main row %d; copy it from row %d or leave it empty', $rowNumber, AuthorMergeCsv::TARGET_IDS, $mainRowNumber, $mainRowNumber);
             }
         }
 

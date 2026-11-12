@@ -289,7 +289,12 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         yield 'target author changed on a variant row' => [
             ['1' => $valid],
             static fn (array $rows): array => [...$rows, 1 => [...$rows[1], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + 00000000-0000-0000-0000-000000000000']],
-            'Row 3: "nadriadeny_id" of a variant differs from its main author',
+            'Row 3: "nadriadeny_id" differs from the main row 2; copy it from row 2 or leave it empty',
+        ];
+        yield 'target author changed on the main row only' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + ' . AuthorFixtures::AUTHOR_1]],
+            'Row 3: "nadriadeny_id" differs from the main row 2; copy it from row 2 or leave it empty',
         ];
         yield 'missing decision column' => [
             ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: rozhodnutie',
