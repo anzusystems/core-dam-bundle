@@ -88,6 +88,7 @@ final class AuthorMergeFacade
                 $rowNumbersById[$targetId] ??= (int) array_key_first($rows);
             }
         }
+        array_push($errors, ...$this->checkTargetsAreNotVariants($groups));
         array_push($errors, ...$this->checkAuthors(extSystem: $extSystem, rowNumbersById: $rowNumbersById));
 
         if (false === empty($errors)) {
@@ -135,6 +136,7 @@ final class AuthorMergeFacade
         }
 
         $this->authorManager->beginTransaction();
+
         try {
             $assetLinks = $this->logPairs(runId: $result->getRunId(), groupName: $group->name, variants: $variants, targets: $targets);
             $cleanPhrases = 1 === count($targets) ? $this->replaceCleanPhraseAuthor(variants: $variants, target: $targets[App::ZERO]) : App::ZERO;
@@ -296,7 +298,8 @@ final class AuthorMergeFacade
     }
 
     /**
-     * Merged rows of one group are one author written differently, and the group name fits the log.
+     * Merged rows of one group are one author written differently, the group name fits the log, and the targets are
+     * set on the main row only.
      *
      * @param non-empty-array<int, array<string, string>> $rows main and variant rows by row number
      *
@@ -326,10 +329,65 @@ final class AuthorMergeFacade
         if (count($names) > 1) {
             $errors[] = sprintf('Group %s: merges different authors (%s), rows %s', $groupName, implode(', ', $names), implode(', ', array_keys($rows)));
         }
-        $variantIds = array_map(static fn (array $row): string => trim($row[AuthorMergeCsv::AUTHOR_ID]), $variants);
-        foreach ($mains as $main) {
-            foreach (array_intersect(AuthorMergeCsv::splitList($main[AuthorMergeCsv::TARGET_IDS]), $variantIds) as $variantId) {
-                $errors[] = sprintf('Group %s: variant %s cannot be a target author of its group', $groupName, $variantId);
+        $main = array_values($mains)[App::ZERO] ?? null;
+        if (null === $main) {
+            return $errors;
+        }
+        $mainTargetIds = $this->findMainTargetIds($main);
+        foreach ($variants as $rowNumber => $variant) {
+            $targetIds = $this->findTargetIds($variant);
+            if (false === empty($targetIds) && $targetIds !== $mainTargetIds) {
+                $errors[] = sprintf('Row %d: "%s" of a variant differs from its main author; set it on the row "%s"', $rowNumber, AuthorMergeCsv::TARGET_IDS, AuthorMergeDecision::Main->value);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param array<string, string> $mainRow
+     *
+     * @return non-empty-list<string> sorted
+     */
+    private function findMainTargetIds(array $mainRow): array
+    {
+        return $this->findTargetIds($mainRow) ?: [trim($mainRow[AuthorMergeCsv::AUTHOR_ID])];
+    }
+
+    /**
+     * @param array<string, string> $row
+     *
+     * @return list<string> sorted
+     */
+    private function findTargetIds(array $row): array
+    {
+        $targetIds = array_values(array_unique(AuthorMergeCsv::splitList($row[AuthorMergeCsv::TARGET_IDS])));
+        sort($targetIds);
+
+        return $targetIds;
+    }
+
+    /**
+     * A variant merged by one group cannot be a current author, so a group with it as a target would be skipped.
+     *
+     * @param list<AuthorMergeGroupDto> $groups
+     *
+     * @return list<string>
+     */
+    private function checkTargetsAreNotVariants(array $groups): array
+    {
+        $variantGroups = [];
+        foreach ($groups as $group) {
+            foreach ($group->variants as $variant) {
+                $variantGroups[$variant->authorId] = $group->name;
+            }
+        }
+        $errors = [];
+        foreach ($groups as $group) {
+            foreach ($group->targetIds as $targetId) {
+                if (array_key_exists($targetId, $variantGroups)) {
+                    $errors[] = sprintf('Group %s: target author %s is a variant of group %s', $group->name, $targetId, $variantGroups[$targetId]);
+                }
             }
         }
 
@@ -357,7 +415,7 @@ final class AuthorMergeFacade
             name: $groupName,
             main: $main,
             variants: $variants,
-            targetIds: array_values(array_unique(AuthorMergeCsv::splitList($mainRow[AuthorMergeCsv::TARGET_IDS]))) ?: [$main->authorId],
+            targetIds: $this->findMainTargetIds($mainRow),
         );
     }
 
