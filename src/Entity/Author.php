@@ -12,6 +12,7 @@ use AnzuSystems\Contracts\Entity\Interfaces\UuidIdentifiableInterface;
 use AnzuSystems\Contracts\Entity\Traits\TimeTrackingTrait;
 use AnzuSystems\Contracts\Entity\Traits\UserTrackingTrait;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorNameNormalizer;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AuthorFlags;
 use AnzuSystems\CoreDamBundle\Entity\Interfaces\ExtSystemIndexableInterface;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
@@ -28,6 +29,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 #[ORM\UniqueConstraint(fields: ['name', 'identifier', 'extSystem'])]
+#[ORM\Index(fields: ['extSystem', 'nameNormalized'])]
 #[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['name'])]
 #[AuthorCurrentAuthor]
 class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemIndexableInterface
@@ -47,6 +49,10 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
         maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
     )]
     private string $name;
+
+    // Search-only key built by AuthorNameNormalizer; empty means not processed yet.
+    #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH, options: ['default' => ''])]
+    private string $nameNormalized = '';
 
     /**
      * If asset uses author and has defined currentAuthors, this relation should be replaced
@@ -99,8 +105,14 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setName(string $name): self
     {
         $this->name = $name;
+        $this->nameNormalized = AuthorNameNormalizer::normalize($name);
 
         return $this;
+    }
+
+    public function getNameNormalized(): string
+    {
+        return $this->nameNormalized;
     }
 
     public function getIdentifier(): string
