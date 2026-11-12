@@ -314,6 +314,16 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         self::assertSame(['main'], $this->toTreeKeys($this->authors, $this->findAuthor('reviewed')->getCurrentAuthors()));
     }
 
+    public function testFileSavedWithSemicolonsMerges(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, self::TREE);
+        $this->writeCsv(['1' => ['main' => 'main', 'reviewed' => 'variant', 'skipped' => 'skip']], delimiter: ';');
+
+        $this->execute(Command::SUCCESS);
+
+        self::assertSame(['main'], $this->toTreeKeys($this->authors, $this->findAuthor('reviewed')->getCurrentAuthors()));
+    }
+
     public function testFileNotSavedAsUtf8ChangesNothing(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, self::TREE);
@@ -423,7 +433,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
      * @param array<string, array<string, string>> $decisions decision by tree key, by group
      * @param Closure(array<int, array<string, string|int>>): array<int, array<string, string|int>>|null $editRows
      */
-    private function writeCsv(array $decisions, ?Closure $editRows = null): void
+    private function writeCsv(array $decisions, ?Closure $editRows = null, string $delimiter = ','): void
     {
         $rows = [];
         foreach ($decisions as $group => $groupDecisions) {
@@ -451,9 +461,9 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         $handle = fopen($this->file, 'wb');
         self::assertNotFalse($handle);
         fwrite($handle, "\u{FEFF}");
-        fputcsv($handle, array_keys($rows[0]), ';', '"', '');
+        fputcsv($handle, array_keys($rows[0]), $delimiter, '"', '');
         foreach ($rows as $row) {
-            fputcsv($handle, array_values($row), ';', '"', '');
+            fputcsv($handle, array_values($row), $delimiter, '"', '');
         }
         fclose($handle);
     }

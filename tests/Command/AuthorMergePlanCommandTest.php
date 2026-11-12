@@ -109,7 +109,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
 
     public function testFileIsUtf8WithBomForExcel(): void
     {
-        self::assertStringStartsWith("\u{FEFF}" . implode(';', AuthorMergeCsv::COLUMNS), (string) file_get_contents($this->file));
+        self::assertStringStartsWith("\u{FEFF}" . implode(',', AuthorMergeCsv::COLUMNS), (string) file_get_contents($this->file));
     }
 
     public function testMainIsTheVariantWithMostAssets(): void
