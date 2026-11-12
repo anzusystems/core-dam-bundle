@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AnzuSystems\CoreDamBundle\Model\ValueObject;
+namespace AnzuSystems\CoreDamBundle\Model\Dto\Author;
 
 use AnzuSystems\CoreDamBundle\App;
 
-final class AuthorMergeResult
+final class AuthorMergeResultDto
 {
     private int $mergedGroups = App::ZERO;
     private int $mergedVariants = App::ZERO;

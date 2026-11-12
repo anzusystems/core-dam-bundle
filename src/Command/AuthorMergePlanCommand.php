@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Command;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Author\Merge\AuthorMergePlanFacade;
+use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Attribute\Option;
@@ -28,7 +29,7 @@ final readonly class AuthorMergePlanCommand
         SymfonyStyle $io,
         #[Option(description: 'Slug of the ext system whose authors are merged')]
         string $extSystem = App::EMPTY_STRING,
-        #[Option(description: 'Path of the CSV to write')]
+        #[Option(description: 'Path of the CSV to write, the file must not exist')]
         string $file = App::EMPTY_STRING,
     ): int {
         $extSystemEntity = $this->extSystemRepository->findOneBySlug($extSystem);
@@ -38,7 +39,13 @@ final readonly class AuthorMergePlanCommand
             return Command::INVALID;
         }
 
-        $result = $this->authorMergePlanFacade->writePlan($extSystemEntity, $file);
+        try {
+            $result = $this->authorMergePlanFacade->writePlan($extSystemEntity, $file);
+        } catch (InvalidArgumentException $exception) {
+            $io->error($exception->getMessage());
+
+            return Command::FAILURE;
+        }
         $io->success(sprintf(
             'Wrote %d authors in %d groups (%d left to people), %d variants proposed for merge, to %s',
             $result->authors,

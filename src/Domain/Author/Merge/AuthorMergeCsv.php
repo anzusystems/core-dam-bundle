@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\Author\Merge;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 
 /**
@@ -12,7 +13,7 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 final class AuthorMergeCsv
 {
     public const string GROUP = 'skupina';
-    public const string VARIANT = 'variant';
+    public const string CASE = 'variant';
     public const string EXT_SYSTEM = 'ext_system';
     public const string NAME_NORMALIZED = 'normalizovane_meno';
     public const string GROUP_IDENTIFIER = 'identifikator_skupiny';
@@ -27,14 +28,14 @@ final class AuthorMergeCsv
     public const string CURRENT_AUTHOR_COUNT = 'ma_nadriadeneho';
     public const string CHILD_AUTHOR_COUNT = 'pocet_podriadenych';
     public const string PROPOSAL = 'navrh';
-    public const string CURRENT_AUTHOR_IDS = 'nadriadeny_id';
-    public const string CURRENT_AUTHOR_NAMES = 'nadriadeny_meno';
+    public const string TARGET_IDS = 'nadriadeny_id';
+    public const string TARGET_NAMES = 'nadriadeny_meno';
     public const string REASON = 'dovod';
     public const string DECISION = 'rozhodnutie';
 
     public const array COLUMNS = [
         self::GROUP,
-        self::VARIANT,
+        self::CASE,
         self::EXT_SYSTEM,
         self::NAME_NORMALIZED,
         self::GROUP_IDENTIFIER,
@@ -49,8 +50,8 @@ final class AuthorMergeCsv
         self::CURRENT_AUTHOR_COUNT,
         self::CHILD_AUTHOR_COUNT,
         self::PROPOSAL,
-        self::CURRENT_AUTHOR_IDS,
-        self::CURRENT_AUTHOR_NAMES,
+        self::TARGET_IDS,
+        self::TARGET_NAMES,
         self::REASON,
         self::DECISION,
     ];
@@ -61,23 +62,52 @@ final class AuthorMergeCsv
     private const array REQUIRED_COLUMNS = [
         self::GROUP,
         self::EXT_SYSTEM,
+        self::NAME_NORMALIZED,
+        self::GROUP_IDENTIFIER,
         self::AUTHOR_ID,
         self::NAME,
         self::IDENTIFIER,
-        self::CURRENT_AUTHOR_COUNT,
+        self::TARGET_IDS,
         self::DECISION,
     ];
 
+    private const string LIST_SEPARATOR = ' + ';
     private const string DELIMITER = ';';
     private const string ENCLOSURE = '"';
     private const string ESCAPE = '';
     private const string BOM = "\u{FEFF}";
 
     /**
+     * @param list<string> $values
+     */
+    public static function joinList(array $values): string
+    {
+        return implode(self::LIST_SEPARATOR, $values);
+    }
+
+    /**
+     * @return list<string> values of a cell written by joinList(), people may leave out the spaces
+     */
+    public static function splitList(string $cell): array
+    {
+        return array_values(array_filter(
+            array_map(trim(...), explode(trim(self::LIST_SEPARATOR), $cell)),
+            static fn (string $value): bool => App::EMPTY_STRING !== $value,
+        ));
+    }
+
+    /**
+     * Never overwrites a file, so a wrong path cannot destroy a CSV people already checked.
+     *
      * @param iterable<list<string|int>> $rows values in the order of COLUMNS
+     *
+     * @throws InvalidArgumentException
      */
     public static function write(string $path, iterable $rows): void
     {
+        if (file_exists($path)) {
+            throw new InvalidArgumentException(sprintf('The file "%s" already exists', $path));
+        }
         $handle = fopen($path, 'wb');
         if (false === $handle) {
             throw new InvalidArgumentException(sprintf('Cannot write the file "%s"', $path));

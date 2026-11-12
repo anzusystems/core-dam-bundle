@@ -31,7 +31,7 @@ final readonly class AuthorMergeCommand
         string $extSystem = App::EMPTY_STRING,
         #[Option(description: 'Path of the checked CSV')]
         string $file = App::EMPTY_STRING,
-        #[Option(description: 'Merge everything in a transaction that is rolled back, without jobs and Elasticsearch')]
+        #[Option(description: 'Roll back each group instead of the commit, without jobs and Elasticsearch')]
         bool $dryRun = false,
     ): int {
         $extSystemEntity = $this->extSystemRepository->findOneBySlug($extSystem);
@@ -50,6 +50,10 @@ final readonly class AuthorMergeCommand
         }
 
         $progressBar = $io->createProgressBar(count($groups));
+        $progressBar->setFormat('debug');
+        $progressBar->setBarCharacter('=');
+        $progressBar->setEmptyBarCharacter('-');
+        $progressBar->setProgressCharacter('>');
         $merge = $this->authorMergeFacade->merge($groups, $dryRun);
         foreach ($merge as $ignored) {
             $progressBar->advance();

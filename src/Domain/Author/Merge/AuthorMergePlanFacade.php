@@ -12,7 +12,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Author\AuthorMergeProposalDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorMergeDecision;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\AuthorMergePlanResult;
 use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AuthorDBALRepository;
-use Normalizer;
 
 /**
  * Step 1 of the merge: proposes groups of duplicate authors for people to check (#87355).
@@ -23,8 +22,8 @@ use Normalizer;
  */
 final readonly class AuthorMergePlanFacade
 {
-    private const string PROPOSAL_MAIN = 'hlavný';
-    private const string PROPOSAL_VARIANT = 'podriadený';
+    private const string PROPOSAL_MAIN = AuthorMergeDecision::Main->value;
+    private const string PROPOSAL_VARIANT = AuthorMergeDecision::Variant->value;
     private const string PROPOSAL_KEEP = 'bez zmeny: už má nadriadeného';
     private const string PROPOSAL_MANUAL = 'ručne';
     private const array PROPOSAL_ORDER = [
@@ -41,7 +40,7 @@ final readonly class AuthorMergePlanFacade
     private const string MANUAL_DIFFERENT_CURRENT_AUTHORS = 'členovia skupiny majú rôznych nadriadených';
     private const string MANUAL_INITIALS = 'iniciály sa líšia len diakritikou, môžu to byť dvaja ľudia';
     private const string MANUAL_UNCOVERED_NAME = 'nadriadení hlavného nepokrývajú celé jeho meno, varianty by prišli o časť';
-    private const array MANUAL_VARIANTS = [
+    private const array MANUAL_CASES = [
         self::MANUAL_INITIALS => 'M1 iniciály sa líšia len diakritikou',
         self::MANUAL_DIFFERENT_CURRENT_AUTHORS => 'M2 členovia majú rôznych nadriadených',
         self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 členovia majú rôznych nadriadených',
@@ -50,7 +49,6 @@ final readonly class AuthorMergePlanFacade
     ];
     private const string YES = 'áno';
     private const string NO = 'nie';
-    private const string LIST_SEPARATOR = ' + ';
 
     public function __construct(
         private AuthorDBALRepository $authorDBALRepository,
@@ -68,7 +66,7 @@ final readonly class AuthorMergePlanFacade
                     ++$variants;
                 }
                 $row[AuthorMergeCsv::GROUP] = $index + 1;
-                $row[AuthorMergeCsv::VARIANT] = $proposal->variant;
+                $row[AuthorMergeCsv::CASE] = $proposal->case;
                 $row[AuthorMergeCsv::EXT_SYSTEM] = $extSystem->getSlug();
                 $rows[] = array_map(static fn (string $column): string|int => $row[$column], AuthorMergeCsv::COLUMNS);
             }
@@ -94,7 +92,7 @@ final readonly class AuthorMergePlanFacade
     {
         $groups = [];
         foreach ($candidates as $candidate) {
-            $groups[$candidate->nameNormalized . "\0" . $candidate->groupIdentifier][] = $candidate;
+            $groups[$candidate->nameNormalized . "\0" . $this->findGroupIdentifier($candidate)][] = $candidate;
         }
         $currentAuthorNames = $this->findCurrentAuthorNames($candidates);
 
@@ -149,8 +147,9 @@ final readonly class AuthorMergePlanFacade
     }
 
     /**
-     * "Š. Hraško" and "S.Hraško" can be two people: an initial (a single letter with a dot) whose spellings differ
-     * only in diacritics is left to people.
+     * "Š. Hraško" and "S.Hraško" can be two people: a group with an initial (a single letter with a dot) whose
+     * members differ in letters, not only in spaces, punctuation and case, is left to people. The members share the
+     * normalized name, so the letters can differ only in diacritics or in letters like "ł".
      *
      * @param list<AuthorMergeCandidateDto> $group
      */
@@ -164,12 +163,8 @@ final readonly class AuthorMergePlanFacade
             static fn (AuthorMergeCandidateDto $candidate): string => (string) preg_replace('/\W/u', App::EMPTY_STRING, mb_strtolower($candidate->name)),
             $group,
         ));
-        $ascii = array_unique(array_map(
-            static fn (string $spelling): string => (string) preg_replace('/[^\x00-\x7F]/', App::EMPTY_STRING, (string) Normalizer::normalize($spelling, Normalizer::FORM_D)),
-            $spellings,
-        ));
 
-        return count($spellings) > 1 && 1 === count($ascii);
+        return count($spellings) > 1;
     }
 
     /**
@@ -209,8 +204,8 @@ final readonly class AuthorMergePlanFacade
                 group: $group,
                 candidate: $candidate,
                 proposal: $proposal,
-                targetIds: implode(self::LIST_SEPARATOR, $targetIds),
-                targetNames: implode(self::LIST_SEPARATOR, $targetNames),
+                targetIds: AuthorMergeCsv::joinList($targetIds),
+                targetNames: AuthorMergeCsv::joinList($targetNames),
                 reason: $reason,
                 decision: match ($proposal) {
                     self::PROPOSAL_MAIN => AuthorMergeDecision::Main,
@@ -222,7 +217,7 @@ final readonly class AuthorMergePlanFacade
 
         return new AuthorMergeProposalDto(
             manual: false,
-            variant: $this->describeGroup(group: $group, main: $main, hasVariants: in_array(self::PROPOSAL_VARIANT, $proposals, true)),
+            case: $this->describeGroup(group: $group, main: $main, hasVariants: in_array(self::PROPOSAL_VARIANT, $proposals, true)),
             assetCount: $this->sumAssets($group),
             key: $key,
             rows: $rows,
@@ -238,7 +233,7 @@ final readonly class AuthorMergePlanFacade
 
         return new AuthorMergeProposalDto(
             manual: true,
-            variant: self::MANUAL_VARIANTS[$reason],
+            case: self::MANUAL_CASES[$reason],
             assetCount: $this->sumAssets($group),
             key: $key,
             rows: array_map(
@@ -365,7 +360,7 @@ final readonly class AuthorMergePlanFacade
     ): array {
         return [
             AuthorMergeCsv::NAME_NORMALIZED => $candidate->nameNormalized,
-            AuthorMergeCsv::GROUP_IDENTIFIER => $candidate->groupIdentifier,
+            AuthorMergeCsv::GROUP_IDENTIFIER => $this->findGroupIdentifier($candidate),
             AuthorMergeCsv::GROUP_REVIEWED_COUNT => $this->countReviewed($group),
             AuthorMergeCsv::AUTHOR_ID => $candidate->id,
             AuthorMergeCsv::NAME => $candidate->name,
@@ -377,8 +372,8 @@ final readonly class AuthorMergePlanFacade
             AuthorMergeCsv::CURRENT_AUTHOR_COUNT => count($candidate->currentAuthorIds),
             AuthorMergeCsv::CHILD_AUTHOR_COUNT => $candidate->childAuthorCount,
             AuthorMergeCsv::PROPOSAL => $proposal,
-            AuthorMergeCsv::CURRENT_AUTHOR_IDS => $targetIds,
-            AuthorMergeCsv::CURRENT_AUTHOR_NAMES => $targetNames,
+            AuthorMergeCsv::TARGET_IDS => $targetIds,
+            AuthorMergeCsv::TARGET_NAMES => $targetNames,
             AuthorMergeCsv::REASON => $reason,
             AuthorMergeCsv::DECISION => $decision->value,
         ];
@@ -414,6 +409,18 @@ final readonly class AuthorMergePlanFacade
             array_push($currentAuthorIds, ...$candidate->currentAuthorIds);
         }
 
-        return $names + $this->authorDBALRepository->findNames(array_values(array_diff(array_unique($currentAuthorIds), array_keys($names))));
+        $unknownIds = array_values(array_diff(array_unique($currentAuthorIds), array_keys($names)));
+
+        return $names + $this->authorDBALRepository->findNames($unknownIds);
+    }
+
+    /**
+     * The identifier a merge group is split by: an empty one or one equal to the name counts as none.
+     */
+    private function findGroupIdentifier(AuthorMergeCandidateDto $candidate): string
+    {
+        $identifierNormalized = AuthorNameNormalizer::normalize($candidate->identifier);
+
+        return $identifierNormalized === $candidate->nameNormalized ? App::EMPTY_STRING : $identifierNormalized;
     }
 }
