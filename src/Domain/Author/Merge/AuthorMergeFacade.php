@@ -29,7 +29,7 @@ use Throwable;
 
 /**
  * Step 2 of the merge (#87355): merges the groups of a CSV checked by people, as the plan approved them: the variants
- * go under the target authors of the main author's row (`nadriadeny_id`, empty means the main author itself). Each
+ * go under the target authors of the main author's row (`target_ids`, empty means the main author itself). Each
  * group is guarded against the current data and merged in its own transaction; a group that no longer matches is
  * skipped with a reason, a group merged by an earlier run counts as already merged. After the commit a
  * JobAuthorCurrentOptimize of each target author moves the assets of the variants to it, and the authors of the group
