@@ -114,7 +114,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
 
     public function testMainIsTheVariantWithMostAssets(): void
     {
-        $this->assertGroup(['jakubco' => 'hlavny', 'jakubcoDash' => 'podriadeny', 'jakubcoSpace' => 'podriadeny'], 'A3 schválený je variant s menej fotkami');
+        $this->assertGroup(['jakubco' => 'main', 'jakubcoDash' => 'variant', 'jakubcoSpace' => 'variant'], 'A3 a variant with fewer assets is reviewed');
         self::assertSame('2', $this->rows['jakubco'][AuthorMergeCsv::ASSET_COUNT]);
         self::assertSame((string) $this->authors['jakubco']->getId(), $this->rows['jakubcoSpace'][AuthorMergeCsv::TARGET_IDS]);
         self::assertSame('1', $this->rows['jakubco'][AuthorMergeCsv::GROUP_REVIEWED_COUNT]);
@@ -122,32 +122,32 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
 
     public function testDifferentIdentifiersAreNeverGrouped(): void
     {
-        $this->assertGroup(['novakSport' => 'hlavny', 'novakSportDot' => 'podriadeny'], 'A1 nikto nie je schválený');
+        $this->assertGroup(['novakSport' => 'main', 'novakSportDot' => 'variant'], 'A1 nobody is reviewed');
         self::assertArrayNotHasKey('novakPhoto', $this->rows);
         self::assertSame('sport', $this->rows['novakSport'][AuthorMergeCsv::GROUP_IDENTIFIER]);
     }
 
     public function testIdentifierEqualToNameCountsAsNone(): void
     {
-        $this->assertGroup(['lipaSelf' => 'hlavny', 'lipaDot' => 'podriadeny'], 'A1 nikto nie je schválený');
+        $this->assertGroup(['lipaSelf' => 'main', 'lipaDot' => 'variant'], 'A1 nobody is reviewed');
         self::assertSame('', $this->rows['lipaSelf'][AuthorMergeCsv::GROUP_IDENTIFIER]);
     }
 
     public function testCurrentAuthorIsMainAndItsChildrenStay(): void
     {
-        $this->assertGroup(['erd' => 'hlavny', 'erdDot' => 'podriadeny', 'erdMapped' => 'bez zmeny'], 'A5 hlavný už je nadriadeným iných');
+        $this->assertGroup(['erd' => 'main', 'erdDot' => 'variant', 'erdMapped' => 'no change'], 'A5 main is already a current author of others');
         self::assertSame('1', $this->rows['erdMapped'][AuthorMergeCsv::CURRENT_AUTHOR_COUNT]);
         self::assertSame('2', $this->rows['erd'][AuthorMergeCsv::CHILD_AUTHOR_COUNT]);
     }
 
     public function testGroupsTheRulesCannotDecideGoToPeopleFirst(): void
     {
-        $this->assertGroup(['kovacA' => '', 'kovacB' => ''], 'M3 dvaja nadriadení v jednej skupine');
-        $this->assertGroup(['hraskoPlain' => '', 'hraskoCaron' => ''], 'M1 iniciály sa líšia len diakritikou');
-        $this->assertGroup(['nowakPlain' => '', 'nowakStroke' => ''], 'M1 iniciály sa líšia len diakritikou');
-        $this->assertGroup(['betaSme' => '', 'betaBurcik' => ''], 'M2 členovia majú rôznych nadriadených');
-        $this->assertGroup(['gama' => '', 'gamaSme' => ''], 'M2 členovia majú rôznych nadriadených');
-        self::assertSame('ručne', $this->rows['kovacA'][AuthorMergeCsv::PROPOSAL]);
+        $this->assertGroup(['kovacA' => '', 'kovacB' => ''], 'M3 two current authors in one group');
+        $this->assertGroup(['hraskoPlain' => '', 'hraskoCaron' => ''], 'M1 initials differ only in diacritics');
+        $this->assertGroup(['nowakPlain' => '', 'nowakStroke' => ''], 'M1 initials differ only in diacritics');
+        $this->assertGroup(['betaSme' => '', 'betaBurcik' => ''], 'M2 members have different current authors');
+        $this->assertGroup(['gama' => '', 'gamaSme' => ''], 'M2 members have different current authors');
+        self::assertSame('manual', $this->rows['kovacA'][AuthorMergeCsv::PROPOSAL]);
         self::assertLessThan((int) $this->rows['jakubco'][AuthorMergeCsv::GROUP], (int) $this->rows['kovacA'][AuthorMergeCsv::GROUP]);
         self::assertLessThan((int) $this->rows['jakubco'][AuthorMergeCsv::GROUP], (int) $this->rows['hraskoCaron'][AuthorMergeCsv::GROUP]);
         self::assertArrayNotHasKey('alone', $this->rows);
@@ -155,14 +155,14 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
 
     public function testCurrentAuthorsOfTheMainAuthorGoToTheVariants(): void
     {
-        $this->assertGroup(['burcikMain' => 'hlavny', 'burcikVariant' => 'podriadeny'], 'A6 člen už má nadriadených od človeka');
+        $this->assertGroup(['burcikMain' => 'main', 'burcikVariant' => 'variant'], 'A6 a member already has current authors set by a person');
         self::assertEqualsCanonicalizing(['SME', 'Matúš Burčík'], AuthorMergeCsv::splitList($this->rows['burcikVariant'][AuthorMergeCsv::TARGET_NAMES]));
     }
 
     public function testCurrentAuthorsThatDropAPartOfTheNameGoToPeople(): void
     {
-        $this->assertGroup(['korzarMain' => '', 'korzarVariant' => ''], 'M4 nadriadení nepokrývajú meno');
-        $this->assertGroup(['tatranMain' => 'hlavny', 'tatranMapped' => 'bez zmeny'], 'A7 skupina je už upratená');
+        $this->assertGroup(['korzarMain' => '', 'korzarVariant' => ''], 'M4 current authors do not cover the name');
+        $this->assertGroup(['tatranMain' => 'main', 'tatranMapped' => 'no change'], 'A7 group is already clean');
     }
 
     /**

@@ -24,31 +24,31 @@ final readonly class AuthorMergePlanFacade
 {
     private const string PROPOSAL_MAIN = AuthorMergeDecision::Main->value;
     private const string PROPOSAL_VARIANT = AuthorMergeDecision::Variant->value;
-    private const string PROPOSAL_KEEP = 'bez zmeny: už má nadriadeného';
-    private const string PROPOSAL_MANUAL = 'ručne';
+    private const string PROPOSAL_KEEP = 'no change: already has current authors';
+    private const string PROPOSAL_MANUAL = 'manual';
     private const array PROPOSAL_ORDER = [
         self::PROPOSAL_MAIN => 0,
         self::PROPOSAL_VARIANT => 1,
         self::PROPOSAL_MANUAL => 1,
         self::PROPOSAL_KEEP => 2,
     ];
-    private const string REASON_MOST_ASSETS = 'najviac fotiek';
-    private const string REASON_IS_CURRENT_AUTHOR = 'už je nadriadeným iných autorov';
-    private const string REASON_HAS_CURRENT_AUTHORS = 'už má nadriadených, ostatní dostanú tých istých';
-    private const string MANUAL_TWO_CURRENT_AUTHORS = 'v skupine sú dvaja alebo viac nadriadení';
-    private const string MANUAL_OTHER_CURRENT_AUTHOR = 'člen skupiny má iného nadriadeného ako ten, ktorý je v skupine';
-    private const string MANUAL_DIFFERENT_CURRENT_AUTHORS = 'členovia skupiny majú rôznych nadriadených';
-    private const string MANUAL_INITIALS = 'iniciály sa líšia len diakritikou, môžu to byť dvaja ľudia';
-    private const string MANUAL_UNCOVERED_NAME = 'nadriadení hlavného nepokrývajú celé jeho meno, varianty by prišli o časť';
+    private const string REASON_MOST_ASSETS = 'most assets';
+    private const string REASON_IS_CURRENT_AUTHOR = 'already a current author of other authors';
+    private const string REASON_HAS_CURRENT_AUTHORS = 'already has current authors, the others get the same';
+    private const string MANUAL_TWO_CURRENT_AUTHORS = 'two or more current authors in the group';
+    private const string MANUAL_OTHER_CURRENT_AUTHOR = 'a member has another current author than the one in the group';
+    private const string MANUAL_DIFFERENT_CURRENT_AUTHORS = 'members have different current authors';
+    private const string MANUAL_INITIALS = 'initials differ only in diacritics, they can be two people';
+    private const string MANUAL_UNCOVERED_NAME = 'current authors of the main do not cover its whole name, variants would lose a part';
     private const array MANUAL_CASES = [
-        self::MANUAL_INITIALS => 'M1 iniciály sa líšia len diakritikou',
-        self::MANUAL_DIFFERENT_CURRENT_AUTHORS => 'M2 členovia majú rôznych nadriadených',
-        self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 členovia majú rôznych nadriadených',
-        self::MANUAL_TWO_CURRENT_AUTHORS => 'M3 dvaja nadriadení v jednej skupine',
-        self::MANUAL_UNCOVERED_NAME => 'M4 nadriadení nepokrývajú meno',
+        self::MANUAL_INITIALS => 'M1 initials differ only in diacritics',
+        self::MANUAL_DIFFERENT_CURRENT_AUTHORS => 'M2 members have different current authors',
+        self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 members have different current authors',
+        self::MANUAL_TWO_CURRENT_AUTHORS => 'M3 two current authors in one group',
+        self::MANUAL_UNCOVERED_NAME => 'M4 current authors do not cover the name',
     ];
-    private const string YES = 'áno';
-    private const string NO = 'nie';
+    private const string YES = 'yes';
+    private const string NO = 'no';
 
     public function __construct(
         private AuthorDBALRepository $authorDBALRepository,
@@ -259,13 +259,13 @@ final readonly class AuthorMergePlanFacade
         $reviewedCount = $this->countReviewed($group);
 
         return match (true) {
-            false === $hasVariants => 'A7 skupina je už upratená',
-            $main->childAuthorCount > App::ZERO => 'A5 hlavný už je nadriadeným iných',
-            false === empty($main->currentAuthorIds) => 'A6 člen už má nadriadených od človeka',
-            App::ZERO === $reviewedCount => 'A1 nikto nie je schválený',
-            1 === $reviewedCount && $main->reviewed => 'A2 schválený je hlavný',
-            1 === $reviewedCount => 'A3 schválený je variant s menej fotkami',
-            default => 'A4 viac schválených',
+            false === $hasVariants => 'A7 group is already clean',
+            $main->childAuthorCount > App::ZERO => 'A5 main is already a current author of others',
+            false === empty($main->currentAuthorIds) => 'A6 a member already has current authors set by a person',
+            App::ZERO === $reviewedCount => 'A1 nobody is reviewed',
+            1 === $reviewedCount && $main->reviewed => 'A2 the main is reviewed',
+            1 === $reviewedCount => 'A3 a variant with fewer assets is reviewed',
+            default => 'A4 more are reviewed',
         };
     }
 

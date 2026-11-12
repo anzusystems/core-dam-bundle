@@ -12,26 +12,26 @@ use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
  */
 final class AuthorMergeCsv
 {
-    public const string GROUP = 'skupina';
-    public const string CASE = 'variant';
+    public const string GROUP = 'group';
+    public const string CASE = 'case';
     public const string EXT_SYSTEM = 'ext_system';
-    public const string NAME_NORMALIZED = 'normalizovane_meno';
-    public const string GROUP_IDENTIFIER = 'identifikator_skupiny';
-    public const string GROUP_REVIEWED_COUNT = 'schvalenych_v_skupine';
+    public const string NAME_NORMALIZED = 'name_normalized';
+    public const string GROUP_IDENTIFIER = 'group_identifier';
+    public const string GROUP_REVIEWED_COUNT = 'group_reviewed_count';
     public const string AUTHOR_ID = 'author_id';
-    public const string NAME = 'meno';
-    public const string IDENTIFIER = 'identifikator';
-    public const string REVIEWED = 'schvaleny';
-    public const string ASSET_COUNT = 'fotiek';
-    public const string CREATED_AT = 'zalozene';
-    public const string CREATED_BY = 'zalozil';
-    public const string CURRENT_AUTHOR_COUNT = 'ma_nadriadeneho';
-    public const string CHILD_AUTHOR_COUNT = 'pocet_podriadenych';
-    public const string PROPOSAL = 'navrh';
-    public const string TARGET_IDS = 'nadriadeny_id';
-    public const string TARGET_NAMES = 'nadriadeny_meno';
-    public const string REASON = 'dovod';
-    public const string DECISION = 'rozhodnutie';
+    public const string NAME = 'name';
+    public const string IDENTIFIER = 'identifier';
+    public const string REVIEWED = 'reviewed';
+    public const string ASSET_COUNT = 'asset_count';
+    public const string CREATED_AT = 'created_at';
+    public const string CREATED_BY = 'created_by';
+    public const string CURRENT_AUTHOR_COUNT = 'current_author_count';
+    public const string CHILD_AUTHOR_COUNT = 'child_author_count';
+    public const string PROPOSAL = 'proposal';
+    public const string TARGET_IDS = 'target_ids';
+    public const string TARGET_NAMES = 'target_names';
+    public const string REASON = 'reason';
+    public const string DECISION = 'decision';
 
     public const array COLUMNS = [
         self::GROUP,
