@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase;
 
 use AnzuSystems\CommonBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 
 final class AuthorCleanPhraseManager extends AbstractManager
@@ -28,6 +29,15 @@ final class AuthorCleanPhraseManager extends AbstractManager
             ->setPosition($newBannedPhrase->getPosition())
             ->setFlags($newBannedPhrase->getFlags())
         ;
+        $this->trackModification($bannedPhrase);
+        $this->flush($flush);
+
+        return $bannedPhrase;
+    }
+
+    public function updateAuthorReplacement(AuthorCleanPhrase $bannedPhrase, Author $authorReplacement, bool $flush = true): AuthorCleanPhrase
+    {
+        $bannedPhrase->setAuthorReplacement($authorReplacement);
         $this->trackModification($bannedPhrase);
         $this->flush($flush);
 

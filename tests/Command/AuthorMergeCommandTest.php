@@ -13,8 +13,6 @@ use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobAuthorCurrentOptimizeProce
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
-use AnzuSystems\CoreDamBundle\Entity\AuthorMergeAssetAuthor;
-use AnzuSystems\CoreDamBundle\Entity\AuthorMergeLog;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
@@ -82,7 +80,10 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
                 ->setType(AuthorCleanPhraseType::Word)
                 ->setAuthorReplacement($this->authors['spaces'])
         );
-        $this->writeCsv(['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny', 'skipped' => 'vynechat']]);
+        $this->writeCsv([
+            '1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny', 'skipped' => 'vynechat'],
+            '2' => ['other' => 'nezlucovat', 'otherDot' => ''],
+        ]);
 
         $display = $this->execute(Command::SUCCESS);
 
@@ -96,40 +97,42 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             self::assertFalse($variant->getFlags()->isReviewed(), $key);
             self::assertFalse($variant->getFlags()->isCanBeCurrentAuthor(), $key);
         }
-        self::assertTrue($this->findAuthor('skipped')->getCurrentAuthors()->isEmpty());
+        foreach (['skipped', 'other', 'otherDot'] as $key) {
+            self::assertTrue($this->findAuthor($key)->getCurrentAuthors()->isEmpty(), $key);
+        }
         self::assertSame((string) $main->getId(), (string) $this->entityManager->find(AuthorCleanPhrase::class, $phrase->getId())?->getAuthorReplacement()?->getId());
 
-        $logs = $this->entityManager->getRepository(AuthorMergeLog::class)->findBy([], ['variantName' => 'ASC']);
+        $logs = $this->fetchLogs();
         self::assertSame(
             [
-                ['Jozef  Jakubčo', false, true, 'Jozef Jakubčo', false, '1'],
-                ['Jozef Jakubčo.', true, true, 'Jozef Jakubčo', false, '1'],
+                ['Jozef  Jakubčo', 0, 1, 'Jozef Jakubčo', 0, '1'],
+                ['Jozef Jakubčo.', 1, 1, 'Jozef Jakubčo', 0, '1'],
             ],
-            array_map(static fn (AuthorMergeLog $log): array => [
-                $log->getVariantName(),
-                $log->isVariantReviewed(),
-                $log->isVariantCanBeCurrentAuthor(),
-                $log->getMainAuthorName(),
-                $log->isMainAuthorReviewed(),
-                $log->getGroupName(),
+            array_map(static fn (array $log): array => [
+                $log['variant_name'],
+                (int) $log['variant_reviewed'],
+                (int) $log['variant_can_be_current_author'],
+                $log['main_author_name'],
+                (int) $log['main_author_reviewed'],
+                $log['group_name'],
             ], $logs),
         );
-        $snapshot = $this->entityManager->getRepository(AuthorMergeAssetAuthor::class)->findAll();
+        $snapshot = $this->fetchSnapshot();
         self::assertEqualsCanonicalizing(
             [(string) $this->authors['reviewed']->getId(), (string) $this->authors['spaces']->getId()],
-            array_map(static fn (AuthorMergeAssetAuthor $row): string => $row->getAuthorId(), $snapshot),
+            array_column($snapshot, 'author_id'),
         );
         foreach ($snapshot as $row) {
-            self::assertSame((string) $asset->getId(), $row->getAssetId());
-            self::assertSame((string) $main->getId(), $row->getMainAuthorId());
-            self::assertSame($logs[0]->getRunId(), $row->getRunId());
+            self::assertSame((string) $asset->getId(), $row['asset_id']);
+            self::assertSame((string) $main->getId(), $row['main_author_id']);
+            self::assertSame($logs[0]['run_id'], $row['run_id']);
         }
 
         $this->processJobs('main');
         self::assertSame(['main', 'other'], $this->toTreeKeys($this->authors, $this->findCmsAsset()->getAuthors()));
     }
 
-    public function testVariantsGoUnderTheCurrentAuthorsOfTheMainAuthor(): void
+    public function testVariantsGoUnderTheTargetAuthorsTheCsvApproved(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, [
             'sme' => ['name' => 'SME', 'reviewed' => true],
@@ -137,13 +140,23 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             'main' => ['name' => 'SME - Ivan Lipa', 'parents' => ['sme', 'lipa']],
             'variant' => ['name' => 'SME- Ivan Lipa', 'reviewed' => true],
         ]);
+        $asset = $this->findCmsAsset();
+        $asset->addAuthor($this->authors['variant']);
+        $this->entityManager->flush();
         $this->writeCsv(['7' => ['main' => 'hlavny', 'variant' => 'podriadeny']]);
+        $main = $this->findAuthor('main');
+        $main->getCurrentAuthors()->removeElement($this->findAuthor('lipa'));
+        $this->entityManager->flush();
 
         $display = $this->execute(Command::SUCCESS);
 
-        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, 0 asset links, 0 clean phrases\), 2 jobs/', $display);
+        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, 2 asset links, 0 clean phrases\), 2 jobs/', $display);
         self::assertSame(['lipa', 'sme'], $this->toTreeKeys($this->authors, $this->findAuthor('variant')->getCurrentAuthors()));
-        self::assertCount(2, $this->entityManager->getRepository(AuthorMergeLog::class)->findBy(['variantId' => (string) $this->authors['variant']->getId()]));
+        self::assertCount(2, array_filter($this->fetchLogs(), fn (array $log): bool => (string) $this->authors['variant']->getId() === $log['variant_id']));
+        self::assertEqualsCanonicalizing(
+            [(string) $this->authors['sme']->getId(), (string) $this->authors['lipa']->getId()],
+            array_column($this->fetchSnapshot(), 'main_author_id'),
+        );
         self::assertEqualsCanonicalizing(
             [(string) $this->authors['sme']->getId(), (string) $this->authors['lipa']->getId()],
             array_map(static fn (JobAuthorCurrentOptimize $job): ?string => $job->getAuthorId(), $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll()),
@@ -160,6 +173,10 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             'malaMain' => ['name' => 'SME - Eva Malá', 'parents' => ['sme']],
             'malaVariant' => ['name' => 'SME- Eva Malá'],
         ]);
+        $asset = $this->findCmsAsset();
+        $asset->getAuthors()->clear();
+        $asset->addAuthor($this->authors['malaVariant']);
+        $this->entityManager->flush();
         $this->writeCsv(['1' => ['lipaMain' => 'hlavny', 'lipaVariant' => 'podriadeny'], '2' => ['malaMain' => 'hlavny', 'malaVariant' => 'podriadeny']]);
 
         $display = $this->execute(Command::SUCCESS);
@@ -170,6 +187,9 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             array_map(static fn (JobAuthorCurrentOptimize $job): ?string => $job->getAuthorId(), $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll()),
         );
         self::assertSame(['sme'], $this->toTreeKeys($this->authors, $this->findAuthor('malaVariant')->getCurrentAuthors()));
+
+        $this->processJobs('sme');
+        self::assertSame(['sme'], $this->toTreeKeys($this->authors, $this->findCmsAsset()->getAuthors()));
     }
 
     /**
@@ -184,7 +204,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
         self::assertStringContainsString($error, $this->execute(Command::FAILURE));
         self::assertTrue($this->findAuthor('reviewed')->getCurrentAuthors()->isEmpty());
-        self::assertSame([], $this->entityManager->getRepository(AuthorMergeLog::class)->findAll());
+        self::assertSame([], $this->fetchLogs());
     }
 
     public static function invalidCsvDataProvider(): iterable
@@ -218,6 +238,24 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             static fn (array $rows): array => [...$rows, 3 => [...$rows[3], AuthorMergeCsv::AUTHOR_ID => $rows[0][AuthorMergeCsv::AUTHOR_ID]]],
             'is already on row 2',
         ];
+        yield 'group name longer than the log column' => [
+            ['1' => $valid],
+            static fn (array $rows): array => array_map(static fn (array $row): array => [...$row, AuthorMergeCsv::GROUP => str_repeat('x', 65)], $rows),
+            'the name is longer than 64 characters',
+        ];
+        yield 'group of two different authors' => [
+            ['1' => ['main' => 'hlavny', 'other' => 'podriadeny']], null, 'Group 1: merges different authors',
+        ];
+        yield 'target author that does not exist' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => '00000000-0000-0000-0000-000000000000']],
+            'Row 2: author "00000000-0000-0000-0000-000000000000" does not exist',
+        ];
+        yield 'variant as the target author' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]]],
+            'cannot be a target author of its group',
+        ];
         yield 'missing decision column' => [
             ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: rozhodnutie',
         ];
@@ -249,8 +287,9 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         self::assertStringContainsString($reason, $display);
         self::assertMatchesRegularExpression('/merged 1 groups .* 1 skipped/', $display);
         self::assertTrue($this->findAuthor('reviewed')->getCurrentAuthors()->isEmpty());
-        self::assertSame([], $this->entityManager->getRepository(AuthorMergeLog::class)->findBy(['groupName' => '1']));
+        self::assertSame([], array_filter($this->fetchLogs(), static fn (array $log): bool => '1' === $log['group_name']));
         self::assertSame(['other'], $this->toTreeKeys($this->authors, $this->findAuthor('otherDot')->getCurrentAuthors()));
+        self::assertFalse($this->findAuthor('other')->getFlags()->isReviewed());
     }
 
     public static function changedAfterCsvDataProvider(): iterable
@@ -283,7 +322,13 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             static function (array $authors, AuthorManager $manager): void {
                 $manager->merge(variants: [$authors['main']], targets: [$authors['root']], flush: false);
             },
-            'current authors of main author',
+            'cannot be a current author',
+        ];
+        yield 'main author cannot be a current author' => [
+            static function (array $authors): void {
+                $authors['main']->getFlags()->setCanBeCurrentAuthor(false);
+            },
+            'cannot be a current author',
         ];
         yield 'variant became a current author' => [
             static function (array $authors, AuthorManager $manager): void {
@@ -304,7 +349,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         self::assertTrue($this->findAuthor('reviewed')->getCurrentAuthors()->isEmpty());
         self::assertTrue($this->findAuthor('reviewed')->getFlags()->isReviewed());
         self::assertFalse($this->findAuthor('main')->getFlags()->isReviewed());
-        self::assertSame([], $this->entityManager->getRepository(AuthorMergeLog::class)->findAll());
+        self::assertSame([], $this->fetchLogs());
         self::assertSame([], $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll());
     }
 
@@ -317,7 +362,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         $display = $this->execute(Command::SUCCESS);
 
         self::assertMatchesRegularExpression('/merged 0 groups .* 0 jobs, 1 groups already merged, 0 skipped/', $display);
-        self::assertCount(2, $this->entityManager->getRepository(AuthorMergeLog::class)->findAll());
+        self::assertCount(2, $this->fetchLogs());
         self::assertCount(1, $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll());
     }
 
@@ -329,16 +374,19 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     {
         $rows = [];
         foreach ($decisions as $group => $groupDecisions) {
+            $main = $this->authors[(string) array_search('hlavny', $groupDecisions, true)] ?? null;
+            $targets = null === $main ? [] : ($main->getCurrentAuthors()->getValues() ?: [$main]);
             foreach ($groupDecisions as $key => $decision) {
                 $author = $this->authors[$key];
                 $rows[] = [
                     ...array_fill_keys(AuthorMergeCsv::COLUMNS, ''),
                     AuthorMergeCsv::GROUP => (string) $group,
                     AuthorMergeCsv::EXT_SYSTEM => 'cms',
+                    AuthorMergeCsv::NAME_NORMALIZED => $author->getNameNormalized(),
                     AuthorMergeCsv::AUTHOR_ID => (string) $author->getId(),
                     AuthorMergeCsv::NAME => $author->getName(),
                     AuthorMergeCsv::IDENTIFIER => $author->getIdentifier(),
-                    AuthorMergeCsv::CURRENT_AUTHOR_COUNT => $author->getCurrentAuthors()->count(),
+                    AuthorMergeCsv::TARGET_IDS => AuthorMergeCsv::joinList(array_map(static fn (Author $target): string => (string) $target->getId(), $targets)),
                     AuthorMergeCsv::DECISION => $decision,
                 ];
             }
@@ -355,6 +403,22 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             fputcsv($handle, array_values($row), ';', '"', '');
         }
         fclose($handle);
+    }
+
+    /**
+     * @return list<array<string, string|int>> by variant name
+     */
+    private function fetchLogs(): array
+    {
+        return $this->entityManager->getConnection()->fetchAllAssociative('SELECT * FROM _author_merge_log ORDER BY variant_name, main_author_name');
+    }
+
+    /**
+     * @return list<array<string, string|int>>
+     */
+    private function fetchSnapshot(): array
+    {
+        return $this->entityManager->getConnection()->fetchAllAssociative('SELECT * FROM _author_merge_asset_author');
     }
 
     /**
