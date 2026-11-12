@@ -95,13 +95,13 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         );
         $this->writeCsv([
             '1' => [
-                'main' => 'hlavny',
-                'reviewed' => 'podriadeny',
-                'spaces' => 'podriadeny',
-                'skipped' => 'vynechat',
+                'main' => 'main',
+                'reviewed' => 'variant',
+                'spaces' => 'variant',
+                'skipped' => 'skip',
             ],
             '2' => [
-                'other' => 'nezlucovat',
+                'other' => 'do not merge',
                 'otherDot' => '',
             ],
         ]);
@@ -164,7 +164,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         $asset = $this->findCmsAsset();
         $asset->addAuthor($this->authors['variant']);
         $this->entityManager->flush();
-        $this->writeCsv(['7' => ['main' => 'hlavny', 'variant' => 'podriadeny']]);
+        $this->writeCsv(['7' => ['main' => 'main', 'variant' => 'variant']]);
         $main = $this->findAuthor('main');
         $main->getCurrentAuthors()->removeElement($this->findAuthor('lipa'));
         $this->entityManager->flush();
@@ -198,7 +198,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         $asset->getAuthors()->clear();
         $asset->addAuthor($this->authors['malaVariant']);
         $this->entityManager->flush();
-        $this->writeCsv(['1' => ['lipaMain' => 'hlavny', 'lipaVariant' => 'podriadeny'], '2' => ['malaMain' => 'hlavny', 'malaVariant' => 'podriadeny']]);
+        $this->writeCsv(['1' => ['lipaMain' => 'main', 'lipaVariant' => 'variant'], '2' => ['malaMain' => 'main', 'malaVariant' => 'variant']]);
 
         $display = $this->execute(Command::SUCCESS);
 
@@ -230,19 +230,19 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
     public static function invalidCsvDataProvider(): iterable
     {
-        $valid = ['main' => 'hlavny', 'reviewed' => 'podriadeny'];
+        $valid = ['main' => 'main', 'reviewed' => 'variant'];
 
         yield 'two main authors' => [
-            ['1' => ['main' => 'hlavny', 'reviewed' => 'hlavny', 'spaces' => 'podriadeny']], null, 'Group 1: 2 rows "hlavny"',
+            ['1' => ['main' => 'main', 'reviewed' => 'main', 'spaces' => 'variant']], null, 'Group 1: 2 rows "main"',
         ];
         yield 'variant without a main author' => [
-            ['1' => ['main' => 'bez zmeny', 'reviewed' => 'podriadeny']], null, 'Group 1: rows "podriadeny" without a row "hlavny"',
+            ['1' => ['main' => 'no change', 'reviewed' => 'variant']], null, 'Group 1: rows "variant" without a row "main"',
         ];
         yield 'unknown decision' => [
-            ['1' => ['main' => 'hlavný', 'reviewed' => 'podriadeny']], null, 'unknown decision "hlavný"',
+            ['1' => ['main' => 'Main', 'reviewed' => 'variant']], null, 'unknown decision "Main"',
         ];
         yield 'author that does not exist, in a valid group of its own' => [
-            ['1' => $valid, '2' => ['other' => 'hlavny', 'otherDot' => 'podriadeny']],
+            ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
             static fn (array $rows): array => [...$rows, 3 => [...$rows[3], AuthorMergeCsv::AUTHOR_ID => '00000000-0000-0000-0000-000000000000']],
             'author "00000000-0000-0000-0000-000000000000" does not exist',
         ];
@@ -255,7 +255,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             'belongs to another ext system',
         ];
         yield 'author in two rows' => [
-            ['1' => $valid, '2' => ['other' => 'hlavny', 'otherDot' => 'podriadeny']],
+            ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
             static fn (array $rows): array => [...$rows, 3 => [...$rows[3], AuthorMergeCsv::AUTHOR_ID => $rows[0][AuthorMergeCsv::AUTHOR_ID]]],
             'is already on row 2',
         ];
@@ -265,7 +265,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             'the name is longer than 64 characters',
         ];
         yield 'group of two different authors' => [
-            ['1' => ['main' => 'hlavny', 'other' => 'podriadeny']], null, 'Group 1: merges different authors',
+            ['1' => ['main' => 'main', 'other' => 'variant']], null, 'Group 1: merges different authors',
         ];
         yield 'target author that does not exist' => [
             ['1' => $valid],
@@ -278,7 +278,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             'Group 1: target author',
         ];
         yield 'variant of another group as the target author' => [
-            ['1' => $valid, '2' => ['other' => 'hlavny', 'otherDot' => 'podriadeny']],
+            ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
             static fn (array $rows): array => [
                 ...$rows,
                 2 => [...$rows[2], AuthorMergeCsv::TARGET_IDS => $rows[1][AuthorMergeCsv::AUTHOR_ID]],
@@ -289,15 +289,15 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         yield 'target author changed on a variant row' => [
             ['1' => $valid],
             static fn (array $rows): array => [...$rows, 1 => [...$rows[1], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + 00000000-0000-0000-0000-000000000000']],
-            'Row 3: "nadriadeny_id" differs from the main row 2; copy it from row 2 or leave it empty',
+            'Row 3: "target_ids" differs from the main row 2; copy it from row 2 or leave it empty',
         ];
         yield 'target author changed on the main row only' => [
             ['1' => $valid],
             static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + ' . AuthorFixtures::AUTHOR_1]],
-            'Row 3: "nadriadeny_id" differs from the main row 2; copy it from row 2 or leave it empty',
+            'Row 3: "target_ids" differs from the main row 2; copy it from row 2 or leave it empty',
         ];
         yield 'missing decision column' => [
-            ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: rozhodnutie',
+            ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: decision',
         ];
     }
 
@@ -305,7 +305,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     {
         $this->authors = $this->createAuthorTree($this->cms, self::TREE);
         $this->writeCsv(
-            ['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny']],
+            ['1' => ['main' => 'main', 'reviewed' => 'variant']],
             static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => '']],
         );
 
@@ -317,7 +317,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     public function testFileNotSavedAsUtf8ChangesNothing(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, self::TREE);
-        $this->writeCsv(['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny']]);
+        $this->writeCsv(['1' => ['main' => 'main', 'reviewed' => 'variant']]);
         file_put_contents($this->file, mb_convert_encoding((string) file_get_contents($this->file), 'ISO-8859-2', 'UTF-8'));
 
         self::assertStringContainsString('not UTF-8', $this->execute(Command::FAILURE));
@@ -331,7 +331,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     public function testGroupChangedAfterCsvIsSkippedAndOthersMerge(Closure $change, string $reason): void
     {
         $this->authors = $this->createAuthorTree($this->cms, [...self::TREE, 'root' => ['name' => 'Iná Osoba', 'reviewed' => true]]);
-        $this->writeCsv(['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny'], '2' => ['other' => 'hlavny', 'otherDot' => 'podriadeny']]);
+        $this->writeCsv(['1' => ['main' => 'main', 'reviewed' => 'variant', 'spaces' => 'variant'], '2' => ['other' => 'main', 'otherDot' => 'variant']]);
         $change($this->authors, $this->getService(AuthorManager::class));
         $this->entityManager->flush();
 
@@ -394,7 +394,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     public function testDryRunRollsBackAndCreatesNoJob(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, self::TREE);
-        $this->writeCsv(['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny']]);
+        $this->writeCsv(['1' => ['main' => 'main', 'reviewed' => 'variant', 'spaces' => 'variant']]);
 
         $display = $this->execute(Command::SUCCESS, ['--dry-run' => true]);
 
@@ -409,7 +409,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     public function testRepeatedRunSkipsMergedGroups(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, self::TREE);
-        $this->writeCsv(['1' => ['main' => 'hlavny', 'reviewed' => 'podriadeny', 'spaces' => 'podriadeny']]);
+        $this->writeCsv(['1' => ['main' => 'main', 'reviewed' => 'variant', 'spaces' => 'variant']]);
         $this->execute(Command::SUCCESS);
 
         $display = $this->execute(Command::SUCCESS);
@@ -427,7 +427,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
     {
         $rows = [];
         foreach ($decisions as $group => $groupDecisions) {
-            $main = $this->authors[(string) array_search('hlavny', $groupDecisions, true)] ?? null;
+            $main = $this->authors[(string) array_search('main', $groupDecisions, true)] ?? null;
             $targets = null === $main ? [] : ($main->getCurrentAuthors()->getValues() ?: [$main]);
             foreach ($groupDecisions as $key => $decision) {
                 $author = $this->authors[$key];
