@@ -10,6 +10,7 @@ use Doctrine\DBAL\ArrayParameterType;
 final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
 {
     private const string TABLE_NAME = 'asset_author';
+    private const string MERGE_SNAPSHOT_TABLE_NAME = 'author_merge_asset_author';
 
     public function getTableName(): string
     {
@@ -47,5 +48,24 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
         }
 
         return $data;
+    }
+
+    /**
+     * Copies the asset links of a merged author, so the job that moves its assets to the main author can be traced.
+     *
+     * @return int copied links
+     */
+    public function copyToMergeSnapshot(string $runId, string $authorId, string $mainAuthorId): int
+    {
+        return (int) $this->connection->executeStatement(
+            'INSERT INTO ' . self::MERGE_SNAPSHOT_TABLE_NAME . ' (run_id, asset_id, author_id, main_author_id)
+            SELECT :runId, entity.asset_id, entity.author_id, :mainAuthorId FROM ' . self::TABLE_NAME . ' entity
+            WHERE entity.author_id = :authorId',
+            [
+                'runId' => $runId,
+                'authorId' => $authorId,
+                'mainAuthorId' => $mainAuthorId,
+            ],
+        );
     }
 }
