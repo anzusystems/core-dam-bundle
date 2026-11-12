@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -89,9 +88,14 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             return;
         }
 
-        $authorIds = [(string) $author->getId()];
+        $authorIds = [];
         foreach ($author->getChildAuthors() as $childAuthor) {
             $authorIds[] = (string) $childAuthor->getId();
+        }
+        // An author without current authors never changes on an asset; skipping its own assets keeps a job of
+        // a large target (SME: tens of thousands of assets) to the assets of its child authors.
+        if (false === $author->getCurrentAuthors()->isEmpty()) {
+            $authorIds[] = (string) $author->getId();
         }
 
         $lastId = $job->getLastBatchProcessedRecord();
@@ -128,7 +132,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         );
         $this->getManagedJob($job)->setResult($resultNew->toString());
 
-        $count > App::ZERO
+        $count === $this->bulkSize
             ? $this->toAwaitingBatchProcess($job, $lastId)
             : $this->finishSuccess($job);
     }
