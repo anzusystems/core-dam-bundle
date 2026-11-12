@@ -18,19 +18,16 @@ use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AuthorDBALRepository;
  * A group is the same normalized name and the same identifier, so namesakes with different identifiers are never
  * merged. The main author is the one with the most assets (then reviewed, then older); a member that is already a
  * current author, or that already has current authors set by a person, wins and the others follow it. Groups the
- * rules cannot decide are left to people with an empty decision.
+ * rules cannot decide are not approved: people check the prefilled decisions and approve them, or decide groups
+ * prefilled with `do not merge` themselves.
  */
 final readonly class AuthorMergePlanFacade
 {
-    private const string PROPOSAL_MAIN = AuthorMergeDecision::Main->value;
-    private const string PROPOSAL_VARIANT = AuthorMergeDecision::Variant->value;
-    private const string PROPOSAL_KEEP = 'no change: already has current authors';
-    private const string PROPOSAL_MANUAL = 'manual';
-    private const array PROPOSAL_ORDER = [
-        self::PROPOSAL_MAIN => 0,
-        self::PROPOSAL_VARIANT => 1,
-        self::PROPOSAL_MANUAL => 1,
-        self::PROPOSAL_KEEP => 2,
+    private const array MEMBER_ORDER = [
+        AuthorMergeDecision::Main->value => 0,
+        AuthorMergeDecision::Variant->value => 1,
+        AuthorMergeDecision::DoNotMerge->value => 1,
+        AuthorMergeDecision::NoChange->value => 2,
     ];
     private const string REASON_MOST_ASSETS = 'most assets';
     private const string REASON_IS_CURRENT_AUTHOR = 'already a current author of other authors';
@@ -41,12 +38,27 @@ final readonly class AuthorMergePlanFacade
     private const string MANUAL_INITIALS = 'initials differ only in diacritics, they can be two people';
     private const string MANUAL_UNCOVERED_NAME = 'current authors of the main do not cover its whole name, variants would lose a part';
     private const array MANUAL_CASES = [
-        self::MANUAL_INITIALS => 'M1 initials differ only in diacritics',
-        self::MANUAL_DIFFERENT_CURRENT_AUTHORS => 'M2 members have different current authors',
-        self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 members have different current authors',
-        self::MANUAL_TWO_CURRENT_AUTHORS => 'M3 two current authors in one group',
-        self::MANUAL_UNCOVERED_NAME => 'M4 current authors do not cover the name',
+        self::MANUAL_INITIALS => 'M1 (diacritics)',
+        self::MANUAL_DIFFERENT_CURRENT_AUTHORS => 'M2 (different current authors)',
+        self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 (different current authors)',
+        self::MANUAL_TWO_CURRENT_AUTHORS => 'M3 (two current authors)',
+        self::MANUAL_UNCOVERED_NAME => 'M4 (name not covered)',
     ];
+
+    /**
+     * The rules propose no main author here: merging under the main's current authors would drop a part of a name
+     * (only a source or a person may be added, never lost), and two current authors are two people.
+     */
+    private const array MANUAL_WITHOUT_PROPOSAL = [self::MANUAL_TWO_CURRENT_AUTHORS, self::MANUAL_UNCOVERED_NAME];
+
+    /**
+     * Normalized words of a credit that may be lost, the only ones (owner 2026-11-12): "ilustračné foto", "zdroj:",
+     * "koláž", "vizualizácia", "screenshot". A source (SME, Archív SME, Reprofoto, MY …) or a person never is.
+     */
+    private const array NOISE_WORDS = ['foto', 'ilustracne', 'ilustr', 'zdroj', 'kolaz', 'vizualizacia', 'screenshot'];
+    private const string SINGLE_CASE = 'S (single author)';
+    private const string SINGLE_REASON = 'no duplicate; listed to set its current authors by hand';
+    private const int SINGLE_MIN_ASSETS = 10;
     private const string YES = 'yes';
     private const string NO = 'no';
 
@@ -57,12 +69,12 @@ final readonly class AuthorMergePlanFacade
 
     public function writePlan(ExtSystem $extSystem, string $path): AuthorMergePlanResult
     {
-        $proposals = $this->createProposals($this->authorDBALRepository->findMergeCandidates((int) $extSystem->getId()));
+        $proposals = $this->createProposals($this->authorDBALRepository->findMergeCandidates(extSystemId: (int) $extSystem->getId(), minAssets: self::SINGLE_MIN_ASSETS));
         $rows = [];
         $variants = App::ZERO;
         foreach ($proposals as $index => $proposal) {
             foreach ($proposal->rows as $row) {
-                if (self::PROPOSAL_VARIANT === $row[AuthorMergeCsv::PROPOSAL]) {
+                if (AuthorMergeDecision::Variant->value === $row[AuthorMergeCsv::DECISION] && AuthorMergeCsv::APPROVED_YES === $row[AuthorMergeCsv::APPROVED]) {
                     ++$variants;
                 }
                 $row[AuthorMergeCsv::GROUP] = $index + 1;
@@ -73,16 +85,20 @@ final readonly class AuthorMergePlanFacade
         }
         AuthorMergeCsv::write($path, $rows);
 
+        $singleAuthors = count(array_filter($proposals, static fn (AuthorMergeProposalDto $proposal): bool => self::SINGLE_CASE === $proposal->case));
+
         return new AuthorMergePlanResult(
-            groups: count($proposals),
+            groups: count($proposals) - $singleAuthors,
             manualGroups: count(array_filter($proposals, static fn (AuthorMergeProposalDto $proposal): bool => $proposal->manual)),
             authors: count($rows),
             variants: $variants,
+            singleAuthors: $singleAuthors,
         );
     }
 
     /**
-     * Manual groups first, then by assets of the group, largest first.
+     * Groups to approve first, then by case, then by assets of the group, largest first. Authors without a duplicate
+     * follow at the end when they are used (assets or child authors), so a person can still give them current authors.
      *
      * @param list<AuthorMergeCandidateDto> $candidates
      *
@@ -97,21 +113,53 @@ final readonly class AuthorMergePlanFacade
         $currentAuthorNames = $this->findCurrentAuthorNames($candidates);
 
         $proposals = [];
+        $singles = [];
         foreach ($groups as $key => $group) {
             if (1 === count($group)) {
+                if ($group[App::ZERO]->assetCount >= self::SINGLE_MIN_ASSETS || $group[App::ZERO]->childAuthorCount > App::ZERO) {
+                    $singles[] = $this->proposeSingle(key: (string) $key, candidate: $group[App::ZERO], currentAuthorNames: $currentAuthorNames);
+                }
+
                 continue;
             }
             $manualReason = $this->findManualReason(group: $group, currentAuthorNames: $currentAuthorNames);
-            $proposals[] = null === $manualReason
-                ? $this->proposeGroup(key: (string) $key, group: $group, currentAuthorNames: $currentAuthorNames)
-                : $this->proposeManualGroup(key: (string) $key, group: $group, reason: $manualReason);
+            $proposals[] = in_array($manualReason, self::MANUAL_WITHOUT_PROPOSAL, true)
+                ? $this->proposeManualGroup(key: (string) $key, group: $group, reason: (string) $manualReason, currentAuthorNames: $currentAuthorNames)
+                : $this->proposeGroup(key: (string) $key, group: $group, currentAuthorNames: $currentAuthorNames, manualReason: $manualReason);
         }
         usort(
             $proposals,
-            static fn (AuthorMergeProposalDto $first, AuthorMergeProposalDto $second): int => [$second->manual, $second->assetCount, $first->key] <=> [$first->manual, $first->assetCount, $second->key],
+            static fn (AuthorMergeProposalDto $first, AuthorMergeProposalDto $second): int => [$second->manual, $first->case, $second->assetCount, $first->key] <=> [$first->manual, $second->case, $first->assetCount, $second->key],
+        );
+        usort(
+            $singles,
+            static fn (AuthorMergeProposalDto $first, AuthorMergeProposalDto $second): int => [$second->assetCount, $first->key] <=> [$first->assetCount, $second->key],
         );
 
-        return $proposals;
+        return [...$proposals, ...$singles];
+    }
+
+    /**
+     * @param array<string, string> $currentAuthorNames
+     */
+    private function proposeSingle(string $key, AuthorMergeCandidateDto $candidate, array $currentAuthorNames): AuthorMergeProposalDto
+    {
+        return new AuthorMergeProposalDto(
+            manual: false,
+            case: self::SINGLE_CASE,
+            assetCount: $candidate->assetCount,
+            key: $key,
+            rows: [$this->createRow(
+                group: [$candidate],
+                candidate: $candidate,
+                approved: true,
+                decision: AuthorMergeDecision::NoChange,
+                targetIds: App::EMPTY_STRING,
+                targetNames: App::EMPTY_STRING,
+                reason: self::SINGLE_REASON,
+                currentAuthorNames: $currentAuthorNames,
+            )],
+        );
     }
 
     /**
@@ -139,7 +187,7 @@ final readonly class AuthorMergePlanFacade
         if (empty($holders) && count($currentAuthorSets) > 1) {
             return self::MANUAL_DIFFERENT_CURRENT_AUTHORS;
         }
-        if (empty($holders) && 1 === count($currentAuthorSets) && count($this->findMapped($group)) < count($group) && $this->losesNamePart(main: $this->findMostUsed($this->findMapped($group)), currentAuthorNames: $currentAuthorNames)) {
+        if (empty($holders) && 1 === count($currentAuthorSets) && count($this->findMapped($group)) < count($group) && false === empty($this->findUncoveredWords(group: $group, currentAuthorNames: $currentAuthorNames))) {
             return self::MANUAL_UNCOVERED_NAME;
         }
 
@@ -171,7 +219,7 @@ final readonly class AuthorMergePlanFacade
      * @param list<AuthorMergeCandidateDto> $group
      * @param array<string, string> $currentAuthorNames
      */
-    private function proposeGroup(string $key, array $group, array $currentAuthorNames): AuthorMergeProposalDto
+    private function proposeGroup(string $key, array $group, array $currentAuthorNames, ?string $manualReason): AuthorMergeProposalDto
     {
         $holders = $this->findCurrentAuthorsOfOthers($group);
         $mapped = $this->findMapped($group);
@@ -180,7 +228,7 @@ final readonly class AuthorMergePlanFacade
             false === empty($mapped) => $this->findMostUsed($mapped),
             default => $this->findMostUsed($group),
         };
-        $reason = match (true) {
+        $reason = $manualReason ?? match (true) {
             false === empty($holders) => self::REASON_IS_CURRENT_AUTHOR,
             false === empty($mapped) => self::REASON_HAS_CURRENT_AUTHORS,
             default => self::REASON_MOST_ASSETS,
@@ -188,36 +236,34 @@ final readonly class AuthorMergePlanFacade
         $targetIds = $main->currentAuthorIds ?: [$main->id];
         $targetNames = array_map(static fn (string $id): string => $currentAuthorNames[$id] ?? $id, $targetIds);
 
-        $proposals = [];
+        $decisions = [];
         foreach ($group as $candidate) {
-            $proposals[$candidate->id] = match (true) {
-                $candidate->id === $main->id => self::PROPOSAL_MAIN,
-                false === empty($candidate->currentAuthorIds) => self::PROPOSAL_KEEP,
-                default => self::PROPOSAL_VARIANT,
+            $decisions[$candidate->id] = match (true) {
+                $candidate->id === $main->id => AuthorMergeDecision::Main,
+                false === empty($candidate->currentAuthorIds) => AuthorMergeDecision::NoChange,
+                default => AuthorMergeDecision::Variant,
             };
         }
 
         $rows = [];
-        foreach ($this->sortMembers(group: $group, proposals: $proposals) as $candidate) {
-            $proposal = $proposals[$candidate->id];
+        foreach ($this->sortMembers(group: $group, decisions: $decisions) as $candidate) {
             $rows[] = $this->createRow(
                 group: $group,
                 candidate: $candidate,
-                proposal: $proposal,
+                approved: null === $manualReason,
+                decision: $decisions[$candidate->id],
                 targetIds: AuthorMergeCsv::joinList($targetIds),
                 targetNames: AuthorMergeCsv::joinList($targetNames),
                 reason: $reason,
-                decision: match ($proposal) {
-                    self::PROPOSAL_MAIN => AuthorMergeDecision::Main,
-                    self::PROPOSAL_VARIANT => AuthorMergeDecision::Variant,
-                    default => AuthorMergeDecision::NoChange,
-                },
+                currentAuthorNames: $currentAuthorNames,
             );
         }
 
         return new AuthorMergeProposalDto(
-            manual: false,
-            case: $this->describeGroup(group: $group, main: $main, hasVariants: in_array(self::PROPOSAL_VARIANT, $proposals, true)),
+            manual: null !== $manualReason,
+            case: null === $manualReason
+                ? $this->describeGroup(group: $group, main: $main, hasVariants: in_array(AuthorMergeDecision::Variant, $decisions, true))
+                : self::MANUAL_CASES[$manualReason],
             assetCount: $this->sumAssets($group),
             key: $key,
             rows: $rows,
@@ -226,10 +272,12 @@ final readonly class AuthorMergePlanFacade
 
     /**
      * @param list<AuthorMergeCandidateDto> $group
+     * @param array<string, string> $currentAuthorNames
      */
-    private function proposeManualGroup(string $key, array $group, string $reason): AuthorMergeProposalDto
+    private function proposeManualGroup(string $key, array $group, string $reason, array $currentAuthorNames): AuthorMergeProposalDto
     {
-        $proposals = array_fill_keys(array_map(static fn (AuthorMergeCandidateDto $candidate): string => $candidate->id, $group), self::PROPOSAL_MANUAL);
+        $decisions = array_fill_keys(array_map(static fn (AuthorMergeCandidateDto $candidate): string => $candidate->id, $group), AuthorMergeDecision::DoNotMerge);
+        $uncoveredWords = self::MANUAL_UNCOVERED_NAME === $reason ? $this->findUncoveredWords(group: $group, currentAuthorNames: $currentAuthorNames) : [];
 
         return new AuthorMergeProposalDto(
             manual: true,
@@ -240,13 +288,14 @@ final readonly class AuthorMergePlanFacade
                 fn (AuthorMergeCandidateDto $candidate): array => $this->createRow(
                     group: $group,
                     candidate: $candidate,
-                    proposal: self::PROPOSAL_MANUAL,
+                    approved: false,
+                    decision: AuthorMergeDecision::DoNotMerge,
                     targetIds: App::EMPTY_STRING,
                     targetNames: App::EMPTY_STRING,
-                    reason: $reason,
-                    decision: AuthorMergeDecision::Empty,
+                    reason: empty($uncoveredWords) ? $reason : sprintf('%s (%s)', $reason, implode(', ', $uncoveredWords)),
+                    currentAuthorNames: $currentAuthorNames,
                 ),
-                $this->sortMembers(group: $group, proposals: $proposals),
+                $this->sortMembers(group: $group, decisions: $decisions),
             ),
         );
     }
@@ -259,13 +308,13 @@ final readonly class AuthorMergePlanFacade
         $reviewedCount = $this->countReviewed($group);
 
         return match (true) {
-            false === $hasVariants => 'A7 group is already clean',
-            $main->childAuthorCount > App::ZERO => 'A5 main is already a current author of others',
-            false === empty($main->currentAuthorIds) => 'A6 a member already has current authors set by a person',
-            App::ZERO === $reviewedCount => 'A1 nobody is reviewed',
-            1 === $reviewedCount && $main->reviewed => 'A2 the main is reviewed',
-            1 === $reviewedCount => 'A3 a variant with fewer assets is reviewed',
-            default => 'A4 more are reviewed',
+            false === $hasVariants => 'A7 (already clean)',
+            $main->childAuthorCount > App::ZERO => 'A5 (main has children)',
+            false === empty($main->currentAuthorIds) => 'A6 (set by a person)',
+            App::ZERO === $reviewedCount => 'A1 (nobody reviewed)',
+            1 === $reviewedCount && $main->reviewed => 'A2 (main reviewed)',
+            1 === $reviewedCount => 'A3 (variant reviewed)',
+            default => 'A4 (several reviewed)',
         };
     }
 
@@ -290,19 +339,24 @@ final readonly class AuthorMergePlanFacade
     }
 
     /**
-     * The variants get the current authors of the main author, so a word of the name they do not carry would vanish
-     * from the assets: "Korzár/Michal Frank" under "Michal Frank" loses Korzár.
+     * The variants get the current authors of the main author (the mapped member with the most assets), so a word of
+     * the name they do not carry would vanish from the assets: "Korzár/Michal Frank" under "Michal Frank" loses Korzár.
+     * Noise words do not count.
      *
+     * @param list<AuthorMergeCandidateDto> $group with a mapped member
      * @param array<string, string> $currentAuthorNames
+     *
+     * @return list<string> normalized words of the main author's name
      */
-    private function losesNamePart(AuthorMergeCandidateDto $main, array $currentAuthorNames): bool
+    private function findUncoveredWords(array $group, array $currentAuthorNames): array
     {
+        $main = $this->findMostUsed($this->findMapped($group));
         $covered = [];
         foreach ($main->currentAuthorIds as $id) {
             array_push($covered, ...$this->splitWords($currentAuthorNames[$id] ?? App::EMPTY_STRING));
         }
 
-        return false === empty(array_diff($this->splitWords($main->name), $covered));
+        return array_values(array_unique(array_diff($this->splitWords($main->name), $covered, self::NOISE_WORDS)));
     }
 
     /**
@@ -330,15 +384,15 @@ final readonly class AuthorMergePlanFacade
      * Main author first, then the variants, then the members that stay; by assets inside.
      *
      * @param list<AuthorMergeCandidateDto> $group
-     * @param array<string, string> $proposals
+     * @param array<string, AuthorMergeDecision> $decisions
      *
      * @return list<AuthorMergeCandidateDto>
      */
-    private function sortMembers(array $group, array $proposals): array
+    private function sortMembers(array $group, array $decisions): array
     {
         usort(
             $group,
-            static fn (AuthorMergeCandidateDto $first, AuthorMergeCandidateDto $second): int => [self::PROPOSAL_ORDER[$proposals[$first->id]], $second->assetCount, $first->name] <=> [self::PROPOSAL_ORDER[$proposals[$second->id]], $first->assetCount, $second->name],
+            static fn (AuthorMergeCandidateDto $first, AuthorMergeCandidateDto $second): int => [self::MEMBER_ORDER[$decisions[$first->id]->value], $second->assetCount, $first->name] <=> [self::MEMBER_ORDER[$decisions[$second->id]->value], $first->assetCount, $second->name],
         );
 
         return $group;
@@ -346,19 +400,22 @@ final readonly class AuthorMergePlanFacade
 
     /**
      * @param list<AuthorMergeCandidateDto> $group
+     * @param array<string, string> $currentAuthorNames
      *
      * @return array<string, string|int>
      */
     private function createRow(
         array $group,
         AuthorMergeCandidateDto $candidate,
-        string $proposal,
+        bool $approved,
+        AuthorMergeDecision $decision,
         string $targetIds,
         string $targetNames,
         string $reason,
-        AuthorMergeDecision $decision,
+        array $currentAuthorNames,
     ): array {
         return [
+            AuthorMergeCsv::APPROVED => $approved ? AuthorMergeCsv::APPROVED_YES : AuthorMergeCsv::APPROVED_NO,
             AuthorMergeCsv::NAME_NORMALIZED => $candidate->nameNormalized,
             AuthorMergeCsv::GROUP_IDENTIFIER => $this->findGroupIdentifier($candidate),
             AuthorMergeCsv::GROUP_REVIEWED_COUNT => $this->countReviewed($group),
@@ -369,9 +426,8 @@ final readonly class AuthorMergePlanFacade
             AuthorMergeCsv::ASSET_COUNT => $candidate->assetCount,
             AuthorMergeCsv::CREATED_AT => $candidate->createdAt,
             AuthorMergeCsv::CREATED_BY => $candidate->createdBy,
-            AuthorMergeCsv::CURRENT_AUTHOR_COUNT => count($candidate->currentAuthorIds),
+            AuthorMergeCsv::CURRENT_AUTHORS => AuthorMergeCsv::joinList(array_map(static fn (string $id): string => $currentAuthorNames[$id] ?? $id, $candidate->currentAuthorIds)),
             AuthorMergeCsv::CHILD_AUTHOR_COUNT => $candidate->childAuthorCount,
-            AuthorMergeCsv::PROPOSAL => $proposal,
             AuthorMergeCsv::TARGET_IDS => $targetIds,
             AuthorMergeCsv::TARGET_NAMES => $targetNames,
             AuthorMergeCsv::REASON => $reason,

@@ -8,11 +8,13 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 
 /**
- * The merge CSV goes to product and comes back edited in Excel: UTF-8 with a BOM, `;` and Slovak column names.
+ * The merge CSV goes to product and comes back edited in Excel: UTF-8 with a BOM, commas (Excel with a Slovak list
+ * separator saves semicolons, both are read). The columns people decide by come first.
  */
 final class AuthorMergeCsv
 {
     public const string GROUP = 'group';
+    public const string APPROVED = 'approved';
     public const string CASE = 'case';
     public const string EXT_SYSTEM = 'ext_system';
     public const string NAME_NORMALIZED = 'name_normalized';
@@ -25,9 +27,8 @@ final class AuthorMergeCsv
     public const string ASSET_COUNT = 'asset_count';
     public const string CREATED_AT = 'created_at';
     public const string CREATED_BY = 'created_by';
-    public const string CURRENT_AUTHOR_COUNT = 'current_author_count';
+    public const string CURRENT_AUTHORS = 'current_authors';
     public const string CHILD_AUTHOR_COUNT = 'child_author_count';
-    public const string PROPOSAL = 'proposal';
     public const string TARGET_IDS = 'target_ids';
     public const string TARGET_NAMES = 'target_names';
     public const string REASON = 'reason';
@@ -35,32 +36,36 @@ final class AuthorMergeCsv
 
     public const array COLUMNS = [
         self::GROUP,
+        self::APPROVED,
         self::CASE,
+        self::NAME,
+        self::IDENTIFIER,
+        self::ASSET_COUNT,
+        self::REVIEWED,
+        self::DECISION,
+        self::TARGET_NAMES,
+        self::TARGET_IDS,
+        self::REASON,
+        self::CURRENT_AUTHORS,
+        self::CHILD_AUTHOR_COUNT,
+        self::CREATED_AT,
+        self::CREATED_BY,
+        self::GROUP_REVIEWED_COUNT,
+        self::AUTHOR_ID,
         self::EXT_SYSTEM,
         self::NAME_NORMALIZED,
         self::GROUP_IDENTIFIER,
-        self::GROUP_REVIEWED_COUNT,
-        self::AUTHOR_ID,
-        self::NAME,
-        self::IDENTIFIER,
-        self::REVIEWED,
-        self::ASSET_COUNT,
-        self::CREATED_AT,
-        self::CREATED_BY,
-        self::CURRENT_AUTHOR_COUNT,
-        self::CHILD_AUTHOR_COUNT,
-        self::PROPOSAL,
-        self::TARGET_IDS,
-        self::TARGET_NAMES,
-        self::REASON,
-        self::DECISION,
     ];
+
+    public const string APPROVED_YES = '1';
+    public const string APPROVED_NO = '0';
 
     /**
      * Columns the merge reads back; the others are only for the people who decide.
      */
     private const array REQUIRED_COLUMNS = [
         self::GROUP,
+        self::APPROVED,
         self::EXT_SYSTEM,
         self::NAME_NORMALIZED,
         self::GROUP_IDENTIFIER,
