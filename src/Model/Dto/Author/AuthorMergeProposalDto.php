@@ -14,7 +14,7 @@ final readonly class AuthorMergeProposalDto
      */
     public function __construct(
         public bool $manual,
-        public string $variant,
+        public string $case,
         public int $assetCount,
         public string $key,
         public array $rows,

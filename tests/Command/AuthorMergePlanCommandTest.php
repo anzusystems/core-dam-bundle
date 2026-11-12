@@ -67,6 +67,13 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
             'burcik' => ['name' => 'Matúš Burčík', 'reviewed' => true],
             'burcikMain' => ['name' => 'SME- Matúš Burčík', 'parents' => ['sme', 'burcik']],
             'burcikVariant' => ['name' => 'SME – Matúš Burčík'],
+            'betaSme' => ['name' => 'Eva Beta', 'parents' => ['sme']],
+            'betaBurcik' => ['name' => 'Eva Beta.', 'parents' => ['burcik']],
+            'gama' => ['name' => 'Ola Gama'],
+            'gamaChild' => ['name' => 'Gamova fotka', 'parents' => ['gama']],
+            'gamaSme' => ['name' => 'Ola Gama.', 'parents' => ['sme']],
+            'nowakStroke' => ['name' => 'Ł. Nowak'],
+            'nowakPlain' => ['name' => 'L. Nowak'],
         ]);
         $this->linkAssets('jakubco', 2);
         $this->linkAssets('jakubcoDash', 1);
@@ -74,9 +81,8 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         $this->linkAssets('lipaSelf', 1);
         $this->linkAssets('tatranMain', 1);
 
-        $this->file = (string) tempnam(sys_get_temp_dir(), 'author-merge-plan');
-        $commandTester = new CommandTester((new Application(self::$kernel))->find(self::COMMAND));
-        self::assertSame(Command::SUCCESS, $commandTester->execute(['--ext-system' => 'cms', '--file' => $this->file]));
+        $this->file = sys_get_temp_dir() . '/author-merge-plan-' . bin2hex(random_bytes(8)) . '.csv';
+        self::assertSame(Command::SUCCESS, $this->execute());
 
         $keysById = array_flip(array_map(static fn (Author $author): string => (string) $author->getId(), $this->authors));
         $this->rows = [];
@@ -93,6 +99,14 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         parent::tearDown();
     }
 
+    public function testExistingFileIsNeverOverwritten(): void
+    {
+        $content = (string) file_get_contents($this->file);
+
+        self::assertSame(Command::FAILURE, $this->execute());
+        self::assertSame($content, (string) file_get_contents($this->file));
+    }
+
     public function testFileIsUtf8WithBomForExcel(): void
     {
         self::assertStringStartsWith("\u{FEFF}" . implode(';', AuthorMergeCsv::COLUMNS), (string) file_get_contents($this->file));
@@ -102,7 +116,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
     {
         $this->assertGroup(['jakubco' => 'hlavny', 'jakubcoDash' => 'podriadeny', 'jakubcoSpace' => 'podriadeny'], 'A3 schválený je variant s menej fotkami');
         self::assertSame('2', $this->rows['jakubco'][AuthorMergeCsv::ASSET_COUNT]);
-        self::assertSame((string) $this->authors['jakubco']->getId(), $this->rows['jakubcoSpace'][AuthorMergeCsv::CURRENT_AUTHOR_IDS]);
+        self::assertSame((string) $this->authors['jakubco']->getId(), $this->rows['jakubcoSpace'][AuthorMergeCsv::TARGET_IDS]);
         self::assertSame('1', $this->rows['jakubco'][AuthorMergeCsv::GROUP_REVIEWED_COUNT]);
     }
 
@@ -130,6 +144,9 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
     {
         $this->assertGroup(['kovacA' => '', 'kovacB' => ''], 'M3 dvaja nadriadení v jednej skupine');
         $this->assertGroup(['hraskoPlain' => '', 'hraskoCaron' => ''], 'M1 iniciály sa líšia len diakritikou');
+        $this->assertGroup(['nowakPlain' => '', 'nowakStroke' => ''], 'M1 iniciály sa líšia len diakritikou');
+        $this->assertGroup(['betaSme' => '', 'betaBurcik' => ''], 'M2 členovia majú rôznych nadriadených');
+        $this->assertGroup(['gama' => '', 'gamaSme' => ''], 'M2 členovia majú rôznych nadriadených');
         self::assertSame('ručne', $this->rows['kovacA'][AuthorMergeCsv::PROPOSAL]);
         self::assertLessThan((int) $this->rows['jakubco'][AuthorMergeCsv::GROUP], (int) $this->rows['kovacA'][AuthorMergeCsv::GROUP]);
         self::assertLessThan((int) $this->rows['jakubco'][AuthorMergeCsv::GROUP], (int) $this->rows['hraskoCaron'][AuthorMergeCsv::GROUP]);
@@ -139,7 +156,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
     public function testCurrentAuthorsOfTheMainAuthorGoToTheVariants(): void
     {
         $this->assertGroup(['burcikMain' => 'hlavny', 'burcikVariant' => 'podriadeny'], 'A6 člen už má nadriadených od človeka');
-        self::assertEqualsCanonicalizing(['SME', 'Matúš Burčík'], explode(' + ', $this->rows['burcikVariant'][AuthorMergeCsv::CURRENT_AUTHOR_NAMES]));
+        self::assertEqualsCanonicalizing(['SME', 'Matúš Burčík'], AuthorMergeCsv::splitList($this->rows['burcikVariant'][AuthorMergeCsv::TARGET_NAMES]));
     }
 
     public function testCurrentAuthorsThatDropAPartOfTheNameGoToPeople(): void
@@ -151,7 +168,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
     /**
      * @param array<string, string> $decisions all members of one group, the main author first
      */
-    private function assertGroup(array $decisions, string $variant): void
+    private function assertGroup(array $decisions, string $case): void
     {
         $keys = array_keys($decisions);
         $group = $this->rows[$keys[0]][AuthorMergeCsv::GROUP];
@@ -159,9 +176,14 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         self::assertSame($keys, $members);
         foreach ($decisions as $key => $decision) {
             self::assertSame($decision, $this->rows[$key][AuthorMergeCsv::DECISION], $key);
-            self::assertSame($variant, $this->rows[$key][AuthorMergeCsv::VARIANT], $key);
+            self::assertSame($case, $this->rows[$key][AuthorMergeCsv::CASE], $key);
             self::assertSame('cms', $this->rows[$key][AuthorMergeCsv::EXT_SYSTEM], $key);
         }
+    }
+
+    private function execute(): int
+    {
+        return (new CommandTester((new Application(self::$kernel))->find(self::COMMAND)))->execute(['--ext-system' => 'cms', '--file' => $this->file]);
     }
 
     private function linkAssets(string $key, int $count): void

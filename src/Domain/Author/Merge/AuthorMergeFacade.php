@@ -5,19 +5,18 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Author\Merge;
 
 use AnzuSystems\CommonBundle\Domain\Job\JobFacade;
-use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
+use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseManager;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
-use AnzuSystems\CoreDamBundle\Entity\AuthorMergeLog;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Exception\InvalidArgumentException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Author\AuthorMergeGroupDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Author\AuthorMergeResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Author\AuthorMergeRowDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorMergeDecision;
-use AnzuSystems\CoreDamBundle\Model\ValueObject\AuthorMergeResult;
 use AnzuSystems\CoreDamBundle\Repository\AuthorCleanPhraseRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetAuthorDBALRepository;
@@ -29,14 +28,15 @@ use Symfony\Component\Uid\Uuid;
 use Throwable;
 
 /**
- * Step 2 of the merge (#87355): merges the groups of a CSV checked by people. Each group is guarded against the
- * current data and merged in its own transaction; a group that no longer matches is skipped with a reason, a group
- * merged by an earlier run is skipped as done. After the commit a JobAuthorCurrentOptimize of the main author moves the
- * assets of the variants to it, and the authors of the group are reindexed.
+ * Step 2 of the merge (#87355): merges the groups of a CSV checked by people, as the plan approved them: the variants
+ * go under the target authors of the main author's row (`nadriadeny_id`, empty means the main author itself). Each
+ * group is guarded against the current data and merged in its own transaction; a group that no longer matches is
+ * skipped with a reason, a group merged by an earlier run counts as already merged. After the commit a
+ * JobAuthorCurrentOptimize of each target author moves the assets of the variants to it, and the authors of the group
+ * are reindexed.
  */
 final class AuthorMergeFacade
 {
-    use EntityManagerAwareTrait;
     use IndexManagerAwareTrait;
 
     private const int MAX_REPORTED_ERRORS = 50;
@@ -46,6 +46,7 @@ final class AuthorMergeFacade
         private readonly AuthorDBALRepository $authorDBALRepository,
         private readonly AssetAuthorDBALRepository $assetAuthorDBALRepository,
         private readonly AuthorCleanPhraseRepository $authorCleanPhraseRepository,
+        private readonly AuthorCleanPhraseManager $authorCleanPhraseManager,
         private readonly AuthorManager $authorManager,
         private readonly JobFacade $jobFacade,
         private readonly JobAuthorCurrentOptimizeRepository $jobAuthorCurrentOptimizeRepository,
@@ -61,150 +62,73 @@ final class AuthorMergeFacade
      */
     public function readGroups(ExtSystem $extSystem, string $path): array
     {
-        $rows = AuthorMergeCsv::read($path);
         $errors = [];
-        $groups = [];
-        $seenIds = [];
-        foreach ($rows as $rowNumber => $row) {
+        $rowNumbersById = [];
+        $mergeRows = [];
+        foreach (AuthorMergeCsv::read($path) as $rowNumber => $row) {
             $authorId = trim($row[AuthorMergeCsv::AUTHOR_ID]);
-            $groupName = trim($row[AuthorMergeCsv::GROUP]);
+            array_push($errors, ...$this->checkRow(rowNumber: $rowNumber, row: $row, extSystem: $extSystem, seenOnRow: $rowNumbersById[$authorId] ?? null));
+            $rowNumbersById[$authorId] = $rowNumber;
             $decision = AuthorMergeDecision::tryFrom(trim($row[AuthorMergeCsv::DECISION]));
-            if (trim($row[AuthorMergeCsv::EXT_SYSTEM]) !== $extSystem->getSlug()) {
-                $errors[] = sprintf('Row %d: ext system "%s" is not "%s"', $rowNumber, $row[AuthorMergeCsv::EXT_SYSTEM], $extSystem->getSlug());
+            if (null !== $decision && $decision->in([AuthorMergeDecision::Main, AuthorMergeDecision::Variant])) {
+                $mergeRows[trim($row[AuthorMergeCsv::GROUP])][$rowNumber] = $row;
             }
-            if (App::EMPTY_STRING === $groupName) {
-                $errors[] = sprintf('Row %d: empty group', $rowNumber);
-            }
-            if (null === $decision) {
-                $errors[] = sprintf('Row %d: unknown decision "%s", allowed: %s', $rowNumber, $row[AuthorMergeCsv::DECISION], implode(', ', AuthorMergeDecision::values()));
-            }
-            if (isset($seenIds[$authorId])) {
-                $errors[] = sprintf('Row %d: author %s is already on row %d', $rowNumber, $authorId, $seenIds[$authorId]);
-            }
-            $seenIds[$authorId] = $rowNumber;
-            if (null === $decision || false === $decision->in([AuthorMergeDecision::Main, AuthorMergeDecision::Variant])) {
+        }
+
+        $groups = [];
+        foreach ($mergeRows as $groupName => $rows) {
+            $groupErrors = $this->checkGroup(groupName: (string) $groupName, rows: $rows);
+            array_push($errors, ...$groupErrors);
+            $group = empty($groupErrors) ? $this->createGroup(groupName: (string) $groupName, rows: $rows) : null;
+            if (null === $group) {
                 continue;
             }
-
-            $groups[$groupName][$decision->value][$rowNumber] = new AuthorMergeRowDto(
-                authorId: $authorId,
-                name: $row[AuthorMergeCsv::NAME],
-                identifier: $row[AuthorMergeCsv::IDENTIFIER],
-                currentAuthorCount: (int) $row[AuthorMergeCsv::CURRENT_AUTHOR_COUNT],
-            );
-        }
-
-        $extSystemIds = $this->authorDBALRepository->findExtSystemIds(array_map(strval(...), array_keys($seenIds)));
-        foreach ($seenIds as $authorId => $rowNumber) {
-            $errors[] = $this->checkAuthorExtSystem(rowNumber: $rowNumber, authorId: (string) $authorId, extSystemId: $extSystemIds[(string) $authorId] ?? null, extSystem: $extSystem);
-        }
-
-        $mergeGroups = [];
-        foreach ($groups as $groupName => $decisions) {
-            $mains = $decisions[AuthorMergeDecision::Main->value] ?? [];
-            $variants = array_values($decisions[AuthorMergeDecision::Variant->value] ?? []);
-            $error = $this->checkGroup(groupName: (string) $groupName, mains: $mains, hasVariants: false === empty($variants));
-            $errors[] = $error;
-            if (null === $error && false === empty($variants)) {
-                $mergeGroups[] = new AuthorMergeGroupDto(name: (string) $groupName, main: array_values($mains)[App::ZERO], variants: $variants);
+            $groups[] = $group;
+            foreach ($group->targetIds as $targetId) {
+                $rowNumbersById[$targetId] ??= (int) array_key_first($rows);
             }
         }
-        $errors = array_values(array_filter($errors));
+        array_push($errors, ...$this->checkAuthors(extSystem: $extSystem, rowNumbersById: $rowNumbersById));
 
         if (false === empty($errors)) {
-            $more = count($errors) - self::MAX_REPORTED_ERRORS;
-            $errors = array_slice($errors, App::ZERO, self::MAX_REPORTED_ERRORS);
-            if ($more > App::ZERO) {
-                $errors[] = sprintf('… and %d more', $more);
-            }
-
-            throw new InvalidArgumentException(implode(PHP_EOL, $errors));
+            throw $this->createInvalidCsvException($errors);
         }
 
-        return $mergeGroups;
+        return $groups;
     }
 
     /**
-     * Yields after each group; the generator returns the result. A dry run merges everything in one transaction it
-     * rolls back, and creates no job and writes nothing to Elasticsearch.
+     * Yields after each group; the generator returns the result. A dry run rolls back each group instead of the
+     * commit, so it holds the locks of one group at a time, and creates no job and writes nothing to Elasticsearch.
      *
      * @param list<AuthorMergeGroupDto> $groups
      *
-     * @return Generator<int, string, mixed, AuthorMergeResult> yields the group name
+     * @return Generator<int, string, mixed, AuthorMergeResultDto> yields the group name
      */
     public function merge(array $groups, bool $dryRun): Generator
     {
-        $result = new AuthorMergeResult(Uuid::v7()->toRfc4122());
-        if ($dryRun) {
-            $this->authorManager->beginTransaction();
-        }
+        $result = new AuthorMergeResultDto(Uuid::v7()->toRfc4122());
+        foreach ($groups as $group) {
+            $this->mergeGroup(result: $result, group: $group, dryRun: $dryRun);
+            $this->authorManager->clear();
 
-        try {
-            foreach ($groups as $group) {
-                $this->mergeGroup(result: $result, group: $group, dryRun: $dryRun);
-                $this->entityManager->clear();
-
-                yield $group->name;
-            }
-        } finally {
-            if ($dryRun) {
-                $this->authorManager->rollback();
-            }
+            yield $group->name;
         }
 
         return $result;
     }
 
-    private function mergeGroup(AuthorMergeResult $result, AuthorMergeGroupDto $group, bool $dryRun): void
+    private function mergeGroup(AuthorMergeResultDto $result, AuthorMergeGroupDto $group, bool $dryRun): void
     {
-        $main = $this->findUnchanged($group->main);
-        if (null === $main) {
-            $result->addSkipped($group->name, sprintf('main author %s was changed or deleted', $group->main->authorId));
-
+        $targets = $this->findTargets(result: $result, group: $group);
+        if (null === $targets) {
             return;
         }
-        if ($main->getCurrentAuthors()->count() !== $group->main->currentAuthorCount) {
-            $result->addSkipped($group->name, sprintf('current authors of main author %s were changed', $group->main->authorId));
-
+        $variants = $this->findVariantsToMerge(result: $result, group: $group, targets: $targets);
+        if (null === $variants) {
             return;
         }
-
-        $targets = $main->getCurrentAuthors()->isEmpty() ? [$main] : array_values($main->getCurrentAuthors()->toArray());
-        foreach ($targets as $target) {
-            if (false === $target->getCurrentAuthors()->isEmpty() || false === $target->getFlags()->isCanBeCurrentAuthor()) {
-                $result->addSkipped($group->name, sprintf('author %s cannot be a current author', (string) $target->getId()));
-
-                return;
-            }
-        }
-
-        $targetIds = $this->toSortedIds($targets);
-        $pending = [];
-        foreach ($group->variants as $row) {
-            $variant = $this->findUnchanged($row);
-            if (null === $variant) {
-                $result->addSkipped($group->name, sprintf('variant %s was changed or deleted', $row->authorId));
-
-                return;
-            }
-            if (false === $variant->getChildAuthors()->isEmpty()) {
-                $result->addSkipped($group->name, sprintf('variant %s is a current author of other authors', $row->authorId));
-
-                return;
-            }
-            if ($variant->getCurrentAuthors()->isEmpty()) {
-                $pending[] = $variant;
-
-                continue;
-            }
-            if ($this->toSortedIds($variant->getCurrentAuthors()->toArray()) !== $targetIds) {
-                $result->addSkipped($group->name, sprintf('variant %s already has other current authors', $row->authorId));
-
-                return;
-            }
-        }
-
-        if (empty($pending)) {
+        if (empty($variants)) {
             $result->addAlreadyMerged();
 
             return;
@@ -212,42 +136,123 @@ final class AuthorMergeFacade
 
         $this->authorManager->beginTransaction();
         try {
-            $assetLinks = App::ZERO;
-            foreach ($pending as $variant) {
-                foreach ($targets as $target) {
-                    $this->entityManager->persist(new AuthorMergeLog(
-                        runId: $result->getRunId(),
-                        groupName: $group->name,
-                        variant: $variant,
-                        mainAuthor: $target,
-                        decision: AuthorMergeDecision::Variant,
-                    ));
-                    $assetLinks += $this->assetAuthorDBALRepository->copyToMergeSnapshot(
-                        runId: $result->getRunId(),
-                        authorId: (string) $variant->getId(),
-                        mainAuthorId: (string) $target->getId(),
-                    );
-                }
+            $assetLinks = $this->logPairs(runId: $result->getRunId(), groupName: $group->name, variants: $variants, targets: $targets);
+            $cleanPhrases = 1 === count($targets) ? $this->replaceCleanPhraseAuthor(variants: $variants, target: $targets[App::ZERO]) : App::ZERO;
+            $this->authorManager->merge(variants: $variants, targets: $targets);
+            if (false === $dryRun) {
+                $this->authorManager->commit();
             }
-            $cleanPhrases = 1 === count($targets) ? $this->replaceCleanPhraseAuthor(variants: $pending, target: $targets[App::ZERO]) : App::ZERO;
-            $this->authorManager->merge(variants: $pending, targets: $targets);
-            $this->authorManager->commit();
         } catch (Throwable $exception) {
             $this->authorManager->rollback();
 
             throw $exception;
         }
 
-        $jobs = $dryRun ? App::ZERO : $this->createJobs($targets);
-        if (false === $dryRun) {
-            $this->indexManager->indexBulk([...$targets, ...$pending]);
+        if ($dryRun) {
+            $this->authorManager->rollback();
+            $result->addMerged(variants: count($variants), assetLinks: $assetLinks, cleanPhrases: $cleanPhrases, jobs: App::ZERO);
+
+            return;
         }
-        $result->addMerged(variants: count($pending), assetLinks: $assetLinks, cleanPhrases: $cleanPhrases, jobs: $jobs);
+        $jobs = $this->createJobs($targets);
+        $this->indexManager->indexBulk([...$targets, ...$variants]);
+        $result->addMerged(variants: count($variants), assetLinks: $assetLinks, cleanPhrases: $cleanPhrases, jobs: $jobs);
+    }
+
+    /**
+     * @return non-empty-list<Author>|null null when the group is skipped
+     */
+    private function findTargets(AuthorMergeResultDto $result, AuthorMergeGroupDto $group): ?array
+    {
+        if (null === $this->findUnchanged($group->main)) {
+            $result->addSkipped($group->name, sprintf('main author %s was changed or deleted', $group->main->authorId));
+
+            return null;
+        }
+
+        $targets = [];
+        foreach ($group->targetIds as $targetId) {
+            $target = $this->authorRepository->find($targetId);
+            if (null === $target || false === $target->getCurrentAuthors()->isEmpty() || false === $target->getFlags()->isCanBeCurrentAuthor()) {
+                $result->addSkipped($group->name, sprintf('author %s cannot be a current author', $targetId));
+
+                return null;
+            }
+            $targets[] = $target;
+        }
+
+        return $targets;
+    }
+
+    /**
+     * @param non-empty-list<Author> $targets
+     *
+     * @return list<Author>|null the variants not merged yet, null when the group is skipped
+     */
+    private function findVariantsToMerge(AuthorMergeResultDto $result, AuthorMergeGroupDto $group, array $targets): ?array
+    {
+        $targetIds = $this->toSortedIds($targets);
+        $variants = [];
+        foreach ($group->variants as $row) {
+            $variant = $this->findUnchanged($row);
+            if (null === $variant) {
+                $result->addSkipped($group->name, sprintf('variant %s was changed or deleted', $row->authorId));
+
+                return null;
+            }
+            if (false === $variant->getChildAuthors()->isEmpty()) {
+                $result->addSkipped($group->name, sprintf('variant %s is a current author of other authors', $row->authorId));
+
+                return null;
+            }
+            if ($variant->getCurrentAuthors()->isEmpty()) {
+                $variants[] = $variant;
+
+                continue;
+            }
+            if ($this->toSortedIds($variant->getCurrentAuthors()->toArray()) !== $targetIds) {
+                $result->addSkipped($group->name, sprintf('variant %s already has other current authors', $row->authorId));
+
+                return null;
+            }
+        }
+
+        return $variants;
+    }
+
+    /**
+     * One log row and the asset links of the variant per pair, as they are before the merge.
+     *
+     * @param list<Author> $variants
+     * @param list<Author> $targets
+     *
+     * @return int copied asset links
+     */
+    private function logPairs(string $runId, string $groupName, array $variants, array $targets): int
+    {
+        $assetLinks = App::ZERO;
+        foreach ($variants as $variant) {
+            foreach ($targets as $target) {
+                $this->authorDBALRepository->insertMergeLog(
+                    runId: $runId,
+                    groupName: $groupName,
+                    variantId: (string) $variant->getId(),
+                    mainAuthorId: (string) $target->getId(),
+                );
+                $assetLinks += $this->assetAuthorDBALRepository->copyToMergeSnapshot(
+                    runId: $runId,
+                    authorId: (string) $variant->getId(),
+                    mainAuthorId: (string) $target->getId(),
+                );
+            }
+        }
+
+        return $assetLinks;
     }
 
     /**
      * A waiting job of the author already moves the assets of all its current children when it starts, so groups
-     * under one author (SME is the main author of 28 groups) share it instead of each scanning all its assets.
+     * under one author share it instead of each scanning all its assets.
      *
      * @param list<Author> $targets
      */
@@ -266,31 +271,142 @@ final class AuthorMergeFacade
         return $jobs;
     }
 
-    private function checkAuthorExtSystem(int $rowNumber, string $authorId, ?int $extSystemId, ExtSystem $extSystem): ?string
+    /**
+     * @param array<string, string> $row
+     *
+     * @return list<string>
+     */
+    private function checkRow(int $rowNumber, array $row, ExtSystem $extSystem, ?int $seenOnRow): array
     {
-        if (null === $extSystemId) {
-            return sprintf('Row %d: author "%s" does not exist', $rowNumber, $authorId);
+        $errors = [];
+        if (trim($row[AuthorMergeCsv::EXT_SYSTEM]) !== $extSystem->getSlug()) {
+            $errors[] = sprintf('Row %d: ext system "%s" is not "%s"', $rowNumber, $row[AuthorMergeCsv::EXT_SYSTEM], $extSystem->getSlug());
         }
-        if ($extSystemId !== $extSystem->getId()) {
-            return sprintf('Row %d: author %s belongs to another ext system', $rowNumber, $authorId);
+        if (App::EMPTY_STRING === trim($row[AuthorMergeCsv::GROUP])) {
+            $errors[] = sprintf('Row %d: empty group', $rowNumber);
+        }
+        if (null === AuthorMergeDecision::tryFrom(trim($row[AuthorMergeCsv::DECISION]))) {
+            $errors[] = sprintf('Row %d: unknown decision "%s", allowed: %s', $rowNumber, $row[AuthorMergeCsv::DECISION], implode(', ', AuthorMergeDecision::values()));
+        }
+        if (null !== $seenOnRow) {
+            $errors[] = sprintf('Row %d: author %s is already on row %d', $rowNumber, $row[AuthorMergeCsv::AUTHOR_ID], $seenOnRow);
         }
 
-        return null;
+        return $errors;
     }
 
     /**
-     * @param array<int, AuthorMergeRowDto> $mains by row number
+     * Merged rows of one group are one author written differently, and the group name fits the log.
+     *
+     * @param non-empty-array<int, array<string, string>> $rows main and variant rows by row number
+     *
+     * @return list<string>
      */
-    private function checkGroup(string $groupName, array $mains, bool $hasVariants): ?string
+    private function checkGroup(string $groupName, array $rows): array
     {
+        $mains = $this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Main);
+        $variants = $this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Variant);
+        $errors = [];
         if (count($mains) > 1) {
-            return sprintf('Group %s: %d rows "%s" (rows %s), one is allowed', $groupName, count($mains), AuthorMergeDecision::Main->value, implode(', ', array_keys($mains)));
+            $errors[] = sprintf('Group %s: %d rows "%s" (rows %s), one is allowed', $groupName, count($mains), AuthorMergeDecision::Main->value, implode(', ', array_keys($mains)));
         }
-        if (empty($mains) && $hasVariants) {
-            return sprintf('Group %s: rows "%s" without a row "%s"', $groupName, AuthorMergeDecision::Variant->value, AuthorMergeDecision::Main->value);
+        if (empty($mains) && false === empty($variants)) {
+            $errors[] = sprintf('Group %s: rows "%s" without a row "%s"', $groupName, AuthorMergeDecision::Variant->value, AuthorMergeDecision::Main->value);
+        }
+        if (empty($variants)) {
+            return $errors;
+        }
+        if (mb_strlen($groupName) > AuthorDBALRepository::MERGE_LOG_GROUP_NAME_LENGTH) {
+            $errors[] = sprintf('Group %s: the name is longer than %d characters', $groupName, AuthorDBALRepository::MERGE_LOG_GROUP_NAME_LENGTH);
+        }
+        $names = array_unique(array_map(
+            static fn (array $row): string => trim($row[AuthorMergeCsv::NAME_NORMALIZED]) . ' / ' . trim($row[AuthorMergeCsv::GROUP_IDENTIFIER]),
+            $rows,
+        ));
+        if (count($names) > 1) {
+            $errors[] = sprintf('Group %s: merges different authors (%s), rows %s', $groupName, implode(', ', $names), implode(', ', array_keys($rows)));
+        }
+        $variantIds = array_map(static fn (array $row): string => trim($row[AuthorMergeCsv::AUTHOR_ID]), $variants);
+        foreach ($mains as $main) {
+            foreach (array_intersect(AuthorMergeCsv::splitList($main[AuthorMergeCsv::TARGET_IDS]), $variantIds) as $variantId) {
+                $errors[] = sprintf('Group %s: variant %s cannot be a target author of its group', $groupName, $variantId);
+            }
         }
 
-        return null;
+        return $errors;
+    }
+
+    /**
+     * @param non-empty-array<int, array<string, string>> $rows main and variant rows by row number, checked
+     */
+    private function createGroup(string $groupName, array $rows): ?AuthorMergeGroupDto
+    {
+        $toRowDto = static fn (array $row): AuthorMergeRowDto => new AuthorMergeRowDto(
+            authorId: trim($row[AuthorMergeCsv::AUTHOR_ID]),
+            name: $row[AuthorMergeCsv::NAME],
+            identifier: $row[AuthorMergeCsv::IDENTIFIER],
+        );
+        $variants = array_values(array_map($toRowDto, $this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Variant)));
+        if (empty($variants)) {
+            return null;
+        }
+        $mainRow = array_values($this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Main))[App::ZERO];
+        $main = $toRowDto($mainRow);
+
+        return new AuthorMergeGroupDto(
+            name: $groupName,
+            main: $main,
+            variants: $variants,
+            targetIds: array_values(array_unique(AuthorMergeCsv::splitList($mainRow[AuthorMergeCsv::TARGET_IDS]))) ?: [$main->authorId],
+        );
+    }
+
+    /**
+     * @param array<int, array<string, string>> $rows by row number
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function filterByDecision(array $rows, AuthorMergeDecision $decision): array
+    {
+        return array_filter($rows, static fn (array $row): bool => $decision->value === trim($row[AuthorMergeCsv::DECISION]));
+    }
+
+    /**
+     * @param array<string, int> $rowNumbersById authors and target authors with the row that names them
+     *
+     * @return list<string>
+     */
+    private function checkAuthors(ExtSystem $extSystem, array $rowNumbersById): array
+    {
+        $extSystemIds = $this->authorDBALRepository->findExtSystemIds(array_map(strval(...), array_keys($rowNumbersById)));
+        $errors = [];
+        foreach ($rowNumbersById as $authorId => $rowNumber) {
+            $extSystemId = $extSystemIds[(string) $authorId] ?? null;
+            if (null === $extSystemId) {
+                $errors[] = sprintf('Row %d: author "%s" does not exist', $rowNumber, $authorId);
+
+                continue;
+            }
+            if ($extSystemId !== $extSystem->getId()) {
+                $errors[] = sprintf('Row %d: author %s belongs to another ext system', $rowNumber, $authorId);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param non-empty-list<string> $errors
+     */
+    private function createInvalidCsvException(array $errors): InvalidArgumentException
+    {
+        $more = count($errors) - self::MAX_REPORTED_ERRORS;
+        $errors = array_slice($errors, App::ZERO, self::MAX_REPORTED_ERRORS);
+        if ($more > App::ZERO) {
+            $errors[] = sprintf('… and %d more', $more);
+        }
+
+        return new InvalidArgumentException(implode(PHP_EOL, $errors));
     }
 
     private function findUnchanged(AuthorMergeRowDto $row): ?Author
@@ -304,7 +420,7 @@ final class AuthorMergeFacade
     }
 
     /**
-     * Clean phrases that put the variant on an asset put the main author there instead.
+     * Clean phrases that put a variant on an asset put the target author there instead.
      *
      * @param list<Author> $variants
      */
@@ -313,7 +429,7 @@ final class AuthorMergeFacade
         /** @var list<AuthorCleanPhrase> $phrases */
         $phrases = $this->authorCleanPhraseRepository->findBy(['authorReplacement' => $variants]);
         foreach ($phrases as $phrase) {
-            $phrase->setAuthorReplacement($target);
+            $this->authorCleanPhraseManager->updateAuthorReplacement(bannedPhrase: $phrase, authorReplacement: $target, flush: false);
         }
 
         return count($phrases);

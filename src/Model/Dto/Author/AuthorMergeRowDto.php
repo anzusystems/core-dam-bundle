@@ -13,7 +13,6 @@ final readonly class AuthorMergeRowDto
         public string $authorId,
         public string $name,
         public string $identifier,
-        public int $currentAuthorCount,
     ) {
     }
 }

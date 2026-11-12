@@ -4,16 +4,8 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Model\Dto\Author;
 
-use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\Author\AuthorNameNormalizer;
-
 final readonly class AuthorMergeCandidateDto
 {
-    /**
-     * The identifier a merge group is split by: an empty one or one equal to the name counts as none.
-     */
-    public string $groupIdentifier;
-
     /**
      * @param list<string> $currentAuthorIds
      */
@@ -29,7 +21,5 @@ final readonly class AuthorMergeCandidateDto
         public array $currentAuthorIds,
         public int $childAuthorCount,
     ) {
-        $identifierNormalized = AuthorNameNormalizer::normalize($identifier);
-        $this->groupIdentifier = $identifierNormalized === $nameNormalized ? App::EMPTY_STRING : $identifierNormalized;
     }
 }
