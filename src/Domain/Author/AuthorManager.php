@@ -60,6 +60,36 @@ final class AuthorManager extends AbstractManager
         return $author;
     }
 
+    /**
+     * The variants get the target authors as their current authors. Reviewed is kept only at the root, so it moves
+     * from the variants to the targets when any variant was reviewed.
+     *
+     * @param list<Author> $variants
+     * @param list<Author> $targets
+     */
+    public function merge(array $variants, array $targets, bool $flush = true): void
+    {
+        $approveTargets = array_any($variants, static fn (Author $variant): bool => $variant->getFlags()->isReviewed());
+        foreach ($variants as $variant) {
+            $this->trackModification($variant);
+            foreach ($targets as $target) {
+                $variant->addCurrentAuthor($target);
+                $target->addChildAuthor($variant);
+            }
+            $variant->getFlags()
+                ->setReviewed(false)
+                ->setCanBeCurrentAuthor(false);
+        }
+        foreach ($targets as $target) {
+            if ($approveTargets && false === $target->getFlags()->isReviewed()) {
+                $this->trackModification($target);
+                $target->getFlags()->setReviewed(true);
+            }
+        }
+
+        $this->flush($flush);
+    }
+
     public function delete(Author $author, bool $flush = true): bool
     {
         $this->entityManager->remove($author);
