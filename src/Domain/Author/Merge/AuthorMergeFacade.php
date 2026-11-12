@@ -211,8 +211,15 @@ final class AuthorMergeFacade
         $targetIds = $this->toSortedIds($targets);
         $variants = [];
         $main = $this->authorRepository->find($group->main->authorId);
-        if ($main instanceof Author && false === in_array((string) $main->getId(), $targetIds, true) && $main->getCurrentAuthors()->isEmpty() && $main->getChildAuthors()->isEmpty()) {
-            $variants[] = $main;
+        if ($main instanceof Author && false === in_array((string) $main->getId(), $targetIds, true)) {
+            if (false === $main->getChildAuthors()->isEmpty()) {
+                $result->addSkipped($group->name, sprintf('main author %s is a current author of other authors, it cannot go under its targets', $group->main->authorId));
+
+                return null;
+            }
+            if ($main->getCurrentAuthors()->isEmpty()) {
+                $variants[] = $main;
+            }
         }
         foreach ($group->variants as $row) {
             $variant = $this->findUnchanged($row);

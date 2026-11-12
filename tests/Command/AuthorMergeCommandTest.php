@@ -205,6 +205,25 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         self::assertTrue($this->findAuthor('tasr')->getCurrentAuthors()->isEmpty());
     }
 
+    public function testMainWithChildAuthorsThatIsNotItsTargetSkipsTheGroup(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'tasr' => ['name' => 'TASR', 'reviewed' => true],
+            'paren' => ['name' => '(TASR)', 'reviewed' => true],
+            'parenChild' => ['name' => '(TASR) ilustračné', 'parents' => ['paren']],
+        ]);
+        $this->writeCsv(
+            ['1' => ['paren' => 'main']],
+            fn (array $rows): array => [0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $this->authors['tasr']->getId()]],
+        );
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertStringContainsString(sprintf('main author %s is a current author of other authors', (string) $this->authors['paren']->getId()), $display);
+        self::assertTrue($this->findAuthor('paren')->getCurrentAuthors()->isEmpty());
+        self::assertSame(['paren'], $this->toTreeKeys($this->authors, $this->findAuthor('parenChild')->getCurrentAuthors()));
+    }
+
     public function testGroupsUnderOneAuthorShareItsWaitingJob(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, [
