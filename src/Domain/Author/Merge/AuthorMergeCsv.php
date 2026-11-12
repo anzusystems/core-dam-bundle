@@ -162,7 +162,7 @@ final class AuthorMergeCsv
      */
     private static function findDelimiter(string $content): string
     {
-        $header = strstr($content, "\n", true) ?: $content;
+        $header = strstr(haystack: $content, needle: "\n", before_needle: true) ?: $content;
 
         return str_contains($header, self::EXCEL_DELIMITER) ? self::EXCEL_DELIMITER : self::DELIMITER;
     }
