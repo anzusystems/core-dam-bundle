@@ -31,6 +31,15 @@ final class AuthorCurrentAuthorValidator extends ConstraintValidator
             return;
         }
 
+        if ($value->getFlags()->isReviewed() && false === $value->getCurrentAuthors()->isEmpty()) {
+            $this->context
+                ->buildViolation(ValidationException::ERROR_FIELD_INVALID)
+                ->atPath('flags.reviewed')
+                ->addViolation();
+
+            return;
+        }
+
         foreach ($value->getCurrentAuthors() as $currentAuthor) {
             if ($currentAuthor->is($value)) {
                 $this->context

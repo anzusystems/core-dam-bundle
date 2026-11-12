@@ -13,7 +13,6 @@ use AnzuSystems\CoreDamBundle\Entity\JobAuthorNameReindex;
 use AnzuSystems\CoreDamBundle\Exception\AuthorExistsException;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Throwable;
 
@@ -23,11 +22,9 @@ final class AuthorFacade
     use IndexManagerAwareTrait;
     use ResourceLockerAwareTrait;
 
-    private const string LOCK_PREFIX = 'author_create_';
-
     public function __construct(
         private readonly AuthorManager $authorManager,
-        private readonly AuthorRepository $authorRepository,
+        private readonly AuthorProvider $authorProvider,
         private readonly JobFacade $jobFacade,
         private readonly DamLogger $damLogger,
     ) {
@@ -39,12 +36,11 @@ final class AuthorFacade
      */
     public function create(Author $author): Author
     {
-        // Lowercased: the DB unique check is collation case-insensitive, the Redis lock key must match that.
-        $lockName = self::LOCK_PREFIX . mb_strtolower($author->getName()) . '_' . (string) $author->getExtSystem()->getId();
+        $lockName = AuthorProvider::createLockName($author->getName(), $author->getExtSystem());
         $this->resourceLocker->lock($lockName);
 
         try {
-            $existingAuthor = $this->authorRepository->findOneByNameAndExtSystem($author->getName(), $author->getExtSystem());
+            $existingAuthor = $this->authorProvider->resolve($author->getName(), $author->getExtSystem(), $author->getIdentifier());
             if ($existingAuthor) {
                 throw new AuthorExistsException($existingAuthor);
             }
