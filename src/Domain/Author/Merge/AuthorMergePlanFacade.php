@@ -36,6 +36,7 @@ final readonly class AuthorMergePlanFacade
     private const string MANUAL_OTHER_CURRENT_AUTHOR = 'a member has another current author than the one in the group';
     private const string MANUAL_DIFFERENT_CURRENT_AUTHORS = 'members have different current authors';
     private const string MANUAL_INITIALS = 'initials differ only in diacritics, they can be two people';
+    private const string MANUAL_DIACRITICS = 'names differ in diacritics, two people or only a misspelling';
     private const string MANUAL_UNCOVERED_NAME = 'current authors of the main do not cover its whole name, variants would lose a part';
     private const array MANUAL_CASES = [
         self::MANUAL_INITIALS => 'M1 (diacritics)',
@@ -43,6 +44,7 @@ final readonly class AuthorMergePlanFacade
         self::MANUAL_OTHER_CURRENT_AUTHOR => 'M2 (different current authors)',
         self::MANUAL_TWO_CURRENT_AUTHORS => 'M3 (two current authors)',
         self::MANUAL_UNCOVERED_NAME => 'M4 (name not covered)',
+        self::MANUAL_DIACRITICS => 'M5 (diacritics in name)',
     ];
 
     /**
@@ -52,8 +54,8 @@ final readonly class AuthorMergePlanFacade
     private const array MANUAL_WITHOUT_PROPOSAL = [self::MANUAL_TWO_CURRENT_AUTHORS, self::MANUAL_UNCOVERED_NAME];
 
     /**
-     * Normalized words of a credit that may be lost, the only ones (owner 2026-11-12): "ilustračné foto", "zdroj:",
-     * "koláž", "vizualizácia", "screenshot". A source (SME, Archív SME, Reprofoto, MY …) or a person never is.
+     * Normalized words of a credit that may be lost, the only ones (owner 2026-11-12): "ilustračné foto", "ilustr",
+     * "zdroj:", "koláž", "vizualizácia", "screenshot". A source (SME, Archív SME, Reprofoto, MY …) or a person never is.
      */
     private const array NOISE_WORDS = ['foto', 'ilustracne', 'ilustr', 'zdroj', 'kolaz', 'vizualizacia', 'screenshot'];
     private const string SINGLE_CASE = 'S (single author)';
@@ -191,28 +193,39 @@ final readonly class AuthorMergePlanFacade
             return self::MANUAL_UNCOVERED_NAME;
         }
 
-        return $this->isInitialsDiacriticsOnly($group) ? self::MANUAL_INITIALS : null;
+        if (false === $this->differsInLetters($group)) {
+            return null;
+        }
+
+        return $this->hasInitial($group) ? self::MANUAL_INITIALS : self::MANUAL_DIACRITICS;
     }
 
     /**
-     * "Š. Hraško" and "S.Hraško" can be two people: a group with an initial (a single letter with a dot) whose
-     * members differ in letters, not only in spaces, punctuation and case, is left to people. The members share the
-     * normalized name, so the letters can differ only in diacritics or in letters like "ł".
+     * Members that differ in letters, not only in spaces, punctuation and case, are left to people: they share the
+     * normalized name, so the letters differ only in diacritics or in letters like "ł". "Š. Hraško" and "S.Hraško",
+     * "Martin Krupa" and "Martin Krúpa", "Hospodárske noviny" and "Hospodářské noviny" can be two, and a main
+     * without diacritics would replace the right spelling on the assets of the variants.
      *
      * @param list<AuthorMergeCandidateDto> $group
      */
-    private function isInitialsDiacriticsOnly(array $group): bool
+    private function differsInLetters(array $group): bool
     {
-        if (false === (bool) preg_match('/\b\w\s*\./u', $group[App::ZERO]->nameNormalized)) {
-            return false;
-        }
-
         $spellings = array_unique(array_map(
             static fn (AuthorMergeCandidateDto $candidate): string => (string) preg_replace('/\W/u', App::EMPTY_STRING, mb_strtolower($candidate->name)),
             $group,
         ));
 
         return count($spellings) > 1;
+    }
+
+    /**
+     * An initial is a single letter with a dot.
+     *
+     * @param list<AuthorMergeCandidateDto> $group
+     */
+    private function hasInitial(array $group): bool
+    {
+        return (bool) preg_match('/\b\w\s*\./u', $group[App::ZERO]->nameNormalized);
     }
 
     /**

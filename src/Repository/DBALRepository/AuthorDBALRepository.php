@@ -65,7 +65,8 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
 
     /**
      * Authors of the ext system that share their normalized name with another one, or are used (at least
-     * $minAssets assets or a child author), with what the merge plan needs.
+     * $minAssets assets or a child author), with what the merge plan needs. A name without a letter or a digit
+     * ("", "...", "⭐️") normalizes to empty and is never a candidate: such authors would share one group.
      *
      * @return list<AuthorMergeCandidateDto>
      */
@@ -84,7 +85,7 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
                 ) AS shared_name
             FROM ' . self::TABLE_NAME . ' author
             LEFT JOIN user creator ON creator.id = author.created_by_id
-            WHERE author.ext_system_id = :extSystemId
+            WHERE author.ext_system_id = :extSystemId AND author.name_normalized <> :empty
             HAVING shared_name OR asset_count >= :minAssets OR child_author_count > 0',
             [
                 'extSystemId' => $extSystemId,
