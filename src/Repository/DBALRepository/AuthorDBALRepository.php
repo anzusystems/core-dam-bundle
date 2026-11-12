@@ -64,28 +64,32 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
     }
 
     /**
-     * Authors of the ext system that share their normalized name with another one, with what the merge plan needs.
+     * Authors of the ext system that share their normalized name with another one, or are used (at least
+     * $minAssets assets or a child author), with what the merge plan needs.
      *
      * @return list<AuthorMergeCandidateDto>
      */
-    public function findMergeCandidates(int $extSystemId): array
+    public function findMergeCandidates(int $extSystemId, int $minAssets): array
     {
         $rows = $this->connection->fetchAllAssociative(
             'SELECT author.id, author.name, author.name_normalized, author.identifier, author.flags_reviewed, author.created_at,
                 creator.email,
                 (SELECT COUNT(*) FROM asset_author WHERE asset_author.author_id = author.id) AS asset_count,
                 (SELECT GROUP_CONCAT(hierarchy.author_target) FROM author_is_current_author hierarchy WHERE hierarchy.author_source = author.id) AS current_author_ids,
-                (SELECT COUNT(*) FROM author_is_current_author hierarchy WHERE hierarchy.author_target = author.id) AS child_author_count
+                (SELECT COUNT(*) FROM author_is_current_author hierarchy WHERE hierarchy.author_target = author.id) AS child_author_count,
+                author.name_normalized IN (
+                    SELECT shared.name_normalized FROM ' . self::TABLE_NAME . ' shared
+                    WHERE shared.ext_system_id = :extSystemId AND shared.name_normalized <> :empty
+                    GROUP BY shared.name_normalized HAVING COUNT(*) > 1
+                ) AS shared_name
             FROM ' . self::TABLE_NAME . ' author
             LEFT JOIN user creator ON creator.id = author.created_by_id
-            WHERE author.ext_system_id = :extSystemId AND author.name_normalized IN (
-                SELECT shared.name_normalized FROM ' . self::TABLE_NAME . ' shared
-                WHERE shared.ext_system_id = :extSystemId AND shared.name_normalized <> :empty
-                GROUP BY shared.name_normalized HAVING COUNT(*) > 1
-            )',
+            WHERE author.ext_system_id = :extSystemId
+            HAVING shared_name OR asset_count >= :minAssets OR child_author_count > 0',
             [
                 'extSystemId' => $extSystemId,
                 'empty' => App::EMPTY_STRING,
+                'minAssets' => $minAssets,
             ],
         );
 

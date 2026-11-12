@@ -11,6 +11,7 @@ final readonly class AuthorMergePlanResult
         public int $manualGroups,
         public int $authors,
         public int $variants,
+        public int $singleAuthors,
     ) {
     }
 }
