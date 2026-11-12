@@ -28,9 +28,10 @@ use Symfony\Component\Uid\Uuid;
 use Throwable;
 
 /**
- * Step 2 of the merge (#87355): merges the groups of a CSV checked by people, as the plan approved them: the variants
- * go under the target authors of the main author's row (`target_ids`, empty means the main author itself). Each
- * group is guarded against the current data and merged in its own transaction; a group that no longer matches is
+ * Step 2 of the merge (#87355): merges the groups of a CSV checked by people, only those approved (`approved` 1),
+ * as their decisions say: the variants go under the target authors of the main author's row (`target_ids`, empty
+ * means the main author itself), and so does the main author when it is not a target and has no current or child
+ * authors (a credit like "(TASR)" put under TASR, also as a group of one row). Each group is guarded against the current data and merged in its own transaction; a group that no longer matches is
  * skipped with a reason, a group merged by an earlier run counts as already merged. After the commit a
  * JobAuthorCurrentOptimize of each target author moves the assets of the variants to it, and the authors of the group
  * are reindexed.
@@ -64,14 +65,28 @@ final class AuthorMergeFacade
     {
         $errors = [];
         $rowNumbersById = [];
+        $mergeRowNumbersById = [];
+        $approvedRowNumbers = [];
         $mergeRows = [];
         foreach (AuthorMergeCsv::read($path) as $rowNumber => $row) {
             $authorId = trim($row[AuthorMergeCsv::AUTHOR_ID]);
-            array_push($errors, ...$this->checkRow(rowNumber: $rowNumber, row: $row, extSystem: $extSystem, seenOnRow: $rowNumbersById[$authorId] ?? null));
-            $rowNumbersById[$authorId] = $rowNumber;
             $decision = AuthorMergeDecision::tryFrom(trim($row[AuthorMergeCsv::DECISION]));
-            if (null !== $decision && $decision->in([AuthorMergeDecision::Main, AuthorMergeDecision::Variant])) {
-                $mergeRows[trim($row[AuthorMergeCsv::GROUP])][$rowNumber] = $row;
+            $isMergeRow = null !== $decision && $decision->in([AuthorMergeDecision::Main, AuthorMergeDecision::Variant]);
+            array_push($errors, ...$this->checkRow(rowNumber: $rowNumber, row: $row, extSystem: $extSystem, seenOnRow: $isMergeRow ? $mergeRowNumbersById[$authorId] ?? null : null));
+            $rowNumbersById[$authorId] ??= $rowNumber;
+            if ($isMergeRow) {
+                $mergeRowNumbersById[$authorId] = $rowNumber;
+            }
+            $groupName = trim($row[AuthorMergeCsv::GROUP]);
+            $approved = trim($row[AuthorMergeCsv::APPROVED]);
+            $approvedRowNumbers[$groupName][$approved] ??= $rowNumber;
+            if (AuthorMergeCsv::APPROVED_YES === $approved && $isMergeRow) {
+                $mergeRows[$groupName][$rowNumber] = $row;
+            }
+        }
+        foreach ($approvedRowNumbers as $groupName => $rowNumbers) {
+            if (count($rowNumbers) > 1) {
+                $errors[] = sprintf('Group %s: "%s" differs between rows %s; set it on all rows of the group', $groupName, AuthorMergeCsv::APPROVED, implode(', ', $rowNumbers));
             }
         }
 
@@ -195,6 +210,10 @@ final class AuthorMergeFacade
     {
         $targetIds = $this->toSortedIds($targets);
         $variants = [];
+        $main = $this->authorRepository->find($group->main->authorId);
+        if ($main instanceof Author && false === in_array((string) $main->getId(), $targetIds, true) && $main->getCurrentAuthors()->isEmpty() && $main->getChildAuthors()->isEmpty()) {
+            $variants[] = $main;
+        }
         foreach ($group->variants as $row) {
             $variant = $this->findUnchanged($row);
             if (null === $variant) {
@@ -287,11 +306,14 @@ final class AuthorMergeFacade
         if (App::EMPTY_STRING === trim($row[AuthorMergeCsv::GROUP])) {
             $errors[] = sprintf('Row %d: empty group', $rowNumber);
         }
+        if (false === in_array(trim($row[AuthorMergeCsv::APPROVED]), [AuthorMergeCsv::APPROVED_YES, AuthorMergeCsv::APPROVED_NO], true)) {
+            $errors[] = sprintf('Row %d: "%s" is "%s", allowed: %s, %s', $rowNumber, AuthorMergeCsv::APPROVED, $row[AuthorMergeCsv::APPROVED], AuthorMergeCsv::APPROVED_YES, AuthorMergeCsv::APPROVED_NO);
+        }
         if (null === AuthorMergeDecision::tryFrom(trim($row[AuthorMergeCsv::DECISION]))) {
             $errors[] = sprintf('Row %d: unknown decision "%s", allowed: %s', $rowNumber, $row[AuthorMergeCsv::DECISION], implode(', ', AuthorMergeDecision::values()));
         }
         if (null !== $seenOnRow) {
-            $errors[] = sprintf('Row %d: author %s is already on row %d', $rowNumber, $row[AuthorMergeCsv::AUTHOR_ID], $seenOnRow);
+            $errors[] = sprintf('Row %d: author %s is already merged on row %d', $rowNumber, $row[AuthorMergeCsv::AUTHOR_ID], $seenOnRow);
         }
 
         return $errors;
@@ -315,9 +337,6 @@ final class AuthorMergeFacade
         }
         if (empty($mains) && false === empty($variants)) {
             $errors[] = sprintf('Group %s: rows "%s" without a row "%s"', $groupName, AuthorMergeDecision::Variant->value, AuthorMergeDecision::Main->value);
-        }
-        if (empty($variants)) {
-            return $errors;
         }
         if (mb_strlen($groupName) > AuthorDBALRepository::MERGE_LOG_GROUP_NAME_LENGTH) {
             $errors[] = sprintf('Group %s: the name is longer than %d characters', $groupName, AuthorDBALRepository::MERGE_LOG_GROUP_NAME_LENGTH);
@@ -368,7 +387,8 @@ final class AuthorMergeFacade
     }
 
     /**
-     * A variant merged by one group cannot be a current author, so a group with it as a target would be skipped.
+     * A variant merged by one group cannot be a current author, so a group with it as a target would be skipped; so can
+     * a main author that is not its own target.
      *
      * @param list<AuthorMergeGroupDto> $groups
      *
@@ -378,7 +398,8 @@ final class AuthorMergeFacade
     {
         $variantGroups = [];
         foreach ($groups as $group) {
-            foreach ($group->variants as $variant) {
+            $mainMayMove = false === in_array($group->main->authorId, $group->targetIds, true);
+            foreach ([...$group->variants, ...($mainMayMove ? [$group->main] : [])] as $variant) {
                 $variantGroups[$variant->authorId] = $group->name;
             }
         }
@@ -405,17 +426,18 @@ final class AuthorMergeFacade
             identifier: $row[AuthorMergeCsv::IDENTIFIER],
         );
         $variants = array_values(array_map($toRowDto, $this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Variant)));
-        if (empty($variants)) {
-            return null;
-        }
         $mainRow = array_values($this->filterByDecision(rows: $rows, decision: AuthorMergeDecision::Main))[App::ZERO];
         $main = $toRowDto($mainRow);
+        $targetIds = $this->findMainTargetIds($mainRow);
+        if (empty($variants) && [$main->authorId] === $targetIds) {
+            return null;
+        }
 
         return new AuthorMergeGroupDto(
             name: $groupName,
             main: $main,
             variants: $variants,
-            targetIds: $this->findMainTargetIds($mainRow),
+            targetIds: $targetIds,
         );
     }
 

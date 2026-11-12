@@ -7,7 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Author;
 final readonly class AuthorMergeGroupDto
 {
     /**
-     * @param non-empty-list<AuthorMergeRowDto> $variants
+     * @param list<AuthorMergeRowDto> $variants empty when only the main author goes under its targets
      * @param non-empty-list<string> $targetIds the authors the variants go under, as the plan approved them
      */
     public function __construct(

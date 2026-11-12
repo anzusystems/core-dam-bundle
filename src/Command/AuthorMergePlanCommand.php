@@ -47,11 +47,12 @@ final readonly class AuthorMergePlanCommand
             return Command::FAILURE;
         }
         $io->success(sprintf(
-            'Wrote %d authors in %d groups (%d left to people), %d variants proposed for merge, to %s',
+            'Wrote %d authors in %d groups (%d left to people), %d variants proposed for merge, %d single authors, to %s',
             $result->authors,
             $result->groups,
             $result->manualGroups,
             $result->variants,
+            $result->singleAuthors,
             $file,
         ));
 

@@ -173,6 +173,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
         self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, 2 asset link snapshots, 0 clean phrases\), 2 jobs/', $display);
         self::assertSame(['lipa', 'sme'], $this->toTreeKeys($this->authors, $this->findAuthor('variant')->getCurrentAuthors()));
+        self::assertSame(['sme'], $this->toTreeKeys($this->authors, $this->findAuthor('main')->getCurrentAuthors()));
         self::assertCount(2, array_filter($this->fetchLogs(), fn (array $log): bool => (string) $this->authors['variant']->getId() === $log['variant_id']));
         self::assertEqualsCanonicalizing(
             [(string) $this->authors['sme']->getId(), (string) $this->authors['lipa']->getId()],
@@ -182,6 +183,26 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             [(string) $this->authors['sme']->getId(), (string) $this->authors['lipa']->getId()],
             array_map(static fn (JobAuthorCurrentOptimize $job): ?string => $job->getAuthorId(), $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll()),
         );
+    }
+
+    public function testMainThatIsNotItsTargetGoesUnderTheTargetsAlsoAlone(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'tasr' => ['name' => 'TASR', 'reviewed' => true],
+            'tasrDot' => ['name' => 'TASR.'],
+            'paren' => ['name' => '(TASR)', 'reviewed' => true],
+        ]);
+        $this->writeCsv(
+            ['1' => ['tasr' => 'main', 'tasrDot' => 'variant'], '2' => ['tasr' => 'no change', 'paren' => 'main']],
+            fn (array $rows): array => [...$rows, 3 => [...$rows[3], AuthorMergeCsv::TARGET_IDS => (string) $this->authors['tasr']->getId()]],
+        );
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertMatchesRegularExpression('/merged 2 groups \(2 variants/', $display);
+        self::assertSame(['tasr'], $this->toTreeKeys($this->authors, $this->findAuthor('paren')->getCurrentAuthors()));
+        self::assertFalse($this->findAuthor('paren')->getFlags()->isReviewed());
+        self::assertTrue($this->findAuthor('tasr')->getCurrentAuthors()->isEmpty());
     }
 
     public function testGroupsUnderOneAuthorShareItsWaitingJob(): void
@@ -257,7 +278,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         yield 'author in two rows' => [
             ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
             static fn (array $rows): array => [...$rows, 3 => [...$rows[3], AuthorMergeCsv::AUTHOR_ID => $rows[0][AuthorMergeCsv::AUTHOR_ID]]],
-            'is already on row 2',
+            'is already merged on row 2',
         ];
         yield 'group name longer than the log column' => [
             ['1' => $valid],
@@ -296,9 +317,29 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + ' . AuthorFixtures::AUTHOR_1]],
             'Row 3: "target_ids" differs from the main row 2; copy it from row 2 or leave it empty',
         ];
+        yield 'approved that is not 0 or 1' => [
+            ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => [...$row, AuthorMergeCsv::APPROVED => 'yes'], $rows), 'Row 2: "approved" is "yes", allowed: 1, 0',
+        ];
+        yield 'approved only on a part of the group' => [
+            ['1' => $valid], static fn (array $rows): array => [...$rows, 1 => [...$rows[1], AuthorMergeCsv::APPROVED => '0']], 'Group 1: "approved" differs between rows 2, 3',
+        ];
         yield 'missing decision column' => [
             ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::DECISION => true]), $rows), 'Missing columns: decision',
         ];
+    }
+
+    public function testGroupNotApprovedChangesNothing(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, self::TREE);
+        $this->writeCsv(
+            ['1' => ['main' => 'main', 'reviewed' => 'variant'], '2' => ['other' => 'main', 'otherDot' => 'variant']],
+            static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::APPROVED => '0'], 1 => [...$rows[1], AuthorMergeCsv::APPROVED => '0']],
+        );
+
+        $this->execute(Command::SUCCESS);
+
+        self::assertTrue($this->findAuthor('reviewed')->getCurrentAuthors()->isEmpty());
+        self::assertSame(['other'], $this->toTreeKeys($this->authors, $this->findAuthor('otherDot')->getCurrentAuthors()));
     }
 
     public function testEmptyTargetsOnTheMainRowMeanTheMainAuthor(): void
@@ -444,6 +485,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
                 $rows[] = [
                     ...array_fill_keys(AuthorMergeCsv::COLUMNS, ''),
                     AuthorMergeCsv::GROUP => (string) $group,
+                    AuthorMergeCsv::APPROVED => '1',
                     AuthorMergeCsv::EXT_SYSTEM => 'cms',
                     AuthorMergeCsv::NAME_NORMALIZED => $author->getNameNormalized(),
                     AuthorMergeCsv::AUTHOR_ID => (string) $author->getId(),
