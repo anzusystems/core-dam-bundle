@@ -38,16 +38,43 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         $cms = $this->entityManager->find(ExtSystem::class, ExtSystemFixtures::ID_CMS);
         self::assertInstanceOf(ExtSystem::class, $cms);
         $this->authors = $this->createAuthorTree($cms, [
-            'jakubco' => ['name' => 'SME - Jozef Jakubčo'],
-            'jakubcoDash' => ['name' => 'SME- Jozef Jakubčo', 'reviewed' => true],
-            'jakubcoSpace' => ['name' => 'SME -Jozef Jakubčo'],
-            'novakPhoto' => ['name' => 'Peter Novák', 'identifier' => 'foto'],
-            'novakSport' => ['name' => 'Peter Novák', 'identifier' => 'šport'],
-            'novakSportDot' => ['name' => 'Peter Novák.', 'identifier' => 'Šport'],
-            'lipaSelf' => ['name' => 'Ivan Lipa', 'identifier' => 'IVAN LIPA'],
-            'lipaDot' => ['name' => 'Ivan Lipa.'],
-            'erd' => ['name' => 'Marko Erd', 'reviewed' => true],
-            'erdChild' => ['name' => 'Sme - Marko', 'parents' => ['erd']],
+            'jakubco' => [
+                'name' => 'SME - Jozef Jakubčo',
+            ],
+            'jakubcoDash' => [
+                'name' => 'SME- Jozef Jakubčo',
+                'reviewed' => true,
+            ],
+            'jakubcoSpace' => [
+                'name' => 'SME -Jozef Jakubčo',
+            ],
+            'novakPhoto' => [
+                'name' => 'Peter Novák',
+                'identifier' => 'foto',
+            ],
+            'novakSport' => [
+                'name' => 'Peter Novák',
+                'identifier' => 'šport',
+            ],
+            'novakSportDot' => [
+                'name' => 'Peter Novák.',
+                'identifier' => 'Šport',
+            ],
+            'lipaSelf' => [
+                'name' => 'Ivan Lipa',
+                'identifier' => 'IVAN LIPA',
+            ],
+            'lipaDot' => [
+                'name' => 'Ivan Lipa.',
+            ],
+            'erd' => [
+                'name' => 'Marko Erd',
+                'reviewed' => true,
+            ],
+            'erdChild' => [
+                'name' => 'Sme - Marko',
+                'parents' => ['erd'],
+            ],
             'erdDot' => ['name' => 'Marko Erd.'],
             'erdMapped' => ['name' => 'Marko Erd,', 'parents' => ['erd']],
             'kovacA' => ['name' => 'Ján Kováč'],
@@ -76,6 +103,10 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
             'nowakPlain' => ['name' => 'L. Nowak'],
             'illustrationMain' => ['name' => 'ILUSTRAČNÉ FOTO SME', 'parents' => ['sme']],
             'illustrationVariant' => ['name' => 'ILUSTRAČNÉ FOTO SME.'],
+            'krupa' => ['name' => 'Martin Krupa'],
+            'krupaAcute' => ['name' => 'Martin Krúpa.'],
+            'dots' => ['name' => '.......'],
+            'dotsChild' => ['name' => 'Bodky', 'parents' => ['dots']],
         ]);
         $this->linkAssets('jakubco', 2);
         $this->linkAssets('jakubcoDash', 1);
@@ -83,6 +114,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         $this->linkAssets('lipaSelf', 1);
         $this->linkAssets('tatranMain', 1);
         $this->linkAssets('alone', 10);
+        $this->linkAssets('krupa', 1);
 
         $this->file = sys_get_temp_dir() . '/author-merge-plan-' . bin2hex(random_bytes(8)) . '.csv';
         self::assertSame(Command::SUCCESS, $this->execute());
@@ -127,6 +159,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
     {
         $this->assertGroup(['novakSport' => 'main', 'novakSportDot' => 'variant'], 'A1 (nobody reviewed)');
         self::assertArrayNotHasKey('novakPhoto', $this->rows);
+        self::assertArrayNotHasKey('dots', $this->rows);
         self::assertSame('sport', $this->rows['novakSport'][AuthorMergeCsv::GROUP_IDENTIFIER]);
     }
 
@@ -150,6 +183,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         $this->assertGroup(['betaSme' => 'main', 'betaBurcik' => 'no change'], 'M2 (different current authors)');
         $this->assertGroup(['gama' => 'main', 'gamaSme' => 'no change'], 'M2 (different current authors)');
         $this->assertGroup(['kovacA' => 'do not merge', 'kovacB' => 'do not merge'], 'M3 (two current authors)');
+        $this->assertGroup(['krupa' => 'main', 'krupaAcute' => 'variant'], 'M5 (diacritics in name)');
         self::assertSame('SME', $this->rows['betaSme'][AuthorMergeCsv::TARGET_NAMES]);
         self::assertLessThan((int) $this->rows['betaSme'][AuthorMergeCsv::GROUP], (int) $this->rows['hraskoCaron'][AuthorMergeCsv::GROUP]);
         self::assertLessThan((int) $this->rows['kovacA'][AuthorMergeCsv::GROUP], (int) $this->rows['gama'][AuthorMergeCsv::GROUP]);
@@ -162,6 +196,7 @@ final class AuthorMergePlanCommandTest extends CoreDamKernelTestCase
         self::assertSame('no change', $this->rows['alone'][AuthorMergeCsv::DECISION]);
         self::assertSame('S (single author)', $this->rows['frank'][AuthorMergeCsv::CASE]);
         self::assertArrayNotHasKey('novakPhoto', $this->rows);
+        self::assertArrayNotHasKey('dots', $this->rows);
         self::assertGreaterThan((int) $this->rows['jakubco'][AuthorMergeCsv::GROUP], (int) $this->rows['frank'][AuthorMergeCsv::GROUP]);
         self::assertLessThan((int) $this->rows['frank'][AuthorMergeCsv::GROUP], (int) $this->rows['alone'][AuthorMergeCsv::GROUP]);
     }
