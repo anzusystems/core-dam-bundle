@@ -83,19 +83,11 @@ final readonly class AuthorProvider
             identifier: $identifier,
         );
 
-        $resolved = [];
-        foreach ($candidates as $candidate) {
-            $targets = $candidate->getCurrentAuthors()->isEmpty() ? [$candidate] : $candidate->getCurrentAuthors();
-            foreach ($targets as $target) {
-                $resolved[(string) $target->getId()] = $target;
-            }
+        if (1 === count($candidates)) {
+            return $candidates[App::ZERO];
         }
 
-        if (1 === count($resolved)) {
-            return array_values($resolved)[App::ZERO];
-        }
-
-        $reviewed = array_filter($resolved, static fn (Author $author): bool => $author->getFlags()->isReviewed());
+        $reviewed = array_filter($candidates, static fn (Author $author): bool => $author->getFlags()->isReviewed());
 
         return 1 === count($reviewed) ? array_values($reviewed)[App::ZERO] : null;
     }
