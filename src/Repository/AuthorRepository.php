@@ -39,8 +39,6 @@ final class AuthorRepository extends AbstractAnzuRepository
         }
 
         $qb = $this->createQueryBuilder('author')
-            ->addSelect('currentAuthor')
-            ->leftJoin('author.currentAuthors', 'currentAuthor')
             ->where('author.nameNormalized = :nameNormalized')
             ->andWhere('IDENTITY(author.extSystem) = :extSystemId')
             ->setParameter('nameNormalized', $nameNormalized)

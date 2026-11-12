@@ -44,13 +44,22 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
         self::assertSame($author->getId(), $this->authorProvider->resolve('RESOLVER JAKUBCO.', $this->extSystem)?->getId());
     }
 
-    public function testMatchIsReplacedByItsCurrentAuthor(): void
+    public function testChildMatchKeepsAllItsCurrentAuthorsOnAsset(): void
     {
-        $parent = $this->createAuthor('Resolver Parent');
-        $child = $this->createAuthor('Resolver – Child', [$parent]);
+        $agency = $this->createAuthor('Resolver Agency', [], reviewed: true);
+        $photographer = $this->createAuthor('Resolver Photographer');
+        $child = $this->createAuthor('Resolver Agency / Photographer', [$agency, $photographer]);
 
-        self::assertNotNull($child->getId());
-        self::assertSame($parent->getId(), $this->authorProvider->resolve('resolver - child', $this->extSystem)?->getId());
+        $resolved = $this->authorProvider->resolve('resolver agency/photographer.', $this->extSystem);
+        self::assertInstanceOf(Author::class, $resolved);
+        self::assertSame($child->getId(), $resolved->getId());
+
+        $asset = (new Asset())->addAuthor($resolved);
+        self::assertTrue($this->authorProvider->provideCurrentAuthorToColl($asset));
+        self::assertSame(
+            [$agency->getId(), $photographer->getId()],
+            $asset->getAuthors()->map(static fn (Author $author): ?string => $author->getId())->getValues()
+        );
     }
 
     public function testAmbiguousMatchResolvesToNothingAndProvideCreatesNewAuthor(): void
