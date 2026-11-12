@@ -67,7 +67,7 @@ final readonly class AuthorMergeCommand
             $io->table(['Skipped group', 'Reason'], array_map(null, array_keys($skipped), $skipped));
         }
         $io->success(sprintf(
-            '%sRun %s: merged %d groups (%d variants, %d asset links, %d clean phrases), %d jobs, %d groups already merged, %d skipped',
+            '%sRun %s: merged %d groups (%d variants, %d asset link snapshots, %d clean phrases), %d jobs, %d groups already merged, %d skipped',
             $dryRun ? 'Dry run, rolled back. ' : App::EMPTY_STRING,
             $result->getRunId(),
             $result->getMergedGroups(),
