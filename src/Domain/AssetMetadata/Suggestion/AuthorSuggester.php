@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Domain\AssetMetadata\Suggestion;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorFactory;
-use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\AuthorCleanPhrase\AuthorCleanPhraseProcessor;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
@@ -28,7 +27,6 @@ final class AuthorSuggester extends AbstractSuggester
         private readonly AuthorRepository $authorRepo,
         private readonly AuthorFactory $authorFactory,
         private readonly AuthorFacade $authorFacade,
-        private readonly AuthorProvider $authorProvider,
         private readonly EntityManagerInterface $entityManager,
         private readonly DamLogger $damLogger,
         private readonly AuthorCleanPhraseProcessor $authorCleanPhraseProcessor,
@@ -103,13 +101,7 @@ final class AuthorSuggester extends AbstractSuggester
             return $ids;
         }
 
-        // 2. Only a normalized name matches, use the one safe match.
-        $resolved = $this->authorProvider->resolveByNormalizedName($name, $extSystem);
-        if ($resolved instanceof Author) {
-            return [(string) $resolved->getId()];
-        }
-
-        // 3. Entity doesn't exist (or the match is ambiguous), create it.
+        // 2. Entity doesn't exist, create it.
         $author = $this->authorFactory->create($name, $extSystem);
 
         try {

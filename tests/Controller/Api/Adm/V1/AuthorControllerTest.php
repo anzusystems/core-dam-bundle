@@ -153,6 +153,7 @@ final class AuthorControllerTest extends AbstractApiController
         yield 'same case' => [static fn (string $name): string => $name];
         // The duplicate check relies on a case-insensitive DB collation — pin that assumption.
         yield 'different case' => [static fn (string $name): string => mb_strtoupper($name)];
+        yield 'normalized variant' => [static fn (string $name): string => $name . '.'];
     }
 
     /**
@@ -174,6 +175,30 @@ final class AuthorControllerTest extends AbstractApiController
 
         $this->assertSame($requestJson['id'], $author->getId());
         $this->assertSame($requestJson['name'], $author->getName());
+    }
+
+    public function testUpdateReviewedWithCurrentAuthorsFailure(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $existingAuthor = self::getContainer()
+            ->get(AuthorRepository::class)
+            ->find(AuthorFixtures::AUTHOR_1);
+
+        $response = $client->put(AuthorUrl::update($existingAuthor->getId()), [
+            'id' => $existingAuthor->getId(),
+            'name' => $existingAuthor->getName(),
+            'extSystem' => $existingAuthor->getExtSystem()->getId(),
+            'flags' => ['reviewed' => true],
+            'currentAuthors' => [AuthorFixtures::AUTHOR_5],
+        ]);
+        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        $content = json_decode($response->getContent(), true);
+        $this->assertValidationErrors($content, [
+            'flags.reviewed' => [
+                ValidationException::ERROR_FIELD_INVALID,
+            ],
+        ]);
     }
 
     public static function updateSuccessDataProvider(): array

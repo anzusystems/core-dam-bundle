@@ -29,7 +29,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
 #[ORM\UniqueConstraint(fields: ['name', 'identifier', 'extSystem'])]
-#[ORM\Index(fields: ['extSystem', 'nameNormalized'])]
+#[ORM\Index(name: 'IDX_ext_system_name_normalized', fields: ['extSystem', 'nameNormalized'])]
 #[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['name'])]
 #[AuthorCurrentAuthor]
 class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemIndexableInterface
@@ -50,7 +50,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     )]
     private string $name;
 
-    // Search-only key built by AuthorNameNormalizer; empty means not processed yet.
+    // Search-only key built by AuthorNameNormalizer; empty = not filled yet, or nothing left after normalization; never matches.
     #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH, options: ['default' => ''])]
     private string $nameNormalized = '';
 
