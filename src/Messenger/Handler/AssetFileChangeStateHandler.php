@@ -96,6 +96,7 @@ final class AssetFileChangeStateHandler
         }
 
         $this->resourceLocker->lock($assetFile, ttl: (float) $assetFile->getAssetType()->getChangeStateAckDeadlineSeconds());
+
         try {
             // ResourceLocker refreshes the entity only on a contended acquire; a released lock leaves a stale one.
             $this->entityManager->refresh($assetFile);

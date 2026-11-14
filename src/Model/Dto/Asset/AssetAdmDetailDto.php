@@ -36,6 +36,12 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
     protected Collection $authors;
 
+    /**
+     * @var Collection<string, Author>
+     */
+    #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
+    protected Collection $sources;
+
     #[Serialize]
     private AssetFlagsAdmDto $flags;
 
@@ -57,6 +63,7 @@ final class AssetAdmDetailDto extends AssetAdmListDto
             ->setMetadata(AssetMetadataAdmDetailDto::getInstance($asset->getMetadata()))
             ->setKeywords($asset->getKeywords())
             ->setAuthors($asset->getAuthors())
+            ->setSources($asset->getSources())
         ;
     }
 
@@ -134,6 +141,24 @@ final class AssetAdmDetailDto extends AssetAdmListDto
     public function setAuthors(Collection $authors): self
     {
         $this->authors = $authors;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<string, Author>
+     */
+    public function getSources(): Collection
+    {
+        return $this->sources;
+    }
+
+    /**
+     * @param Collection<string, Author> $sources
+     */
+    public function setSources(Collection $sources): self
+    {
+        $this->sources = $sources;
 
         return $this;
     }

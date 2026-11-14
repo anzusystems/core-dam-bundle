@@ -18,6 +18,7 @@ class ExtSystemAssetTypeConfiguration
     public const string CUSTOM_METADATA_PINNED_AMOUNT = 'custom_metadata_pinned_amount';
     public const string KEYWORDS_KEY = 'keywords';
     public const string AUTHORS_KEY = 'authors';
+    public const string SOURCES_KEY = 'sources';
     public const string DISTRIBUTION_KEY = 'distribution';
     public const string ASSET_EXTERNAL_PROVIDERS_MAP_KEY = 'asset_external_providers_map';
 
@@ -33,6 +34,7 @@ class ExtSystemAssetTypeConfiguration
         private readonly ExtSystemAssetTypeSlotsConfiguration $slots,
         private readonly ExtSystemAssetTypeExifMetadataConfiguration $keywords,
         private readonly ExtSystemAssetTypeExifMetadataConfiguration $authors,
+        private readonly ExtSystemAssetTypeSourcesConfiguration $sources,
         private readonly ExtSystemAssetTypeDistributionConfiguration $distribution,
     ) {
     }
@@ -59,6 +61,9 @@ class ExtSystemAssetTypeConfiguration
             ),
             ExtSystemAssetTypeExifMetadataConfiguration::getFromArrayConfiguration(
                 $config[self::AUTHORS_KEY] ?? []
+            ),
+            ExtSystemAssetTypeSourcesConfiguration::getFromArrayConfiguration(
+                $config[self::SOURCES_KEY] ?? []
             ),
             ExtSystemAssetTypeDistributionConfiguration::getFromArrayConfiguration(
                 $config[self::DISTRIBUTION_KEY] ?? []
@@ -109,6 +114,11 @@ class ExtSystemAssetTypeConfiguration
     public function getAuthors(): ExtSystemAssetTypeExifMetadataConfiguration
     {
         return $this->authors;
+    }
+
+    public function getSources(): ExtSystemAssetTypeSourcesConfiguration
+    {
+        return $this->sources;
     }
 
     public function getDistribution(): ExtSystemAssetTypeDistributionConfiguration

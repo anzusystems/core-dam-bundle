@@ -22,6 +22,12 @@ return static function (ContainerConfigurator $configurator): void {
                 'canBeCurrentAuthor' => [
                     'type' => 'boolean',
                 ],
+                'source' => [
+                    'type' => 'boolean',
+                ],
+                'hiddenInCredit' => [
+                    'type' => 'boolean',
+                ],
                 'name' => [
                     'type' => 'text',
                     'analyzer' => 'author_exact_stop',

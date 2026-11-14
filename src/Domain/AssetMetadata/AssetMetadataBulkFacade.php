@@ -94,6 +94,8 @@ final class AssetMetadataBulkFacade
             (false === $updateDto->isCustomDataUndefined() && false === ($asset->getMetadata()->getCustomData() === $updateDto->getCustomData())) ||
             ($updateDto->isAuthorsUndefined() && false === $asset->getAuthors()->isEmpty()) ||
             (false === $updateDto->isAuthorsUndefined() && false === CollectionHelper::colDiff($asset->getAuthors(), $updateDto->getAuthors())->isEmpty()) ||
+            ($updateDto->isSourcesUndefined() && false === $asset->getSources()->isEmpty()) ||
+            (false === $updateDto->isSourcesUndefined() && false === CollectionHelper::colDiff($asset->getSources(), $updateDto->getSources())->isEmpty()) ||
             (false === $updateDto->isMainFileInternalUndefined() && null !== $asset->getMainFile() && $asset->getMainFile()->getFlags()->isInternal() !== $updateDto->isMainFileInternal());
     }
 
@@ -113,6 +115,12 @@ final class AssetMetadataBulkFacade
         if (false === $updateDto->isAuthorsUndefined()) {
             foreach ($updateDto->getAuthors() as $author) {
                 $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $author);
+            }
+        }
+
+        if (false === $updateDto->isSourcesUndefined()) {
+            foreach ($updateDto->getSources() as $source) {
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $source);
             }
         }
 

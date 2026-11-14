@@ -55,6 +55,19 @@ final class AuthorQueryFactory extends AbstractQueryFactory
         return parent::getMust($searchDto, $extSystem);
     }
 
+    /**
+     * @param AuthorAdmSearchDto $searchDto
+     */
+    protected function getMustNot(SearchDtoInterface $searchDto): array
+    {
+        $mustNot = parent::getMustNot($searchDto);
+        if (false === $searchDto->isSource()) {
+            $mustNot[] = ['term' => ['source' => true]];
+        }
+
+        return $mustNot;
+    }
+
     protected function getRegularDefaultOrder(): array
     {
         return [
@@ -93,6 +106,10 @@ final class AuthorQueryFactory extends AbstractQueryFactory
         }
         if (false === (null === $searchDto->isCanBeCurrentAuthor())) {
             $filter[] = ['term' => ['canBeCurrentAuthor' => $searchDto->isCanBeCurrentAuthor()]];
+        }
+
+        if (true === $searchDto->isSource()) {
+            $filter[] = ['term' => ['source' => true]];
         }
 
         return $filter;

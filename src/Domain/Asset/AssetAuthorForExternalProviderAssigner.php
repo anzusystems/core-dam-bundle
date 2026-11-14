@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CommonBundle\Traits\ResourceLockerAwareTrait;
 use AnzuSystems\Contracts\Exception\AnzuException;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -18,6 +19,7 @@ final class AssetAuthorForExternalProviderAssigner
     public function __construct(
         private readonly ExtSystemConfigurationProvider $configurationProvider,
         private readonly AuthorRepository $authorRepository,
+        private readonly AuthorProvider $authorProvider,
     ) {
     }
 
@@ -47,6 +49,7 @@ final class AssetAuthorForExternalProviderAssigner
         $author = $this->authorRepository->find($authorId);
         if ($author instanceof Author) {
             $asset->getAuthors()->add($author);
+            $this->authorProvider->provideCurrentAuthorToColl($asset);
         }
 
         return $asset;

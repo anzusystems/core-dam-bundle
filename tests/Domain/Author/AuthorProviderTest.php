@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -185,7 +186,8 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
     public function testProvideCurrentAuthorToColl(array $tree, array $onAsset, bool $changed, array $expected): void
     {
         $authors = $this->createAuthorTree($this->cms, $tree);
-        $asset = new Asset();
+        $asset = (new Asset())->setExtSystem($this->cms);
+        $asset->getAttributes()->setAssetType(AssetType::Image);
         foreach ($onAsset as $key) {
             $asset->addAuthor($authors[$key]);
         }

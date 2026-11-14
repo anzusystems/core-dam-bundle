@@ -64,6 +64,8 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
      *     keyword_names: string[],
      *     author_ids: string[],
      *     author_names: string[],
+     *     source_ids: string[],
+     *     source_names: string[],
      *     file_ids: string[],
      *     podcast_ids: string[],
      * } $array
@@ -90,6 +92,8 @@ final readonly class AssetDBALIndexFactory implements DBALIndexFactoryInterface
             'keywordNames' => $array['keyword_names'],
             'authorIds' => $array['author_ids'],
             'authorNames' => $array['author_names'],
+            'sourceIds' => $array['source_ids'],
+            'sourceNames' => $array['source_names'],
             'type' => $array['attributes_asset_type'],
             'status' => $array['attributes_status'],
             'described' => (bool) $array['asset_flags_described'],

@@ -19,6 +19,7 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Validator\Constraints\AuthorCurrentAuthor;
+use AnzuSystems\CoreDamBundle\Validator\Constraints\AuthorSourceFlag;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -32,6 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Index(name: 'IDX_ext_system_name_normalized', fields: ['extSystem', 'nameNormalized'])]
 #[BaseAppAssert\UniqueEntity(fields: ['name', 'identifier', 'extSystem'], errorAtPath: ['name'])]
 #[AuthorCurrentAuthor]
+#[AuthorSourceFlag]
 class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTrackingInterface, ExtSystemIndexableInterface
 {
     use UuidIdentityTrait;

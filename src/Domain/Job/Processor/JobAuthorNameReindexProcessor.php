@@ -75,7 +75,7 @@ final class JobAuthorNameReindexProcessor extends AbstractJobProcessor
         }
 
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthorIds([(string) $author->getId()], $lastId, $this->bulkSize);
+        $assets = $this->assetRepository->findByAuthorIds([(string) $author->getId()], [(string) $author->getId()], $lastId, $this->bulkSize);
 
         $lastProcessedId = $lastId;
         foreach ($assets as $asset) {

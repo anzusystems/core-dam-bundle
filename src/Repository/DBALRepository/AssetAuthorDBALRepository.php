@@ -49,6 +49,14 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
         return $data;
     }
 
+    public function countByAuthor(string $authorId): int
+    {
+        return (int) $this->connection->fetchOne(
+            'SELECT COUNT(*) FROM ' . self::TABLE_NAME . ' entity WHERE entity.author_id = :authorId',
+            ['authorId' => $authorId],
+        );
+    }
+
     /**
      * Copies the asset links of a merged author to `_author_merge_asset_author`, a table the host creates outside of
      * Doctrine, so the job that moves its assets to the author it goes under can be traced.

@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeConfiguratio
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeDistributionRequirementConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeExifMetadataConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeSourcesConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAudioTypeConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemConfiguration;
 use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemDocumentTypeConfiguration;
@@ -29,6 +30,7 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionStrategy;
+use AnzuSystems\CoreDamBundle\Model\Enum\ExtSystemSourcesRequired;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
@@ -484,6 +486,7 @@ class Configuration implements ConfigurationInterface
 
         $config->append($this->addExtSystemExifMetadataSection(ExtSystemAssetTypeConfiguration::KEYWORDS_KEY));
         $config->append($this->addExtSystemExifMetadataSection(ExtSystemAssetTypeConfiguration::AUTHORS_KEY));
+        $config->append($this->addExtSystemSourcesSection());
 
         if ($type->is(AssetType::Audio)) {
             $config
@@ -550,6 +553,20 @@ class Configuration implements ConfigurationInterface
                         ->ifTrue(fn (array $values) => array_is_list($values))
                         ->thenInvalid('Must be key => value')
                     ->end()
+                ->end()
+            ->end()
+        ;
+    }
+
+    private function addExtSystemSourcesSection(): NodeDefinition
+    {
+        return (new TreeBuilder(ExtSystemAssetTypeConfiguration::SOURCES_KEY))->getRootNode()
+            ->canBeEnabled()
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->enumNode(ExtSystemAssetTypeSourcesConfiguration::REQUIRED_KEY)
+                    ->values([false, ExtSystemSourcesRequired::Adm->value])
+                    ->defaultFalse()
                 ->end()
             ->end()
         ;

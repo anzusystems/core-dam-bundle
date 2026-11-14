@@ -24,6 +24,9 @@ final class AuthorAdmSearchDto extends AbstractSearchDto
     #[Serialize]
     protected ?string $type = null;
 
+    #[Serialize]
+    protected ?bool $source = null;
+
     public function isCanBeCurrentAuthor(): ?bool
     {
         return $this->canBeCurrentAuthor;
@@ -73,6 +76,18 @@ final class AuthorAdmSearchDto extends AbstractSearchDto
     public function setReviewed(?bool $reviewed): self
     {
         $this->reviewed = $reviewed;
+
+        return $this;
+    }
+
+    public function isSource(): ?bool
+    {
+        return $this->source;
+    }
+
+    public function setSource(?bool $source): self
+    {
+        $this->source = $source;
 
         return $this;
     }

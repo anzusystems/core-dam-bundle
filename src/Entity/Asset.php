@@ -62,6 +62,11 @@ class Asset implements
     #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
     private Collection $authors;
 
+    #[ORM\ManyToMany(targetEntity: Author::class, fetch: App::DOCTRINE_EXTRA_LAZY, indexBy: 'id')]
+    #[ORM\JoinTable(name: 'asset_source')]
+    #[ORM\InverseJoinColumn(name: 'author_id', onDelete: 'CASCADE')]
+    private Collection $sources;
+
     #[ORM\ManyToOne(targetEntity: self::class)]
     #[Serialize(handler: EntityIdHandler::class)]
     private ?Asset $siblingToAsset;
@@ -121,6 +126,7 @@ class Asset implements
         $this->setDates(new AssetDates());
         $this->setSlots(new ArrayCollection());
         $this->setAuthors(new ArrayCollection());
+        $this->setSources(new ArrayCollection());
         $this->setKeywords(new ArrayCollection());
         $this->setDistributionCategory(null);
         $this->setEpisodes(new ArrayCollection());
@@ -140,6 +146,7 @@ class Asset implements
             ->setAssetFileProperties(clone $this->getAssetFileProperties())
             ->setMetadata($this->getMetadata()->__copy())
             ->setAuthors($this->getAuthors())
+            ->setSources($this->getSources())
             ->setKeywords($this->getKeywords())
             ->setDistributionCategory($this->getDistributionCategory())
             ->setMainFile(null)
@@ -275,6 +282,35 @@ class Asset implements
         if (false === $this->authors->contains($author)) {
             $this->authors->add($author);
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<string, Author>
+     */
+    public function getSources(): Collection
+    {
+        return $this->sources;
+    }
+
+    public function addSource(Author $source): self
+    {
+        if (false === $this->sources->contains($source)) {
+            $this->sources->add($source);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @template TKey of array-key
+     *
+     * @param Collection<TKey, Author> $sources
+     */
+    public function setSources(Collection $sources): self
+    {
+        $this->sources = $sources;
 
         return $this;
     }

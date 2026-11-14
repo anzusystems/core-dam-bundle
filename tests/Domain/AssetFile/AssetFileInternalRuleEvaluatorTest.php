@@ -6,14 +6,13 @@ namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileInternalRuleEvaluator;
-use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
-use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ImageFixtures;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
 {
@@ -292,5 +291,79 @@ final class AssetFileInternalRuleEvaluatorTest extends CoreDamKernelTestCase
         $image->getLicence()->getInternalRule()->setMarkAsInternalSince(null);
 
         $this->assertTrue($this->evaluator->evaluate($image));
+    }
+
+    /**
+     * @param list<string> $authorIds
+     * @param list<string> $sourceIds
+     * @param list<string> $ruleAuthorIds
+     */
+    #[DataProvider('sourcesInRuleAuthorsDataProvider')]
+    public function testAssetSourcesAreCheckedLikeAuthors(
+        array $authorIds,
+        array $sourceIds,
+        array $ruleAuthorIds,
+        bool $expected,
+    ): void {
+        $image = $this->createImageWithActiveAuthorRule($authorIds, $sourceIds, $ruleAuthorIds);
+
+        self::assertSame($expected, $this->evaluator->evaluate($image));
+    }
+
+    public static function sourcesInRuleAuthorsDataProvider(): array
+    {
+        return [
+            'Author and source listed in the rule' => [
+                'authorIds' => [AuthorFixtures::AUTHOR_1],
+                'sourceIds' => [AuthorFixtures::AUTHOR_2],
+                'ruleAuthorIds' => [AuthorFixtures::AUTHOR_1, AuthorFixtures::AUTHOR_2],
+                'expected' => true,
+            ],
+            'Source outside the rule' => [
+                'authorIds' => [AuthorFixtures::AUTHOR_1],
+                'sourceIds' => [AuthorFixtures::AUTHOR_2],
+                'ruleAuthorIds' => [AuthorFixtures::AUTHOR_1],
+                'expected' => false,
+            ],
+            'Only a source listed in the rule' => [
+                'authorIds' => [],
+                'sourceIds' => [AuthorFixtures::AUTHOR_2],
+                'ruleAuthorIds' => [AuthorFixtures::AUTHOR_2],
+                'expected' => true,
+            ],
+        ];
+    }
+
+    /**
+     * @param list<string> $authorIds
+     * @param list<string> $sourceIds
+     * @param list<string> $ruleAuthorIds
+     */
+    private function createImageWithActiveAuthorRule(array $authorIds, array $sourceIds, array $ruleAuthorIds): ImageFile
+    {
+        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1);
+        self::assertInstanceOf(ImageFile::class, $image);
+        $licence = $image->getLicence();
+        $licence->getInternalRule()->setActive(true);
+        foreach ($authorIds as $authorId) {
+            $image->getAsset()->addAuthor($this->findAuthor($authorId));
+        }
+        foreach ($sourceIds as $sourceId) {
+            $image->getAsset()->addSource($this->findAuthor($sourceId));
+        }
+        foreach ($ruleAuthorIds as $ruleAuthorId) {
+            $licence->addInternalRuleAuthor($this->findAuthor($ruleAuthorId));
+        }
+        $this->entityManager->flush();
+
+        return $image;
+    }
+
+    private function findAuthor(string $id): Author
+    {
+        $author = $this->entityManager->find(Author::class, $id);
+        self::assertInstanceOf(Author::class, $author);
+
+        return $author;
     }
 }

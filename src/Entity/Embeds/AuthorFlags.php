@@ -18,6 +18,14 @@ final class AuthorFlags
     #[Serialize]
     private bool $canBeCurrentAuthor = true;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $source = false;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $hiddenInCredit = false;
+
     public function isCanBeCurrentAuthor(): bool
     {
         return $this->canBeCurrentAuthor;
@@ -26,6 +34,30 @@ final class AuthorFlags
     public function setCanBeCurrentAuthor(bool $canBeCurrentAuthor): self
     {
         $this->canBeCurrentAuthor = $canBeCurrentAuthor;
+
+        return $this;
+    }
+
+    public function isSource(): bool
+    {
+        return $this->source;
+    }
+
+    public function setSource(bool $source): self
+    {
+        $this->source = $source;
+
+        return $this;
+    }
+
+    public function isHiddenInCredit(): bool
+    {
+        return $this->hiddenInCredit;
+    }
+
+    public function setHiddenInCredit(bool $hiddenInCredit): self
+    {
+        $this->hiddenInCredit = $hiddenInCredit;
 
         return $this;
     }

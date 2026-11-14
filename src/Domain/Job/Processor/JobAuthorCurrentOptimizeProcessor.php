@@ -88,18 +88,26 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             return;
         }
 
-        $authorIds = [];
+        $childAuthorIds = [];
         foreach ($author->getChildAuthors() as $childAuthor) {
-            $authorIds[] = (string) $childAuthor->getId();
+            $childAuthorIds[] = (string) $childAuthor->getId();
         }
-        // An author without current authors never changes on an asset; skipping its own assets keeps a job of
-        // a large target (SME: tens of thousands of assets) to the assets of its child authors.
-        if (false === $author->getCurrentAuthors()->isEmpty()) {
-            $authorIds[] = (string) $author->getId();
+        $authorIds = $childAuthorIds;
+        $sourceAuthorIds = $childAuthorIds;
+        // An author without current authors never changes on an asset, except a source whose links are not moved
+        // yet; skipping its own assets keeps a job of a large target (SME: tens of thousands of assets) to the assets
+        // of its child authors. The links a source already holds in `sources` stay where they are.
+        $authorId = (string) $author->getId();
+        $hasCurrentAuthors = false === $author->getCurrentAuthors()->isEmpty();
+        if ($hasCurrentAuthors || $author->getFlags()->isSource()) {
+            $authorIds[] = $authorId;
+        }
+        if ($hasCurrentAuthors) {
+            $sourceAuthorIds[] = $authorId;
         }
 
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthorIds($authorIds, $lastId, $this->bulkSize);
+        $assets = $this->assetRepository->findByAuthorIds($authorIds, $sourceAuthorIds, $lastId, $this->bulkSize);
 
         $this->processAssetsCollection($job, $assets, $lastId);
     }

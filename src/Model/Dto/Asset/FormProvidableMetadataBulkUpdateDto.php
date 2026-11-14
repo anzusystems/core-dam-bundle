@@ -49,6 +49,9 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
     private Collection $authors;
 
+    #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
+    private Collection $sources;
+
     public function __construct()
     {
         $this->setAsset(new Asset());
@@ -65,6 +68,7 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
             ->setMainFileOverrideInternal((bool) $asset->getMainFile()?->getFlags()->isOverrideInternal())
             ->setMainFileInternal((bool) $asset->getMainFile()?->getFlags()->isInternal())
             ->setAuthors($asset->getAuthors())
+            ->setSources($asset->getSources())
             ->setKeywords($asset->getKeywords())
         ;
     }
@@ -176,6 +180,29 @@ final class FormProvidableMetadataBulkUpdateDto implements AssetCustomFormProvid
     public function isAuthorsUndefined(): bool
     {
         return false === isset($this->authors);
+    }
+
+    /**
+     * @return Collection<string, Author>
+     */
+    public function getSources(): Collection
+    {
+        return $this->sources;
+    }
+
+    /**
+     * @param Collection<string, Author> $sources
+     */
+    public function setSources(Collection $sources): self
+    {
+        $this->sources = $sources;
+
+        return $this;
+    }
+
+    public function isSourcesUndefined(): bool
+    {
+        return false === isset($this->sources);
     }
 
     public function isMainFileSingleUse(): bool

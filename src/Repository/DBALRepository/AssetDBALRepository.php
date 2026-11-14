@@ -28,6 +28,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
     public function __construct(
         private readonly AssetKeywordDBALRepository $assetKeywordRepository,
         private readonly AssetAuthorDBALRepository $assetAuthorRepository,
+        private readonly AssetSourceDBALRepository $assetSourceRepository,
         private readonly AssetAssetSlotDBALRepository $assetAssetSlotRepository,
         private readonly AssetPodcastDBALRepository $assetPodcastRepository,
         private readonly AssetSearchableElementsCache $assetSearchableElementsCache,
@@ -100,6 +101,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
 
         $keywordMap = $this->assetKeywordRepository->getByAsset($ids);
         $authorMap = $this->assetAuthorRepository->getByAsset($ids);
+        $sourceMap = $this->assetSourceRepository->getByAsset($ids);
         $assetSlotMap = $this->assetAssetSlotRepository->getByAsset($ids);
 
         foreach ($data as $index => $item) {
@@ -116,6 +118,8 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
             $data[$index]['keyword_names'] = $keywordMap[$item['id']]['names'] ?? [];
             $data[$index]['author_ids'] = $authorMap[$item['id']]['ids'] ?? [];
             $data[$index]['author_names'] = $authorMap[$item['id']]['names'] ?? [];
+            $data[$index]['source_ids'] = $sourceMap[$item['id']]['ids'] ?? [];
+            $data[$index]['source_names'] = $sourceMap[$item['id']]['names'] ?? [];
             $data[$index]['file_ids'] = $assetSlotMap[$item['id']]['ids'] ?? [];
             $data[$index]['image_attributes_most_dominant_color'] = is_string($item['image_attributes_most_dominant_color'])
                 ? Color::fromString($item['image_attributes_most_dominant_color'])

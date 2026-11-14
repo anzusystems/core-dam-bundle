@@ -12,4 +12,9 @@ final class ConfigurationUrl
     {
         return sprintf('/api/pub/v%d/configuration', self::API_VERSION);
     }
+
+    public static function getExtSystem(int $extSystemId): string
+    {
+        return sprintf('/api/adm/v%d/configuration/ext-system/%d', self::API_VERSION, $extSystemId);
+    }
 }

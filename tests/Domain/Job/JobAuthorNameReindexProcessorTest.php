@@ -78,6 +78,28 @@ final class JobAuthorNameReindexProcessorTest extends CoreDamKernelTestCase
         $this->assertSame(3, $result->getTotalCount());
     }
 
+    public function testProcessReindexesAssetsWhereAuthorIsSource(): void
+    {
+        $this->addAsSourceOf(ImageFixtures::IMAGE_ID_1_1);
+        $job = (new JobAuthorNameReindex())->setAuthorId((string) $this->batchAuthor->getId());
+        $this->getService(JobManager::class)->create($job);
+
+        $this->processor->process($job);
+
+        $this->assertSame(JobStatus::Done, $job->getStatus());
+        $result = JobAuthorNameReindexResult::fromString($job->getResult());
+        $this->assertSame(4, $result->getReindexedCount());
+        $this->assertSame(4, $result->getTotalCount());
+    }
+
+    private function addAsSourceOf(string $imageId): void
+    {
+        $image = $this->entityManager->find(ImageFile::class, $imageId);
+        self::assertInstanceOf(ImageFile::class, $image);
+        $image->getAsset()->addSource($this->batchAuthor);
+        $this->entityManager->flush();
+    }
+
     private function createBatchAuthorWithAssets(): Author
     {
         /** @var Author $templateAuthor */
