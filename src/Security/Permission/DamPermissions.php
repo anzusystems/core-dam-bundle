@@ -87,6 +87,12 @@ class DamPermissions
     public const string DAM_AUTHOR_DELETE = 'dam_author_delete';
     public const string DAM_AUTHOR_UI = 'dam_author_ui';
 
+    // Source
+    public const string DAM_SOURCE_CREATE = 'dam_source_create';
+    public const string DAM_SOURCE_UPDATE = 'dam_source_update';
+    public const string DAM_SOURCE_DELETE = 'dam_source_delete';
+    public const string DAM_SOURCE_UI = 'dam_source_ui';
+
     // Keyword
     public const string DAM_KEYWORD_CREATE = 'dam_keyword_create';
     public const string DAM_KEYWORD_UPDATE = 'dam_keyword_update';
@@ -241,6 +247,10 @@ class DamPermissions
         self::DAM_AUTHOR_READ,
         self::DAM_AUTHOR_DELETE,
         self::DAM_AUTHOR_UI,
+        self::DAM_SOURCE_CREATE,
+        self::DAM_SOURCE_UPDATE,
+        self::DAM_SOURCE_DELETE,
+        self::DAM_SOURCE_UI,
         self::DAM_KEYWORD_CREATE,
         self::DAM_KEYWORD_UPDATE,
         self::DAM_KEYWORD_READ,

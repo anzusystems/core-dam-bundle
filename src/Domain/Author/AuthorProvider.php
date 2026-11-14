@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Author;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use Closure;
+use Doctrine\Common\Collections\Collection;
 
 final readonly class AuthorProvider
 {
     public function __construct(
         private AuthorRepository $repository,
         private AuthorManager $authorManager,
+        private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
     ) {
     }
 
@@ -49,6 +53,13 @@ final readonly class AuthorProvider
             ?? null;
     }
 
+    public function findSource(string $name, ExtSystem $extSystem): ?Author
+    {
+        $author = $this->resolve($name, $extSystem);
+
+        return $author?->getFlags()->isSource() ? $author : null;
+    }
+
     public function provideByTitle(string $title, ExtSystem $extSystem, bool $flush = true): ?Author
     {
         $title = StringHelper::parseString(input: $title, length: Author::NAME_MAX_LENGTH);
@@ -73,22 +84,63 @@ final readonly class AuthorProvider
 
     public function provideCurrentAuthorToColl(Asset $asset): bool
     {
-        $changedCurrentAuthors = false;
-        foreach ($asset->getAuthors()->toArray() as $assetAuthor) {
-            if ($assetAuthor->getCurrentAuthors()->isEmpty()) {
+        $changed = $this->replaceByCurrentAuthors($asset->getAuthors(), $asset->addAuthor(...));
+        $changed = $this->replaceByCurrentAuthors($asset->getSources(), $asset->addSource(...)) || $changed;
+
+        $sourcesConfig = $this->extSystemConfigurationProvider
+            ->getExtSystemConfigurationByAssetType($asset->getAttributes()->getAssetType(), $asset->getExtSystem()->getSlug())
+            ->getSources();
+        if ($sourcesConfig->isEnabled()) {
+            $changed = $this->routeBySourceFlag($asset) || $changed;
+        }
+
+        return $changed;
+    }
+
+    /**
+     * @param Collection<string, Author> $collection
+     * @param Closure(Author): mixed $add
+     */
+    private function replaceByCurrentAuthors(Collection $collection, Closure $add): bool
+    {
+        $changed = false;
+        foreach ($collection->toArray() as $author) {
+            if ($author->getCurrentAuthors()->isEmpty()) {
                 continue;
             }
 
-            $changedCurrentAuthors = true;
+            $changed = true;
 
-            foreach ($assetAuthor->getCurrentAuthors() as $currentAuthor) {
-                $asset->addAuthor($currentAuthor);
+            foreach ($author->getCurrentAuthors() as $currentAuthor) {
+                $add($currentAuthor);
             }
 
-            $asset->getAuthors()->removeElement($assetAuthor);
+            $collection->removeElement($author);
         }
 
-        return $changedCurrentAuthors;
+        return $changed;
+    }
+
+    private function routeBySourceFlag(Asset $asset): bool
+    {
+        $changed = false;
+        foreach ($asset->getAuthors()->toArray() as $author) {
+            if ($author->getFlags()->isSource()) {
+                $asset->addSource($author);
+                $asset->getAuthors()->removeElement($author);
+                $changed = true;
+            }
+        }
+
+        foreach ($asset->getSources()->toArray() as $source) {
+            if (false === $source->getFlags()->isSource()) {
+                $asset->addAuthor($source);
+                $asset->getSources()->removeElement($source);
+                $changed = true;
+            }
+        }
+
+        return $changed;
     }
 
     /**

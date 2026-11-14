@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Model\Dto\AssetFile;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[AppAssert\AssetFileSysCreateUrl]
 final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
 {
     #[Serialize]
@@ -20,7 +22,15 @@ final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
     private array $authors = [];
 
     #[Serialize]
+    private array $sources = [];
+
+    #[Serialize]
     private array $keywords = [];
+
+    public function hasLicence(): bool
+    {
+        return isset($this->licence);
+    }
 
     public function getUrl(): string
     {
@@ -42,6 +52,18 @@ final class AssetFileSysUrlCreateDto extends AbstractAssetFileSysDto
     public function setAuthors(array $authors): self
     {
         $this->authors = $authors;
+
+        return $this;
+    }
+
+    public function getSources(): array
+    {
+        return $this->sources;
+    }
+
+    public function setSources(array $sources): self
+    {
+        $this->sources = $sources;
 
         return $this;
     }

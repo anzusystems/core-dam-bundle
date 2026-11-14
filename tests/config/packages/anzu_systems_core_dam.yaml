@@ -160,6 +160,9 @@ anzu_systems_core_dam:
           autocomplete_from_exif_metadata_tags:
             Artist: ','
             Creator: ','
+        sources:
+          enabled: true
+          required: adm
         admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'

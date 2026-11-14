@@ -48,6 +48,7 @@ final readonly class FileFactory
         $chunkFileSystem = $this->fileSystemProvider->getFilesystemByStorable($firstChunk);
         foreach ($assetFile->getChunks() as $chunk) {
             $chunkStream = $chunkFileSystem->readStream($chunk->getFilePath());
+
             try {
                 $fileSystem->appendTmpStream($path, $chunkStream);
             } finally {

@@ -25,6 +25,11 @@ final class AssetUrl
         return sprintf('/api/adm/v%d/asset/%s', self::API_VERSION, $assetId);
     }
 
+    public static function metadataBulkUpdate(): string
+    {
+        return sprintf('/api/adm/v%d/asset/metadata-bulk-update', self::API_VERSION);
+    }
+
     /**
      * @param list<int> $licenceIds
      */

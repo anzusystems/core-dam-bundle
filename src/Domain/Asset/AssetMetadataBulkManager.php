@@ -33,6 +33,7 @@ final class AssetMetadataBulkManager extends AbstractManager
         $this->updateMainFileSingleUse($asset, $dto);
         $this->updateMainFileOverrideInternal($asset, $dto);
         $this->updateMainFileInternal($asset, $dto);
+        $this->updateSources($asset, $dto);
         $this->updateAuthors($asset, $dto);
         $this->updateKeywords($asset, $dto);
         $this->evaluateInternalRules($asset);
@@ -61,6 +62,19 @@ final class AssetMetadataBulkManager extends AbstractManager
         $this->colUpdate(
             oldCollection: $asset->getAuthors(),
             newCollection: $updateDto->getAuthors(),
+        );
+        $this->authorProvider->provideCurrentAuthorToColl($asset);
+    }
+
+    private function updateSources(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
+    {
+        if ($updateDto->isSourcesUndefined()) {
+            return;
+        }
+
+        $this->colUpdate(
+            oldCollection: $asset->getSources(),
+            newCollection: $updateDto->getSources(),
         );
         $this->authorProvider->provideCurrentAuthorToColl($asset);
     }

@@ -8,17 +8,19 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 /**
  * Builds author data the way it exists in production: variants, twins that differ only in the identifier,
- * and children with one or more current authors. A spec is `key => [name, reviewed?, identifier?, parent keys?]`.
+ * and children with one or more current authors. A spec is `key => [name, reviewed?, source?, identifier?, parent keys?]`.
  */
 trait AuthorTreeTrait
 {
     /**
-     * @param array<string, array{name: string, reviewed?: bool, identifier?: string, parents?: list<string>}> $specs
+     * @param array<string, array{name: string, reviewed?: bool, source?: bool, identifier?: string, parents?: list<string>}> $specs
      *
      * @return array<string, Author>
      */
@@ -32,11 +34,25 @@ trait AuthorTreeTrait
                 ->setIdentifier($spec['identifier'] ?? App::EMPTY_STRING)
                 ->setExtSystem($extSystem)
                 ->setCurrentAuthors(new ArrayCollection($parents));
-            $author->getFlags()->setReviewed($spec['reviewed'] ?? false);
+            $author->getFlags()
+                ->setReviewed($spec['reviewed'] ?? false)
+                ->setSource($spec['source'] ?? false);
             $authors[$key] = $this->getService(AuthorManager::class)->create($author);
         }
 
         return $authors;
+    }
+
+    private function createSource(string $name, int $extSystemId = ExtSystemFixtures::ID_CMS): Author
+    {
+        $source = (new Author())
+            ->setName($name)
+            ->setIdentifier($name)
+            ->setType(AuthorType::Agency)
+            ->setExtSystem($this->entityManager->find(ExtSystem::class, $extSystemId));
+        $source->getFlags()->setSource(true);
+
+        return $this->getService(AuthorManager::class)->create($source);
     }
 
     /**

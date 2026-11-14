@@ -60,6 +60,13 @@ final class AuthorManager extends AbstractManager
         return $author;
     }
 
+    public function markSource(Author $author, bool $flush = true): void
+    {
+        $this->trackModification($author);
+        $author->getFlags()->setSource(true);
+        $this->flush($flush);
+    }
+
     /**
      * The variants get the target authors as their current authors. Reviewed is kept only at the root, so it moves
      * from the variants to the targets when any variant was reviewed.

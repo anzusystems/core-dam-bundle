@@ -73,6 +73,12 @@ class ExtSystemAssetTypeAdmGetDecorator
     }
 
     #[Serialize]
+    public function getSources(): ExtSystemAssetTypeSourcesAdmGetDecorator
+    {
+        return ExtSystemAssetTypeSourcesAdmGetDecorator::getInstance($this->configuration->getSources());
+    }
+
+    #[Serialize]
     public function getDistribution(): ExtSystemAssetTypeDistributionAdmGetDecorator
     {
         return ExtSystemAssetTypeDistributionAdmGetDecorator::getInstance(

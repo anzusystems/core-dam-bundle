@@ -93,6 +93,7 @@ final class AssetSysFacade
                     $createdFile = $assetFile;
                     $this->setupCustomData($assetFile, $dto);
                     $this->setupKeywords($assetFile, $dto);
+                    $this->setupSources($assetFile, $dto);
                     $this->setupAuthors($assetFile, $dto);
                 }
             );
@@ -189,6 +190,16 @@ final class AssetSysFacade
         $this->authorProvider->provideCurrentAuthorToColl($assetFile->getAsset());
     }
 
+    public function setupSources(AssetFile $assetFile, AssetFileSysUrlCreateDto $dto): void
+    {
+        foreach ($dto->getSources() as $sourceName) {
+            $source = $this->authorProvider->findSource($sourceName, $assetFile->getExtSystem());
+            if ($source instanceof Author) {
+                $assetFile->getAsset()->addSource($source);
+            }
+        }
+    }
+
     private function findImagePreview(VideoFileSysUrlCreateDto $dto): ?ImageFile
     {
         $imagePreviewId = $dto->getImagePreviewAssetFileId();
@@ -216,6 +227,7 @@ final class AssetSysFacade
 
             $indexEntities = array_values([
                 ...$assetFile->getAsset()->getAuthors(),
+                ...$assetFile->getAsset()->getSources(),
                 ...$assetFile->getAsset()->getKeywords(),
             ]);
             if (false === empty($indexEntities)) {

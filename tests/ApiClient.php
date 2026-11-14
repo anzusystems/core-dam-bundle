@@ -105,6 +105,7 @@ final class ApiClient
             'CONTENT_TYPE' => 'application/json',
         ];
         if ($this->userId) {
+            $this->client->getKernel()->boot();
             $user = $this->client->getContainer()
                 ->get(EntityManagerInterface::class)
                 ->getReference(User::class, $this->userId);

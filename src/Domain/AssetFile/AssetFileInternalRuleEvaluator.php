@@ -55,8 +55,9 @@ final readonly class AssetFileInternalRuleEvaluator
             return true;
         }
 
-        $assetAuthors = $assetFile->getAsset()->getAuthors();
-        if ($assetAuthors->isEmpty()) {
+        $asset = $assetFile->getAsset();
+        $assetAuthors = [...$asset->getAuthors()->toArray(), ...$asset->getSources()->toArray()];
+        if ([] === $assetAuthors) {
             return false;
         }
 

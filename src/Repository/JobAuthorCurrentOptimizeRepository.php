@@ -17,7 +17,10 @@ final class JobAuthorCurrentOptimizeRepository extends AbstractAnzuRepository
 {
     public function existsWaitingForAuthor(string $authorId): bool
     {
-        return null !== $this->findOneBy(['authorId' => $authorId, 'status' => JobStatus::Waiting]);
+        return null !== $this->findOneBy([
+            'authorId' => $authorId,
+            'status' => JobStatus::Waiting,
+        ]);
     }
 
     protected function getEntityClass(): string

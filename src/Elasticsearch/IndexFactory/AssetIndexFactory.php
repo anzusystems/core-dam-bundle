@@ -64,6 +64,11 @@ final class AssetIndexFactory implements IndexFactoryInterface
                 static fn (Author $author): string => $author->getName(),
                 $entity->getAuthors()->toArray(),
             )),
+            'sourceIds' => array_values(CollectionHelper::traversableToIds($entity->getSources())),
+            'sourceNames' => array_values(array_map(
+                static fn (Author $source): string => $source->getName(),
+                $entity->getSources()->toArray(),
+            )),
             'type' => $entity->getAttributes()->getAssetType()->toString(),
             'status' => $entity->getAttributes()->getStatus(),
             'described' => $entity->getAssetFlags()->isDescribed(),

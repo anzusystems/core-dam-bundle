@@ -139,6 +139,30 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
     }
 
     /**
+     * Authors of the ext system with exactly this name (case and accents as stored) that are not a child of another
+     * author. The exact comparison is done here, because MySQL drops `name = BINARY :name` next to `name = :name`.
+     *
+     * @return list<string>
+     */
+    public function findRootIdsByName(int $extSystemId, string $name): array
+    {
+        $rows = $this->connection->fetchAllAssociative(
+            'SELECT author.id, author.name FROM ' . self::TABLE_NAME . ' author
+            LEFT JOIN author_is_current_author hierarchy ON hierarchy.author_source = author.id
+            WHERE author.ext_system_id = :extSystemId AND author.name = :name AND hierarchy.author_source IS NULL',
+            [
+                'extSystemId' => $extSystemId,
+                'name' => $name,
+            ],
+        );
+
+        return array_values(array_map(
+            static fn (array $row): string => (string) $row['id'],
+            array_filter($rows, static fn (array $row): bool => $name === $row['name']),
+        ));
+    }
+
+    /**
      * @param list<string> $authorIds
      *
      * @return array<string, string> by author id, unknown ids left out

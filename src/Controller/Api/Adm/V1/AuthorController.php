@@ -73,7 +73,10 @@ final class AuthorController extends AbstractApiController
     public function create(Request $request, #[SerializeParam] Author $author): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_CREATE, $author);
+        $this->denyAccessUnlessGranted(
+            $author->getFlags()->isSource() ? DamPermissions::DAM_SOURCE_CREATE : DamPermissions::DAM_AUTHOR_CREATE,
+            $author
+        );
 
         try {
             $author = $this->authorFacade->create($author);
@@ -96,7 +99,10 @@ final class AuthorController extends AbstractApiController
     public function update(Request $request, Author $author, #[SerializeParam] Author $newAuthor): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_UPDATE, $author);
+        $this->denyAccessUnlessGranted(
+            $author->getFlags()->isSource() ? DamPermissions::DAM_SOURCE_UPDATE : DamPermissions::DAM_AUTHOR_UPDATE,
+            $author
+        );
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
 
         return $this->okResponse(
@@ -114,7 +120,10 @@ final class AuthorController extends AbstractApiController
     public function delete(Request $request, Author $author): JsonResponse
     {
         App::throwOnReadOnlyMode();
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_DELETE, $author);
+        $this->denyAccessUnlessGranted(
+            $author->getFlags()->isSource() ? DamPermissions::DAM_SOURCE_DELETE : DamPermissions::DAM_AUTHOR_DELETE,
+            $author
+        );
 
         AuditLogResourceHelper::setResourceByEntity(request: $request, entity: $author);
         $this->authorFacade->delete($author);

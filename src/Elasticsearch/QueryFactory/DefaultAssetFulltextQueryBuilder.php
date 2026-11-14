@@ -22,12 +22,17 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
             self::AUTHOR_NAMES_FIELD => 2,
             self::AUTHOR_NAMES_FIELD . '.lang' => 1,
         ],
+        self::SOURCE_NAMES_FIELD => [
+            self::SOURCE_NAMES_FIELD => 2,
+            self::SOURCE_NAMES_FIELD . '.lang' => 1,
+        ],
         self::KEYWORD_NAMES_FIELD => [
             self::KEYWORD_NAMES_FIELD => 2,
             self::KEYWORD_NAMES_FIELD . '.lang' => 1,
         ],
     ];
     private const string AUTHOR_NAMES_FIELD = 'authorNames';
+    private const string SOURCE_NAMES_FIELD = 'sourceNames';
     private const string KEYWORD_NAMES_FIELD = 'keywordNames';
 
     private const string EDGEGRAMS_SUFFIX = '.edgegrams';
@@ -57,6 +62,7 @@ final class DefaultAssetFulltextQueryBuilder implements AssetFulltextQueryBuilde
             ...$customDataFields,
             self::KEYWORD_NAMES_FIELD,
             self::AUTHOR_NAMES_FIELD,
+            self::SOURCE_NAMES_FIELD,
         ]);
 
         return [
