@@ -568,6 +568,12 @@ class Configuration implements ConfigurationInterface
                     ->values([false, ExtSystemSourcesRequired::Adm->value])
                     ->defaultFalse()
                 ->end()
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_FORMAT_KEY)
+                    ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_FORMAT)
+                ->end()
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_SEPARATOR_KEY)
+                    ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_SEPARATOR)
+                ->end()
             ->end()
         ;
     }

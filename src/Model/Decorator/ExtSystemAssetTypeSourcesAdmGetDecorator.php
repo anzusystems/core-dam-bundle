@@ -35,4 +35,16 @@ final class ExtSystemAssetTypeSourcesAdmGetDecorator
     {
         return $this->configuration->isRequiredInAdm();
     }
+
+    #[Serialize]
+    public function getCreditFormat(): string
+    {
+        return $this->configuration->getCreditFormat();
+    }
+
+    #[Serialize]
+    public function getCreditSeparator(): string
+    {
+        return $this->configuration->getCreditSeparator();
+    }
 }
