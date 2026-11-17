@@ -7,7 +7,6 @@ namespace AnzuSystems\CoreDamBundle\Validator\Constraints;
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Author;
-use AnzuSystems\CoreDamBundle\Model\Enum\AuthorType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -24,10 +23,6 @@ final class AuthorSourceFlagValidator extends ConstraintValidator
     {
         if (false === ($value instanceof Author)) {
             throw new UnexpectedTypeException($constraint, Author::class);
-        }
-
-        if ($value->getFlags()->isSource() && $value->getType()->is(AuthorType::None)) {
-            $this->addViolation('type');
         }
 
         $id = (string) $value->getId();

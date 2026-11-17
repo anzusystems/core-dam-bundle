@@ -63,10 +63,6 @@ final class AuthorSourceTest extends AbstractApiController
         self::assertStatusCode($response, Response::HTTP_CREATED);
         $createdId = json_decode((string) $response->getContent(), true)['id'];
 
-        $response = $client->post(AuthorUrl::createPath(), $this->body('Typeless Source', source: true, type: AuthorType::None));
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        self::assertSame([ValidationException::ERROR_FIELD_INVALID], $this->getFieldErrors($response, 'type'));
-
         $response = $client->put(AuthorUrl::update($createdId), $this->body('Renamed Source', source: true, id: $createdId));
         self::assertStatusCode($response, Response::HTTP_OK);
         self::assertSame('Renamed Source', json_decode((string) $response->getContent(), true)['name']);
@@ -75,9 +71,10 @@ final class AuthorSourceTest extends AbstractApiController
         self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         self::assertSame([ValidationException::ERROR_FIELD_INVALID], $this->getFieldErrors($response, 'flags.source'));
 
-        $response = $client->put(AuthorUrl::update($createdId), $this->body('Renamed Source', source: true, id: $createdId, type: AuthorType::None));
-        self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
-        self::assertSame([ValidationException::ERROR_FIELD_INVALID], $this->getFieldErrors($response, 'type'));
+        self::assertStatusCode(
+            $client->put(AuthorUrl::update($createdId), $this->body('Renamed Source', source: true, id: $createdId, type: AuthorType::None)),
+            Response::HTTP_OK
+        );
 
         self::assertStatusCode(
             $client->put(AuthorUrl::update($authorId), $this->body('Managed Author', source: false, id: $authorId)),
