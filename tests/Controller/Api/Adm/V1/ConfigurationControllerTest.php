@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class ConfigurationControllerTest extends AbstractApiController
 {
     /**
-     * @param array{enabled: bool, required: bool, creditFormat: string, creditSeparator: string} $expectedSources
+     * @param array{enabled: bool, required: bool, creditFormat: string, creditSourcesSeparator: string, creditAuthorsSeparator: string} $expectedSources
      */
     #[DataProvider('extSystemSourcesDataProvider')]
     public function testExtSystemShowsSourcesOfAssetType(int $extSystemId, string $assetType, array $expectedSources): void
@@ -33,13 +33,15 @@ final class ConfigurationControllerTest extends AbstractApiController
         self::assertStatusCode($setResponse, Response::HTTP_OK);
         $set = json_decode((string) $setResponse->getContent(), true);
         self::assertSame('{authors} / {sources}', $set['image']['sources']['creditFormat']);
-        self::assertSame('; ', $set['image']['sources']['creditSeparator']);
+        self::assertSame(' | ', $set['image']['sources']['creditSourcesSeparator']);
+        self::assertSame('; ', $set['image']['sources']['creditAuthorsSeparator']);
 
         $defaultResponse = $client->get(ConfigurationUrl::getExtSystem(ExtSystemFixtures::ID_BLOG));
         self::assertStatusCode($defaultResponse, Response::HTTP_OK);
         $default = json_decode((string) $defaultResponse->getContent(), true);
         self::assertSame('{sources}/{authors}', $default['image']['sources']['creditFormat']);
-        self::assertSame(', ', $default['image']['sources']['creditSeparator']);
+        self::assertSame('/', $default['image']['sources']['creditSourcesSeparator']);
+        self::assertSame(', ', $default['image']['sources']['creditAuthorsSeparator']);
     }
 
     public static function extSystemSourcesDataProvider(): array
@@ -52,7 +54,8 @@ final class ConfigurationControllerTest extends AbstractApiController
                     'enabled' => true,
                     'required' => true,
                     'creditFormat' => '{authors} / {sources}',
-                    'creditSeparator' => '; ',
+                    'creditSourcesSeparator' => ' | ',
+                    'creditAuthorsSeparator' => '; ',
                 ],
             ],
             'Video without sources' => [
@@ -62,7 +65,8 @@ final class ConfigurationControllerTest extends AbstractApiController
                     'enabled' => false,
                     'required' => false,
                     'creditFormat' => '{sources}/{authors}',
-                    'creditSeparator' => ', ',
+                    'creditSourcesSeparator' => '/',
+                    'creditAuthorsSeparator' => ', ',
                 ],
             ],
             'Image of an ext system without sources' => [
@@ -72,7 +76,8 @@ final class ConfigurationControllerTest extends AbstractApiController
                     'enabled' => false,
                     'required' => false,
                     'creditFormat' => '{sources}/{authors}',
-                    'creditSeparator' => ', ',
+                    'creditSourcesSeparator' => '/',
+                    'creditAuthorsSeparator' => ', ',
                 ],
             ],
         ];
