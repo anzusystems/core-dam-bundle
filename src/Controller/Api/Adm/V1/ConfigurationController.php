@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Controller\Api\Adm\V1;
 
 use AnzuSystems\CommonBundle\Model\OpenApi\Response\OAResponse;
-use AnzuSystems\CoreDamBundle\Cache\Settings\AdmConfigCacheSettings;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationFacade;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -37,7 +36,6 @@ final class ConfigurationController extends AbstractApiController
     {
         return $this->okResponse(
             $this->configurationFacade->decorateAdm(),
-            new AdmConfigCacheSettings()
         );
     }
 
@@ -52,7 +50,6 @@ final class ConfigurationController extends AbstractApiController
 
         return $this->okResponse(
             $this->configurationFacade->decorateExtSystemAdm($extSystem),
-            new AdmConfigCacheSettings()
         );
     }
 }
