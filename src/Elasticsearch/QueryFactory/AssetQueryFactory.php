@@ -210,7 +210,10 @@ final class AssetQueryFactory extends AbstractQueryFactory
             $filter[] = ['terms' => ['keywordIds.keywordId' => $searchDto->getKeywordIds()]];
         }
         if (false === empty($searchDto->getAuthorIds())) {
-            $filter[] = ['terms' => ['authorIds.authorId' => $searchDto->getAuthorIds()]];
+            $filter[] = ['bool' => ['should' => [
+                ['terms' => ['authorIds.authorId' => $searchDto->getAuthorIds()]],
+                ['terms' => ['sourceIds.sourceId' => $searchDto->getAuthorIds()]],
+            ]]];
         }
         if (false === empty($searchDto->getSourceIds())) {
             $filter[] = ['terms' => ['sourceIds.sourceId' => $searchDto->getSourceIds()]];

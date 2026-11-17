@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository\DBALRepository;
 
 use AnzuSystems\CoreDamBundle\Repository\AbstractAnzuDBALRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
 
 final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
 {
@@ -21,13 +22,13 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
      *
      * @return array<string, array{ids: string[], names: string[]}>
      */
-    public function getByAsset(array $assetIds): array
+    public function getByAsset(array $assetIds, bool $source = false): array
     {
         $qb = $this->connection->createQueryBuilder();
         /** @noinspection PhpDqlBuilderUnknownModelInspection */
         $qb
             ->select('entity.author_id, entity.asset_id, author.name')
-            ->from(self::TABLE_NAME, 'entity')
+            ->from($source ? AssetSourceDBALRepository::TABLE_NAME : self::TABLE_NAME, 'entity')
             ->leftJoin('entity', 'author', 'author', 'author.id = entity.author_id')
             ->where('entity.asset_id IN (:assetIds)')
             ->setParameter('assetIds', $assetIds, ArrayParameterType::STRING)
@@ -47,6 +48,42 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
         }
 
         return $data;
+    }
+
+    /**
+     * The ids are read as a UNION of the two link tables, because an OR over both joins would use no index. Each branch
+     * stops at the limit and reads distinct asset ids, so an asset linked to several of the ids takes one row and a batch never reads all links of a large author.
+     *
+     * @param list<string> $authorIds
+     * @param list<string> $sourceAuthorIds
+     *
+     * @return list<string>
+     */
+    public function findAssetIdsByAuthorIds(array $authorIds, array $sourceAuthorIds, string $fromId, int $limit): array
+    {
+        $branches = [];
+        $params = ['fromId' => $fromId, 'limit' => $limit];
+        $types = ['limit' => ParameterType::INTEGER];
+        foreach ([self::TABLE_NAME => $authorIds, AssetSourceDBALRepository::TABLE_NAME => $sourceAuthorIds] as $table => $ids) {
+            if (empty($ids)) {
+                continue;
+            }
+            $branches[] = sprintf(
+                '(SELECT DISTINCT asset_id FROM %1$s WHERE author_id IN (:%1$s) AND asset_id > :fromId ORDER BY asset_id LIMIT :limit)',
+                $table,
+            );
+            $params[$table] = $ids;
+            $types[$table] = ArrayParameterType::STRING;
+        }
+        if (empty($branches)) {
+            return [];
+        }
+
+        return $this->connection->fetchFirstColumn(
+            'SELECT asset_id FROM (' . implode(' UNION ', $branches) . ') linked ORDER BY asset_id LIMIT :limit',
+            $params,
+            $types,
+        );
     }
 
     public function countByAuthor(string $authorId): int

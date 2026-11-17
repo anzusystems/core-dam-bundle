@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
+use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
 use AnzuSystems\CoreDamBundle\Elasticsearch\IndexSettings;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Entity\VideoFile;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
@@ -45,6 +47,48 @@ final class AssetSearchSourcesTest extends AbstractApiController
         } finally {
             $this->reindexWithoutSources($assetId);
         }
+    }
+
+    public function testAuthorIdsFilterFindsAuthorsAndSources(): void
+    {
+        $source = $this->createSource('Zebrafoto Video Agency');
+        $sourceId = (string) $source->getId();
+        $imageAsset = $this->createIndexedImageWithSource($source);
+        $imageAssetId = (string) $imageAsset->getId();
+        $videoAssetId = $this->createIndexedVideoWithAuthor($source);
+
+        try {
+            $response = $this->getApiClient(User::ID_ADMIN)->get(
+                AssetUrl::licenceSearch([$imageAsset->getLicence()->getId()]) . '&authorIds=' . $sourceId
+            );
+            self::assertStatusCode($response, Response::HTTP_OK);
+            self::assertEqualsCanonicalizing([$imageAssetId, $videoAssetId], $this->getIds($response));
+        } finally {
+            $this->reindexWithoutSources($imageAssetId);
+            $this->reindexVideoWithoutAuthor($videoAssetId, $sourceId);
+        }
+    }
+
+    private function createIndexedVideoWithAuthor(Author $author): string
+    {
+        $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
+        self::assertInstanceOf(VideoFile::class, $video);
+        $asset = $video->getAsset();
+        $asset->addAuthor($author);
+        $this->entityManager->flush();
+        $this->indexAsset($asset);
+
+        return (string) $asset->getId();
+    }
+
+    private function reindexVideoWithoutAuthor(string $assetId, string $authorId): void
+    {
+        $this->entityManager->clear();
+        $asset = $this->entityManager->find(Asset::class, $assetId);
+        self::assertInstanceOf(Asset::class, $asset);
+        $asset->getAuthors()->removeElement($this->entityManager->find(Author::class, $authorId));
+        $this->entityManager->flush();
+        $this->indexAsset($asset);
     }
 
     private function createIndexedImageWithSource(Author $source): Asset

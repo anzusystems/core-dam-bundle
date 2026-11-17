@@ -28,7 +28,6 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
     public function __construct(
         private readonly AssetKeywordDBALRepository $assetKeywordRepository,
         private readonly AssetAuthorDBALRepository $assetAuthorRepository,
-        private readonly AssetSourceDBALRepository $assetSourceRepository,
         private readonly AssetAssetSlotDBALRepository $assetAssetSlotRepository,
         private readonly AssetPodcastDBALRepository $assetPodcastRepository,
         private readonly AssetSearchableElementsCache $assetSearchableElementsCache,
@@ -101,7 +100,7 @@ final class AssetDBALRepository extends AbstractAnzuDBALRepository implements DB
 
         $keywordMap = $this->assetKeywordRepository->getByAsset($ids);
         $authorMap = $this->assetAuthorRepository->getByAsset($ids);
-        $sourceMap = $this->assetSourceRepository->getByAsset($ids);
+        $sourceMap = $this->assetAuthorRepository->getByAsset($ids, source: true);
         $assetSlotMap = $this->assetAssetSlotRepository->getByAsset($ids);
 
         foreach ($data as $index => $item) {

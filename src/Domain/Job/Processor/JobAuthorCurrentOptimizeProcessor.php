@@ -15,6 +15,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetAuthorDBALRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
@@ -28,6 +29,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
 
     public function __construct(
         private readonly AssetRepository $assetRepository,
+        private readonly AssetAuthorDBALRepository $assetAuthorDBALRepository,
         private readonly AuthorRepository $authorRepository,
         private readonly AuthorProvider $authorProvider,
         private readonly DamLogger $damLogger,
@@ -107,7 +109,9 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         }
 
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthorIds($authorIds, $sourceAuthorIds, $lastId, $this->bulkSize);
+        $assets = $this->assetRepository->findByIds(
+            $this->assetAuthorDBALRepository->findAssetIdsByAuthorIds($authorIds, $sourceAuthorIds, $lastId, $this->bulkSize)
+        );
 
         $this->processAssetsCollection($job, $assets, $lastId);
     }
