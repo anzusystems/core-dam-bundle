@@ -121,7 +121,7 @@ final class AssetMetadataSourcesTest extends AbstractApiController
     }
 
     #[DataProvider('sentSourcesDataProvider')]
-    public function testKeepsStoredSourceMovedFromAuthorsWhenSourcesAreSent(bool $sendListedSource): void
+    public function testSavesSentCollectionsWhenStoredSourceIsInAuthors(bool $sendStoredSource, bool $sendListedSource): void
     {
         $client = $this->getApiClient(User::ID_ADMIN);
         $assetId = $this->getImageAssetId();
@@ -130,16 +130,17 @@ final class AssetMetadataSourcesTest extends AbstractApiController
         $response = $client->patch(AssetUrl::metadataBulkUpdate(), [['id' => $assetId, 'authors' => [$storedSourceId]]]);
         self::assertStatusCode($response, Response::HTTP_OK);
         $this->markSource($storedSourceId);
+        $sentStoredSourceIds = $sendStoredSource ? [$storedSourceId] : [];
         $sentSourceIds = $sendListedSource ? [$listedSourceId] : [];
 
         $response = $client->patch(AssetUrl::metadataBulkUpdate(), [[
             'id' => $assetId,
-            'authors' => [$storedSourceId, AuthorFixtures::AUTHOR_1],
+            'authors' => [...$sentStoredSourceIds, AuthorFixtures::AUTHOR_1],
             'sources' => $sentSourceIds,
         ]]);
 
         self::assertStatusCode($response, Response::HTTP_OK);
-        $expectedSourceIds = [$storedSourceId, ...$sentSourceIds];
+        $expectedSourceIds = [...$sentStoredSourceIds, ...$sentSourceIds];
         sort($expectedSourceIds);
         self::assertSame($expectedSourceIds, $this->getSourceIds($assetId));
         self::assertSame([AuthorFixtures::AUTHOR_1], $this->getAuthorIds($assetId));
@@ -148,11 +149,17 @@ final class AssetMetadataSourcesTest extends AbstractApiController
     public static function sentSourcesDataProvider(): array
     {
         return [
-            'Empty sources from the admin form' => [
+            'Stored source in authors, empty sources from the admin form' => [
+                'sendStoredSource' => true,
                 'sendListedSource' => false,
             ],
-            'Another source from the admin form' => [
+            'Stored source in authors, another source from the admin form' => [
+                'sendStoredSource' => true,
                 'sendListedSource' => true,
+            ],
+            'Stored source not sent, empty sources' => [
+                'sendStoredSource' => false,
+                'sendListedSource' => false,
             ],
         ];
     }
