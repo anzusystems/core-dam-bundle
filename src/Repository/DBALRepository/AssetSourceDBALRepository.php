@@ -9,7 +9,7 @@ use Doctrine\DBAL\ArrayParameterType;
 
 final class AssetSourceDBALRepository extends AbstractAnzuDBALRepository
 {
-    private const string TABLE_NAME = 'asset_source';
+    public const string TABLE_NAME = 'asset_source';
 
     public function getTableName(): string
     {

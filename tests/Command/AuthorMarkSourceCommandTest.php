@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Command;
 
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
-use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\VideoFixtures;
+use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobAuthorCurrentOptimizeProcessor;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Domain\Author\AuthorTreeTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -29,6 +34,7 @@ final class AuthorMarkSourceCommandTest extends CoreDamKernelTestCase
     private const string COMMAND = 'anzu-dam:author:mark-source';
 
     private string $file;
+    private string $imageAssetId;
     private ExtSystem $cms;
 
     /**
@@ -73,6 +79,7 @@ final class AuthorMarkSourceCommandTest extends CoreDamKernelTestCase
                 'identifier' => 'second',
             ],
         ]);
+        $this->imageAssetId = (string) $this->createCmsImageAsset()->getId();
         $this->setAssetAuthors($this->findImageAsset(), ['source', 'child']);
         $this->setAssetAuthors($this->findVideoAsset(), ['source']);
 
@@ -97,12 +104,19 @@ final class AuthorMarkSourceCommandTest extends CoreDamKernelTestCase
 
         $display = $this->execute(Command::SUCCESS);
         self::assertStringContainsString('Marked 1 sources, 1 jobs', $display);
-        self::assertMatchesRegularExpression('/Mark Source Agency \S+ 2 created/', $display);
+        self::assertMatchesRegularExpression('/Mark Source Agency \S+ 2 created\s+created/', $display);
         self::assertTrue($this->findAuthor('source')->getFlags()->isSource());
+        $phrase = $this->entityManager->getRepository(AuthorCleanPhrase::class)->findOneBy([
+            'phrase' => '(Mark Source Agency)',
+            'extSystem' => $this->cms,
+        ]);
+        self::assertInstanceOf(AuthorCleanPhrase::class, $phrase);
+        self::assertSame(AuthorCleanPhraseMode::Replace, $phrase->getMode());
+        self::assertSame($this->findAuthor('source')->getId(), $phrase->getAuthorReplacement()?->getId());
 
         $display = $this->execute(Command::SUCCESS);
         self::assertStringContainsString('Marked 1 sources, 0 jobs', $display);
-        self::assertMatchesRegularExpression('/Mark Source Agency \S+ 2 waiting/', $display);
+        self::assertMatchesRegularExpression('/Mark Source Agency \S+ 2 waiting\s+exists/', $display);
         $this->processJob();
 
         $image = $this->findImageAsset();
@@ -113,6 +127,21 @@ final class AuthorMarkSourceCommandTest extends CoreDamKernelTestCase
 
         $display = $this->execute(Command::SUCCESS);
         self::assertStringContainsString('Marked 1 sources, 1 jobs', $display);
+    }
+
+    public function testMarksRootWhoseNameEndsWithSpace(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'source' => [
+                'name' => 'Mark Source Agency ',
+            ],
+        ]);
+
+        $this->writeNames(['Mark Source Agency']);
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertStringContainsString('Marked 1 sources, 1 jobs', $display);
+        self::assertTrue($this->findAuthor('source')->getFlags()->isSource());
     }
 
     /**
@@ -226,12 +255,26 @@ final class AuthorMarkSourceCommandTest extends CoreDamKernelTestCase
         return $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findOneBy(['authorId' => (string) $this->authors['source']->getId()]);
     }
 
+    /**
+     * The image fixtures belong to the blog ext system, which has no sources.
+     */
+    private function createCmsImageAsset(): Asset
+    {
+        $licence = $this->entityManager->find(AssetLicence::class, AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE);
+        self::assertInstanceOf(AssetLicence::class, $licence);
+        $imageFile = $this->getService(ImageFactory::class)->createFromUrl($licence, 'https://example.test/mark-source.jpg');
+        $asset = $this->getService(AssetFactory::class)->createForAssetFile($imageFile, $licence);
+        $this->getService(ImageManager::class)->create($imageFile);
+
+        return $asset;
+    }
+
     private function findImageAsset(): Asset
     {
-        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_2);
-        self::assertInstanceOf(ImageFile::class, $image);
+        $asset = $this->entityManager->find(Asset::class, $this->imageAssetId);
+        self::assertInstanceOf(Asset::class, $asset);
 
-        return $image->getAsset();
+        return $asset;
     }
 
     private function findVideoAsset(): Asset

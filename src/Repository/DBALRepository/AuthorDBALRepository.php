@@ -113,15 +113,20 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
 
     /**
      * Logs a variant and the author it goes under as they are before the merge, in `_author_merge_log`, a table the
-     * host creates outside of Doctrine.
+     * host creates outside of Doctrine. The current authors of the variant before the merge and an author the merge
+     * created are logged too, so the merge can be undone by hand.
      */
-    public function insertMergeLog(string $runId, string $groupName, string $variantId, string $mainAuthorId): void
+    public function insertMergeLog(string $runId, string $groupName, string $variantId, string $mainAuthorId, bool $mainAuthorCreated): void
     {
         $this->connection->executeStatement(
             'INSERT INTO _author_merge_log (run_id, ext_system_id, group_name, variant_id, variant_name, variant_identifier,
-                variant_reviewed, variant_can_be_current_author, main_author_id, main_author_name, main_author_reviewed, created_at)
+                variant_reviewed, variant_can_be_current_author, variant_current_author_ids, main_author_id, main_author_name,
+                main_author_reviewed, main_author_created, created_at)
             SELECT :runId, variant.ext_system_id, :groupName, variant.id, variant.name, variant.identifier,
-                variant.flags_reviewed, variant.flags_can_be_current_author, main_author.id, main_author.name, main_author.flags_reviewed, :createdAt
+                variant.flags_reviewed, variant.flags_can_be_current_author,
+                (SELECT COALESCE(GROUP_CONCAT(hierarchy.author_target ORDER BY hierarchy.author_target), \'\')
+                    FROM author_is_current_author hierarchy WHERE hierarchy.author_source = variant.id),
+                main_author.id, main_author.name, main_author.flags_reviewed, :mainAuthorCreated, :createdAt
             FROM ' . self::TABLE_NAME . ' variant
             INNER JOIN ' . self::TABLE_NAME . ' main_author ON main_author.id = :mainAuthorId
             WHERE variant.id = :variantId',
@@ -130,17 +135,20 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
                 'groupName' => $groupName,
                 'variantId' => $variantId,
                 'mainAuthorId' => $mainAuthorId,
+                'mainAuthorCreated' => $mainAuthorCreated,
                 'createdAt' => App::getAppDate(),
             ],
             [
+                'mainAuthorCreated' => Types::BOOLEAN,
                 'createdAt' => Types::DATETIME_IMMUTABLE,
             ],
         );
     }
 
     /**
-     * Authors of the ext system with exactly this name (case and accents as stored) that are not a child of another
-     * author. The exact comparison is done here, because MySQL drops `name = BINARY :name` next to `name = :name`.
+     * Authors of the ext system with exactly this name (case and accents as stored, trailing spaces ignored like MySQL
+     * does) that are not a child of another author. The exact comparison is done here, because MySQL drops
+     * `name = BINARY :name` next to `name = :name`.
      *
      * @return list<string>
      */
@@ -158,7 +166,7 @@ final class AuthorDBALRepository extends AbstractAnzuDBALRepository
 
         return array_values(array_map(
             static fn (array $row): string => (string) $row['id'],
-            array_filter($rows, static fn (array $row): bool => $name === $row['name']),
+            array_filter($rows, static fn (array $row): bool => $name === rtrim((string) $row['name'], ' ')),
         ));
     }
 

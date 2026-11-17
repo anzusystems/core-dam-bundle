@@ -63,7 +63,7 @@ final class AuthorControllerTest extends AbstractApiController
     }
 
     /**
-     * @param array{name: string, extSystem: int, extId: string} $requestJson
+     * @param array{name: string, identifier?: string, extSystem: int, extId?: string} $requestJson
      *
      * @throws SerializerException
      */
@@ -85,7 +85,7 @@ final class AuthorControllerTest extends AbstractApiController
     }
 
     /**
-     * @return list<array{requestJson: array{name: string, extSystem: int, extId: string}, expectedResponseStatusCode: int}>
+     * @return list<array{requestJson: array{name: string, identifier?: string, extSystem: int, extId?: string}, expectedResponseStatusCode: int}>
      */
     public static function createSuccessDataProvider(): array
     {
@@ -93,6 +93,14 @@ final class AuthorControllerTest extends AbstractApiController
             [
                 'requestJson' => [
                     'name' => 'test',
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                ],
+                'expectedResponseStatusCode' => Response::HTTP_CREATED,
+            ],
+            [
+                'requestJson' => [
+                    'name' => 'test with identifier',
+                    'identifier' => 'AB',
                     'extSystem' => ExtSystemFixtures::ID_CMS,
                 ],
                 'expectedResponseStatusCode' => Response::HTTP_CREATED,
@@ -106,6 +114,7 @@ final class AuthorControllerTest extends AbstractApiController
 
         $response = $client->post(AuthorUrl::createPath(), [
             'name' => 'a',
+            'identifier' => 'b',
             'extSystem' => 0,
         ]);
         $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
@@ -113,6 +122,9 @@ final class AuthorControllerTest extends AbstractApiController
         $content = json_decode($response->getContent(), true);
         $this->assertValidationErrors($content, [
             'name' => [
+                ValidationException::ERROR_FIELD_LENGTH_MIN,
+            ],
+            'identifier' => [
                 ValidationException::ERROR_FIELD_LENGTH_MIN,
             ],
             'extSystem' => [

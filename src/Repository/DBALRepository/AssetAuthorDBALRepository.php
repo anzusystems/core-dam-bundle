@@ -58,17 +58,43 @@ final class AssetAuthorDBALRepository extends AbstractAnzuDBALRepository
     }
 
     /**
-     * Copies the asset links of a merged author to `_author_merge_asset_author`, a table the host creates outside of
-     * Doctrine, so the job that moves its assets to the author it goes under can be traced.
+     * Gives every asset of the author also the target, as a source or as an author.
+     *
+     * @return int links added
+     */
+    public function linkAssetsOfAuthor(string $authorId, string $targetId, bool $source): int
+    {
+        return (int) $this->connection->executeStatement(
+            'INSERT IGNORE INTO ' . ($source ? AssetSourceDBALRepository::TABLE_NAME : self::TABLE_NAME) . ' (asset_id, author_id)
+            SELECT link.asset_id, :targetId FROM ' . self::TABLE_NAME . ' link WHERE link.author_id = :authorId
+            UNION
+            SELECT link.asset_id, :targetId FROM ' . AssetSourceDBALRepository::TABLE_NAME . ' link WHERE link.author_id = :authorId',
+            [
+                'authorId' => $authorId,
+                'targetId' => $targetId,
+            ],
+        );
+    }
+
+    /**
+     * Copies the asset links of a merged author, as an author and as a source, to `_author_merge_asset_author`, a
+     * table the host creates outside of Doctrine, so the job that moves its assets to the author it goes under can be
+     * traced and undone: `main_author_linked` tells whether the asset already had that author before the merge.
      *
      * @return int copied links
      */
     public function copyToMergeSnapshot(string $runId, string $authorId, string $mainAuthorId): int
     {
+        $mainAuthorLinked = '(EXISTS (SELECT 1 FROM ' . self::TABLE_NAME . ' linked WHERE linked.asset_id = link.asset_id AND linked.author_id = :mainAuthorId)
+            OR EXISTS (SELECT 1 FROM ' . AssetSourceDBALRepository::TABLE_NAME . ' linked WHERE linked.asset_id = link.asset_id AND linked.author_id = :mainAuthorId))';
+
         return (int) $this->connection->executeStatement(
-            'INSERT INTO _author_merge_asset_author (run_id, asset_id, author_id, main_author_id)
-            SELECT :runId, entity.asset_id, entity.author_id, :mainAuthorId FROM ' . self::TABLE_NAME . ' entity
-            WHERE entity.author_id = :authorId',
+            'INSERT INTO _author_merge_asset_author (run_id, asset_id, author_id, main_author_id, source, main_author_linked)
+            SELECT :runId, link.asset_id, link.author_id, :mainAuthorId, 0, ' . $mainAuthorLinked . ' FROM ' . self::TABLE_NAME . ' link
+            WHERE link.author_id = :authorId
+            UNION ALL
+            SELECT :runId, link.asset_id, link.author_id, :mainAuthorId, 1, ' . $mainAuthorLinked . ' FROM ' . AssetSourceDBALRepository::TABLE_NAME . ' link
+            WHERE link.author_id = :authorId',
             [
                 'runId' => $runId,
                 'authorId' => $authorId,

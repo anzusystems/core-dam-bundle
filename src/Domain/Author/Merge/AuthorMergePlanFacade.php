@@ -443,6 +443,8 @@ final readonly class AuthorMergePlanFacade
             AuthorMergeCsv::CHILD_AUTHOR_COUNT => $candidate->childAuthorCount,
             AuthorMergeCsv::TARGET_IDS => $targetIds,
             AuthorMergeCsv::TARGET_NAMES => $targetNames,
+            AuthorMergeCsv::NEW_SOURCES => App::EMPTY_STRING,
+            AuthorMergeCsv::NEW_AUTHORS => App::EMPTY_STRING,
             AuthorMergeCsv::REASON => $reason,
             AuthorMergeCsv::DECISION => $decision->value,
         ];

@@ -68,8 +68,9 @@ final class AuthorManager extends AbstractManager
     }
 
     /**
-     * The variants get the target authors as their current authors. Reviewed is kept only at the root, so it moves
-     * from the variants to the targets when any variant was reviewed.
+     * The variants and their child authors get the target authors as their current authors, so the hierarchy stays
+     * one level deep. Reviewed is kept only at the root, so it moves from the variants to the targets when any
+     * variant was reviewed.
      *
      * @param list<Author> $variants
      * @param list<Author> $targets
@@ -79,6 +80,15 @@ final class AuthorManager extends AbstractManager
         $approveTargets = array_any($variants, static fn (Author $variant): bool => $variant->getFlags()->isReviewed());
         foreach ($variants as $variant) {
             $this->trackModification($variant);
+            foreach ($variant->getChildAuthors()->toArray() as $child) {
+                $this->trackModification($child);
+                $child->removeCurrentAuthor($variant);
+                $variant->removeChildAuthor($child);
+                foreach ($targets as $target) {
+                    $child->addCurrentAuthor($target);
+                    $target->addChildAuthor($child);
+                }
+            }
             foreach ($targets as $target) {
                 $variant->addCurrentAuthor($target);
                 $target->addChildAuthor($variant);

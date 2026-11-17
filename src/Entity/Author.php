@@ -73,6 +73,17 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Serialize]
+    #[Assert\When(
+        expression: 'value !== ""',
+        constraints: [
+            new Assert\Length(
+                min: 2,
+                max: 255,
+                minMessage: ValidationException::ERROR_FIELD_LENGTH_MIN,
+                maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX
+            ),
+        ],
+    )]
     private string $identifier;
 
     #[ORM\ManyToOne]

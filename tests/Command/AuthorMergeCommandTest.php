@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Command;
 
 use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
 use AnzuSystems\CoreDamBundle\Domain\Author\Merge\AuthorMergeCsv;
@@ -16,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Entity\AuthorCleanPhrase;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
+use AnzuSystems\CoreDamBundle\Entity\JobAuthorNameReindex;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseMode;
 use AnzuSystems\CoreDamBundle\Model\Enum\AuthorCleanPhraseType;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -205,7 +207,7 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
         self::assertTrue($this->findAuthor('tasr')->getCurrentAuthors()->isEmpty());
     }
 
-    public function testMainWithChildAuthorsThatIsNotItsTargetSkipsTheGroup(): void
+    public function testMainWithChildAuthorsTakesThemUnderItsTargets(): void
     {
         $this->authors = $this->createAuthorTree($this->cms, [
             'tasr' => ['name' => 'TASR', 'reviewed' => true],
@@ -219,9 +221,180 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
 
         $display = $this->execute(Command::SUCCESS);
 
-        self::assertStringContainsString(sprintf('main author %s is a current author of other authors', (string) $this->authors['paren']->getId()), $display);
-        self::assertTrue($this->findAuthor('paren')->getCurrentAuthors()->isEmpty());
-        self::assertSame(['paren'], $this->toTreeKeys($this->authors, $this->findAuthor('parenChild')->getCurrentAuthors()));
+        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants, .* 0 skipped; 1 child authors moved along, 0 target authors created/', $display);
+        self::assertSame(['tasr'], $this->toTreeKeys($this->authors, $this->findAuthor('paren')->getCurrentAuthors()));
+        self::assertSame(['tasr'], $this->toTreeKeys($this->authors, $this->findAuthor('parenChild')->getCurrentAuthors()));
+        self::assertSame(
+            [['(TASR)', App::EMPTY_STRING], ['(TASR) ilustračné', (string) $this->authors['paren']->getId()]],
+            array_map(static fn (array $log): array => [$log['variant_name'], $log['variant_current_author_ids']], $this->fetchLogs()),
+        );
+    }
+
+    public function testMainAloneThatIsItsOwnTargetStaysAndItsAssetsGetTheOtherTargets(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'web' => ['name' => 'mesto-sever.sk', 'reviewed' => true],
+            'repro' => ['name' => 'Repro Sever', 'source' => true],
+        ]);
+        $asset = $this->findCmsAsset();
+        $asset->getAuthors()->clear();
+        $asset->getSources()->clear();
+        $asset->addAuthor($this->authors['web']);
+        $this->entityManager->flush();
+        $this->writeCsv(
+            ['1' => ['web' => 'main']],
+            fn (array $rows): array => [[...$rows[0], AuthorMergeCsv::TARGET_IDS => AuthorMergeCsv::joinList([(string) $this->authors['web']->getId(), (string) $this->authors['repro']->getId()])]],
+        );
+        $merged = '/merged 1 groups \(0 variants, 1 asset link snapshots, 0 clean phrases\), %d jobs, 0 groups already merged, 0 skipped/';
+
+        self::assertMatchesRegularExpression(sprintf($merged, 0), $this->execute(Command::SUCCESS, ['--dry-run' => true]));
+        self::assertSame([], $this->toTreeKeys($this->authors, $this->findCmsAsset()->getSources()));
+
+        self::assertMatchesRegularExpression(sprintf($merged, 1), $this->execute(Command::SUCCESS));
+        $web = $this->findAuthor('web');
+        self::assertTrue($web->getCurrentAuthors()->isEmpty());
+        self::assertTrue($web->getFlags()->isReviewed());
+        self::assertTrue($web->getFlags()->isCanBeCurrentAuthor());
+        $asset = $this->findCmsAsset();
+        self::assertSame(['web'], $this->toTreeKeys($this->authors, $asset->getAuthors()));
+        self::assertSame(['repro'], $this->toTreeKeys($this->authors, $asset->getSources()));
+        self::assertSame(
+            [[(string) $this->authors['web']->getId(), 0, (string) $this->authors['repro']->getId(), 0]],
+            array_map(static fn (array $link): array => [$link['author_id'], (int) $link['source'], $link['main_author_id'], (int) $link['main_author_linked']], $this->fetchSnapshot()),
+        );
+        self::assertInstanceOf(JobAuthorNameReindex::class, $this->entityManager->getRepository(JobAuthorNameReindex::class)->findOneBy(['authorId' => (string) $this->authors['web']->getId()]));
+        self::assertSame([], $this->entityManager->getRepository(JobAuthorCurrentOptimize::class)->findAll());
+
+        self::assertMatchesRegularExpression('/merged 0 groups .* 1 groups already merged, 0 skipped/', $this->execute(Command::SUCCESS));
+    }
+
+    public function testMainAloneMergedElsewhereSkipsTheGroup(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'tasr' => ['name' => 'TASR', 'reviewed' => true],
+            'other' => ['name' => 'Agentúra Sever', 'reviewed' => true],
+            'paren' => ['name' => '(TASR)', 'parents' => ['other']],
+        ]);
+        $this->writeCsv(
+            ['1' => ['paren' => 'main']],
+            fn (array $rows): array => [0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $this->authors['tasr']->getId()]],
+        );
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertStringContainsString(sprintf('author %s already has other current authors', (string) $this->authors['paren']->getId()), $display);
+        self::assertSame(['other'], $this->toTreeKeys($this->authors, $this->findAuthor('paren')->getCurrentAuthors()));
+    }
+
+    public function testMapRowsGoUnderNamedTargetsFoundOrCreated(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, [
+            'agency' => ['name' => 'Agentúra Sever', 'source' => true, 'reviewed' => true],
+            'composite' => ['name' => 'Agentúra Sever/Ema Horná'],
+            'compositeChild' => ['name' => 'Agentúra Sever / Ema Horná', 'parents' => ['composite']],
+            'blank' => ['name' => '???'],
+            'twin' => ['name' => 'Ema Horná.'],
+        ]);
+        $asset = $this->findCmsAsset();
+        $asset->getAuthors()->clear();
+        $asset->getSources()->clear();
+        $asset->addAuthor($this->authors['composite'])->addSource($this->authors['blank'])->addSource($this->authors['agency']);
+        $this->entityManager->flush();
+        $this->writeCsv(
+            ['1' => ['composite' => 'main'], '2' => ['blank' => 'main'], '3' => ['twin' => 'main']],
+            static fn (array $rows): array => [
+                self::nameTargets($rows[0], sources: 'Agentúra Sever', authors: 'Ema Horná'),
+                self::nameTargets($rows[1], sources: 'Neznámy', authors: ''),
+                self::nameTargets($rows[2], sources: '', authors: 'Ema Horná'),
+            ],
+        );
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertMatchesRegularExpression('/merged 3 groups \(3 variants, 3 asset link snapshots, .* 0 skipped; 1 child authors moved along, 2 target authors created/', $display);
+        $created = $this->findNamed('Ema Horná');
+        self::assertFalse($created->getFlags()->isSource());
+        self::assertTrue($this->findNamed('Neznámy')->getFlags()->isSource());
+        foreach (['composite', 'compositeChild'] as $key) {
+            self::assertSame(['agency', 'name:Ema Horná'], $this->toTreeKeys($this->authors, $this->findAuthor($key)->getCurrentAuthors()), $key);
+        }
+        self::assertSame(['name:Neznámy'], $this->toTreeKeys($this->authors, $this->findAuthor('blank')->getCurrentAuthors()));
+        self::assertSame(['name:Ema Horná'], $this->toTreeKeys($this->authors, $this->findAuthor('twin')->getCurrentAuthors()));
+        self::assertSame(
+            [
+                ['???', 'Neznámy', 1],
+                ['Agentúra Sever / Ema Horná', 'Agentúra Sever', 0],
+                ['Agentúra Sever / Ema Horná', 'Ema Horná', 1],
+                ['Agentúra Sever/Ema Horná', 'Agentúra Sever', 0],
+                ['Agentúra Sever/Ema Horná', 'Ema Horná', 1],
+                ['Ema Horná.', 'Ema Horná', 0],
+            ],
+            array_map(static fn (array $log): array => [$log['variant_name'], $log['main_author_name'], (int) $log['main_author_created']], $this->fetchLogs()),
+        );
+        self::assertEqualsCanonicalizing(
+            [
+                [(string) $this->authors['composite']->getId(), 0, (string) $this->authors['agency']->getId(), 1],
+                [(string) $this->authors['composite']->getId(), 0, (string) $created->getId(), 0],
+                [(string) $this->authors['blank']->getId(), 1, (string) $this->findNamed('Neznámy')->getId(), 0],
+            ],
+            array_map(static fn (array $link): array => [$link['author_id'], (int) $link['source'], $link['main_author_id'], (int) $link['main_author_linked']], $this->fetchSnapshot()),
+        );
+    }
+
+    public function testDryRunCreatesNoNamedTarget(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, ['composite' => ['name' => 'Agentúra Sever/Ema Horná']]);
+        $this->writeCsv(['1' => ['composite' => 'main']], static fn (array $rows): array => [self::nameTargets($rows[0], sources: 'Agentúra Sever', authors: 'Ema Horná')]);
+
+        $display = $this->execute(Command::SUCCESS, ['--dry-run' => true]);
+
+        self::assertMatchesRegularExpression('/Dry run, rolled back\. .* 2 target authors created/', $display);
+        self::assertSame([], $this->entityManager->getRepository(Author::class)->findBy(['name' => ['Agentúra Sever', 'Ema Horná']]));
+        self::assertTrue($this->findAuthor('composite')->getCurrentAuthors()->isEmpty());
+        self::assertSame([], $this->fetchLogs());
+    }
+
+    /**
+     * @param array<string, array{name: string, source?: bool}> $tree
+     */
+    #[DataProvider('namedTargetSkippedDataProvider')]
+    public function testNamedTargetThatIsNotCertainSkipsTheGroup(array $tree, string $sources, string $authors, string $reason): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, ['composite' => ['name' => 'Agentúra Sever/Ema Horná'], ...$tree]);
+        $this->writeCsv(['1' => ['composite' => 'main']], static fn (array $rows): array => [self::nameTargets($rows[0], sources: $sources, authors: $authors)]);
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertStringContainsString($reason, $display);
+        self::assertTrue($this->findAuthor('composite')->getCurrentAuthors()->isEmpty());
+        self::assertSame([], $this->fetchLogs());
+    }
+
+    public static function namedTargetSkippedDataProvider(): iterable
+    {
+        yield 'name spelled otherwise' => [
+            ['other' => ['name' => 'Ema Horna']], App::EMPTY_STRING, 'Ema Horná', 'target "Ema Horná" exists as "Ema Horna"',
+        ];
+        yield 'source that is an author' => [
+            ['other' => ['name' => 'Agentúra Sever']], 'Agentúra Sever', 'Ema Horná', 'target "Agentúra Sever" is not a source',
+        ];
+        yield 'author that is a source' => [
+            ['other' => ['name' => 'Ema Horná', 'source' => true]], App::EMPTY_STRING, 'Ema Horná', 'target "Ema Horná" is a source',
+        ];
+    }
+
+    public function testFileWithoutNamedTargetColumnsMerges(): void
+    {
+        $this->authors = $this->createAuthorTree($this->cms, self::TREE);
+        $this->writeCsv(
+            ['1' => ['main' => 'main', 'reviewed' => 'variant']],
+            static fn (array $rows): array => array_map(static fn (array $row): array => array_diff_key($row, [AuthorMergeCsv::NEW_SOURCES => true, AuthorMergeCsv::NEW_AUTHORS => true]), $rows),
+        );
+
+        $display = $this->execute(Command::SUCCESS);
+
+        self::assertMatchesRegularExpression('/merged 1 groups \(1 variants/', $display);
+        self::assertSame(['main'], $this->toTreeKeys($this->authors, $this->findAuthor('reviewed')->getCurrentAuthors()));
     }
 
     public function testGroupsUnderOneAuthorShareItsWaitingJob(): void
@@ -335,6 +508,32 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             ['1' => $valid],
             static fn (array $rows): array => [...$rows, 0 => [...$rows[0], AuthorMergeCsv::TARGET_IDS => (string) $rows[0][AuthorMergeCsv::AUTHOR_ID] . ' + ' . AuthorFixtures::AUTHOR_1]],
             'Row 3: "target_ids" differs from the main row 2; copy it from row 2 or leave it empty',
+        ];
+        yield 'name in new sources and new authors' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [self::nameTargets($rows[0], sources: 'Ema Horná', authors: 'Ema Horná'), $rows[1]],
+            'Row 2: "Ema Horná" is in both "new_sources" and "new_authors"',
+        ];
+        yield 'new target name changed on a variant row' => [
+            ['1' => $valid],
+            static fn (array $rows): array => [self::nameTargets($rows[0], sources: '', authors: 'Ema Horná'), [...$rows[1], AuthorMergeCsv::NEW_AUTHORS => 'Eva Horná']],
+            'Row 3: "new_authors" differs from the main row 2; copy it from row 2 or leave it empty',
+        ];
+        yield 'new target written otherwise by another group' => [
+            ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
+            static fn (array $rows): array => [
+                self::nameTargets($rows[0], sources: '', authors: 'Ema Horná'), self::nameTargets($rows[1], sources: '', authors: ''),
+                self::nameTargets($rows[2], sources: '', authors: 'EMA HORNÁ'), self::nameTargets($rows[3], sources: '', authors: ''),
+            ],
+            'Row 4: "EMA HORNÁ" in "new_authors" is "Ema Horná" in "new_authors" on row 2; write it the same',
+        ];
+        yield 'new target as a source and as an author' => [
+            ['1' => $valid, '2' => ['other' => 'main', 'otherDot' => 'variant']],
+            static fn (array $rows): array => [
+                self::nameTargets($rows[0], sources: 'Ema Horná', authors: ''), self::nameTargets($rows[1], sources: '', authors: ''),
+                self::nameTargets($rows[2], sources: '', authors: 'Ema Horná'), self::nameTargets($rows[3], sources: '', authors: ''),
+            ],
+            'Row 4: "Ema Horná" in "new_authors" is "Ema Horná" in "new_sources" on row 2; write it the same',
         ];
         yield 'approved that is not 0 or 1' => [
             ['1' => $valid], static fn (array $rows): array => array_map(static fn (array $row): array => [...$row, AuthorMergeCsv::APPROVED => 'yes'], $rows), 'Row 2: "approved" is "yes", allowed: 1, 0',
@@ -453,12 +652,6 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             },
             'cannot be a current author',
         ];
-        yield 'variant became a current author' => [
-            static function (array $authors, AuthorManager $manager): void {
-                $manager->merge(variants: [$authors['skipped']], targets: [$authors['spaces']], flush: false);
-            },
-            'is a current author of other authors',
-        ];
     }
 
     public function testDryRunRollsBackAndCreatesNoJob(): void
@@ -527,6 +720,24 @@ final class AuthorMergeCommandTest extends CoreDamKernelTestCase
             fputcsv($handle, array_values($row), $delimiter, '"', '');
         }
         fclose($handle);
+    }
+
+    /**
+     * @param array<string, string|int> $row
+     *
+     * @return array<string, string|int>
+     */
+    private static function nameTargets(array $row, string $sources, string $authors): array
+    {
+        return [...$row, AuthorMergeCsv::TARGET_IDS => App::EMPTY_STRING, AuthorMergeCsv::NEW_SOURCES => $sources, AuthorMergeCsv::NEW_AUTHORS => $authors];
+    }
+
+    private function findNamed(string $name): Author
+    {
+        $author = $this->entityManager->getRepository(Author::class)->findOneBy(['name' => $name, 'identifier' => App::EMPTY_STRING, 'extSystem' => $this->cms]);
+        self::assertInstanceOf(Author::class, $author);
+
+        return $author;
     }
 
     /**
