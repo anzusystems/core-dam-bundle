@@ -164,7 +164,8 @@ anzu_systems_core_dam:
           enabled: true
           required: adm
           credit_format: '{authors} / {sources}'
-          credit_separator: '; '
+          credit_sources_separator: ' | '
+          credit_authors_separator: '; '
         admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'

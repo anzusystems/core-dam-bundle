@@ -43,8 +43,14 @@ final class ExtSystemAssetTypeSourcesAdmGetDecorator
     }
 
     #[Serialize]
-    public function getCreditSeparator(): string
+    public function getCreditSourcesSeparator(): string
     {
-        return $this->configuration->getCreditSeparator();
+        return $this->configuration->getCreditSourcesSeparator();
+    }
+
+    #[Serialize]
+    public function getCreditAuthorsSeparator(): string
+    {
+        return $this->configuration->getCreditAuthorsSeparator();
     }
 }

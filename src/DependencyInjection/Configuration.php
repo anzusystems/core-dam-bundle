@@ -571,8 +571,11 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_FORMAT_KEY)
                     ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_FORMAT)
                 ->end()
-                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_SEPARATOR_KEY)
-                    ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_SEPARATOR)
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_SOURCES_SEPARATOR_KEY)
+                    ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_SOURCES_SEPARATOR)
+                ->end()
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_AUTHORS_SEPARATOR_KEY)
+                    ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_AUTHORS_SEPARATOR)
                 ->end()
             ->end()
         ;
