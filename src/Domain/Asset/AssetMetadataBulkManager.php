@@ -35,6 +35,9 @@ final class AssetMetadataBulkManager extends AbstractManager
         $this->updateMainFileInternal($asset, $dto);
         $this->updateSources($asset, $dto);
         $this->updateAuthors($asset, $dto);
+        if (false === $dto->isAuthorsUndefined() || false === $dto->isSourcesUndefined()) {
+            $this->authorProvider->provideCurrentAuthorToColl($asset);
+        }
         $this->updateKeywords($asset, $dto);
         $this->evaluateInternalRules($asset);
 
@@ -63,7 +66,6 @@ final class AssetMetadataBulkManager extends AbstractManager
             oldCollection: $asset->getAuthors(),
             newCollection: $updateDto->getAuthors(),
         );
-        $this->authorProvider->provideCurrentAuthorToColl($asset);
     }
 
     private function updateSources(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
@@ -76,7 +78,6 @@ final class AssetMetadataBulkManager extends AbstractManager
             oldCollection: $asset->getSources(),
             newCollection: $updateDto->getSources(),
         );
-        $this->authorProvider->provideCurrentAuthorToColl($asset);
     }
 
     private function updateTtsAudio(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void

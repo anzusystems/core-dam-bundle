@@ -14,9 +14,6 @@ use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
-use Doctrine\Common\Collections\Order;
-use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\QueryBuilder;
 
 /**
@@ -49,7 +46,7 @@ final class AssetRepository extends AbstractAnzuRepository
     }
 
     /**
-     * @return Collection<array-key, Asset>
+     * @return Collection<int, Asset>
      */
     public function findByIds(array $ids): Collection
     {
@@ -57,54 +54,7 @@ final class AssetRepository extends AbstractAnzuRepository
             $this->createQueryBuilder('entity')
                 ->where('entity.id in (:ids)')
                 ->setParameter('ids', $ids)
-                ->getQuery()
-                ->getResult()
-        );
-    }
-
-    /**
-     * The ids are read as a UNION of the two link tables, because an OR over both joins would use no index. Each branch
-     * stops at the limit and reads distinct asset ids, so an asset linked to several of the ids takes one row and a batch never reads all links of a large author.
-     *
-     * @param list<string> $authorIds
-     * @param list<string> $sourceAuthorIds
-     *
-     * @return Collection<int, Asset>
-     */
-    public function findByAuthorIds(array $authorIds, array $sourceAuthorIds, string $fromId = '', int $limit = 100): Collection
-    {
-        $branches = [];
-        $params = ['fromId' => $fromId, 'limit' => $limit];
-        $types = ['limit' => ParameterType::INTEGER];
-        foreach (['asset_author' => $authorIds, 'asset_source' => $sourceAuthorIds] as $table => $ids) {
-            if (empty($ids)) {
-                continue;
-            }
-            $branches[] = sprintf(
-                '(SELECT DISTINCT asset_id FROM %1$s WHERE author_id IN (:%1$s) AND asset_id > :fromId ORDER BY asset_id LIMIT :limit)',
-                $table,
-            );
-            $params[$table] = $ids;
-            $types[$table] = ArrayParameterType::STRING;
-        }
-        if (empty($branches)) {
-            return new ArrayCollection();
-        }
-
-        $assetIds = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            'SELECT asset_id FROM (' . implode(' UNION ', $branches) . ') linked ORDER BY asset_id LIMIT :limit',
-            $params,
-            $types,
-        );
-        if (empty($assetIds)) {
-            return new ArrayCollection();
-        }
-
-        return new ArrayCollection(
-            $this->createQueryBuilder('entity')
-                ->where('entity.id IN (:ids)')
-                ->setParameter('ids', $assetIds)
-                ->addOrderBy('entity.id', Order::Ascending->value)
+                ->orderBy('entity.id', Criteria::ASC)
                 ->getQuery()
                 ->getResult()
         );

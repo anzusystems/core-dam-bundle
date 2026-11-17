@@ -12,6 +12,7 @@ use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorNameReindexResult;
 use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetAuthorDBALRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
 use RuntimeException;
 use Throwable;
@@ -24,6 +25,7 @@ final class JobAuthorNameReindexProcessor extends AbstractJobProcessor
 
     public function __construct(
         private readonly AssetRepository $assetRepository,
+        private readonly AssetAuthorDBALRepository $assetAuthorDBALRepository,
         private readonly AuthorRepository $authorRepository,
         private readonly DamLogger $damLogger,
         private int $bulkSize = self::ASSET_BULK_SIZE,
@@ -75,7 +77,10 @@ final class JobAuthorNameReindexProcessor extends AbstractJobProcessor
         }
 
         $lastId = $job->getLastBatchProcessedRecord();
-        $assets = $this->assetRepository->findByAuthorIds([(string) $author->getId()], [(string) $author->getId()], $lastId, $this->bulkSize);
+        $authorIds = [(string) $author->getId()];
+        $assets = $this->assetRepository->findByIds(
+            $this->assetAuthorDBALRepository->findAssetIdsByAuthorIds($authorIds, $authorIds, $lastId, $this->bulkSize)
+        );
 
         $lastProcessedId = $lastId;
         foreach ($assets as $asset) {
