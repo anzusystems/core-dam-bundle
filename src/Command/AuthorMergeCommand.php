@@ -15,7 +15,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'anzu-dam:author:merge',
-    description: 'Merge duplicate authors by the CSV of anzu-dam:author:merge-plan checked by people'
+    description: 'Merge authors by a CSV checked by people: the plan of anzu-dam:author:merge-plan or an author map'
 )]
 final readonly class AuthorMergeCommand
 {
@@ -67,7 +67,7 @@ final readonly class AuthorMergeCommand
             $io->table(['Skipped group', 'Reason'], array_map(null, array_keys($skipped), $skipped));
         }
         $io->success(sprintf(
-            '%sRun %s: merged %d groups (%d variants, %d asset link snapshots, %d clean phrases), %d jobs, %d groups already merged, %d skipped',
+            '%sRun %s: merged %d groups (%d variants, %d asset link snapshots, %d clean phrases), %d jobs, %d groups already merged, %d skipped; %d child authors moved along, %d target authors created',
             $dryRun ? 'Dry run, rolled back. ' : App::EMPTY_STRING,
             $result->getRunId(),
             $result->getMergedGroups(),
@@ -77,6 +77,8 @@ final readonly class AuthorMergeCommand
             $result->getJobs(),
             $result->getAlreadyMergedGroups(),
             count($skipped),
+            $result->getChildAuthors(),
+            $result->getCreatedAuthors(),
         ));
 
         return Command::SUCCESS;

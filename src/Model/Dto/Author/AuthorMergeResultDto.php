@@ -10,6 +10,8 @@ final class AuthorMergeResultDto
 {
     private int $mergedGroups = App::ZERO;
     private int $mergedVariants = App::ZERO;
+    private int $childAuthors = App::ZERO;
+    private int $createdAuthors = App::ZERO;
     private int $alreadyMergedGroups = App::ZERO;
     private int $assetLinks = App::ZERO;
     private int $cleanPhrases = App::ZERO;
@@ -25,10 +27,12 @@ final class AuthorMergeResultDto
     ) {
     }
 
-    public function addMerged(int $variants, int $assetLinks, int $cleanPhrases, int $jobs): void
+    public function addMerged(int $variants, int $childAuthors, int $createdAuthors, int $assetLinks, int $cleanPhrases, int $jobs): void
     {
         ++$this->mergedGroups;
         $this->mergedVariants += $variants;
+        $this->childAuthors += $childAuthors;
+        $this->createdAuthors += $createdAuthors;
         $this->assetLinks += $assetLinks;
         $this->cleanPhrases += $cleanPhrases;
         $this->jobs += $jobs;
@@ -57,6 +61,16 @@ final class AuthorMergeResultDto
     public function getMergedVariants(): int
     {
         return $this->mergedVariants;
+    }
+
+    public function getChildAuthors(): int
+    {
+        return $this->childAuthors;
+    }
+
+    public function getCreatedAuthors(): int
+    {
+        return $this->createdAuthors;
     }
 
     public function getAlreadyMergedGroups(): int

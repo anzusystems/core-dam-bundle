@@ -50,8 +50,8 @@ final readonly class AuthorMarkSourceCommand
         }
 
         $rows = $this->authorMarkSourceFacade->markSources($authors, $dryRun);
-        $io->table(['Name', 'Id', 'Links', 'Job'], $rows);
-        $jobs = count(array_filter($rows, static fn (array $row): bool => AuthorMarkSourceFacade::JOB_CREATED === $row['job']));
+        $io->table(['Name', 'Id', 'Links', 'Job', 'Clean phrase'], $rows);
+        $jobs = count(array_filter($rows, static fn (array $row): bool => AuthorMarkSourceFacade::CREATED === $row['job']));
         $io->success(
             $dryRun
                 ? sprintf('Dry run, nothing written. %d sources would be marked', count($rows))

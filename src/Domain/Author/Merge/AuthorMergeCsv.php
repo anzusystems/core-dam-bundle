@@ -31,6 +31,8 @@ final class AuthorMergeCsv
     public const string CHILD_AUTHOR_COUNT = 'child_author_count';
     public const string TARGET_IDS = 'target_ids';
     public const string TARGET_NAMES = 'target_names';
+    public const string NEW_SOURCES = 'new_sources';
+    public const string NEW_AUTHORS = 'new_authors';
     public const string REASON = 'reason';
     public const string DECISION = 'decision';
 
@@ -45,6 +47,8 @@ final class AuthorMergeCsv
         self::DECISION,
         self::TARGET_NAMES,
         self::TARGET_IDS,
+        self::NEW_SOURCES,
+        self::NEW_AUTHORS,
         self::REASON,
         self::CURRENT_AUTHORS,
         self::CHILD_AUTHOR_COUNT,
@@ -196,7 +200,10 @@ final class AuthorMergeCsv
             if (count($values) !== count($header)) {
                 throw new InvalidArgumentException(sprintf('Row %d has %d columns, the header has %d', $rowNumber, count($values), count($header)));
             }
-            $rows[$rowNumber] = array_combine($header, array_map(static fn (?string $value): string => (string) $value, $values));
+            $rows[$rowNumber] = [
+                ...array_fill_keys(self::COLUMNS, App::EMPTY_STRING),
+                ...array_combine($header, array_map(static fn (?string $value): string => (string) $value, $values)),
+            ];
         }
 
         return $rows;
