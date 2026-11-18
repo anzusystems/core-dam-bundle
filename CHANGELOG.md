@@ -66,6 +66,7 @@
 * `FileSystemProvider` checks `instanceof` and `QueryFactoryProvider` compares the search DTO `::class` instead of `ClassUtils::getRealClass()` of the abandoned `doctrine/common`. `composer audit` ignores the abandonment of `doctrine/common`, which `anzusystems/serializer-bundle` still requires
 
 ### Fixes
+* A clean phrase of mode `replace` gives the author of the phrase that matched: `AuthorCleanPhraseProcessor::replace()` took the author of the first `replace` phrase in the list, so the credit `Name (TASR)` got the author of another phrase
 * The adm configuration (`GET /api/adm/v1/configuration` and `/configuration/ext-system/{extSystem}`) is no longer cached in the proxy: it sits behind the adm firewall and a cached copy outlived a deploy that changed it; the pub configuration keeps the proxy cache (`AdmConfigCacheSettings`, xkey `core-dam-adm-config`) for 1 hour instead of a week
 * `LicenceCollectionHandler` loads the requested licences through `EntityIdHandler::prepareDeserializeBatch()`, so the adm asset and distribution search no longer silently drop the licence ids that are not loaded yet
 * A file whose processing closed the EntityManager (e.g. a Doctrine failure) is stored as `failed` through a reset manager instead of failing again with `The EntityManager is closed.` and being retried forever; `AssetFileChangeStateHandler` continues with the reloaded file, so a video downloaded by `POST /api/sys/v1/video/from-url` gets its `videoFailed` callback; `AbstractAssetFileStatusFacade` gains the `setManagerRegistry()` setter

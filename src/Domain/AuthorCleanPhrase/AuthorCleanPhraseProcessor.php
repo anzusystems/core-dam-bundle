@@ -71,7 +71,8 @@ final class AuthorCleanPhraseProcessor extends AbstractManager
                 $replace,
                 function (array $matches) use (&$authorIdReplacements): string {
                     foreach ($matches as $key => $match) {
-                        if (str_starts_with((string) $key, AbstractAuthorCleanPhraseBuilder::PHRASE_ID_PREFIX)) {
+                        // Named groups of the phrases before the matched one are in $matches too, as ''.
+                        if ('' !== $match && str_starts_with((string) $key, AbstractAuthorCleanPhraseBuilder::PHRASE_ID_PREFIX)) {
                             $id = (int) ltrim((string) $key, AbstractAuthorCleanPhraseBuilder::PHRASE_ID_PREFIX);
                             $phrase = $this->repository->find($id);
                             if ($phrase instanceof AuthorCleanPhrase && $phrase->getAuthorReplacement()) {
