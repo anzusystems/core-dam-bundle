@@ -249,7 +249,29 @@ final class AuthorCleanPhraseControllerTest extends AbstractApiController
                     'authorNames' => ['the king'],
                     'authors' => [AuthorFixtures::AUTHOR_1],
                 ]
-            ]
+            ],
+            'Replace phrase after the fixture replace phrases of another author' => [
+                'phrasePayload' => [
+                    'extSystem' => ExtSystemFixtures::ID_CMS,
+                    'phrase' => '(TASR)',
+                    'type' => AuthorCleanPhraseType::Word->value,
+                    'mode' => AuthorCleanPhraseMode::Replace->value,
+                    'authorReplacement' => AuthorFixtures::AUTHOR_1,
+                    'position' => 1,
+                    'flags' => [
+                        'wordBoundary' => false,
+                    ],
+                ],
+                'testAuthorString' => 'Henrich (TASR)',
+                'expectedProcessResultBefore' => [
+                    'authorNames' => ['Henrich (TASR)'],
+                    'authors' => [],
+                ],
+                'expectedProcessResultAfter' => [
+                    'authorNames' => ['Henrich'],
+                    'authors' => [AuthorFixtures::AUTHOR_1],
+                ]
+            ],
         ];
     }
 
