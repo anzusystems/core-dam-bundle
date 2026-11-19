@@ -20,6 +20,8 @@ use Doctrine\Common\Collections\Collection;
 /**
  * Backfill for files created before a single use rule applied to them. The ext system is notified
  * before the flush: a failed notification leaves the batch unswitched, so a re-run announces it again.
+ * Only assets with a switched file are reindexed, so a re-run does not repair the index after a crash between
+ * the flush and the reindex.
  */
 final readonly class AssetFileSingleUseFacade
 {
@@ -62,6 +64,7 @@ final readonly class AssetFileSingleUseFacade
         do {
             $assets = $findBatch($idFrom);
             $switchedImages = [];
+            $switchedAssets = [];
             foreach ($assets as $asset) {
                 foreach ($asset->getSlots() as $slot) {
                     $assetFile = $slot->getAssetFile();
@@ -69,6 +72,7 @@ final readonly class AssetFileSingleUseFacade
                         continue;
                     }
                     $enforcedCount++;
+                    $switchedAssets[(string) $asset->getId()] = $asset;
                     if ($assetFile instanceof ImageFile) {
                         $switchedImages[] = $assetFile;
                     }
@@ -78,8 +82,8 @@ final readonly class AssetFileSingleUseFacade
 
             $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($switchedImages));
             $this->assetFileManager->flush();
-            if (false === $assets->isEmpty()) {
-                $this->indexManager->indexBulk($assets->toArray());
+            if (false === empty($switchedAssets)) {
+                $this->indexManager->indexBulk(array_values($switchedAssets));
             }
             $this->assetFileManager->clear();
         } while (self::BATCH_SIZE === $assets->count());
