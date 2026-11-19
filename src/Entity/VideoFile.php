@@ -73,6 +73,11 @@ class VideoFile extends AssetFile implements ImagePreviewableInterface
         return $this;
     }
 
+    public function hasAsset(): bool
+    {
+        return isset($this->asset);
+    }
+
     public function getAsset(): Asset
     {
         return $this->asset;

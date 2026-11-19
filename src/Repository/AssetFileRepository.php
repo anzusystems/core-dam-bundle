@@ -23,8 +23,6 @@ use Doctrine\ORM\NonUniqueResultException;
  */
 final class AssetFileRepository extends AbstractAssetFileRepository
 {
-    private const int DEFAULT_FAILED_REASONS_LIMIT = 3;
-
     /**
      * @return Collection<array-key, AssetFile>
      */
@@ -60,20 +58,17 @@ final class AssetFileRepository extends AbstractAssetFileRepository
      */
     public function findFailedReasonsByOriginStorage(
         OriginStorage $originStorage,
-        int $limit = self::DEFAULT_FAILED_REASONS_LIMIT,
-        ?DateTimeInterface $failedSince = null,
+        int $limit,
+        DateTimeInterface $failedSince,
     ): array {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->select('entity.assetAttributes.failReason AS failReason')
             ->where('entity.assetAttributes.originStorage = :originStorage')
             ->andWhere('entity.assetAttributes.status = :status')
             ->setParameter('originStorage', $originStorage->toString())
-            ->setParameter('status', AssetFileProcessStatus::Failed->toString());
-        if ($failedSince instanceof DateTimeInterface) {
-            $queryBuilder
-                ->andWhere('entity.createdAt >= :failedSince')
-                ->setParameter('failedSince', $failedSince);
-        }
+            ->andWhere('entity.createdAt >= :failedSince')
+            ->setParameter('status', AssetFileProcessStatus::Failed->toString())
+            ->setParameter('failedSince', $failedSince);
 
         return array_column(
             $queryBuilder

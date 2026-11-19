@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
+use AnzuSystems\CoreDamBundle\Exception\ValidationException as DamValidationException;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -124,7 +125,7 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
 
     public function testDefaultSourceFromForeignExtSystemFailsValidation(): void
     {
-        $this->assertDefaultSourceIsInvalid($this->createSource('Licence Foreign Source'));
+        $this->assertDefaultSourceIsInvalid($this->createSource('Licence Foreign Source'), DamValidationException::ERROR_INVALID_EXT_SYSTEM);
     }
 
     public function testDefaultSourceThatIsNotASourceFailsValidation(): void
@@ -132,10 +133,10 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_BLOG_1);
         self::assertInstanceOf(Author::class, $author);
 
-        $this->assertDefaultSourceIsInvalid($author);
+        $this->assertDefaultSourceIsInvalid($author, ValidationException::ERROR_FIELD_INVALID);
     }
 
-    private function assertDefaultSourceIsInvalid(Author $defaultSource): void
+    private function assertDefaultSourceIsInvalid(Author $defaultSource, string $expectedError): void
     {
         $licence = $this->getFixtureLicence();
         $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
@@ -145,7 +146,7 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
             $this->assetLicenceFacade->update($licence, $newLicence);
             self::fail('Expected ValidationException was not thrown.');
         } catch (ValidationException $exception) {
-            self::assertArrayHasKey('defaultSource', $exception->getFormattedErrors());
+            self::assertSame([$expectedError], $exception->getFormattedErrors()['defaultSource'] ?? null);
         }
     }
 

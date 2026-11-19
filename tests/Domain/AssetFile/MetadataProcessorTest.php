@@ -109,6 +109,16 @@ final class MetadataProcessorTest extends CoreDamKernelTestCase
         self::assertFalse($this->isSuggesterLockHeld($assetId));
     }
 
+    public function testConfiguredTagsWithHyphenAreStored(): void
+    {
+        $imageFile = $this->createImage();
+
+        $exifData = $this->getService(AssetMetadataProcessor::class)->readExifData($imageFile, $this->getFile());
+
+        self::assertSame('Ján Kováč', $exifData['By-line'] ?? null);
+        self::assertSame("Žofia O'Brien x & spol", $exifData['Caption-Abstract'] ?? null);
+    }
+
     private function isSuggesterLockHeld(string $assetId): bool
     {
         $locker = $this->getService(ResourceLocker::class);

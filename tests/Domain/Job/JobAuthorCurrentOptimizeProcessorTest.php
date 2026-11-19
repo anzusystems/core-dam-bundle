@@ -86,6 +86,18 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
         $this->assertSame(['Optimize Agency'], $this->assetSources(ImageFixtures::IMAGE_ID_1_2));
     }
 
+    public function testProcessReplacingSourceWithEnforcedSourceSwitchesSingleUse(): void
+    {
+        $agency = $this->createAuthor('Optimize Single Use Agency', source: true);
+        $agency->getFlags()->setSingleUseEnforced(true);
+        $this->setAssetSources(ImageFixtures::IMAGE_ID_1_2, [$this->createChildAuthor('Optimize Single Use Agency.', $agency, source: true)]);
+        $this->assertFalse($this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_2)->getFlags()->isSingleUse());
+
+        $this->runJob($agency);
+
+        $this->assertTrue($this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_2)->getFlags()->isSingleUse());
+    }
+
     #[DataProvider('lastPartialBatchDataProvider')]
     public function testProcessFinishesWithTheLastPartialBatch(bool $twoChildAuthorsPerAsset): void
     {

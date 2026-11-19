@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 
 /**
- * The one place deciding which asset files must be single use; today the rule is the licence
- * flag, further rules (e.g. by file name) belong here as well.
+ * The one place deciding which asset files must be single use: the licence flag, exif Credit or Source
+ * matching the configured pattern, or a source of the asset with the flag. Further rules belong here as well.
  */
 final readonly class AssetFileSingleUseEnforcer
 {
+    private const array SINGLE_USE_METADATA_TAGS = ['Credit', 'Source'];
+
+    public function __construct(
+        private string $singleUseMetadataPattern = App::EMPTY_STRING,
+    ) {
+    }
+
     public function enforce(AssetFile $assetFile): bool
     {
         if ($assetFile->getFlags()->isSingleUse() || false === $this->mustBeSingleUse($assetFile)) {
@@ -25,6 +34,26 @@ final readonly class AssetFileSingleUseEnforcer
 
     private function mustBeSingleUse(AssetFile $assetFile): bool
     {
-        return $assetFile->getLicence()->getFlags()->isSingleUseEnforced();
+        return $assetFile->getLicence()->getFlags()->isSingleUseEnforced()
+            || $this->hasSingleUseMetadata($assetFile)
+            || ($assetFile->hasAsset() && $assetFile->getAsset()->getSources()->exists(
+                static fn (int|string $key, Author $source): bool => $source->getFlags()->isSingleUseEnforced(),
+            ));
+    }
+
+    private function hasSingleUseMetadata(AssetFile $assetFile): bool
+    {
+        if (App::EMPTY_STRING === $this->singleUseMetadataPattern) {
+            return false;
+        }
+
+        $exifData = $assetFile->getMetadata()->getExifData();
+        foreach (self::SINGLE_USE_METADATA_TAGS as $tag) {
+            if (is_string($exifData[$tag] ?? null) && 1 === preg_match($this->singleUseMetadataPattern, $exifData[$tag])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

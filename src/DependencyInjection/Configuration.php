@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\DependencyInjection;
 
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\AllowListConfiguration;
 use AnzuSystems\CoreDamBundle\Domain\Configuration\ConfigurationProvider;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
@@ -232,6 +233,14 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(SettingsConfiguration::URL_FILE_TRUSTED_DOMAINS_KEY)
                     ->defaultValue('')
                     ->info('Comma-separated domain patterns trusted for URL file download (e.g. ".sme.sk,sme.local")')
+                ->end()
+                ->scalarNode(SettingsConfiguration::SINGLE_USE_METADATA_PATTERN_KEY)
+                    ->defaultValue('')
+                    ->info('PCRE pattern; an asset file whose exif Credit or Source matches it is single use (e.g. "/(?:^|[\\s\\/])AP(?:$|[\\s\\/])/"). Empty disables the rule.')
+                    ->validate()
+                        ->ifTrue(static fn (string $pattern): bool => App::EMPTY_STRING !== $pattern && false === @preg_match($pattern, App::EMPTY_STRING))
+                        ->thenInvalid('Invalid PCRE pattern %s')
+                    ->end()
                 ->end()
                 ->booleanNode(SettingsConfiguration::URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY)
                     ->defaultFalse()
@@ -623,6 +632,7 @@ class Configuration implements ConfigurationInterface
     {
         return (new TreeBuilder($metadata))->getRootNode()
             ->useAttributeAsKey('name')
+            ->normalizeKeys(false)
             ->arrayPrototype()
                 ->children()
                     ->scalarNode('autoFillField')

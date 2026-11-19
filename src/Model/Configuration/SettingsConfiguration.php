@@ -39,6 +39,7 @@ final class SettingsConfiguration
     public const string TTS_GOOGLE_API_HOST_DEFAULT = 'https://texttospeech.googleapis.com';
     public const string URL_FILE_TRUSTED_DOMAINS_KEY = 'url_file_trusted_domains';
     public const string URL_FILE_ALLOW_PRIVATE_NETWORKS_KEY = 'url_file_allow_private_networks';
+    public const string SINGLE_USE_METADATA_PATTERN_KEY = 'single_use_metadata_pattern';
 
     public function __construct(
         private readonly string $elasticIndexPrefix,
