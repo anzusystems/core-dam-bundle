@@ -51,12 +51,12 @@ final class AssetLicenceRepository extends AbstractAnzuRepository
         );
     }
 
-    public function existsByDefaultAuthor(Author $author): bool
+    public function existsByDefaultSource(Author $source): bool
     {
         return (bool) $this->createQueryBuilder('entity')
             ->select('1')
-            ->where('entity.defaultAuthor = :author')
-            ->setParameter('author', $author)
+            ->where('entity.defaultSource = :source')
+            ->setParameter('source', $source)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

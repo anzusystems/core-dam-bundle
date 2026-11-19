@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetFactory;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetMetadataBulkManager;
-use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceSingleUseFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceSingleUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -102,6 +104,18 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         self::assertSame(1, $this->assetLicenceSingleUseFacade->enforce($licence));
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertSame(0, $this->assetLicenceSingleUseFacade->enforce($this->findLicence($licence->getId())));
+    }
+
+    public function testCopyIntoEnforcedLicenceKeepsSingleUse(): void
+    {
+        $origin = $this->findImage(ImageFixtures::IMAGE_ID_1_1);
+        $origin->getFlags()->setSingleUse(false);
+        $this->entityManager->flush();
+        $target = $this->createImage($this->createLicence(singleUseEnforced: true));
+
+        $this->getService(AssetFileCopyBuilder::class)->copy($origin, $target);
+
+        self::assertTrue($target->getFlags()->isSingleUse());
     }
 
     private function findLicence(int $licenceId): AssetLicence

@@ -234,9 +234,9 @@ final class AuthorControllerTest extends AbstractApiController
         ];
     }
 
-    public function testDeleteOfTheDefaultAuthorOfALicenceIsRefused(): void
+    public function testDeleteOfTheDefaultSourceOfALicenceIsRefused(): void
     {
-        $this->makeDefaultAuthorOfLicence(AuthorFixtures::AUTHOR_1, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+        $this->makeDefaultSourceOfLicence(AuthorFixtures::AUTHOR_1, AssetLicenceFixtures::DEFAULT_LICENCE_ID);
 
         $response = $this->getApiClient(User::ID_ADMIN)->delete(AuthorUrl::delete(AuthorFixtures::AUTHOR_1));
 
@@ -248,11 +248,11 @@ final class AuthorControllerTest extends AbstractApiController
         self::assertInstanceOf(Author::class, $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1));
     }
 
-    private function makeDefaultAuthorOfLicence(string $authorId, int $licenceId): void
+    private function makeDefaultSourceOfLicence(string $authorId, int $licenceId): void
     {
         /** @var AssetLicence $licence */
         $licence = $this->entityManager->find(AssetLicence::class, $licenceId);
-        $licence->setDefaultAuthor($this->entityManager->find(Author::class, $authorId));
+        $licence->setDefaultSource($this->entityManager->find(Author::class, $authorId));
         $this->entityManager->flush();
     }
 }
