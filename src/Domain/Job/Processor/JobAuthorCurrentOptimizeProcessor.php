@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\Job\Processor;
 use AnzuSystems\CommonBundle\Domain\Job\Processor\AbstractJobProcessor;
 use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
@@ -33,6 +34,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         private readonly AuthorRepository $authorRepository,
         private readonly AuthorProvider $authorProvider,
         private readonly DamLogger $damLogger,
+        private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -127,6 +129,9 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
                 $changedAuthorsCount++;
                 $changedAssets[] = $asset;
+                foreach ($asset->getSlots() as $slot) {
+                    $this->assetFileSingleUseEnforcer->enforce($slot->getAssetFile());
+                }
             }
             $lastId = (string) $asset->getId();
         }

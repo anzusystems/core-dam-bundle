@@ -10,6 +10,8 @@ use Doctrine\Common\Collections\Collection;
 
 interface AssetFileInterface
 {
+    public function hasAsset(): bool;
+
     public function getAsset(): Asset;
 
     public function setAsset(Asset $asset): static;

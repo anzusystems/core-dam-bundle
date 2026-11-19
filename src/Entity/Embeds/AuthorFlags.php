@@ -26,6 +26,10 @@ final class AuthorFlags
     #[Serialize]
     private bool $hiddenInCredit = false;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    #[Serialize]
+    private bool $singleUseEnforced = false;
+
     public function isCanBeCurrentAuthor(): bool
     {
         return $this->canBeCurrentAuthor;
@@ -58,6 +62,18 @@ final class AuthorFlags
     public function setHiddenInCredit(bool $hiddenInCredit): self
     {
         $this->hiddenInCredit = $hiddenInCredit;
+
+        return $this;
+    }
+
+    public function isSingleUseEnforced(): bool
+    {
+        return $this->singleUseEnforced;
+    }
+
+    public function setSingleUseEnforced(bool $singleUseEnforced): self
+    {
+        $this->singleUseEnforced = $singleUseEnforced;
 
         return $this;
     }

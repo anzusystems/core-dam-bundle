@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\Asset;
 
 use AnzuSystems\CoreDamBundle\Domain\AbstractManager;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\AssetAdmUpdateDto;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -14,6 +15,7 @@ class AssetManager extends AbstractManager
 {
     public function __construct(
         private readonly AssetPropertiesRefresher $propertiesRefresher,
+        private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
     }
 
@@ -46,6 +48,9 @@ class AssetManager extends AbstractManager
             $this->trackModification($asset);
         }
         $this->propertiesRefresher->refreshProperties($asset);
+        foreach ($asset->getSlots() as $slot) {
+            $this->assetFileSingleUseEnforcer->enforce($slot->getAssetFile());
+        }
         $this->flush($flush);
 
         return $asset;

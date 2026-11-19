@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Repository;
 
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
@@ -154,6 +155,29 @@ final class AssetRepository extends AbstractAnzuRepository
                 ->orderBy('entity.id', Criteria::ASC)
                 ->getQuery()
                 ->getResult()
+        );
+    }
+
+    /**
+     * @return Collection<int, Asset>
+     */
+    public function findAllBySource(Author $source, int $limit, string $idFrom = ''): Collection
+    {
+        $queryBuilder = $this->createQueryBuilder('entity')
+            ->innerJoin('entity.sources', 'source')
+            ->where('source.id = :sourceId')
+            ->setParameter('sourceId', $source->getId())
+            ->orderBy('entity.id', Criteria::ASC)
+            ->setMaxResults($limit);
+
+        if (false === ('' === $idFrom)) {
+            $queryBuilder
+                ->andWhere('entity.id > :idFrom')
+                ->setParameter('idFrom', $idFrom);
+        }
+
+        return new ArrayCollection(
+            $queryBuilder->getQuery()->getResult()
         );
     }
 

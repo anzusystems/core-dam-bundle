@@ -71,6 +71,7 @@ return static function (ContainerConfigurator $configurator): void {
         ->bind('$userEntityClass', param('anzu_systems.dam_bundle.settings.user_entity_class'))
         ->bind('$urlFileTrustedDomains', param('anzu_systems.dam_bundle.url_file_trusted_domains'))
         ->bind('$urlFileAllowPrivateNetworks', param('anzu_systems.dam_bundle.url_file_allow_private_networks'))
+        ->bind('$singleUseMetadataPattern', param('anzu_systems.dam_bundle.single_use_metadata_pattern'))
         ->bind('$assetLicenceStorageOverrides', param('anzu_systems.dam_bundle.asset_licence_storage_overrides'))
     ;
 

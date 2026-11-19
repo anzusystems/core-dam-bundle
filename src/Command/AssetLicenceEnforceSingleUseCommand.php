@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceSingleUseFacade;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseFacade;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'anzu-dam:asset-licence:enforce-single-use',
-    description: 'Switch every asset file of a licence with flags.singleUseEnforced to single use and reindex it'
+    description: 'Apply the single use rules to every asset file of a licence, switch the matching ones to single use and reindex them'
 )]
 final class AssetLicenceEnforceSingleUseCommand extends Command
 {
@@ -22,7 +22,7 @@ final class AssetLicenceEnforceSingleUseCommand extends Command
 
     public function __construct(
         private readonly AssetLicenceRepository $assetLicenceRepository,
-        private readonly AssetLicenceSingleUseFacade $assetLicenceSingleUseFacade,
+        private readonly AssetFileSingleUseFacade $assetFileSingleUseFacade,
     ) {
         parent::__construct();
     }
@@ -43,13 +43,7 @@ final class AssetLicenceEnforceSingleUseCommand extends Command
 
             return Command::FAILURE;
         }
-        if (false === $licence->getFlags()->isSingleUseEnforced()) {
-            $output->writeln('<error>Asset licence does not enforce single use, nothing to do</error>');
-
-            return Command::FAILURE;
-        }
-
-        $enforcedCount = $this->assetLicenceSingleUseFacade->enforce($licence);
+        $enforcedCount = $this->assetFileSingleUseFacade->enforceForLicence($licence);
         $output->writeln(sprintf('<info>Switched %d asset file(s) of licence %d to single use</info>', $enforcedCount, $licence->getId()));
 
         return Command::SUCCESS;
