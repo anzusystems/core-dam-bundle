@@ -9,8 +9,10 @@ use AnzuSystems\CommonBundle\Entity\Interfaces\JobInterface;
 use AnzuSystems\CommonBundle\Traits\EntityManagerAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileSingleUseEnforcer;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
@@ -18,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetAuthorDBALRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Throwable;
 
@@ -35,6 +38,7 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         private readonly AuthorProvider $authorProvider,
         private readonly DamLogger $damLogger,
         private readonly AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
+        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
         private int $bulkSize = self::ASSET_BULK_SIZE,
     ) {
     }
@@ -125,17 +129,22 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
     {
         $changedAuthorsCount = 0;
         $changedAssets = [];
+        $switchedImages = [];
         foreach ($assets as $asset) {
             if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
                 $changedAuthorsCount++;
                 $changedAssets[] = $asset;
                 foreach ($asset->getSlots() as $slot) {
-                    $this->assetFileSingleUseEnforcer->enforce($slot->getAssetFile());
+                    $assetFile = $slot->getAssetFile();
+                    if ($this->assetFileSingleUseEnforcer->enforce($assetFile) && $assetFile instanceof ImageFile) {
+                        $switchedImages[] = $assetFile;
+                    }
                 }
             }
             $lastId = (string) $asset->getId();
         }
 
+        $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($switchedImages));
         $this->entityManager->flush();
         if (false === empty($changedAssets)) {
             $this->indexManager->indexBulk($changedAssets);
