@@ -126,7 +126,11 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     #[ORM\JoinColumn(nullable: true)]
     #[Serialize(handler: EntityIdHandler::class)]
     #[AppAssert\EqualExtSystem]
-    private ?Author $defaultAuthor = null;
+    #[Assert\Expression(
+        expression: 'value === null or value.getFlags().isSource()',
+        message: ValidationException::ERROR_FIELD_INVALID,
+    )]
+    private ?Author $defaultSource = null;
 
     public function __construct()
     {
@@ -142,7 +146,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         $this->setAutoDelete(new AssetLicenceAutoDelete());
         $this->internalRuleAuthors = new ArrayCollection();
         $this->internalRuleUsers = new ArrayCollection();
-        $this->setDefaultAuthor(null);
+        $this->setDefaultSource(null);
     }
 
     public function getName(): string
@@ -343,14 +347,14 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         return $this;
     }
 
-    public function getDefaultAuthor(): ?Author
+    public function getDefaultSource(): ?Author
     {
-        return $this->defaultAuthor;
+        return $this->defaultSource;
     }
 
-    public function setDefaultAuthor(?Author $defaultAuthor): self
+    public function setDefaultSource(?Author $defaultSource): self
     {
-        $this->defaultAuthor = $defaultAuthor;
+        $this->defaultSource = $defaultSource;
 
         return $this;
     }

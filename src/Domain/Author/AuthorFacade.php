@@ -107,7 +107,7 @@ final class AuthorFacade
      */
     public function delete(Author $author): bool
     {
-        if ($this->assetLicenceRepository->existsByDefaultAuthor($author)) {
+        if ($this->assetLicenceRepository->existsByDefaultSource($author)) {
             throw (new DependencyExistsException())->addDependency(AssetLicence::class);
         }
 

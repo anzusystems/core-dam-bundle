@@ -230,6 +230,21 @@ final class AuthorProviderTest extends CoreDamKernelTestCase
         self::assertSame(['first', 'second'], $this->toTreeKeys($authors, $asset->getAuthors()));
     }
 
+    public function testProvideAuthorToCollAddsASourceToSourcesOnce(): void
+    {
+        $authors = $this->createAuthorTree($this->cms, [
+            'agency' => ['name' => 'Agentúra', 'reviewed' => true, 'source' => true],
+            'photographer' => ['name' => 'Fotograf'],
+        ]);
+        $asset = $this->createImageAsset();
+        $asset->addAuthor($authors['photographer']);
+
+        self::assertTrue($this->authorProvider->provideAuthorToColl($asset, $authors['agency']));
+        self::assertFalse($this->authorProvider->provideAuthorToColl($asset, $authors['agency']));
+        self::assertSame(['photographer'], $this->toTreeKeys($authors, $asset->getAuthors()));
+        self::assertSame(['agency'], $this->toTreeKeys($authors, $asset->getSources()));
+    }
+
     private function createImageAsset(): Asset
     {
         $asset = (new Asset())->setExtSystem($this->cms);

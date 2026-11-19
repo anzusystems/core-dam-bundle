@@ -13,9 +13,13 @@ use AnzuSystems\CoreDamBundle\Entity\Embeds\AssetLicenceAutoDelete;
 use AnzuSystems\CoreDamBundle\Repository\AssetLicenceRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
+use AnzuSystems\CoreDamBundle\Tests\Domain\Author\AuthorTreeTrait;
 
 final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
 {
+    use AuthorTreeTrait;
+
     private AssetLicenceFacade $assetLicenceFacade;
     private AssetLicenceRepository $assetLicenceRepository;
 
@@ -104,32 +108,44 @@ final class AssetLicenceFacadeTest extends CoreDamKernelTestCase
         self::assertSame(AssetLicenceAutoDelete::MIN_OLDER_THAN_DAYS, $stored->getAutoDelete()->getOlderThanDays());
     }
 
-    public function testUpdateSetsDefaultAuthor(): void
+    public function testUpdateSetsDefaultSource(): void
     {
         $licence = $this->getFixtureLicence();
-        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_BLOG_1);
+        $source = $this->createSource('Licence Default Source', ExtSystemFixtures::ID_BLOG);
         $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
-        $newLicence->setDefaultAuthor($author);
+        $newLicence->setDefaultSource($source);
 
         $this->assetLicenceFacade->update($licence, $newLicence);
         $this->entityManager->clear();
 
         $stored = $this->getFixtureLicence();
-        self::assertSame(AuthorFixtures::AUTHOR_BLOG_1, $stored->getDefaultAuthor()?->getId());
+        self::assertSame($source->getId(), $stored->getDefaultSource()?->getId());
     }
 
-    public function testDefaultAuthorFromForeignExtSystemFailsValidation(): void
+    public function testDefaultSourceFromForeignExtSystemFailsValidation(): void
+    {
+        $this->assertDefaultSourceIsInvalid($this->createSource('Licence Foreign Source'));
+    }
+
+    public function testDefaultSourceThatIsNotASourceFailsValidation(): void
+    {
+        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_BLOG_1);
+        self::assertInstanceOf(Author::class, $author);
+
+        $this->assertDefaultSourceIsInvalid($author);
+    }
+
+    private function assertDefaultSourceIsInvalid(Author $defaultSource): void
     {
         $licence = $this->getFixtureLicence();
-        $author = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1);
         $newLicence = $this->buildNewLicenceState($licence, manualUploadAllowed: true, directUseAllowed: true, autoDeleteActive: false, olderThanDays: 1);
-        $newLicence->setDefaultAuthor($author);
+        $newLicence->setDefaultSource($defaultSource);
 
         try {
             $this->assetLicenceFacade->update($licence, $newLicence);
             self::fail('Expected ValidationException was not thrown.');
         } catch (ValidationException $exception) {
-            self::assertArrayHasKey('defaultAuthor', $exception->getFormattedErrors());
+            self::assertArrayHasKey('defaultSource', $exception->getFormattedErrors());
         }
     }
 
