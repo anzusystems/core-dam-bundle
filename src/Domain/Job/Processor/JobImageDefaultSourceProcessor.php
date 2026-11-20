@@ -16,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
 use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetSourceDBALRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -76,7 +77,7 @@ final class JobImageDefaultSourceProcessor extends AbstractJobProcessor
         $extSystem = $this->extSystemRepository->find($job->getExtSystemId());
         $source = $extSystem instanceof ExtSystem ? $this->authorProvider->getDefaultSource($extSystem, AssetType::Image) : null;
         if (null === $source) {
-            $this->finishFail($job, 'Default source not set');
+            $this->finishFail($job, new RuntimeException('default_source_not_set'));
 
             return;
         }

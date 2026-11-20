@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Sys\V1;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures as BaseAssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
+use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\AssetLicenceFixtures;
@@ -22,6 +24,7 @@ final class AssetFileSourcesTest extends AbstractApiController
     use AuthorTreeTrait;
 
     private const string DOWNLOAD_URL = 'http://core-dam.sme.localhost/download-file?file=50x50&case=sources';
+    private const string STORAGE_FILENAME = 'solid_image.jpeg';
 
     /**
      * @param array<string, mixed> $extra
@@ -114,6 +117,24 @@ final class AssetFileSourcesTest extends AbstractApiController
         $asset = $this->entityManager->find(Asset::class, json_decode((string) $response->getContent(), true)['assetId']);
         self::assertInstanceOf(Asset::class, $asset);
         self::assertSame($expectedSources, $asset->getSources()->map(static fn (Author $source): string => $source->getName())->getValues());
+    }
+
+    public function testGivesDefaultSourceToFileFromStorage(): void
+    {
+        $this->markDefaultSource();
+        $fileSystem = static::getContainer()->get(FileSystemProvider::class)->getFileSystemByStorageName('cms.image');
+        $fileSystem->write(self::STORAGE_FILENAME, (string) file_get_contents(AbstractAssetFileFixtures::DATA_PATH . self::STORAGE_FILENAME));
+
+        $payload = $this->payload(['path' => self::STORAGE_FILENAME]);
+        unset($payload['url']);
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(AssetFileSysUrl::create(), $payload);
+        $fileSystem->delete(self::STORAGE_FILENAME);
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        $this->entityManager->clear();
+        $asset = $this->entityManager->find(Asset::class, json_decode((string) $response->getContent(), true)['assetId']);
+        self::assertInstanceOf(Asset::class, $asset);
+        self::assertSame(['AgencyA'], $asset->getSources()->map(static fn (Author $source): string => $source->getName())->getValues());
     }
 
     /**

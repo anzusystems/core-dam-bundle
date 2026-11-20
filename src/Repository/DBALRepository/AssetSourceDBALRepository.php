@@ -66,7 +66,8 @@ final class AssetSourceDBALRepository extends AbstractAnzuDBALRepository
     public function linkSource(array $assetIds, string $sourceId): int
     {
         return (int) $this->connection->executeStatement(
-            'INSERT IGNORE INTO ' . self::TABLE_NAME . ' (asset_id, author_id) SELECT asset.id, :sourceId FROM asset WHERE asset.id IN (:assetIds)',
+            'INSERT IGNORE INTO ' . self::TABLE_NAME . ' (asset_id, author_id) SELECT asset.id, :sourceId FROM asset WHERE asset.id IN (:assetIds)
+            AND NOT EXISTS (SELECT 1 FROM ' . self::TABLE_NAME . ' link WHERE link.asset_id = asset.id)',
             ['sourceId' => $sourceId, 'assetIds' => $assetIds],
             ['assetIds' => ArrayParameterType::STRING],
         );

@@ -30,7 +30,6 @@ use AnzuSystems\CoreDamBundle\Model\Configuration\TextsWriter\TextsWriterConfigu
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\DistributionStrategy;
-use AnzuSystems\CoreDamBundle\Model\Enum\ExtSystemSourcesRequired;
 use AnzuSystems\CoreDamBundle\Model\Enum\Language;
 use AnzuSystems\CoreDamBundle\Model\Enum\UserAuthType;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
@@ -564,8 +563,9 @@ class Configuration implements ConfigurationInterface
             ->canBeEnabled()
             ->addDefaultsIfNotSet()
             ->children()
-                ->enumNode(ExtSystemAssetTypeSourcesConfiguration::REQUIRED_KEY)
-                    ->values([false, ExtSystemSourcesRequired::Adm->value])
+                // A scalar, not an enum node: the host may pass %env()%, which an enum node rejects at compile time.
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::REQUIRED_KEY)
+                    ->info('false, "never" or "adm"; checked when the configuration is read')
                     ->defaultFalse()
                 ->end()
                 ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_FORMAT_KEY)
