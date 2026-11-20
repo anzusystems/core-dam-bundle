@@ -90,6 +90,7 @@ class DamPermissions
     // Source
     public const string DAM_SOURCE_CREATE = 'dam_source_create';
     public const string DAM_SOURCE_UPDATE = 'dam_source_update';
+    public const string DAM_SOURCE_READ = 'dam_source_read';
     public const string DAM_SOURCE_DELETE = 'dam_source_delete';
     public const string DAM_SOURCE_UI = 'dam_source_ui';
 
@@ -249,6 +250,7 @@ class DamPermissions
         self::DAM_AUTHOR_UI,
         self::DAM_SOURCE_CREATE,
         self::DAM_SOURCE_UPDATE,
+        self::DAM_SOURCE_READ,
         self::DAM_SOURCE_DELETE,
         self::DAM_SOURCE_UI,
         self::DAM_KEYWORD_CREATE,

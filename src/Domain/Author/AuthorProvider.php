@@ -9,7 +9,11 @@ use AnzuSystems\CoreDamBundle\Domain\Configuration\ExtSystemConfigurationProvide
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
+use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
 use AnzuSystems\CoreDamBundle\Helper\StringHelper;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Configuration\ExtSystemAssetTypeSourcesConfiguration;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
 use Closure;
 use Doctrine\Common\Collections\Collection;
@@ -20,6 +24,7 @@ final readonly class AuthorProvider
         private AuthorRepository $repository,
         private AuthorManager $authorManager,
         private ExtSystemConfigurationProvider $extSystemConfigurationProvider,
+        private DamLogger $damLogger,
     ) {
     }
 
@@ -82,19 +87,71 @@ final readonly class AuthorProvider
         );
     }
 
+    /**
+     * Null when the asset type of the ext system has no default source.
+     *
+     * @throws RuntimeException when the configured default source does not exist or is not a source
+     */
+    public function getDefaultSource(ExtSystem $extSystem, AssetType $assetType): ?Author
+    {
+        $defaultSourceId = $this->getSourcesConfiguration($extSystem, $assetType)->getDefaultSourceId();
+        if (null === $defaultSourceId) {
+            return null;
+        }
+
+        $source = $this->repository->find($defaultSourceId);
+        if ($source instanceof Author && $source->getFlags()->isSource()) {
+            return $source;
+        }
+
+        throw new RuntimeException('default_source_not_source');
+    }
+
+    /**
+     * A wrong default source must not stop the sys API: the asset stays without a source and the error is logged.
+     */
+    public function provideDefaultSource(Asset $asset): void
+    {
+        if (false === $asset->getSources()->isEmpty()) {
+            return;
+        }
+
+        try {
+            $source = $this->getDefaultSource($asset->getExtSystem(), $asset->getAttributes()->getAssetType());
+        } catch (RuntimeException $exception) {
+            $this->damLogger->error(
+                DamLogger::NAMESPACE_ASSET_FILE_PROCESS,
+                sprintf('Default source of ext system (%s) is not set right', $asset->getExtSystem()->getSlug()),
+                exception: $exception,
+            );
+
+            return;
+        }
+
+        if ($source instanceof Author) {
+            $asset->addSource($source);
+        }
+    }
+
     public function provideCurrentAuthorToColl(Asset $asset): bool
     {
         $changed = $this->replaceByCurrentAuthors($asset->getAuthors(), $asset->addAuthor(...));
         $changed = $this->replaceByCurrentAuthors($asset->getSources(), $asset->addSource(...)) || $changed;
 
-        $sourcesConfig = $this->extSystemConfigurationProvider
-            ->getExtSystemConfigurationByAssetType($asset->getAttributes()->getAssetType(), $asset->getExtSystem()->getSlug())
-            ->getSources();
+        $sourcesConfig = $this->getSourcesConfiguration($asset->getExtSystem(), $asset->getAttributes()->getAssetType());
         if ($sourcesConfig->isEnabled()) {
             $changed = $this->routeBySourceFlag($asset) || $changed;
+            $changed = $this->removeDefaultSourceBesideSource($asset, $sourcesConfig->getDefaultSourceId()) || $changed;
         }
 
         return $changed;
+    }
+
+    private function getSourcesConfiguration(ExtSystem $extSystem, AssetType $assetType): ExtSystemAssetTypeSourcesConfiguration
+    {
+        return $this->extSystemConfigurationProvider
+            ->getExtSystemConfigurationByAssetType($assetType, $extSystem->getSlug())
+            ->getSources();
     }
 
     /**
@@ -141,6 +198,27 @@ final readonly class AuthorProvider
         }
 
         return $changed;
+    }
+
+    /**
+     * The default source means the asset has no real source, so it gives way to any other source.
+     */
+    private function removeDefaultSourceBesideSource(Asset $asset, ?string $defaultSourceId): bool
+    {
+        $sources = $asset->getSources();
+        if (null === $defaultSourceId || $sources->count() < 2) {
+            return false;
+        }
+
+        foreach ($sources->toArray() as $source) {
+            if ((string) $source->getId() === $defaultSourceId) {
+                $sources->removeElement($source);
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

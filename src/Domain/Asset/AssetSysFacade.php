@@ -71,6 +71,7 @@ final class AssetSysFacade
     {
         $this->validator->validate($dto);
         $assetFile = $this->assetSysFactory->createFromDto($dto);
+        $this->authorProvider->provideDefaultSource($assetFile->getAsset());
         $this->facadeProvider->getStatusFacade($assetFile)->storeAndProcess($assetFile);
 
         return $this->createFromDto($assetFile, $dto);
@@ -95,6 +96,7 @@ final class AssetSysFacade
                     $this->setupKeywords($assetFile, $dto);
                     $this->setupSources($assetFile, $dto);
                     $this->setupAuthors($assetFile, $dto);
+                    $this->authorProvider->provideDefaultSource($assetFile->getAsset());
                 }
             );
 

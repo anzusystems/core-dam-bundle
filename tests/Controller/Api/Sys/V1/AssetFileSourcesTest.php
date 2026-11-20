@@ -97,6 +97,46 @@ final class AssetFileSourcesTest extends AbstractApiController
         self::assertSame(['Photo Person'], $asset->getAuthors()->map(static fn (Author $author): string => $author->getName())->getValues());
     }
 
+    /**
+     * @param array<string, mixed> $extra
+     * @param list<string> $expectedSources
+     */
+    #[DataProvider('defaultSourceDataProvider')]
+    public function testGivesDefaultSourceOnlyWithoutAnotherSource(array $extra, array $expectedSources): void
+    {
+        $this->markDefaultSource();
+        $this->createSource('Default Rival');
+
+        $response = $this->getApiClient(User::ID_CMS_USER)->post(AssetFileSysUrl::createFromUrl(), $this->payload($extra));
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        $this->entityManager->clear();
+        $asset = $this->entityManager->find(Asset::class, json_decode((string) $response->getContent(), true)['assetId']);
+        self::assertInstanceOf(Asset::class, $asset);
+        self::assertSame($expectedSources, $asset->getSources()->map(static fn (Author $source): string => $source->getName())->getValues());
+    }
+
+    /**
+     * @return array<string, array{extra: array<string, mixed>, expectedSources: list<string>}>
+     */
+    public static function defaultSourceDataProvider(): array
+    {
+        return [
+            'without a source' => [
+                'extra' => [],
+                'expectedSources' => ['AgencyA'],
+            ],
+            'with a source' => [
+                'extra' => ['sources' => ['Default Rival']],
+                'expectedSources' => ['Default Rival'],
+            ],
+            'with an author that is a source' => [
+                'extra' => ['authors' => ['Default Rival']],
+                'expectedSources' => ['Default Rival'],
+            ],
+        ];
+    }
+
     public function testAcceptsCustomDataOverFormLimit(): void
     {
         $title = str_repeat('T', 65);

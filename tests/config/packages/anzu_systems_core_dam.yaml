@@ -166,6 +166,7 @@ anzu_systems_core_dam:
           credit_format: '{authors} / {sources}'
           credit_sources_separator: ' | '
           credit_authors_separator: '; '
+          default_source_id: '7470b436-6e03-4437-9b92-50af90aa09bf' # AuthorFixtures::AUTHOR_5, a source only in the tests that mark it
         admin_domain: admin
         storage_name: 'cms.image'
         crop_storage_name: 'cms.crop'

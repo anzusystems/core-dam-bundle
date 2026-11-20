@@ -45,7 +45,10 @@ final class AuthorController extends AbstractApiController
     #[OAParameterPath('author'), OAResponse(Author::class)]
     public function getOne(Author $author): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $author);
+        $this->denyAccessUnlessGranted(
+            $author->getFlags()->isSource() ? DamPermissions::DAM_SOURCE_READ : DamPermissions::DAM_AUTHOR_READ,
+            $author
+        );
 
         return $this->okResponse($author);
     }
@@ -57,7 +60,12 @@ final class AuthorController extends AbstractApiController
     #[OAParameterPath('search', description: 'Searched.'), OAResponse([Author::class])]
     public function searchByExtSystem(ExtSystem $extSystem, #[SerializeParam] AuthorAdmSearchDto $searchDto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $extSystem);
+        if (true !== $searchDto->isSource()) {
+            $this->denyAccessUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $extSystem);
+        }
+        if (false !== $searchDto->isSource()) {
+            $this->denyAccessUnlessGranted(DamPermissions::DAM_SOURCE_READ, $extSystem);
+        }
 
         return $this->okResponse($this->elasticSearch->searchInfiniteList($searchDto, $extSystem));
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Author;
 
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
@@ -41,6 +42,19 @@ trait AuthorTreeTrait
         }
 
         return $authors;
+    }
+
+    /**
+     * The test configuration makes the fixture author AUTHOR_5 the default source of cms images.
+     */
+    private function markDefaultSource(): Author
+    {
+        $default = $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_5);
+        self::assertInstanceOf(Author::class, $default);
+        $default->getFlags()->setSource(true);
+        $this->entityManager->flush();
+
+        return $default;
     }
 
     private function createSource(string $name, int $extSystemId = ExtSystemFixtures::ID_CMS): Author

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Domain\Author;
 
+use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -63,6 +65,56 @@ final class AuthorSourceRoutingTest extends CoreDamKernelTestCase
         self::assertTrue($this->authorProvider->provideCurrentAuthorToColl($video));
         self::assertSame(['photographer', 'sme', 'tasr'], $this->toTreeKeys($tree, $video->getAuthors()));
         self::assertSame([], $this->toTreeKeys($tree, $video->getSources()));
+    }
+
+    public function testDefaultSourceGivesWayToAnotherSource(): void
+    {
+        $default = $this->markDefaultSource();
+        $tasr = $this->createSource('TASR');
+        $image = $this->createAsset(AssetType::Image);
+        $image->addSource($default);
+
+        self::assertFalse($this->authorProvider->provideCurrentAuthorToColl($image));
+        self::assertSame([AuthorFixtures::AUTHOR_5], $this->sourceIds($image));
+
+        $image->addSource($tasr);
+
+        self::assertTrue($this->authorProvider->provideCurrentAuthorToColl($image));
+        self::assertSame([(string) $tasr->getId()], $this->sourceIds($image));
+    }
+
+    public function testProvidesDefaultSourceOnlyToImageWithoutSource(): void
+    {
+        $this->markDefaultSource();
+        $sita = $this->createSource('SITA');
+        $image = $this->createAsset(AssetType::Image);
+        $imageWithSource = $this->createAsset(AssetType::Image)->addSource($sita);
+        $video = $this->createAsset(AssetType::Video);
+
+        $this->authorProvider->provideDefaultSource($image);
+        $this->authorProvider->provideDefaultSource($imageWithSource);
+        $this->authorProvider->provideDefaultSource($video);
+
+        self::assertSame([AuthorFixtures::AUTHOR_5], $this->sourceIds($image));
+        self::assertSame([(string) $sita->getId()], $this->sourceIds($imageWithSource));
+        self::assertSame([], $this->sourceIds($video));
+    }
+
+    public function testDefaultSourceThatIsNotSourceIsNotProvided(): void
+    {
+        $image = $this->createAsset(AssetType::Image);
+
+        $this->authorProvider->provideDefaultSource($image);
+
+        self::assertSame([], $this->sourceIds($image));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function sourceIds(Asset $asset): array
+    {
+        return $asset->getSources()->map(static fn (Author $source): string => (string) $source->getId())->getValues();
     }
 
     private function createAsset(AssetType $type): Asset
