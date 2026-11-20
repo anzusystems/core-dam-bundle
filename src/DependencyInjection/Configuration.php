@@ -565,7 +565,7 @@ class Configuration implements ConfigurationInterface
             ->children()
                 // A scalar, not an enum node: the host may pass %env()%, which an enum node rejects at compile time.
                 ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::REQUIRED_KEY)
-                    ->info('false, "never" or "adm"; checked when the configuration is read')
+                    ->info('false, "never" or "adm" (from %env()% only "never" or "adm"); checked when the configuration is read')
                     ->defaultFalse()
                 ->end()
                 ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_FORMAT_KEY)
