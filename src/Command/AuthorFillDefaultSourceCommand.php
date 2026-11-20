@@ -39,7 +39,7 @@ final readonly class AuthorFillDefaultSourceCommand
     ): int {
         $extSystemEntity = $this->extSystemRepository->findOneBySlug($extSystem);
         if (null === $extSystemEntity) {
-            $io->error('--ext-system=<slug> is required');
+            $io->error(sprintf('Ext system "%s" not found, --ext-system=<slug> is required', $extSystem));
 
             return Command::INVALID;
         }

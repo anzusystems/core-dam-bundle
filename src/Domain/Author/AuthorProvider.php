@@ -100,7 +100,7 @@ final readonly class AuthorProvider
         }
 
         $source = $this->repository->find($defaultSourceId);
-        if ($source instanceof Author && $source->getFlags()->isSource()) {
+        if ($source instanceof Author && $source->getFlags()->isSource() && $source->getExtSystem()->is($extSystem)) {
             return $source;
         }
 

@@ -34,7 +34,7 @@ final class ExtSystemAssetTypeSourcesConfiguration
 
         return new self(
             $config[self::ENABLED_KEY] ?? false,
-            ExtSystemSourcesRequired::tryFrom((string) $required) ?? ExtSystemSourcesRequired::Default,
+            false === $required ? ExtSystemSourcesRequired::Default : ExtSystemSourcesRequired::from((string) $required),
             $config[self::CREDIT_FORMAT_KEY] ?? self::DEFAULT_CREDIT_FORMAT,
             $config[self::CREDIT_SOURCES_SEPARATOR_KEY] ?? self::DEFAULT_CREDIT_SOURCES_SEPARATOR,
             $config[self::CREDIT_AUTHORS_SEPARATOR_KEY] ?? self::DEFAULT_CREDIT_AUTHORS_SEPARATOR,
