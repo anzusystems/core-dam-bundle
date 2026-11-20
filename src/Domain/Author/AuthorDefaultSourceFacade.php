@@ -30,7 +30,7 @@ final class AuthorDefaultSourceFacade
     }
 
     /**
-     * Yields the number of images of each batch.
+     * Yields the number of images linked in each batch.
      *
      * @return Generator<int, int>
      */
@@ -43,12 +43,13 @@ final class AuthorDefaultSourceFacade
                 $lastId,
                 $this->batchSize,
             );
+            $linked = App::ZERO;
             if (false === empty($assetIds)) {
-                $this->assetSourceDBALRepository->linkSource($assetIds, (string) $source->getId());
+                $linked = $this->assetSourceDBALRepository->linkSource($assetIds, (string) $source->getId());
                 $lastId = $assetIds[array_key_last($assetIds)];
             }
 
-            yield count($assetIds);
+            yield $linked;
         } while ($this->batchSize === count($assetIds));
     }
 }
