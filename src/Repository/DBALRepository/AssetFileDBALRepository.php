@@ -11,7 +11,7 @@ use Doctrine\DBAL\ParameterType;
 final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
 {
     private const string TABLE_NAME = 'asset_file';
-    private const string FILE_IDS_OF_ASSETS = 'SELECT id FROM image_file WHERE asset_id IN (:assetIds)
+    private const string FILE_IDS_BY_ASSET_IDS = 'SELECT id FROM image_file WHERE asset_id IN (:assetIds)
         UNION ALL SELECT id FROM audio_file WHERE asset_id IN (:assetIds)
         UNION ALL SELECT id FROM video_file WHERE asset_id IN (:assetIds)
         UNION ALL SELECT id FROM document_file WHERE asset_id IN (:assetIds)';
@@ -30,19 +30,17 @@ final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
     }
 
     /**
-     * `enforced` is set when the licence or a source of the asset enforces single use.
-     *
-     * @return list<array{id: string, enforced: int|string, exif_data: string|null}>
+     * @return list<array{id: string, licence_enforced: int|string, source_enforced: int|string, exif_data: string|null}>
      */
     public function findNotSingleUseByLicence(int $licenceId, string $fromId, int $limit): array
     {
-        /** @var list<array{id: string, enforced: int|string, exif_data: string|null}> */
+        /** @var list<array{id: string, licence_enforced: int|string, source_enforced: int|string, exif_data: string|null}> */
         return $this->connection->fetchAllAssociative(
-            'SELECT asf.id, metadata.exif_data, licence.flags_single_use_enforced OR EXISTS (
+            'SELECT asf.id, metadata.exif_data, licence.flags_single_use_enforced AS licence_enforced, EXISTS (
                 SELECT 1 FROM asset_source link JOIN author source ON source.id = link.author_id
                 WHERE link.asset_id = COALESCE(image.asset_id, audio.asset_id, video.asset_id, document.asset_id)
                 AND source.flags_single_use_enforced = 1
-            ) AS enforced
+            ) AS source_enforced
             FROM ' . self::TABLE_NAME . ' asf
             JOIN asset_licence licence ON licence.id = asf.licence_id
             LEFT JOIN asset_file_metadata metadata ON metadata.id = asf.metadata_id
@@ -60,10 +58,11 @@ final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
     /**
      * @param list<string> $assetIds
      */
-    public function countNotSingleUseOfAssets(array $assetIds): int
+    public function countNotSingleUseByAssetIds(array $assetIds): int
     {
         return (int) $this->connection->fetchOne(
-            'SELECT COUNT(*) FROM ' . self::TABLE_NAME . ' WHERE flags_single_use = 0 AND id IN (' . self::FILE_IDS_OF_ASSETS . ')',
+            'SELECT COUNT(*) FROM ' . self::TABLE_NAME . ' asf JOIN (' . self::FILE_IDS_BY_ASSET_IDS . ') files ON files.id = asf.id
+            WHERE asf.flags_single_use = 0',
             ['assetIds' => $assetIds],
             ['assetIds' => ArrayParameterType::STRING],
         );
@@ -74,10 +73,11 @@ final class AssetFileDBALRepository extends AbstractAnzuDBALRepository
      *
      * @return int files switched
      */
-    public function setSingleUseOfAssets(array $assetIds): int
+    public function setSingleUseByAssetIds(array $assetIds): int
     {
         return (int) $this->connection->executeStatement(
-            'UPDATE ' . self::TABLE_NAME . ' SET flags_single_use = 1 WHERE flags_single_use = 0 AND id IN (' . self::FILE_IDS_OF_ASSETS . ')',
+            'UPDATE ' . self::TABLE_NAME . ' asf JOIN (' . self::FILE_IDS_BY_ASSET_IDS . ') files ON files.id = asf.id
+            SET asf.flags_single_use = 1 WHERE asf.flags_single_use = 0',
             ['assetIds' => $assetIds],
             ['assetIds' => ArrayParameterType::STRING],
         );

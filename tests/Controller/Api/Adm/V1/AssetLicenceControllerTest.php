@@ -181,6 +181,29 @@ final class AssetLicenceControllerTest extends AbstractApiController
         $this->assertSame($requestJson['extSystem'], $assetLicence->getExtSystem()->getId());
     }
 
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateStoresSingleUseEnforced(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $existingLicence = self::getContainer()
+            ->get(AssetLicenceRepository::class)
+            ->find(AssetLicenceFixtures::DEFAULT_LICENCE_ID);
+
+        $response = $client->put(AssetLicenceUrl::update($existingLicence->getId()), [
+            'id' => $existingLicence->getId(),
+            'name' => $existingLicence->getName(),
+            'extSystem' => $existingLicence->getExtSystem()->getId(),
+            'extId' => $existingLicence->getExtId(),
+            'flags' => ['singleUseEnforced' => true],
+        ]);
+        $this->assertStatusCode($response, Response::HTTP_OK);
+
+        $licence = $this->serializer->deserialize($response->getContent(), AssetLicence::class);
+        $this->assertTrue($licence->getFlags()->isSingleUseEnforced());
+    }
+
     public static function updateSuccessDataProvider(): array
     {
         $existingAssetLicence = self::getContainer()

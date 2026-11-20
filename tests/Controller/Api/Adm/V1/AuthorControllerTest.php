@@ -216,6 +216,28 @@ final class AuthorControllerTest extends AbstractApiController
         ]);
     }
 
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateStoresSingleUseEnforced(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $existingAuthor = self::getContainer()
+            ->get(AuthorRepository::class)
+            ->find(AuthorFixtures::AUTHOR_1);
+
+        $response = $client->put(AuthorUrl::update($existingAuthor->getId()), [
+            'id' => $existingAuthor->getId(),
+            'name' => $existingAuthor->getName(),
+            'extSystem' => $existingAuthor->getExtSystem()->getId(),
+            'flags' => ['singleUseEnforced' => true],
+        ]);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $author = $this->serializer->deserialize($response->getContent(), Author::class);
+        $this->assertTrue($author->getFlags()->isSingleUseEnforced());
+    }
+
     public static function updateSuccessDataProvider(): array
     {
         $existingAuthor = self::getContainer()

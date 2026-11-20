@@ -117,7 +117,9 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $licence->getFlags()->setSingleUseEnforced(true);
         $this->entityManager->flush();
 
-        self::assertStringContainsString('Switched 1 asset file(s)', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]));
+        $display = $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]);
+        self::assertStringContainsString('Switched 1 asset file(s)', $display);
+        self::assertStringContainsString('anzu-dam:elastic:rebuild asset --ext-system=cms --no-drop', $display);
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertStringContainsString('Switched 0 asset file(s)', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]));
     }
@@ -130,8 +132,9 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $target = $this->createImage($this->createLicence(singleUseEnforced: true));
 
         $this->getService(ImageCopyFacade::class)->copyAssetFiles($origin->getAsset(), $target->getAsset());
+        $this->entityManager->clear();
 
-        self::assertTrue($target->getFlags()->isSingleUse());
+        self::assertTrue($this->findImage((string) $target->getId())->getFlags()->isSingleUse());
     }
 
     public function testBulkEditAddingEnforcedSourceSwitchesSingleUse(): void
@@ -160,6 +163,8 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $source->getFlags()->setSingleUseEnforced(true);
         $this->entityManager->flush();
 
+        self::assertStringContainsString('1 asset file(s) with source', $this->enforceByCommand(self::SOURCE_COMMAND, ['author_id' => (string) $source->getId(), '--dry-run' => true]));
+        self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertStringContainsString('Switched 1 asset file(s)', $this->enforceByCommand(self::SOURCE_COMMAND, ['author_id' => (string) $source->getId()]));
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertStringContainsString('Switched 0 asset file(s)', $this->enforceByCommand(self::SOURCE_COMMAND, ['author_id' => (string) $source->getId()]));
@@ -198,22 +203,65 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $image->getMetadata()->setExifData(['Credit' => 'TASR/AP', 'Source' => 'AP']);
         $this->entityManager->flush();
         self::assertFalse($image->getFlags()->isSingleUse());
+        $otherImageId = (string) $this->createImage($licence, exifData: ['Credit' => 'TASR', 'Source' => 'TASR'])->getId();
 
         self::assertStringContainsString('1 asset file(s) of licence', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId(), '--dry-run' => true]));
         self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertStringContainsString('Switched 1 asset file(s)', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]));
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
+        self::assertFalse($this->findImage($otherImageId)->getFlags()->isSingleUse());
+    }
+
+    public function testEnforceLicenceBackfillsFilesWithAnEnforcedSource(): void
+    {
+        $licence = $this->createLicence(singleUseEnforced: false);
+        $source = $this->createSource('Source of a licence backfill');
+        $imageId = (string) $this->createImage($licence, $source)->getId();
+        $otherImageId = (string) $this->createImage($licence)->getId();
+        $source->getFlags()->setSingleUseEnforced(true);
+        $this->entityManager->flush();
+
+        self::assertStringContainsString('Switched 1 asset file(s)', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]));
+        self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
+        self::assertFalse($this->findImage($otherImageId)->getFlags()->isSingleUse());
+    }
+
+    public function testEnforceSourceRefusesASourceWithoutTheFlag(): void
+    {
+        $source = $this->createSource('Source without the flag');
+
+        self::assertStringContainsString(
+            'not a source that enforces single use',
+            $this->enforceByCommand(self::SOURCE_COMMAND, ['author_id' => (string) $source->getId()], Command::FAILURE),
+        );
+    }
+
+    /**
+     * @param array<string, int|string> $input
+     */
+    #[DataProvider('unknownTargetDataProvider')]
+    public function testEnforceFailsForAnUnknownTarget(string $command, array $input): void
+    {
+        self::assertStringContainsString('not found', $this->enforceByCommand($command, $input, Command::FAILURE));
+    }
+
+    public static function unknownTargetDataProvider(): array
+    {
+        return [
+            'licence' => [self::LICENCE_COMMAND, ['licence_id' => 999_999]],
+            'source' => [self::SOURCE_COMMAND, ['author_id' => '00000000-0000-0000-0000-000000000000']],
+        ];
     }
 
     /**
      * @param array<string, bool|int|string> $input
      */
-    private function enforceByCommand(string $command, array $input): string
+    private function enforceByCommand(string $command, array $input, int $expectedCode = Command::SUCCESS): string
     {
         $commandTester = new CommandTester((new Application(self::$kernel))->find($command));
         $code = $commandTester->execute($input);
         $display = (string) preg_replace('/\s+/', ' ', $commandTester->getDisplay());
-        self::assertSame(Command::SUCCESS, $code, $display);
+        self::assertSame($expectedCode, $code, $display);
         $this->entityManager->clear();
 
         return $display;

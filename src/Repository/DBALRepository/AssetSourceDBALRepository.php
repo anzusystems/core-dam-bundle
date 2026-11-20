@@ -58,7 +58,7 @@ final class AssetSourceDBALRepository extends AbstractAnzuDBALRepository
         );
     }
 
-    public function countAssetsOfSource(string $sourceId): int
+    public function countBySource(string $sourceId): int
     {
         return (int) $this->connection->fetchOne(
             'SELECT COUNT(*) FROM ' . self::TABLE_NAME . ' WHERE author_id = :sourceId',
@@ -69,7 +69,7 @@ final class AssetSourceDBALRepository extends AbstractAnzuDBALRepository
     /**
      * @return list<string>
      */
-    public function findAssetIdsOfSource(string $sourceId, string $fromId, int $limit): array
+    public function findAssetIdsBySource(string $sourceId, string $fromId, int $limit): array
     {
         return $this->connection->fetchFirstColumn(
             'SELECT asset_id FROM ' . self::TABLE_NAME . ' WHERE author_id = :sourceId AND asset_id > :fromId ORDER BY asset_id LIMIT :limit',

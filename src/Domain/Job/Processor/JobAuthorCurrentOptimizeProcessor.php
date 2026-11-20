@@ -134,16 +134,12 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
             if ($this->authorProvider->provideCurrentAuthorToColl($asset)) {
                 $changedAuthorsCount++;
                 $changedAssets[] = $asset;
-                foreach ($asset->getSlots() as $slot) {
-                    $assetFile = $slot->getAssetFile();
-                    if ($this->assetFileSingleUseEnforcer->enforce($assetFile) && $assetFile instanceof ImageFile) {
-                        $switchedImages[] = $assetFile;
-                    }
-                }
+                $switchedImages = [...$switchedImages, ...$this->enforceSingleUse($asset)];
             }
             $lastId = (string) $asset->getId();
         }
 
+        // Before the flush: a failed flush is redone by the next run, so the ext system can only err toward single use.
         $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($switchedImages));
         $this->entityManager->flush();
         if (false === empty($changedAssets)) {
@@ -161,5 +157,21 @@ final class JobAuthorCurrentOptimizeProcessor extends AbstractJobProcessor
         $count === $this->bulkSize
             ? $this->toAwaitingBatchProcess($job, $lastId)
             : $this->finishSuccess($job);
+    }
+
+    /**
+     * @return list<ImageFile> images switched to single use
+     */
+    private function enforceSingleUse(Asset $asset): array
+    {
+        $switchedImages = [];
+        foreach ($asset->getSlots() as $slot) {
+            $assetFile = $slot->getAssetFile();
+            if ($this->assetFileSingleUseEnforcer->enforce($assetFile) && $assetFile instanceof ImageFile) {
+                $switchedImages[] = $assetFile;
+            }
+        }
+
+        return $switchedImages;
     }
 }

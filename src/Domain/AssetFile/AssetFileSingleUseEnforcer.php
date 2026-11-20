@@ -9,8 +9,9 @@ use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 
 /**
- * The one place deciding which asset files must be single use: the licence flag, exif Credit or Source
- * matching the configured pattern, or a source of the asset with the flag. Further rules belong here as well.
+ * Decides which asset files must be single use: the licence flag, exif Credit or Source matching the configured
+ * pattern, or a source of the asset with the flag. The SQL backfill reads the two flags in
+ * `AssetFileDBALRepository::findNotSingleUseByLicence()` and decides through `mustBeSingleUse()` as well.
  */
 final readonly class AssetFileSingleUseEnforcer
 {
@@ -23,7 +24,13 @@ final readonly class AssetFileSingleUseEnforcer
 
     public function enforce(AssetFile $assetFile): bool
     {
-        if ($assetFile->getFlags()->isSingleUse() || false === $this->mustBeSingleUse($assetFile)) {
+        if ($assetFile->getFlags()->isSingleUse() || false === $this->mustBeSingleUse(
+            $assetFile->getLicence()->getFlags()->isSingleUseEnforced(),
+            $assetFile->hasAsset() && $assetFile->getAsset()->getSources()->exists(
+                static fn (int|string $key, Author $source): bool => $source->getFlags()->isSingleUseEnforced(),
+            ),
+            $assetFile->getMetadata()->getExifData(),
+        )) {
             return false;
         }
 
@@ -35,27 +42,19 @@ final readonly class AssetFileSingleUseEnforcer
     /**
      * @param array<string, mixed> $exifData
      */
-    public function hasSingleUseMetadata(array $exifData): bool
+    public function mustBeSingleUse(bool $licenceEnforced, bool $sourceEnforced, array $exifData): bool
     {
-        if (App::EMPTY_STRING === $this->singleUseMetadataPattern) {
-            return false;
-        }
-
-        foreach (self::SINGLE_USE_METADATA_TAGS as $tag) {
-            if (is_string($exifData[$tag] ?? null) && 1 === preg_match($this->singleUseMetadataPattern, $exifData[$tag])) {
-                return true;
-            }
-        }
-
-        return false;
+        return $licenceEnforced || $sourceEnforced || $this->hasSingleUseMetadata($exifData);
     }
 
-    private function mustBeSingleUse(AssetFile $assetFile): bool
+    /**
+     * @param array<string, mixed> $exifData
+     */
+    private function hasSingleUseMetadata(array $exifData): bool
     {
-        return $assetFile->getLicence()->getFlags()->isSingleUseEnforced()
-            || $this->hasSingleUseMetadata($assetFile->getMetadata()->getExifData())
-            || ($assetFile->hasAsset() && $assetFile->getAsset()->getSources()->exists(
-                static fn (int|string $key, Author $source): bool => $source->getFlags()->isSingleUseEnforced(),
-            ));
+        return App::EMPTY_STRING !== $this->singleUseMetadataPattern && array_any(
+            self::SINGLE_USE_METADATA_TAGS,
+            fn (string $tag): bool => is_string($exifData[$tag] ?? null) && 1 === preg_match($this->singleUseMetadataPattern, $exifData[$tag]),
+        );
     }
 }

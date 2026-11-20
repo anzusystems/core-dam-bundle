@@ -45,8 +45,11 @@ final readonly class AuthorEnforceSingleUseCommand
             return Command::FAILURE;
         }
 
-        $progressBar = $io->createProgressBar($this->assetSourceDBALRepository->countAssetsOfSource($authorId));
+        $progressBar = $io->createProgressBar($this->assetSourceDBALRepository->countBySource($authorId));
         $progressBar->setFormat('debug');
+        $progressBar->setBarCharacter('=');
+        $progressBar->setEmptyBarCharacter('-');
+        $progressBar->setProgressCharacter('>');
         $switched = 0;
         foreach ($this->assetFileSingleUseFacade->enforceForSource($source, $dryRun) as $checked => $batchSwitched) {
             $progressBar->advance($checked);
