@@ -26,6 +26,7 @@ final class AuthorSourceTest extends AbstractApiController
         $authorId = $this->createAuthor('Managed Author', source: false);
         $this->enableAclCheck();
         $client = $this->getApiClient(User::ID_CMS_USER);
+        $searchUrl = AuthorUrl::searchByExtSystem(ExtSystemFixtures::ID_CMS);
 
         $this->grantPermission(
             User::ID_CMS_USER,
@@ -35,11 +36,11 @@ final class AuthorSourceTest extends AbstractApiController
             DamPermissions::DAM_AUTHOR_DELETE,
         );
 
-        self::assertStatusCode($client->get(AuthorUrl::getOne($sourceId)), Response::HTTP_OK);
-        self::assertStatusCode(
-            $client->get(AuthorUrl::searchByExtSystem(ExtSystemFixtures::ID_CMS) . '?source=true'),
-            Response::HTTP_OK
-        );
+        self::assertStatusCode($client->get(AuthorUrl::getOne($authorId)), Response::HTTP_OK);
+        self::assertStatusCode($client->get(AuthorUrl::getOne($sourceId)), Response::HTTP_FORBIDDEN);
+        self::assertStatusCode($client->get($searchUrl . '?source=false'), Response::HTTP_OK);
+        self::assertStatusCode($client->get($searchUrl . '?source=true'), Response::HTTP_FORBIDDEN);
+        self::assertStatusCode($client->get($searchUrl), Response::HTTP_FORBIDDEN);
         self::assertStatusCode($client->post(AuthorUrl::createPath(), $this->body('Denied Source', source: true)), Response::HTTP_FORBIDDEN);
         self::assertStatusCode(
             $client->put(AuthorUrl::update($sourceId), $this->body('Managed Source', source: true, id: $sourceId)),
@@ -56,8 +57,13 @@ final class AuthorSourceTest extends AbstractApiController
             DamPermissions::DAM_AUTHOR_READ,
             DamPermissions::DAM_SOURCE_CREATE,
             DamPermissions::DAM_SOURCE_UPDATE,
+            DamPermissions::DAM_SOURCE_READ,
             DamPermissions::DAM_SOURCE_DELETE,
         );
+
+        self::assertStatusCode($client->get(AuthorUrl::getOne($sourceId)), Response::HTTP_OK);
+        self::assertStatusCode($client->get($searchUrl . '?source=true'), Response::HTTP_OK);
+        self::assertStatusCode($client->get($searchUrl), Response::HTTP_OK);
 
         $response = $client->post(AuthorUrl::createPath(), $this->body('Created Source', source: true));
         self::assertStatusCode($response, Response::HTTP_CREATED);

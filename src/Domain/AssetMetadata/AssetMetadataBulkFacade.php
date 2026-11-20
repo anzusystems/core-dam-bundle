@@ -120,7 +120,7 @@ final class AssetMetadataBulkFacade
 
         if (false === $updateDto->isSourcesUndefined()) {
             foreach ($updateDto->getSources() as $source) {
-                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_AUTHOR_READ, $source);
+                $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_SOURCE_READ, $source);
             }
         }
 

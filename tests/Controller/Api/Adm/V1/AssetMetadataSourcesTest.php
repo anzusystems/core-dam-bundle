@@ -168,7 +168,7 @@ final class AssetMetadataSourcesTest extends AbstractApiController
      * @param list<string> $permissions
      */
     #[DataProvider('sourcePermissionDataProvider')]
-    public function testSourcesRequireAuthorRead(array $permissions, int $expectedStatus): void
+    public function testSourcesRequireSourceRead(array $permissions, int $expectedStatus): void
     {
         $sourceId = (string) $this->createAuthor('Permission Source', source: true)->getId();
         $this->enableAclCheck();
@@ -185,12 +185,16 @@ final class AssetMetadataSourcesTest extends AbstractApiController
     public static function sourcePermissionDataProvider(): array
     {
         return [
-            'Without author read' => [
+            'Without source read' => [
                 'permissions' => [DamPermissions::DAM_ASSET_UPDATE],
                 'expectedStatus' => Response::HTTP_FORBIDDEN,
             ],
-            'With author read' => [
+            'With author read only' => [
                 'permissions' => [DamPermissions::DAM_ASSET_UPDATE, DamPermissions::DAM_AUTHOR_READ],
+                'expectedStatus' => Response::HTTP_FORBIDDEN,
+            ],
+            'With source read' => [
+                'permissions' => [DamPermissions::DAM_ASSET_UPDATE, DamPermissions::DAM_SOURCE_READ],
                 'expectedStatus' => Response::HTTP_OK,
             ],
         ];

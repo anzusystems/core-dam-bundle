@@ -577,6 +577,15 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::CREDIT_AUTHORS_SEPARATOR_KEY)
                     ->defaultValue(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_CREDIT_AUTHORS_SEPARATOR)
                 ->end()
+                ->scalarNode(ExtSystemAssetTypeSourcesConfiguration::DEFAULT_SOURCE_ID_KEY)
+                    ->info('Id of the source that an asset created by the sys API without a source gets')
+                    ->defaultNull()
+                ->end()
+            ->end()
+            ->validate()
+                ->ifTrue(static fn (array $sources): bool => false === $sources[ExtSystemAssetTypeSourcesConfiguration::ENABLED_KEY]
+                    && null !== $sources[ExtSystemAssetTypeSourcesConfiguration::DEFAULT_SOURCE_ID_KEY])
+                ->thenInvalid('A default source needs sources enabled')
             ->end()
         ;
     }

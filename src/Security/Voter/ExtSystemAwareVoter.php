@@ -49,6 +49,7 @@ final class ExtSystemAwareVoter extends AbstractVoter
             DamPermissions::DAM_AUTHOR_DELETE,
             DamPermissions::DAM_SOURCE_CREATE,
             DamPermissions::DAM_SOURCE_UPDATE,
+            DamPermissions::DAM_SOURCE_READ,
             DamPermissions::DAM_SOURCE_DELETE,
             DamPermissions::DAM_KEYWORD_READ,
             DamPermissions::DAM_KEYWORD_CREATE,

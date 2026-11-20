@@ -13,6 +13,7 @@ final class ExtSystemAssetTypeSourcesConfiguration
     public const string CREDIT_FORMAT_KEY = 'credit_format';
     public const string CREDIT_SOURCES_SEPARATOR_KEY = 'credit_sources_separator';
     public const string CREDIT_AUTHORS_SEPARATOR_KEY = 'credit_authors_separator';
+    public const string DEFAULT_SOURCE_ID_KEY = 'default_source_id';
     public const string DEFAULT_CREDIT_FORMAT = '{sources}/{authors}';
     public const string DEFAULT_CREDIT_SOURCES_SEPARATOR = '/';
     public const string DEFAULT_CREDIT_AUTHORS_SEPARATOR = ', ';
@@ -23,6 +24,7 @@ final class ExtSystemAssetTypeSourcesConfiguration
         private readonly string $creditFormat,
         private readonly string $creditSourcesSeparator,
         private readonly string $creditAuthorsSeparator,
+        private readonly ?string $defaultSourceId,
     ) {
     }
 
@@ -36,6 +38,7 @@ final class ExtSystemAssetTypeSourcesConfiguration
             $config[self::CREDIT_FORMAT_KEY] ?? self::DEFAULT_CREDIT_FORMAT,
             $config[self::CREDIT_SOURCES_SEPARATOR_KEY] ?? self::DEFAULT_CREDIT_SOURCES_SEPARATOR,
             $config[self::CREDIT_AUTHORS_SEPARATOR_KEY] ?? self::DEFAULT_CREDIT_AUTHORS_SEPARATOR,
+            $config[self::DEFAULT_SOURCE_ID_KEY] ?? null,
         );
     }
 
@@ -62,5 +65,10 @@ final class ExtSystemAssetTypeSourcesConfiguration
     public function getCreditAuthorsSeparator(): string
     {
         return $this->creditAuthorsSeparator;
+    }
+
+    public function getDefaultSourceId(): ?string
+    {
+        return $this->defaultSourceId;
     }
 }
