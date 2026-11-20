@@ -32,22 +32,15 @@ final readonly class AssetFileSingleUseEnforcer
         return true;
     }
 
-    private function mustBeSingleUse(AssetFile $assetFile): bool
-    {
-        return $assetFile->getLicence()->getFlags()->isSingleUseEnforced()
-            || $this->hasSingleUseMetadata($assetFile)
-            || ($assetFile->hasAsset() && $assetFile->getAsset()->getSources()->exists(
-                static fn (int|string $key, Author $source): bool => $source->getFlags()->isSingleUseEnforced(),
-            ));
-    }
-
-    private function hasSingleUseMetadata(AssetFile $assetFile): bool
+    /**
+     * @param array<string, mixed> $exifData
+     */
+    public function hasSingleUseMetadata(array $exifData): bool
     {
         if (App::EMPTY_STRING === $this->singleUseMetadataPattern) {
             return false;
         }
 
-        $exifData = $assetFile->getMetadata()->getExifData();
         foreach (self::SINGLE_USE_METADATA_TAGS as $tag) {
             if (is_string($exifData[$tag] ?? null) && 1 === preg_match($this->singleUseMetadataPattern, $exifData[$tag])) {
                 return true;
@@ -55,5 +48,14 @@ final readonly class AssetFileSingleUseEnforcer
         }
 
         return false;
+    }
+
+    private function mustBeSingleUse(AssetFile $assetFile): bool
+    {
+        return $assetFile->getLicence()->getFlags()->isSingleUseEnforced()
+            || $this->hasSingleUseMetadata($assetFile->getMetadata()->getExifData())
+            || ($assetFile->hasAsset() && $assetFile->getAsset()->getSources()->exists(
+                static fn (int|string $key, Author $source): bool => $source->getFlags()->isSingleUseEnforced(),
+            ));
     }
 }

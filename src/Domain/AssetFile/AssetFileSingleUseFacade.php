@@ -5,89 +5,76 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Domain\AssetFile;
 
 use AnzuSystems\CoreDamBundle\App;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
-use AnzuSystems\CoreDamBundle\Elasticsearch\IndexManager;
-use AnzuSystems\CoreDamBundle\Entity\Asset;
-use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\Author;
-use AnzuSystems\CoreDamBundle\Entity\ImageFile;
-use AnzuSystems\CoreDamBundle\Repository\AssetRepository;
-use Closure;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetFileDBALRepository;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetSourceDBALRepository;
+use Generator;
 
 /**
- * Backfill for files created before a single use rule applied to them. The ext system is notified
- * before the flush: a failed notification leaves the batch unswitched, so a re-run announces it again.
- * Only assets with a switched file are reindexed, so a re-run does not repair the index after a crash between
- * the flush and the reindex.
+ * Backfill for files created before a single use rule applied to them. It writes straight in SQL and leaves the
+ * search index to `anzu-dam:elastic:rebuild` and the ext system to a JobSynchronizeImageChanged: through the entities
+ * it took about four queries, a callback and a reindex per asset.
  */
 final readonly class AssetFileSingleUseFacade
 {
     private const int BATCH_SIZE = 500;
 
-    /**
-     * @param AssetFileManager<AssetFile> $assetFileManager
-     */
     public function __construct(
-        private AssetRepository $assetRepository,
-        private AssetFileManager $assetFileManager,
-        private IndexManager $indexManager,
-        private ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private AssetFileDBALRepository $assetFileDBALRepository,
+        private AssetSourceDBALRepository $assetSourceDBALRepository,
         private AssetFileSingleUseEnforcer $assetFileSingleUseEnforcer,
     ) {
     }
 
-    public function enforceForLicence(AssetLicence $licence): int
+    /**
+     * Yields the files checked in a batch as the key and the files switched (to switch on a dry run) as the value.
+     *
+     * @return Generator<int, int>
+     */
+    public function enforceForLicence(AssetLicence $licence, bool $dryRun): Generator
     {
-        return $this->enforce(
-            fn (string $idFrom): Collection => $this->assetRepository->findAllByLicence($licence, self::BATCH_SIZE, $idFrom),
-        );
-    }
+        $lastId = App::EMPTY_STRING;
+        do {
+            $files = $this->assetFileDBALRepository->findNotSingleUseByLicence((int) $licence->getId(), $lastId, self::BATCH_SIZE);
+            $ids = array_column(array_filter($files, $this->mustBeSingleUse(...)), 'id');
+            $switched = $dryRun || empty($ids) ? count($ids) : $this->assetFileDBALRepository->setSingleUse($ids);
+            if (false === empty($files)) {
+                $lastId = $files[array_key_last($files)]['id'];
+            }
 
-    public function enforceForSource(Author $source): int
-    {
-        return $this->enforce(
-            fn (string $idFrom): Collection => $this->assetRepository->findAllBySource($source, self::BATCH_SIZE, $idFrom),
-        );
+            yield count($files) => $switched;
+        } while (self::BATCH_SIZE === count($files));
     }
 
     /**
-     * @param Closure(string): Collection<int, Asset> $findBatch
+     * Yields the assets checked in a batch as the key and the files switched (to switch on a dry run) as the value.
+     *
+     * @return Generator<int, int>
      */
-    private function enforce(Closure $findBatch): int
+    public function enforceForSource(Author $source, bool $dryRun): Generator
     {
-        $enforcedCount = App::ZERO;
-        $idFrom = App::EMPTY_STRING;
-
+        $lastId = App::EMPTY_STRING;
         do {
-            $assets = $findBatch($idFrom);
-            $switchedImages = [];
-            $switchedAssets = [];
-            foreach ($assets as $asset) {
-                foreach ($asset->getSlots() as $slot) {
-                    $assetFile = $slot->getAssetFile();
-                    if (false === $this->assetFileSingleUseEnforcer->enforce($assetFile)) {
-                        continue;
-                    }
-                    $enforcedCount++;
-                    $switchedAssets[(string) $asset->getId()] = $asset;
-                    if ($assetFile instanceof ImageFile) {
-                        $switchedImages[] = $assetFile;
-                    }
-                }
-                $idFrom = (string) $asset->getId();
+            $assetIds = $this->assetSourceDBALRepository->findAssetIdsOfSource((string) $source->getId(), $lastId, self::BATCH_SIZE);
+            $switched = App::ZERO;
+            if (false === empty($assetIds)) {
+                $switched = $dryRun
+                    ? $this->assetFileDBALRepository->countNotSingleUseOfAssets($assetIds)
+                    : $this->assetFileDBALRepository->setSingleUseOfAssets($assetIds);
+                $lastId = $assetIds[array_key_last($assetIds)];
             }
 
-            $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($switchedImages));
-            $this->assetFileManager->flush();
-            if (false === empty($switchedAssets)) {
-                $this->indexManager->indexBulk(array_values($switchedAssets));
-            }
-            $this->assetFileManager->clear();
-        } while (self::BATCH_SIZE === $assets->count());
+            yield count($assetIds) => $switched;
+        } while (self::BATCH_SIZE === count($assetIds));
+    }
 
-        return $enforcedCount;
+    /**
+     * @param array{id: string, enforced: int|string, exif_data: string|null} $file
+     */
+    private function mustBeSingleUse(array $file): bool
+    {
+        return (bool) $file['enforced']
+            || $this->assetFileSingleUseEnforcer->hasSingleUseMetadata((array) json_decode($file['exif_data'] ?? '[]', true));
     }
 }

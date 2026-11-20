@@ -199,12 +199,14 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $this->entityManager->flush();
         self::assertFalse($image->getFlags()->isSingleUse());
 
+        self::assertStringContainsString('1 asset file(s) of licence', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId(), '--dry-run' => true]));
+        self::assertFalse($this->findImage($imageId)->getFlags()->isSingleUse());
         self::assertStringContainsString('Switched 1 asset file(s)', $this->enforceByCommand(self::LICENCE_COMMAND, ['licence_id' => $licence->getId()]));
         self::assertTrue($this->findImage($imageId)->getFlags()->isSingleUse());
     }
 
     /**
-     * @param array<string, int|string> $input
+     * @param array<string, bool|int|string> $input
      */
     private function enforceByCommand(string $command, array $input): string
     {
@@ -212,6 +214,7 @@ final class AssetFileSingleUseEnforcementTest extends CoreDamKernelTestCase
         $code = $commandTester->execute($input);
         $display = (string) preg_replace('/\s+/', ' ', $commandTester->getDisplay());
         self::assertSame(Command::SUCCESS, $code, $display);
+        $this->entityManager->clear();
 
         return $display;
     }
