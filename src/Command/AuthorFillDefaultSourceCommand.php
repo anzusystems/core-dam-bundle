@@ -70,7 +70,10 @@ final readonly class AuthorFillDefaultSourceCommand
         }
         $progressBar->finish();
         $io->newLine(2);
-        $io->success(sprintf('Filled %d images', $progressBar->getProgress()));
+        $io->success([
+            sprintf('Filled %d images', $progressBar->getProgress()),
+            sprintf('The search index is not updated: run anzu-dam:elastic:rebuild asset --ext-system=%s --no-drop', $extSystem),
+        ]);
 
         return Command::SUCCESS;
     }

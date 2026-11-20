@@ -36,6 +36,7 @@ final class AuthorFillDefaultSourceCommandTest extends CoreDamKernelTestCase
         $display = $this->execute(Command::SUCCESS);
 
         self::assertStringContainsString(sprintf('Filled %d images', $withFile), $display);
+        self::assertStringContainsString('anzu-dam:elastic:rebuild asset --ext-system=cms --no-drop', $display);
         self::assertSame(0, $this->countWithFileWithoutSource());
     }
 
