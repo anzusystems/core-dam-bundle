@@ -21,6 +21,10 @@ class AssetFileAttributes
     #[ORM\Column(type: Types::STRING, length: 64)]
     private string $checksum;
 
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
+    #[Serialize]
+    private ?string $imageDataChecksum;
+
     #[ORM\Column(type: Types::STRING, length: 36)]
     #[Serialize]
     private string $originAssetId;
@@ -62,6 +66,7 @@ class AssetFileAttributes
     {
         $this->setStatus(AssetFileProcessStatus::Default);
         $this->setChecksum('');
+        $this->setImageDataChecksum(null);
         $this->setFilePath('');
         $this->setOriginFileName('');
         $this->setMimeType('');
@@ -95,6 +100,18 @@ class AssetFileAttributes
     public function setChecksum(string $checksum): self
     {
         $this->checksum = $checksum;
+
+        return $this;
+    }
+
+    public function getImageDataChecksum(): ?string
+    {
+        return $this->imageDataChecksum;
+    }
+
+    public function setImageDataChecksum(?string $imageDataChecksum): self
+    {
+        $this->imageDataChecksum = $imageDataChecksum;
 
         return $this;
     }

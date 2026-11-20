@@ -51,7 +51,8 @@ final class FileAttributesProcessor
         }
 
         $assetFile->getAssetAttributes()
-            ->setChecksum($checksum);
+            ->setChecksum($checksum)
+            ->setImageDataChecksum(MimeGuesser::imageDataChecksumFromPath((string) $file->getRealPath()));
 
         return $assetFile;
     }
