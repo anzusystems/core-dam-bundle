@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Command;
 
-use AnzuSystems\CommonBundle\Domain\Job\JobFacade;
 use AnzuSystems\CoreDamBundle\App;
+use AnzuSystems\CoreDamBundle\Domain\Author\AuthorDefaultSourceFacade;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
-use AnzuSystems\CoreDamBundle\Entity\JobImageDefaultSource;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetType;
 use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetSourceDBALRepository;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
@@ -18,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'anzu-dam:author:fill-default-source',
-    description: 'Give the default source of the ext system to its images with a file and without a source, in a job'
+    description: 'Give the default source of the ext system to its images with a file and without a source'
 )]
 final readonly class AuthorFillDefaultSourceCommand
 {
@@ -26,7 +26,7 @@ final readonly class AuthorFillDefaultSourceCommand
         private ExtSystemRepository $extSystemRepository,
         private AuthorProvider $authorProvider,
         private AssetSourceDBALRepository $assetSourceDBALRepository,
-        private JobFacade $jobFacade,
+        private AuthorDefaultSourceFacade $authorDefaultSourceFacade,
     ) {
     }
 
@@ -55,16 +55,22 @@ final readonly class AuthorFillDefaultSourceCommand
             ['Hidden in credit' => $source->getFlags()->isHiddenInCredit() ? 'yes' : 'no'],
         );
 
+        $counts = $this->assetSourceDBALRepository->countImagesWithoutSource((int) $extSystemEntity->getId());
+        $io->table(['Status', 'Images without a source'], array_map(null, array_keys($counts), $counts));
         if ($dryRun) {
-            $counts = $this->assetSourceDBALRepository->countImagesWithoutSource((int) $extSystemEntity->getId());
-            $io->table(['Status', 'Images without a source'], array_map(null, array_keys($counts), $counts));
             $io->success('Dry run, nothing written. Only images with a file get the default source');
 
             return Command::SUCCESS;
         }
 
-        $job = $this->jobFacade->create((new JobImageDefaultSource())->setExtSystemId((int) $extSystemEntity->getId()));
-        $io->success(sprintf('Job %d created', (int) $job->getId()));
+        $progressBar = $io->createProgressBar($counts[AssetStatus::WithFile->value] ?? App::ZERO);
+        $progressBar->setFormat('debug');
+        foreach ($this->authorDefaultSourceFacade->fillDefaultSource($extSystemEntity, $source) as $batchCount) {
+            $progressBar->advance($batchCount);
+        }
+        $progressBar->finish();
+        $io->newLine(2);
+        $io->success(sprintf('Filled %d images', $progressBar->getProgress()));
 
         return Command::SUCCESS;
     }

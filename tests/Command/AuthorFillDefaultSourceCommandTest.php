@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Command;
 
-use AnzuSystems\CoreDamBundle\Entity\JobImageDefaultSource;
 use AnzuSystems\CoreDamBundle\Exception\RuntimeException;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\DBALRepository\AssetSourceDBALRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use AnzuSystems\CoreDamBundle\Tests\Domain\Author\AuthorTreeTrait;
@@ -19,22 +20,23 @@ final class AuthorFillDefaultSourceCommandTest extends CoreDamKernelTestCase
 
     private const string COMMAND = 'anzu-dam:author:fill-default-source';
 
-    public function testDryRunWritesNothingAndRunCreatesJob(): void
+    public function testDryRunWritesNothingAndRunFills(): void
     {
         $this->markDefaultSource();
+        $withFile = $this->countWithFileWithoutSource();
+        self::assertGreaterThan(0, $withFile);
 
         $display = $this->execute(Command::SUCCESS, ['--dry-run' => true]);
 
         self::assertStringContainsString('AgencyA', $display);
         self::assertStringContainsString('with_file', $display);
         self::assertStringContainsString('Dry run, nothing written', $display);
-        self::assertSame([], $this->findJobs());
+        self::assertSame($withFile, $this->countWithFileWithoutSource());
 
-        $this->execute(Command::SUCCESS);
+        $display = $this->execute(Command::SUCCESS);
 
-        $jobs = $this->findJobs();
-        self::assertCount(1, $jobs);
-        self::assertSame(ExtSystemFixtures::ID_CMS, $jobs[0]->getExtSystemId());
+        self::assertStringContainsString(sprintf('Filled %d images', $withFile), $display);
+        self::assertSame(0, $this->countWithFileWithoutSource());
     }
 
     public function testRefusesDefaultThatIsNotSource(): void
@@ -50,7 +52,6 @@ final class AuthorFillDefaultSourceCommandTest extends CoreDamKernelTestCase
         $display = $this->execute(Command::FAILURE, ['--ext-system' => 'blog']);
 
         self::assertStringContainsString('have no default source', $display);
-        self::assertSame([], $this->findJobs());
     }
 
     /**
@@ -66,11 +67,9 @@ final class AuthorFillDefaultSourceCommandTest extends CoreDamKernelTestCase
         return $display;
     }
 
-    /**
-     * @return list<JobImageDefaultSource>
-     */
-    private function findJobs(): array
+    private function countWithFileWithoutSource(): int
     {
-        return $this->entityManager->getRepository(JobImageDefaultSource::class)->findAll();
+        return $this->getService(AssetSourceDBALRepository::class)
+            ->countImagesWithoutSource(ExtSystemFixtures::ID_CMS)[AssetStatus::WithFile->value] ?? 0;
     }
 }
