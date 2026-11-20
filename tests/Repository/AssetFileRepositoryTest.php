@@ -47,11 +47,11 @@ final class AssetFileRepositoryTest extends CoreDamKernelTestCase
 
         self::assertSame(
             [AssetFileFailedType::InvalidMimeType, AssetFileFailedType::DownloadFailed, AssetFileFailedType::Unknown],
-            $this->repository->findFailedReasonsByOriginStorage($originStorage, limit: 3, failedSince: new DateTimeImmutable('-1 day')),
+            $this->repository->findFailedReasonsByOriginStorage($originStorage, limit: 3, createdSince: new DateTimeImmutable('-1 day')),
         );
         self::assertSame(
             [AssetFileFailedType::InvalidMimeType],
-            $this->repository->findFailedReasonsByOriginStorage($originStorage, limit: 1, failedSince: new DateTimeImmutable('-1 day')),
+            $this->repository->findFailedReasonsByOriginStorage($originStorage, limit: 1, createdSince: new DateTimeImmutable('-1 day')),
         );
     }
 
@@ -66,7 +66,7 @@ final class AssetFileRepositoryTest extends CoreDamKernelTestCase
             $this->repository->findFailedReasonsByOriginStorage(
                 new OriginStorage(self::STORAGE_NAME, self::IMPORTED_PATH),
                 limit: 3,
-                failedSince: new DateTimeImmutable('-2 hours'),
+                createdSince: new DateTimeImmutable('-2 hours'),
             ),
         );
     }
@@ -75,7 +75,7 @@ final class AssetFileRepositoryTest extends CoreDamKernelTestCase
     {
         self::assertSame(
             [],
-            $this->repository->findFailedReasonsByOriginStorage(new OriginStorage(self::STORAGE_NAME, self::OTHER_PATH), limit: 3, failedSince: new DateTimeImmutable('-1 day')),
+            $this->repository->findFailedReasonsByOriginStorage(new OriginStorage(self::STORAGE_NAME, self::OTHER_PATH), limit: 3, createdSince: new DateTimeImmutable('-1 day')),
         );
     }
 

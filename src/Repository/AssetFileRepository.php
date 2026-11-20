@@ -13,6 +13,7 @@ use AnzuSystems\CoreDamBundle\Model\ValueObject\OriginStorage;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Order;
 use Doctrine\ORM\NonUniqueResultException;
 
 /**
@@ -59,20 +60,20 @@ final class AssetFileRepository extends AbstractAssetFileRepository
     public function findFailedReasonsByOriginStorage(
         OriginStorage $originStorage,
         int $limit,
-        DateTimeInterface $failedSince,
+        DateTimeInterface $createdSince,
     ): array {
         $queryBuilder = $this->createQueryBuilder('entity')
             ->select('entity.assetAttributes.failReason AS failReason')
             ->where('entity.assetAttributes.originStorage = :originStorage')
             ->andWhere('entity.assetAttributes.status = :status')
             ->setParameter('originStorage', $originStorage->toString())
-            ->andWhere('entity.createdAt >= :failedSince')
+            ->andWhere('entity.createdAt >= :createdSince')
             ->setParameter('status', AssetFileProcessStatus::Failed->toString())
-            ->setParameter('failedSince', $failedSince);
+            ->setParameter('createdSince', $createdSince);
 
         return array_column(
             $queryBuilder
-                ->orderBy('entity.createdAt', 'DESC')
+                ->orderBy('entity.createdAt', Order::Descending->value)
                 ->setMaxResults($limit)
                 ->getQuery()
                 ->getArrayResult(),

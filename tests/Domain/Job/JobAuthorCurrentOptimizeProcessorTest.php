@@ -9,19 +9,25 @@ use AnzuSystems\CommonBundle\Model\Enum\JobStatus;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\ImageFixtures;
 use AnzuSystems\CoreDamBundle\Domain\Author\AuthorManager;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackInterface;
 use AnzuSystems\CoreDamBundle\Domain\Job\Processor\JobAuthorCurrentOptimizeProcessor;
 use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobAuthorCurrentOptimize;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\ValueObject\JobAuthorCurrentOptimizeResult;
 use AnzuSystems\CoreDamBundle\Repository\AuthorRepository;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
 {
-    private JobAuthorCurrentOptimizeProcessor $processor;
+    private ?JobAuthorCurrentOptimizeProcessor $processor = null;
     private Author $target;
     private Author $source;
     private Author $child;
@@ -29,7 +35,6 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->processor = $this->getService(JobAuthorCurrentOptimizeProcessor::class);
         $this->target = $this->createAuthor('Optimize Target');
         $this->source = $this->createAuthor('Optimize Source');
         $this->child = $this->createAuthor('Optimize Source - Target');
@@ -92,8 +97,20 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
         $agency->getFlags()->setSingleUseEnforced(true);
         $this->setAssetSources(ImageFixtures::IMAGE_ID_1_2, [$this->createChildAuthor('Optimize Single Use Agency.', $agency, source: true)]);
         $this->assertFalse($this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_2)->getFlags()->isSingleUse());
+        $callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $callback->expects(self::once())->method('notifyImagesChanged')->with(self::callback(
+            static fn (Collection $images): bool => [ImageFixtures::IMAGE_ID_1_2] === $images->map(
+                static fn (ImageFile $image): string => (string) $image->getId(),
+            )->getValues(),
+        ));
+        self::getContainer()->set(ExtSystemCallbackFacade::class, new ExtSystemCallbackFacade(
+            new ServiceLocator(['cms' => static fn (): ExtSystemCallbackInterface => $callback]),
+            $this->getService(DamLogger::class),
+            $this->getService(ExtSystemRepository::class),
+        ));
 
         $this->runJob($agency);
+        $this->entityManager->clear();
 
         $this->assertTrue($this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_2)->getFlags()->isSingleUse());
     }
@@ -111,13 +128,13 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
         $job = (new JobAuthorCurrentOptimize())->setAuthorId((string) $this->target->getId());
         $this->getService(JobManager::class)->create($job);
         $jobId = $job->getId();
-        $this->processor->setBulkSize(2);
+        $this->processor()->setBulkSize(2);
 
-        $this->processor->process($job);
+        $this->processor()->process($job);
         $job = $this->entityManager->find(JobAuthorCurrentOptimize::class, $jobId);
         $this->assertSame(JobStatus::AwaitingBatchProcess, $job->getStatus());
 
-        $this->processor->process($job);
+        $this->processor()->process($job);
         $job = $this->entityManager->find(JobAuthorCurrentOptimize::class, $jobId);
         $this->assertSame(JobStatus::Done, $job->getStatus());
         $this->assertSame(1, $job->getBatchProcessedIterationCount());
@@ -138,6 +155,11 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
         ];
     }
 
+    private function processor(): JobAuthorCurrentOptimizeProcessor
+    {
+        return $this->processor ??= $this->getService(JobAuthorCurrentOptimizeProcessor::class);
+    }
+
     private function runJob(Author $author): JobAuthorCurrentOptimize
     {
         $this->entityManager->clear();
@@ -145,7 +167,7 @@ final class JobAuthorCurrentOptimizeProcessorTest extends CoreDamKernelTestCase
         $this->getService(JobManager::class)->create($job);
         $jobId = $job->getId();
 
-        $this->processor->process($job);
+        $this->processor()->process($job);
 
         return $this->entityManager->find(JobAuthorCurrentOptimize::class, $jobId);
     }

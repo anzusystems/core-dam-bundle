@@ -133,23 +133,6 @@ final readonly class AuthorProvider
         }
     }
 
-    /**
-     * Adds the author and resolves aliases in the same step, so the asset never carries an alias
-     * next to the current author it stands for. A source lands in `sources` when the asset type has them enabled.
-     * Returns whether the author was newly added.
-     */
-    public function provideAuthorToColl(Asset $asset, Author $author): bool
-    {
-        if ($asset->getAuthors()->contains($author) || $asset->getSources()->contains($author)) {
-            return false;
-        }
-
-        $asset->addAuthor($author);
-        $this->provideCurrentAuthorToColl($asset);
-
-        return true;
-    }
-
     public function provideCurrentAuthorToColl(Asset $asset): bool
     {
         $changed = $this->replaceByCurrentAuthors($asset->getAuthors(), $asset->addAuthor(...));

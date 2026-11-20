@@ -56,12 +56,12 @@ final readonly class AssetFileSingleUseFacade
     {
         $lastId = App::EMPTY_STRING;
         do {
-            $assetIds = $this->assetSourceDBALRepository->findAssetIdsOfSource((string) $source->getId(), $lastId, self::BATCH_SIZE);
+            $assetIds = $this->assetSourceDBALRepository->findAssetIdsBySource((string) $source->getId(), $lastId, self::BATCH_SIZE);
             $switched = App::ZERO;
             if (false === empty($assetIds)) {
                 $switched = $dryRun
-                    ? $this->assetFileDBALRepository->countNotSingleUseOfAssets($assetIds)
-                    : $this->assetFileDBALRepository->setSingleUseOfAssets($assetIds);
+                    ? $this->assetFileDBALRepository->countNotSingleUseByAssetIds($assetIds)
+                    : $this->assetFileDBALRepository->setSingleUseByAssetIds($assetIds);
                 $lastId = $assetIds[array_key_last($assetIds)];
             }
 
@@ -70,11 +70,14 @@ final readonly class AssetFileSingleUseFacade
     }
 
     /**
-     * @param array{id: string, enforced: int|string, exif_data: string|null} $file
+     * @param array{id: string, licence_enforced: int|string, source_enforced: int|string, exif_data: string|null} $file
      */
     private function mustBeSingleUse(array $file): bool
     {
-        return (bool) $file['enforced']
-            || $this->assetFileSingleUseEnforcer->hasSingleUseMetadata((array) json_decode($file['exif_data'] ?? '[]', true));
+        return $this->assetFileSingleUseEnforcer->mustBeSingleUse(
+            (bool) $file['licence_enforced'],
+            (bool) $file['source_enforced'],
+            (array) json_decode($file['exif_data'] ?? '[]', true),
+        );
     }
 }

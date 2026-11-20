@@ -236,7 +236,7 @@ class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode(SettingsConfiguration::SINGLE_USE_METADATA_PATTERN_KEY)
                     ->defaultValue('')
-                    ->info('PCRE pattern; an asset file whose exif Credit or Source matches it is single use (e.g. "/(?:^|[\\s\\/])AP(?:$|[\\s\\/])/"). Empty disables the rule.')
+                    ->info('PCRE pattern; an asset file whose exif Credit or Source matches it is single use (e.g. "/(?:^|[\\s\\/,])Acme(?:$|[\\s\\/,])/"); Credit and Source must be listed in exif_metadata.common_metadata. Empty disables the rule.')
                     ->validate()
                         ->ifTrue(static fn (string $pattern): bool => App::EMPTY_STRING !== $pattern && false === @preg_match($pattern, App::EMPTY_STRING))
                         ->thenInvalid('Invalid PCRE pattern %s')

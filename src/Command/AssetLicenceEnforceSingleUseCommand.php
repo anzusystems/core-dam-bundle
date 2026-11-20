@@ -42,6 +42,9 @@ final readonly class AssetLicenceEnforceSingleUseCommand
 
         $progressBar = $io->createProgressBar($this->assetFileDBALRepository->countNotSingleUseByLicence($licenceId));
         $progressBar->setFormat('debug');
+        $progressBar->setBarCharacter('=');
+        $progressBar->setEmptyBarCharacter('-');
+        $progressBar->setProgressCharacter('>');
         $switched = 0;
         foreach ($this->assetFileSingleUseFacade->enforceForLicence($licence, $dryRun) as $checked => $batchSwitched) {
             $progressBar->advance($checked);

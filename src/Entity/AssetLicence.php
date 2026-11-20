@@ -130,7 +130,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
         expression: 'value === null or value.getFlags().isSource()',
         message: ValidationException::ERROR_FIELD_INVALID,
     )]
-    private ?Author $defaultSource = null;
+    private ?Author $defaultSource;
 
     public function __construct()
     {
