@@ -22,7 +22,6 @@ class AssetFileAttributes
     private string $checksum;
 
     #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
-    #[Serialize]
     private ?string $imageDataChecksum;
 
     #[ORM\Column(type: Types::STRING, length: 36)]
