@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AnzuSystems\CoreDamBundle\Elasticsearch\SearchDto;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
+use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Helper\UrlHelper;
@@ -840,7 +841,7 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     public function setUsageHolderName(?string $usageHolderName): self
     {
-        $this->usageHolderName = $usageHolderName;
+        $this->usageHolderName = App::EMPTY_STRING === $usageHolderName ? null : $usageHolderName;
 
         return $this;
     }
