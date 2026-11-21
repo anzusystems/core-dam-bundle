@@ -91,6 +91,31 @@ final class AssetAdmElasticsearchDecoratorTest extends CoreDamKernelTestCase
         self::assertNull($items[ImageFixtures::IMAGE_ID_1_1]->getSingleUseUsage());
     }
 
+    /**
+     * The original and its take over copy are one photo: whichever of them the picker shows, the usage is the same.
+     */
+    public function testOriginalAndItsCopyGetTheSameUsage(): void
+    {
+        $original = $this->findImage(ImageFixtures::IMAGE_ID_3);
+        $original->getFlags()->setSingleUse(true);
+        $copy = $this->findImage(ImageFixtures::IMAGE_ID_2);
+        $copy->getFlags()->setSingleUse(true);
+        $copy->getAssetAttributes()->setTakenOverFromId(ImageFixtures::IMAGE_ID_3);
+
+        $usage = (new SingleUseUsage())->setTotalCount(2)->setOtherHolderCount(1);
+        $callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $callback->expects(self::once())
+            ->method('resolveSingleUseUsage')
+            ->with([ImageFixtures::IMAGE_ID_3], self::HOLDER_NAME, self::HOLDER_ID)
+            ->willReturn([ImageFixtures::IMAGE_ID_3 => $usage])
+        ;
+
+        $items = $this->search($callback, [$original->getAsset(), $copy->getAsset()]);
+
+        self::assertSame($usage, $items[ImageFixtures::IMAGE_ID_3]->getSingleUseUsage());
+        self::assertSame($usage, $items[ImageFixtures::IMAGE_ID_2]->getSingleUseUsage());
+    }
+
     public function testFailingCallbackLeavesTheListWithoutUsage(): void
     {
         $single = $this->findImage(ImageFixtures::IMAGE_ID_1_1);
