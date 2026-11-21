@@ -22,6 +22,9 @@ class ForbiddenOperationException extends DomainException
     public const string FILE_UPLOAD_TOO_MANY_FILES = 'file_upload_too_many_files';
     public const string FILE_IS_USED = 'file_is_used';
     public const string LICENCE_MANUAL_UPLOAD_DISABLED = 'licence_manual_upload_disabled';
+    public const string IMAGE_DIRECT_USE_DISABLED = 'image_direct_use_disabled';
+    public const string IMAGE_TAKE_OVER_CONFLICT = 'image_take_over_conflict';
+    public const string IMAGE_TAKE_OVER_SOURCE_INVALID = 'image_take_over_source_invalid';
 
     public const string IS_BLOCKING_ERROR = 'distribution_is_blocking';
 

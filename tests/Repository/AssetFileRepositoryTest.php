@@ -79,6 +79,17 @@ final class AssetFileRepositoryTest extends CoreDamKernelTestCase
         );
     }
 
+    public function testExistsTakenOverFromTellsARootFromACopyAndAnOriginal(): void
+    {
+        $copy = $this->imageFileRepository->find(ImageFixtures::IMAGE_ID_1_2);
+        self::assertInstanceOf(ImageFile::class, $copy);
+        $copy->getAssetAttributes()->setTakenOverFromId(ImageFixtures::IMAGE_ID_1_1);
+        $this->entityManager->flush();
+
+        self::assertTrue($this->repository->existsTakenOverFrom(ImageFixtures::IMAGE_ID_1_1));
+        self::assertFalse($this->repository->existsTakenOverFrom(ImageFixtures::IMAGE_ID_1_2));
+    }
+
     private function storeAttempt(
         string $imageId,
         string $path,

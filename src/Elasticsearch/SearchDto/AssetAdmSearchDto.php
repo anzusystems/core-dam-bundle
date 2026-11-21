@@ -206,6 +206,17 @@ class AssetAdmSearchDto extends AbstractSearchDto
 
     #[Serialize]
     protected ?bool $mainFileInternal = null;
+
+    #[Serialize]
+    #[Assert\Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected ?string $usageHolderName = null;
+
+    #[Serialize]
+    #[Assert\Length(max: 64, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    protected ?string $usageHolderId = null;
+
+    #[Serialize]
+    protected bool $singleUseUsage = false;
     private ?string $idInText = null;
     private bool $resolvedIdInText = false;
 
@@ -818,6 +829,42 @@ class AssetAdmSearchDto extends AbstractSearchDto
     public function setMainFileSingleUse(?bool $mainFileSingleUse): self
     {
         $this->mainFileSingleUse = $mainFileSingleUse;
+
+        return $this;
+    }
+
+    public function getUsageHolderName(): ?string
+    {
+        return $this->usageHolderName;
+    }
+
+    public function setUsageHolderName(?string $usageHolderName): self
+    {
+        $this->usageHolderName = $usageHolderName;
+
+        return $this;
+    }
+
+    public function getUsageHolderId(): ?string
+    {
+        return $this->usageHolderId;
+    }
+
+    public function setUsageHolderId(?string $usageHolderId): self
+    {
+        $this->usageHolderId = $usageHolderId;
+
+        return $this;
+    }
+
+    public function isSingleUseUsage(): bool
+    {
+        return $this->singleUseUsage;
+    }
+
+    public function setSingleUseUsage(bool $singleUseUsage): self
+    {
+        $this->singleUseUsage = $singleUseUsage;
 
         return $this;
     }

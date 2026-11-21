@@ -45,6 +45,7 @@ use Doctrine\ORM\Mapping as ORM;
 )]
 #[ORM\Index(name: 'IDX_licence_created_at', columns: ['licence_id', 'created_at'])]
 #[ORM\Index(name: 'IDX_expire_at', fields: ['expireAt'])]
+#[ORM\Index(name: 'IDX_attributes_taken_over_from', fields: ['assetAttributes.takenOverFromId'])]
 #[ORM\InheritanceType(value: 'JOINED')]
 abstract class AssetFile implements
     TimeTrackingInterface,
@@ -108,6 +109,16 @@ abstract class AssetFile implements
     public function __toString(): string
     {
         return (string) $this->getId();
+    }
+
+    /**
+     * Identity of the photo across licences: the original itself, or the file this one was taken over from.
+     */
+    public function getTakeOverRootId(): string
+    {
+        $attributes = $this->getAssetAttributes();
+
+        return $attributes->isTakenOver() ? $attributes->getTakenOverFromId() : (string) $this->getId();
     }
 
     /**
