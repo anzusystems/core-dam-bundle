@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
@@ -57,6 +58,7 @@ final class ImageUseFacade
         private readonly AssetFileManager $assetFileManager,
         private readonly AssetFileRepository $assetFileRepository,
         private readonly AccessDenier $accessDenier,
+        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
     ) {
     }
 
@@ -101,6 +103,8 @@ final class ImageUseFacade
         if ([] !== $targetAssets) {
             $this->indexManager->indexBulk($targetAssets);
         }
+
+        $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($this->adoptedImages($resolved)));
 
         return $result;
     }
@@ -147,6 +151,24 @@ final class ImageUseFacade
         }
 
         return array_values($targetAssets);
+    }
+
+    /**
+     * @param list<ImageUseResolution> $resolved
+     *
+     * @return list<ImageFile>
+     */
+    private function adoptedImages(array $resolved): array
+    {
+        $adopted = [];
+        foreach ($resolved as $resolution) {
+            $file = $resolution->getFile();
+            if ($resolution->isAdopted() && $file instanceof ImageFile) {
+                $adopted[(string) $file->getId()] = $file;
+            }
+        }
+
+        return array_values($adopted);
     }
 
     /**
@@ -237,6 +259,9 @@ final class ImageUseFacade
      * uploaded manually land here too, with no root of their own. Such a file is adopted under the source root,
      * otherwise the caller would store a photo with no link to the original.
      *
+     * The root of the source itself, found by checksum when a copy is picked back into the licence of its root,
+     * is handed back as it is.
+     *
      * A file already taken over from this exact root is the idempotent case, a retry or the same photo picked
      * twice, and is handed back as it is. A file with a different root, or one that is a root itself, belongs to
      * another group: adopting it would merge two groups, so it is refused. A shared file is never adopted by a
@@ -246,6 +271,10 @@ final class ImageUseFacade
      */
     private function reuseExisting(AssetFile $existing, ImageFile $source): ImageUseResolution
     {
+        if ((string) $existing->getId() === $source->getTakeOverRootId()) {
+            return ImageUseResolution::takenOver($existing, $source);
+        }
+
         $existingAttributes = $existing->getAssetAttributes();
         if ($existingAttributes->isTakenOver()) {
             if ($existingAttributes->getTakenOverFromId() === $source->getTakeOverRootId()) {
@@ -264,7 +293,7 @@ final class ImageUseFacade
         $existingAttributes->setTakenOverFromId($source->getTakeOverRootId());
         $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
 
-        return ImageUseResolution::takenOver($existing, $source);
+        return ImageUseResolution::adopted($existing, $source);
     }
 
     /**

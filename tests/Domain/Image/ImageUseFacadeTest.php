@@ -8,6 +8,8 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
+use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackInterface;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
@@ -16,15 +18,19 @@ use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
+use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
+use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 final class ImageUseFacadeTest extends CoreDamKernelTestCase
 {
@@ -37,10 +43,19 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
     private AssetFileStatusFacadeProvider $facadeProvider;
     private FileSystemProvider $fileSystemProvider;
     private int $extIdSequence = App::ZERO;
+    private ExtSystemCallbackInterface $callback;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->callback = $this->createStub(ExtSystemCallbackInterface::class);
+        self::getContainer()->set(ExtSystemCallbackFacade::class, new ExtSystemCallbackFacade(
+            new ServiceLocator([
+                'cms' => fn (): ExtSystemCallbackInterface => $this->callback,
+            ]),
+            $this->getService(DamLogger::class),
+            $this->getService(ExtSystemRepository::class),
+        ));
         $this->imageUseFacade = $this->getService(ImageUseFacade::class);
         $this->assetLicenceManager = $this->getService(AssetLicenceManager::class);
         $this->imageFactory = $this->getService(ImageFactory::class);
@@ -142,6 +157,32 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
         self::assertSame((string) $existing->getId(), $result->getImageFileId());
         self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
+    }
+
+    public function testAdoptingAFileNotifiesTheExtSystemOnlyForTheAdoptedFile(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false));
+        $target = $this->createLicence();
+        $existing = $this->createImage($target);
+        $this->callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $this->callback->expects(self::once())->method('notifyImagesChanged')->with(self::callback(
+            static fn (Collection $images): bool => [(string) $existing->getId()] === $images->map(
+                static fn (ImageFile $image): string => (string) $image->getId(),
+            )->getValues(),
+        ));
+
+        $this->useOne($source, $target);
+    }
+
+    public function testCopyPickedBackIntoTheLicenceOfItsRootReturnsTheRoot(): void
+    {
+        $root = $this->createImage($this->createLicence(directUseAllowed: false));
+        $copy = $this->findImage($this->useOne($root, $this->createLicence(directUseAllowed: false))->getImageFileId());
+
+        $result = $this->useOne($copy, $root->getLicence());
+
+        self::assertSame((string) $root->getId(), $result->getImageFileId());
+        self::assertNull($result->getTakenOverFromId());
     }
 
     public function testForceTakesOverEvenWhenTheLicenceAllowsDirectUse(): void
