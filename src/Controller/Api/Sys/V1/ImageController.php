@@ -13,12 +13,16 @@ use AnzuSystems\Contracts\Exception\AppReadOnlyModeException;
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Controller\Api\AbstractApiController;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\Job\JobImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageFirstUseRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultListDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Job\JobImageCopyRequestDto;
 use AnzuSystems\CoreDamBundle\Model\OpenApi\Request\OARequest as OADamRequest;
 use AnzuSystems\SerializerBundle\Attributes\SerializeParam;
@@ -35,7 +39,34 @@ final class ImageController extends AbstractApiController
     public function __construct(
         private readonly JobImageCopyFacade $imageCopyFacade,
         private readonly AssetFileFirstUseFacade $firstUseFacade,
+        private readonly ImageUseFacade $imageUseFacade,
     ) {
+    }
+
+    /**
+     * @throws AppReadOnlyModeException
+     * @throws ForbiddenOperationException
+     * @throws ValidationException
+     * @throws Throwable
+     */
+    #[Route(
+        path: '/use',
+        name: 'use',
+        methods: [Request::METHOD_POST],
+    )]
+    #[OADamRequest(ImageUseRequestDto::class), OAResponse(ImageUseResultListDto::class), OAResponseValidation]
+    public function useImages(Request $request, #[SerializeParam] ImageUseRequestDto $dto): JsonResponse
+    {
+        App::throwOnReadOnlyMode();
+        AuditLogResourceHelper::setResource(
+            request: $request,
+            resourceName: AssetFile::getResourceName(),
+            resourceId: CollectionHelper::traversableToIds($dto->getItems(), static fn (ImageUseItemDto $item): string => (string) $item->getImageFile()->getId()),
+        );
+
+        return $this->okResponse(
+            $this->imageUseFacade->useImages($dto)
+        );
     }
 
     /**

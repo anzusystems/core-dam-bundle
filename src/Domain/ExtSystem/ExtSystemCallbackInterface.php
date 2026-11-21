@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Domain\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\SingleUseUsage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use Doctrine\Common\Collections\Collection;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -26,6 +27,13 @@ interface ExtSystemCallbackInterface
      * @return array<string, bool> image file id => used
      */
     public function isImageFileUsedBulk(iterable $imageFiles): array;
+
+    /**
+     * @param list<string> $groupIds take-over root ids of single use files
+     *
+     * @return array<string, SingleUseUsage> group id => usage; a group the ext system cannot answer for is left out
+     */
+    public function resolveSingleUseUsage(array $groupIds, ?string $holderName, ?string $holderId): array;
 
     /**
      * @param Collection<array-key, Asset> $collection

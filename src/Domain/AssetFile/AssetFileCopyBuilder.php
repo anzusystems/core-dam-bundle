@@ -25,7 +25,10 @@ final readonly class AssetFileCopyBuilder
     public function copy(AssetFile $assetFile, AssetFile $targetAssetFile): void
     {
         $targetAssetFile->setAssetAttributes(clone $assetFile->getAssetAttributes());
-        $targetAssetFile->getAssetAttributes()->setOriginAssetId((string) $assetFile->getId());
+        $targetAssetFile->getAssetAttributes()
+            ->setOriginAssetId((string) $assetFile->getId())
+            ->setTakenOverFromId($assetFile->getTakeOverRootId())
+        ;
         $targetAssetFile->getFlags()->setSingleUse($assetFile->getFlags()->isSingleUse());
         $this->assetFileStorageOperator->copyToAssetFile($assetFile, $targetAssetFile);
         if ($assetFile instanceof ImageFile && $targetAssetFile instanceof ImageFile) {

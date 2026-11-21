@@ -10,6 +10,7 @@ use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\SingleUseUsage;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -107,6 +108,34 @@ final class ExtSystemCallbackFacadeTest extends CoreDamKernelTestCase
             'callback_missing' => ['callbackThrows' => false],
             'callback_throws' => ['callbackThrows' => true],
         ];
+    }
+
+    public function testResolveSingleUseUsageReturnsTheCallbackAnswer(): void
+    {
+        $usage = (new SingleUseUsage())->setTotalCount(3)->setOtherHolderCount(2)->setBlocked(true);
+        $callback = $this->createMock(ExtSystemCallbackInterface::class);
+        $callback->expects(self::once())
+            ->method('resolveSingleUseUsage')
+            ->with(['group-1'], 'articleKindStandard', '123')
+            ->willReturn(['group-1' => $usage])
+        ;
+        $facade = $this->createFacade($this->createLocator($callback));
+
+        self::assertSame(
+            ['group-1' => $usage],
+            $facade->resolveSingleUseUsage(self::SLUG, ['group-1'], 'articleKindStandard', '123'),
+        );
+    }
+
+    public function testResolveSingleUseUsageIsEmptyWhenTheCallbackIsMissingOrFails(): void
+    {
+        $withoutCallback = $this->createFacade(new ServiceLocator([]));
+        $callback = self::createStub(ExtSystemCallbackInterface::class);
+        $callback->method('resolveSingleUseUsage')->willThrowException(new RuntimeException('CMS unreachable'));
+        $withFailingCallback = $this->createFacade($this->createLocator($callback));
+
+        self::assertSame([], $withoutCallback->resolveSingleUseUsage(self::SLUG, ['group-1'], null, null));
+        self::assertSame([], $withFailingCallback->resolveSingleUseUsage(self::SLUG, ['group-1'], null, null));
     }
 
     private function createFacade(ServiceLocator $locator): ExtSystemCallbackFacade

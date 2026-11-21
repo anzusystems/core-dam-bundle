@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
+use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\SingleUseUsage;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetFilePropertiesAdmDto;
@@ -27,6 +28,7 @@ class AssetAdmListDto extends AbstractEntityDto
     protected AssetTextsAdmListDto $texts;
     protected AssetAttributesAdmDto $attributes;
     protected AssetFilePropertiesAdmDto $assetFileProperties;
+    protected ?SingleUseUsage $singleUseUsage = null;
 
     public static function getInstance(Asset $asset): static
     {
@@ -120,6 +122,19 @@ class AssetAdmListDto extends AbstractEntityDto
     public function isMainFileSingleUse(): ?bool
     {
         return $this->asset->getMainFile()?->getFlags()->isSingleUse();
+    }
+
+    #[Serialize]
+    public function getSingleUseUsage(): ?SingleUseUsage
+    {
+        return $this->singleUseUsage;
+    }
+
+    public function setSingleUseUsage(?SingleUseUsage $singleUseUsage): static
+    {
+        $this->singleUseUsage = $singleUseUsage;
+
+        return $this;
     }
 
     #[Serialize]
