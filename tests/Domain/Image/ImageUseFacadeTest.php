@@ -159,18 +159,19 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
     }
 
-    public function testAdoptingAFileNotifiesTheExtSystemOnlyForTheAdoptedFile(): void
+    public function testEveryPickOfATakenOverFileNotifiesTheExtSystemSoARetryRepairsALostNotification(): void
     {
         $source = $this->createImage($this->createLicence(directUseAllowed: false));
         $target = $this->createLicence();
         $existing = $this->createImage($target);
         $this->callback = $this->createMock(ExtSystemCallbackInterface::class);
-        $this->callback->expects(self::once())->method('notifyImagesChanged')->with(self::callback(
+        $this->callback->expects(self::exactly(2))->method('notifyImagesChanged')->with(self::callback(
             static fn (Collection $images): bool => [(string) $existing->getId()] === $images->map(
                 static fn (ImageFile $image): string => (string) $image->getId(),
             )->getValues(),
         ));
 
+        $this->useOne($source, $target);
         $this->useOne($source, $target);
     }
 
