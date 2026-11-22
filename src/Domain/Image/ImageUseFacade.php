@@ -6,10 +6,8 @@ namespace AnzuSystems\CoreDamBundle\Domain\Image;
 
 use AnzuSystems\CommonBundle\Exception\ValidationException;
 use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
-use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
-use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileFirstUseFacade;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
@@ -52,7 +50,6 @@ final class ImageUseFacade
      */
     public function __construct(
         private readonly ImageCopyFacade $imageCopyFacade,
-        private readonly AssetFileFirstUseFacade $assetFileFirstUseFacade,
         private readonly AssetManager $assetManager,
         private readonly AssetPropertiesRefresher $assetPropertiesRefresher,
         private readonly AssetFileManager $assetFileManager,
@@ -78,11 +75,6 @@ final class ImageUseFacade
             foreach ($dto->getItems() as $item) {
                 $resolved[] = $this->resolveItem($item);
             }
-            $this->assetFileFirstUseFacade->record(
-                array_map(static fn (ImageUseResolution $resolution): AssetFile => $resolution->getFile(), $resolved),
-                App::getAppDate(),
-            );
-
             $results = new ArrayCollection();
             foreach ($resolved as $resolution) {
                 $results->add(ImageUseResultDto::getInstance($resolution->getFile()));

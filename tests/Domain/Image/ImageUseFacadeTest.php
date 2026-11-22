@@ -218,31 +218,6 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
     }
 
-    public function testFirstUseIsStampedOnTheCopyAndOnTheRoot(): void
-    {
-        $source = $this->createImage($this->createLicence(directUseAllowed: false));
-
-        $result = $this->useOne($source, $this->createLicence());
-        $this->entityManager->clear();
-
-        self::assertNotNull($this->findImage($result->getImageFileId())->getFirstUsedAt());
-        self::assertNotNull($this->findImage((string) $source->getId())->getFirstUsedAt());
-    }
-
-    public function testFirstUseIsWriteOnce(): void
-    {
-        $source = $this->createImage($this->createLicence());
-        $this->useOne($source);
-        $this->entityManager->clear();
-        $firstUsedAt = $this->findImage((string) $source->getId())->getFirstUsedAt();
-        self::assertNotNull($firstUsedAt);
-
-        $this->useOne($this->findImage((string) $source->getId()));
-        $this->entityManager->clear();
-
-        self::assertEquals($firstUsedAt, $this->findImage((string) $source->getId())->getFirstUsedAt());
-    }
-
     public function testRequestWithoutTargetOnlyReportsWhetherDirectUseIsAllowed(): void
     {
         $usable = $this->createImage($this->createLicence());
