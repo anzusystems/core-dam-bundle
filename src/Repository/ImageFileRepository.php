@@ -37,6 +37,28 @@ final class ImageFileRepository extends AbstractAssetFileRepository
         return new ArrayCollection($result);
     }
 
+    /**
+     * The same bytes in a licence of the same ext system that forbids direct use, a file taken over from an agency.
+     */
+    public function findProcessedTakeOverSourceByChecksum(string $checksum, AssetLicence $licence): ?ImageFile
+    {
+        /** @var ImageFile|null $result */
+        $result = $this->createQueryBuilder('entity')
+            ->join('entity.licence', 'licence')
+            ->where('entity.assetAttributes.checksum = :checksum')
+            ->andWhere('entity.assetAttributes.status = :status')
+            ->andWhere('IDENTITY(licence.extSystem) = :extSystemId')
+            ->andWhere('licence.flags.directUseAllowed = false')
+            ->setParameter('checksum', $checksum)
+            ->setParameter('status', AssetFileProcessStatus::Processed)
+            ->setParameter('extSystemId', $licence->getExtSystem()->getId())
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result;
+    }
+
     public function findProcessedByIdAndLicence(string $id, AssetLicence $licence): ?ImageFile
     {
         return $this->findOneBy([

@@ -56,6 +56,7 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
         $this->optimalCropsProcessor->process($imageFile, $file);
         $this->defaultRoiProcessor->process($imageFile, $file);
         $this->imageManipulator->clean();
+        $this->joinTakeOverGroup($imageFile);
 
         return $imageFile;
     }
@@ -67,6 +68,32 @@ final class ImageStatusFacade extends AbstractAssetFileStatusFacade
             licence: $assetFile->getLicence(),
             excludeAssetId: $assetFile->getAsset()->getId(),
         );
+    }
+
+    /**
+     * A photo uploaded straight into a licence that allows direct use, while the same bytes came in through an
+     * agency licence, joins the group of the agency file and takes its single use flag. Without it the upload would
+     * be an independent photo and the single use rule could be bypassed. A new file has no CMS rows yet.
+     */
+    private function joinTakeOverGroup(ImageFile $imageFile): void
+    {
+        $attributes = $imageFile->getAssetAttributes();
+        if ($attributes->isTakenOver() || false === $imageFile->getLicence()->getFlags()->isDirectUseAllowed()) {
+            return;
+        }
+
+        $source = $this->imageFileRepository->findProcessedTakeOverSourceByChecksum(
+            $attributes->getChecksum(),
+            $imageFile->getLicence(),
+        );
+        if (null === $source) {
+            return;
+        }
+
+        $attributes->setTakenOverFromId($source->getTakeOverRootId());
+        if ($source->getFlags()->isSingleUse()) {
+            $imageFile->getFlags()->setSingleUse(true);
+        }
     }
 
     private function getImage(AssetFile $assetFile): ImageFile
