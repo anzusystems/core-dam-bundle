@@ -135,11 +135,11 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         );
     }
 
-    public function testSingleUseSourceCannotAdoptAnIndependentlyUploadedSharedFile(): void
+    public function testSingleUseSourceCannotAdoptASharedFileUploadedBeforeIt(): void
     {
-        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
         $target = $this->createLicence();
         $this->createImage($target);
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
 
         $this->assertForbiddenDetail(
             ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT,
@@ -147,16 +147,36 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         );
     }
 
-    public function testFileWithTheSameBytesInTheTargetLicenceIsAdoptedUnderTheSourceRoot(): void
+    public function testFileWithTheSameBytesUploadedBeforeTheSourceIsAdoptedUnderTheSourceRootAtThePick(): void
     {
-        $source = $this->createImage($this->createLicence(directUseAllowed: false));
         $target = $this->createLicence();
         $existing = $this->createImage($target);
+        $source = $this->createImage($this->createLicence(directUseAllowed: false));
 
         $result = $this->useOne($source, $target);
 
         self::assertSame((string) $existing->getId(), $result->getImageFileId());
         self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
+    }
+
+    public function testUploadOfAPhotoAnAgencyLicenceHoldsJoinsItsGroupAsSingleUse(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+
+        $upload = $this->createImage($this->createLicence());
+
+        self::assertSame((string) $source->getId(), $upload->getAssetAttributes()->getTakenOverFromId());
+        self::assertTrue($upload->getFlags()->isSingleUse());
+    }
+
+    public function testUploadOfAPhotoAnAgencyLicenceOfAnotherExtSystemHoldsStaysIndependent(): void
+    {
+        $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+
+        $upload = $this->createImage($this->createLicence(extSystemId: ExtSystemFixtures::ID_BLOG));
+
+        self::assertFalse($upload->getAssetAttributes()->isTakenOver());
+        self::assertFalse($upload->getFlags()->isSingleUse());
     }
 
     public function testEveryPickOfATakenOverFileNotifiesTheExtSystemSoARetryRepairsALostNotification(): void
