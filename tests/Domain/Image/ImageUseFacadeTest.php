@@ -8,29 +8,26 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackInterface;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
+use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ExtSystem;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Event\AssetChangedEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
-use AnzuSystems\CoreDamBundle\Logger\DamLogger;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
-use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\ExtSystemFixtures;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class ImageUseFacadeTest extends CoreDamKernelTestCase
 {
@@ -43,19 +40,10 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
     private AssetFileStatusFacadeProvider $facadeProvider;
     private FileSystemProvider $fileSystemProvider;
     private int $extIdSequence = App::ZERO;
-    private ExtSystemCallbackInterface $callback;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->callback = $this->createStub(ExtSystemCallbackInterface::class);
-        self::getContainer()->set(ExtSystemCallbackFacade::class, new ExtSystemCallbackFacade(
-            new ServiceLocator([
-                'cms' => fn (): ExtSystemCallbackInterface => $this->callback,
-            ]),
-            $this->getService(DamLogger::class),
-            $this->getService(ExtSystemRepository::class),
-        ));
         $this->imageUseFacade = $this->getService(ImageUseFacade::class);
         $this->assetLicenceManager = $this->getService(AssetLicenceManager::class);
         $this->imageFactory = $this->getService(ImageFactory::class);
@@ -135,16 +123,34 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         );
     }
 
-    public function testSingleUseSourceCannotAdoptASharedFileUploadedBeforeIt(): void
+    public function testSingleUseSourceAdoptsASharedFileUploadedBeforeItAndMakesItSingleUse(): void
     {
         $target = $this->createLicence();
-        $this->createImage($target);
+        $existing = $this->createImage($target);
+        self::assertFalse($existing->getFlags()->isSingleUse());
         $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
 
-        $this->assertForbiddenDetail(
-            ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT,
-            fn (): mixed => $this->useOne($source, $target),
-        );
+        $result = $this->useOne($source, $target);
+
+        self::assertSame((string) $existing->getId(), $result->getImageFileId());
+        self::assertSame((string) $source->getId(), $result->getTakenOverFromId());
+        self::assertTrue($result->isSingleUse());
+        $this->entityManager->clear();
+        self::assertTrue($this->findImage((string) $existing->getId())->getFlags()->isSingleUse());
+    }
+
+    public function testRetryOfAPickRepairsAStaleSharedFlagOfAFileTakenOverFromASingleUseSource(): void
+    {
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+        $target = $this->createLicence();
+        $copy = $this->findImage($this->useOne($source, $target)->getImageFileId());
+        $copy->getFlags()->setSingleUse(false);
+        $this->entityManager->flush();
+
+        $result = $this->useOne($source, $target);
+
+        self::assertSame((string) $copy->getId(), $result->getImageFileId());
+        self::assertTrue($result->isSingleUse());
     }
 
     public function testFileWithTheSameBytesUploadedBeforeTheSourceIsAdoptedUnderTheSourceRootAtThePick(): void
@@ -179,20 +185,28 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertFalse($upload->getFlags()->isSingleUse());
     }
 
-    public function testEveryPickOfATakenOverFileNotifiesTheExtSystemSoARetryRepairsALostNotification(): void
+    public function testEveryPickOfATakenOverFileDispatchesAssetChangedSoARetryRepairsALostNotification(): void
     {
         $source = $this->createImage($this->createLicence(directUseAllowed: false));
         $target = $this->createLicence();
         $existing = $this->createImage($target);
-        $this->callback = $this->createMock(ExtSystemCallbackInterface::class);
-        $this->callback->expects(self::exactly(2))->method('notifyImagesChanged')->with(self::callback(
-            static fn (Collection $images): bool => [(string) $existing->getId()] === $images->map(
-                static fn (ImageFile $image): string => (string) $image->getId(),
-            )->getValues(),
-        ));
+        $dispatched = [];
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            AssetChangedEvent::class,
+            static function (AssetChangedEvent $event) use (&$dispatched): void {
+                $dispatched[] = $event->getAffectedAssets()->map(
+                    static fn (Asset $asset): string => (string) $asset->getId(),
+                )->getValues();
+            },
+        );
 
         $this->useOne($source, $target);
         $this->useOne($source, $target);
+
+        self::assertSame(
+            [[(string) $existing->getAsset()->getId()], [(string) $existing->getAsset()->getId()]],
+            $dispatched,
+        );
     }
 
     public function testCopyPickedBackIntoTheLicenceOfItsRootReturnsTheRoot(): void
