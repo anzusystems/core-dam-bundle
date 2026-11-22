@@ -11,7 +11,6 @@ final readonly class ImageUseResolution
     private function __construct(
         private AssetFile $file,
         private AssetFile $requestedFile,
-        private bool $adopted = false,
     ) {
     }
 
@@ -25,11 +24,6 @@ final readonly class ImageUseResolution
         return new self($file, $requestedFile);
     }
 
-    public static function adopted(AssetFile $file, AssetFile $requestedFile): self
-    {
-        return new self($file, $requestedFile, adopted: true);
-    }
-
     public function getFile(): AssetFile
     {
         return $this->file;
@@ -38,10 +32,5 @@ final readonly class ImageUseResolution
     public function isTakenOver(): bool
     {
         return false === $this->file->is($this->requestedFile);
-    }
-
-    public function isAdopted(): bool
-    {
-        return $this->adopted;
     }
 }

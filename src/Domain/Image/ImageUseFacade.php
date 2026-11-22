@@ -104,7 +104,7 @@ final class ImageUseFacade
             $this->indexManager->indexBulk($targetAssets);
         }
 
-        $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($this->adoptedImages($resolved)));
+        $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($this->takenOverImages($resolved)));
 
         return $result;
     }
@@ -158,17 +158,17 @@ final class ImageUseFacade
      *
      * @return list<ImageFile>
      */
-    private function adoptedImages(array $resolved): array
+    private function takenOverImages(array $resolved): array
     {
-        $adopted = [];
+        $takenOver = [];
         foreach ($resolved as $resolution) {
             $file = $resolution->getFile();
-            if ($resolution->isAdopted() && $file instanceof ImageFile) {
-                $adopted[(string) $file->getId()] = $file;
+            if ($resolution->isTakenOver() && $file instanceof ImageFile) {
+                $takenOver[(string) $file->getId()] = $file;
             }
         }
 
-        return array_values($adopted);
+        return array_values($takenOver);
     }
 
     /**
@@ -293,7 +293,7 @@ final class ImageUseFacade
         $existingAttributes->setTakenOverFromId($source->getTakeOverRootId());
         $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
 
-        return ImageUseResolution::adopted($existing, $source);
+        return ImageUseResolution::takenOver($existing, $source);
     }
 
     /**
