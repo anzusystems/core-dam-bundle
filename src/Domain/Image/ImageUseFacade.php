@@ -9,11 +9,11 @@ use AnzuSystems\CommonBundle\Traits\ValidatorAwareTrait;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetPropertiesRefresher;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
-use AnzuSystems\CoreDamBundle\Domain\ExtSystem\ExtSystemCallbackFacade;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Model\Domain\Image\ImageUseResolution;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
@@ -55,7 +55,7 @@ final class ImageUseFacade
         private readonly AssetFileManager $assetFileManager,
         private readonly AssetFileRepository $assetFileRepository,
         private readonly AccessDenier $accessDenier,
-        private readonly ExtSystemCallbackFacade $extSystemCallbackFacade,
+        private readonly AssetChangedEventDispatcher $assetChangedEventDispatcher,
     ) {
     }
 
@@ -94,9 +94,8 @@ final class ImageUseFacade
         $targetAssets = $this->takenOverTargetAssets($resolved);
         if ([] !== $targetAssets) {
             $this->indexManager->indexBulk($targetAssets);
+            $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection($targetAssets));
         }
-
-        $this->extSystemCallbackFacade->notifyImagesChanged(new ArrayCollection($this->takenOverImages($resolved)));
 
         return $result;
     }
@@ -143,24 +142,6 @@ final class ImageUseFacade
         }
 
         return array_values($targetAssets);
-    }
-
-    /**
-     * @param list<ImageUseResolution> $resolved
-     *
-     * @return list<ImageFile>
-     */
-    private function takenOverImages(array $resolved): array
-    {
-        $takenOver = [];
-        foreach ($resolved as $resolution) {
-            $file = $resolution->getFile();
-            if ($resolution->isTakenOver() && $file instanceof ImageFile) {
-                $takenOver[(string) $file->getId()] = $file;
-            }
-        }
-
-        return array_values($takenOver);
     }
 
     /**
@@ -256,21 +237,21 @@ final class ImageUseFacade
      *
      * A file already taken over from this exact root is the idempotent case, a retry or the same photo picked
      * twice, and is handed back as it is. A file with a different root, or one that is a root itself, belongs to
-     * another group: adopting it would merge two groups, so it is refused. A shared file is never adopted by a
-     * single use source, its flag stays shared.
+     * another group: adopting it would merge two groups, so it is refused. A file taken over from a single use
+     * source takes its single use flag, an upload made before the agency import is resolved by the pick.
      *
      * @throws ForbiddenOperationException
      */
     private function reuseExisting(AssetFile $existing, ImageFile $source): ImageUseResolution
     {
         if ((string) $existing->getId() === $source->getTakeOverRootId()) {
-            return ImageUseResolution::takenOver($existing, $source);
+            return $this->takenOverWithSourceUse($existing, $source);
         }
 
         $existingAttributes = $existing->getAssetAttributes();
         if ($existingAttributes->isTakenOver()) {
             if ($existingAttributes->getTakenOverFromId() === $source->getTakeOverRootId()) {
-                return ImageUseResolution::takenOver($existing, $source);
+                return $this->takenOverWithSourceUse($existing, $source);
             }
 
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
@@ -278,12 +259,21 @@ final class ImageUseFacade
         if ($this->assetFileRepository->existsTakenOverFrom((string) $existing->getId())) {
             throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
         }
-        if ($source->getFlags()->isSingleUse() && false === $existing->getFlags()->isSingleUse()) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
-        }
 
         $existingAttributes->setTakenOverFromId($source->getTakeOverRootId());
-        $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
+
+        return $this->takenOverWithSourceUse($existing, $source, changed: true);
+    }
+
+    private function takenOverWithSourceUse(AssetFile $existing, ImageFile $source, bool $changed = false): ImageUseResolution
+    {
+        if ($source->getFlags()->isSingleUse() && false === $existing->getFlags()->isSingleUse()) {
+            $existing->getFlags()->setSingleUse(true);
+            $changed = true;
+        }
+        if ($changed) {
+            $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
+        }
 
         return ImageUseResolution::takenOver($existing, $source);
     }
