@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 
 final class SingleUseUsagePlace
 {
@@ -17,6 +18,14 @@ final class SingleUseUsagePlace
 
     #[Serialize]
     private int $imageId = App::ZERO;
+
+    #[Serialize]
+    private DateTimeImmutable $pickedAt;
+
+    public function __construct()
+    {
+        $this->setPickedAt(App::getAppDate());
+    }
 
     public function getResourceName(): string
     {
@@ -50,6 +59,18 @@ final class SingleUseUsagePlace
     public function setImageId(int $imageId): self
     {
         $this->imageId = $imageId;
+
+        return $this;
+    }
+
+    public function getPickedAt(): DateTimeImmutable
+    {
+        return $this->pickedAt;
+    }
+
+    public function setPickedAt(DateTimeImmutable $pickedAt): self
+    {
+        $this->pickedAt = $pickedAt;
 
         return $this;
     }
