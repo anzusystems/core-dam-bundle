@@ -6,6 +6,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem;
 
 use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
@@ -19,6 +20,12 @@ final class SingleUseUsage
 
     #[Serialize]
     private bool $blocked = false;
+
+    /**
+     * When the picking holder last picked the photo, null when it does not use it or the host does not send it.
+     */
+    #[Serialize]
+    private ?DateTimeImmutable $holderPickedAt = null;
 
     #[Serialize(type: SingleUseUsagePlace::class)]
     private Collection $places;
@@ -60,6 +67,18 @@ final class SingleUseUsage
     public function setBlocked(bool $blocked): self
     {
         $this->blocked = $blocked;
+
+        return $this;
+    }
+
+    public function getHolderPickedAt(): ?DateTimeImmutable
+    {
+        return $this->holderPickedAt;
+    }
+
+    public function setHolderPickedAt(?DateTimeImmutable $holderPickedAt): self
+    {
+        $this->holderPickedAt = $holderPickedAt;
 
         return $this;
     }
