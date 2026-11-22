@@ -12,6 +12,8 @@ use AnzuSystems\CoreDamBundle\Validator\Constraints as AppAssert;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\When;
 
 #[AppAssert\AssetCopyEqualExtSystem]
 final class ImageUseItemDto
@@ -22,6 +24,10 @@ final class ImageUseItemDto
     private ImageFile $imageFile;
 
     #[Serialize(handler: EntityIdHandler::class)]
+    #[When(
+        expression: 'this.isForce()',
+        constraints: [new NotNull(message: ValidationException::ERROR_FIELD_EMPTY)],
+    )]
     private ?AssetLicence $targetAssetLicence = null;
 
     #[Serialize]

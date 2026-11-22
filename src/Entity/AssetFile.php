@@ -21,7 +21,6 @@ use AnzuSystems\CoreDamBundle\Entity\Traits\NotifyToTrait;
 use AnzuSystems\CoreDamBundle\Entity\Traits\UuidIdentityTrait;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCreateStrategy;
 use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
-use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -90,10 +89,6 @@ abstract class AssetFile implements
      */
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     protected ?DateTimeImmutable $expireAt = null;
-
-    #[Serialize]
-    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    protected ?DateTimeImmutable $firstUsedAt = null;
 
     public function __construct()
     {
@@ -227,18 +222,6 @@ abstract class AssetFile implements
     public function setExpireAt(?DateTimeImmutable $expireAt): static
     {
         $this->expireAt = $expireAt;
-
-        return $this;
-    }
-
-    public function getFirstUsedAt(): ?DateTimeImmutable
-    {
-        return $this->firstUsedAt;
-    }
-
-    public function setFirstUsedAt(?DateTimeImmutable $firstUsedAt): static
-    {
-        $this->firstUsedAt = $firstUsedAt;
 
         return $this;
     }

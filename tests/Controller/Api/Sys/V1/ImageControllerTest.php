@@ -27,16 +27,26 @@ final class ImageControllerTest extends AbstractApiController
      * @param list<string> $imageFileIds
      */
     #[DataProvider('useAccessDataProvider')]
-    public function testUseAccess(?int $grantUserId, int $requestUserId, array $imageFileIds, int $expectedStatus): void
-    {
+    public function testUseAccess(
+        ?int $grantUserId,
+        int $requestUserId,
+        array $imageFileIds,
+        int $expectedStatus,
+        ?int $targetAssetLicence = null,
+        bool $grantCreate = false,
+    ): void {
         $this->enableAclCheck();
         if (null !== $grantUserId) {
-            $this->grantPermission($grantUserId, DamPermissions::DAM_ASSET_READ);
+            $this->grantPermission(
+                $grantUserId,
+                ...($grantCreate ? [DamPermissions::DAM_ASSET_READ, DamPermissions::DAM_ASSET_CREATE] : [DamPermissions::DAM_ASSET_READ]),
+            );
         }
 
         $response = $this->getApiClient($requestUserId)->post(ImageSysUrl::use(), [
             'items' => array_map(static fn (string $imageFileId): array => [
                 'imageFileId' => $imageFileId,
+                'targetAssetLicence' => $targetAssetLicence,
             ], $imageFileIds),
         ]);
 
@@ -70,10 +80,25 @@ final class ImageControllerTest extends AbstractApiController
                 'imageFileIds' => [ImageFixtures::IMAGE_ID_1_1],
                 'expectedStatus' => Response::HTTP_OK,
             ],
+            'target licence without the create permission' => [
+                'grantUserId' => User::ID_CMS_USER,
+                'requestUserId' => User::ID_CMS_USER,
+                'imageFileIds' => [ImageFixtures::IMAGE_ID_1_1],
+                'expectedStatus' => Response::HTTP_FORBIDDEN,
+                'targetAssetLicence' => AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
+            ],
+            'target licence with the create permission' => [
+                'grantUserId' => User::ID_CMS_USER,
+                'requestUserId' => User::ID_CMS_USER,
+                'imageFileIds' => [ImageFixtures::IMAGE_ID_1_1],
+                'expectedStatus' => Response::HTTP_OK,
+                'targetAssetLicence' => AssetLicenceFixtures::FIRST_SYS_SECONDARY_LICENCE,
+                'grantCreate' => true,
+            ],
         ];
     }
 
-    public function testUseReturnsTheRequestedFileAndStampsTheFirstUse(): void
+    public function testUseReturnsTheRequestedFile(): void
     {
         $response = $this->getApiClient(User::ID_CMS_USER)->post(ImageSysUrl::use(), [
             'items' => [['imageFileId' => ImageFixtures::IMAGE_ID_1_1]],
@@ -83,7 +108,6 @@ final class ImageControllerTest extends AbstractApiController
         $result = json_decode((string) $response->getContent(), true)['results'][App::ZERO];
         self::assertSame(ImageFixtures::IMAGE_ID_1_1, $result['imageFileId']);
         self::assertNull($result['takenOverFromId']);
-        self::assertNotNull($this->findFixturePhoto()->getFirstUsedAt());
     }
 
     public function testUseOfAPhotoWhoseLicenceForbidsDirectUseWithoutATargetIsRefused(): void
@@ -97,7 +121,6 @@ final class ImageControllerTest extends AbstractApiController
 
         self::assertStatusCode($response, Response::HTTP_UNPROCESSABLE_ENTITY);
         $this->assertForbiddenOperationError((string) $response->getContent(), ForbiddenOperationException::IMAGE_DIRECT_USE_DISABLED);
-        self::assertNull($this->findFixturePhoto()->getFirstUsedAt());
     }
 
     #[DataProvider('useValidationFailureDataProvider')]
@@ -134,6 +157,10 @@ final class ImageControllerTest extends AbstractApiController
                     'targetAssetLicence' => AssetLicenceFixtures::LICENCE_ID,
                 ]]],
                 'validationErrors' => ['items[0].targetAssetLicence' => [ValidationException::ERROR_INVALID_LICENCE]],
+            ],
+            'force without a target licence' => [
+                'requestJson' => ['items' => [['imageFileId' => ImageFixtures::IMAGE_ID_1_1, 'force' => true]]],
+                'validationErrors' => ['items[0].targetAssetLicence' => [ValidationException::ERROR_FIELD_EMPTY]],
             ],
         ];
     }

@@ -12,7 +12,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 final class ImageUseRequestDto
 {
-    public const int MAX_ITEMS = 100;
+    public const int MAX_ITEMS = 20;
 
     #[Serialize(type: ImageUseItemDto::class)]
     #[Assert\Valid]

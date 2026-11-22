@@ -9,7 +9,6 @@ use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\JobImageCopy;
 use AnzuSystems\CoreDamBundle\Helper\CollectionHelper;
 use AnzuSystems\CoreDamBundle\Logger\DamLogger;
-use AnzuSystems\CoreDamBundle\Model\Domain\ExtSystem\SingleUseUsage;
 use AnzuSystems\CoreDamBundle\Model\Enum\MediaStatusType;
 use AnzuSystems\CoreDamBundle\Repository\ExtSystemRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -67,39 +66,6 @@ final class ExtSystemCallbackFacade
         }
 
         return $result;
-    }
-
-    /**
-     * Fail-soft: no callback or a failing one yields an empty answer, the caller shows no usage.
-     *
-     * @param list<string> $groupIds
-     *
-     * @return array<string, SingleUseUsage> group id => usage
-     */
-    public function resolveSingleUseUsage(string $slug, array $groupIds, ?string $holderName, ?string $holderId): array
-    {
-        $callback = $this->getCallback($slug);
-        if (null === $callback) {
-            $this->logger->warning(
-                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                'resolveSingleUseUsage.noCallbackRegistered',
-                ['slug' => $slug],
-            );
-
-            return [];
-        }
-
-        try {
-            return $callback->resolveSingleUseUsage($groupIds, $holderName, $holderId);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                DamLogger::NAMESPACE_EXT_SYSTEM_CALLBACK,
-                sprintf('resolveSingleUseUsage failed for ext system (%s)', $slug),
-                exception: $e,
-            );
-
-            return [];
-        }
     }
 
     /**
