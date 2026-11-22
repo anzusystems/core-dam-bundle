@@ -19,13 +19,11 @@ final class SingleUseUsagePlace
     #[Serialize]
     private int $imageId = App::ZERO;
 
+    /**
+     * Null when the host does not send it.
+     */
     #[Serialize]
-    private DateTimeImmutable $pickedAt;
-
-    public function __construct()
-    {
-        $this->setPickedAt(App::getAppDate());
-    }
+    private ?DateTimeImmutable $pickedAt = null;
 
     public function getResourceName(): string
     {
@@ -63,12 +61,12 @@ final class SingleUseUsagePlace
         return $this;
     }
 
-    public function getPickedAt(): DateTimeImmutable
+    public function getPickedAt(): ?DateTimeImmutable
     {
         return $this->pickedAt;
     }
 
-    public function setPickedAt(DateTimeImmutable $pickedAt): self
+    public function setPickedAt(?DateTimeImmutable $pickedAt): self
     {
         $this->pickedAt = $pickedAt;
 
