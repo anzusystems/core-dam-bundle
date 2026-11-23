@@ -8,6 +8,7 @@ use AnzuSystems\CoreDamBundle\App;
 use AnzuSystems\CoreDamBundle\DataFixtures\AbstractAssetFileFixtures;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusFacadeProvider;
 use AnzuSystems\CoreDamBundle\Domain\AssetLicence\AssetLicenceManager;
+use AnzuSystems\CoreDamBundle\Domain\Image\ImageCopyFacade;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageFactory;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageManager;
 use AnzuSystems\CoreDamBundle\Domain\Image\ImageUseFacade;
@@ -19,9 +20,12 @@ use AnzuSystems\CoreDamBundle\Event\AssetChangedEvent;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\FileSystem\FileSystemProvider;
 use AnzuSystems\CoreDamBundle\Model\Dto\File\AdapterFile;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
+use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseItemDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseRequestDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultDto;
+use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetStatus;
 use AnzuSystems\CoreDamBundle\Tests\CoreDamKernelTestCase;
@@ -220,6 +224,36 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertNull($result->getTakenOverFromId());
     }
 
+    public function testCopyToLicenceAdoptsAFileUploadedBeforeTheSourceAndMakesItSingleUse(): void
+    {
+        $target = $this->createLicence();
+        $existing = $this->createImage($target);
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+
+        $result = $this->copyOne($source, $target);
+
+        self::assertSame(AssetFileCopyStatus::Exists, $result->getResult());
+        self::assertSame((string) $existing->getId(), (string) $result->getTargetMainFile()?->getId());
+        $this->entityManager->clear();
+        $adopted = $this->findImage((string) $existing->getId());
+        self::assertSame((string) $source->getId(), $adopted->getAssetAttributes()->getTakenOverFromId());
+        self::assertTrue($adopted->getFlags()->isSingleUse());
+    }
+
+    public function testCopyToLicenceDoesNotHandBackAFileOfAnotherGroup(): void
+    {
+        $firstSource = $this->createImage($this->createLicence(directUseAllowed: false));
+        $secondSource = $this->createImage($this->createLicence(directUseAllowed: false));
+        $target = $this->createLicence();
+        $taken = $this->findImage($this->useOne($firstSource, $target)->getImageFileId());
+
+        $result = $this->copyOne($secondSource, $target);
+
+        self::assertSame(AssetFileCopyStatus::NotAllowed, $result->getResult());
+        self::assertNull($result->getTargetMainFile());
+        self::assertSame((string) $firstSource->getId(), $taken->getAssetAttributes()->getTakenOverFromId());
+    }
+
     public function testForceTakesOverEvenWhenTheLicenceAllowsDirectUse(): void
     {
         $source = $this->createImage($this->createLicence());
@@ -289,6 +323,18 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         )->getResults();
 
         /** @var ImageUseResultDto $result */
+        $result = $results->first();
+
+        return $result;
+    }
+
+    private function copyOne(ImageFile $imageFile, AssetLicence $targetLicence): AssetFileCopyResultDto
+    {
+        $results = $this->getService(ImageCopyFacade::class)->prepareCopyList(new ArrayCollection([
+            (new ImageCopyDto())->setAsset($imageFile->getAsset())->setTargetAssetLicence($targetLicence),
+        ]));
+
+        /** @var AssetFileCopyResultDto $result */
         $result = $results->first();
 
         return $result;
