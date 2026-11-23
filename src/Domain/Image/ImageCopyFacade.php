@@ -10,9 +10,12 @@ use AnzuSystems\Contracts\Entity\Interfaces\UserTrackingInterface;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetCopyBuilder;
 use AnzuSystems\CoreDamBundle\Domain\Asset\AssetManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileCopyBuilder;
+use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileManager;
 use AnzuSystems\CoreDamBundle\Domain\AssetFile\AssetFileStatusManager;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
+use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetSlot;
+use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetChangedEventDispatcher;
 use AnzuSystems\CoreDamBundle\Event\Dispatcher\AssetFileEventDispatcher;
 use AnzuSystems\CoreDamBundle\Exception\ForbiddenOperationException;
 use AnzuSystems\CoreDamBundle\Messenger\Message\CopyAssetFileMessage;
@@ -20,6 +23,7 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\AssetFileCopyResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageCopyDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileFailedType;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Repository\ImageFileRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
@@ -38,6 +42,9 @@ final class ImageCopyFacade
 
     private const int BULK_COPY_SIZE = 20;
 
+    /**
+     * @param AssetFileManager<AssetFile> $assetFileManager
+     */
     public function __construct(
         private readonly ImageFileRepository $imageFileRepository,
         private readonly AssetCopyBuilder $assetCopyBuilder,
@@ -47,6 +54,9 @@ final class ImageCopyFacade
         private readonly AssetFileEventDispatcher $assetFileEventDispatcher,
         private readonly AssetFileStatusManager $assetFileStatusManager,
         private readonly AccessDenier $accessDenier,
+        private readonly AssetFileManager $assetFileManager,
+        private readonly AssetFileRepository $assetFileRepository,
+        private readonly AssetChangedEventDispatcher $assetChangedEventDispatcher,
     ) {
     }
 
@@ -72,7 +82,7 @@ final class ImageCopyFacade
                 $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_READ, $imageCopyDto->getAsset()->getLicence());
                 $this->accessDenier->denyUnlessGranted(DamPermissions::DAM_ASSET_CREATE, $imageCopyDto->getTargetAssetLicence());
 
-                $resDto = $this->prepareCopy($imageCopyDto);
+                $resDto = $this->prepareTakeOver($imageCopyDto);
                 $res[] = $resDto;
             }
 
@@ -94,7 +104,39 @@ final class ImageCopyFacade
             }
         }
 
+        $this->notifyExisting($res);
+
         return new ArrayCollection($res);
+    }
+
+    /**
+     * A file found by checksum did not necessarily get into the target licence by a take over, the same bytes
+     * uploaded manually land here too, with no root of their own. Such a file is adopted under the source root,
+     * otherwise the caller would store a photo with no link to the original, and takes the single use flag of the
+     * source. A file of another group is refused: adopting it would merge two groups.
+     *
+     * @throws Throwable
+     */
+    public function prepareTakeOver(ImageCopyDto $copyDto): AssetFileCopyResultDto
+    {
+        $prepared = $this->prepareCopy($copyDto);
+        $existing = $prepared->getTargetMainFile();
+        $source = $copyDto->getAsset()->getMainFile();
+        if (
+            $prepared->getResult()->isNot(AssetFileCopyStatus::Exists)
+            || null === $existing
+            || null === $source
+            || $this->adopt($existing, $source)
+        ) {
+            return $prepared;
+        }
+
+        return AssetFileCopyResultDto::create(
+            asset: $copyDto->getAsset(),
+            targetAssetLicence: $copyDto->getTargetAssetLicence(),
+            result: AssetFileCopyStatus::NotAllowed,
+            assetConflicts: [$existing->getAsset()],
+        );
     }
 
     /**
@@ -191,6 +233,50 @@ final class ImageCopyFacade
                 AssetFileFailedType::Unknown
             );
         }
+    }
+
+    private function adopt(AssetFile $existing, AssetFile $source): bool
+    {
+        $rootId = $source->getTakeOverRootId();
+        $existingId = (string) $existing->getId();
+        $attributes = $existing->getAssetAttributes();
+        $changed = false;
+        if ($existingId !== $rootId && $attributes->getTakenOverFromId() !== $rootId) {
+            if ($attributes->isTakenOver() || $this->assetFileRepository->existsTakenOverFrom($existingId)) {
+                return false;
+            }
+            $attributes->setTakenOverFromId($rootId);
+            $changed = true;
+        }
+        if ($source->getFlags()->isSingleUse() && false === $existing->getFlags()->isSingleUse()) {
+            $existing->getFlags()->setSingleUse(true);
+            $changed = true;
+        }
+        if ($changed) {
+            $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param list<AssetFileCopyResultDto> $results
+     */
+    private function notifyExisting(array $results): void
+    {
+        $assets = [];
+        foreach ($results as $result) {
+            $asset = $result->getTargetAsset();
+            if ($result->getResult()->is(AssetFileCopyStatus::Exists) && $asset instanceof Asset) {
+                $assets[(string) $asset->getId()] = $asset;
+            }
+        }
+        if ([] === $assets) {
+            return;
+        }
+
+        $this->indexManager->indexBulk(array_values($assets));
+        $this->assetChangedEventDispatcher->dispatchAssetChangedEvent(new ArrayCollection(array_values($assets)));
     }
 
     // Adm-only entrypoint — sys copy-job flows through JobImageCopyFacade, not here.

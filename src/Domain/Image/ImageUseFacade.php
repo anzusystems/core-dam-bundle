@@ -24,7 +24,6 @@ use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Image\ImageUseResultListDto;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileCopyStatus;
 use AnzuSystems\CoreDamBundle\Model\Enum\AssetFileProcessStatus;
-use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 use AnzuSystems\CoreDamBundle\Security\AccessDenier;
 use AnzuSystems\CoreDamBundle\Security\Permission\DamPermissions;
 use AnzuSystems\CoreDamBundle\Traits\IndexManagerAwareTrait;
@@ -53,7 +52,6 @@ final class ImageUseFacade
         private readonly AssetManager $assetManager,
         private readonly AssetPropertiesRefresher $assetPropertiesRefresher,
         private readonly AssetFileManager $assetFileManager,
-        private readonly AssetFileRepository $assetFileRepository,
         private readonly AccessDenier $accessDenier,
         private readonly AssetChangedEventDispatcher $assetChangedEventDispatcher,
     ) {
@@ -197,7 +195,7 @@ final class ImageUseFacade
             ->setAsset($source->getAsset())
             ->setTargetAssetLicence($targetLicence);
 
-        return $this->finishCopy($this->imageCopyFacade->prepareCopy($copyDto), $source);
+        return $this->finishCopy($this->imageCopyFacade->prepareTakeOver($copyDto), $source);
     }
 
     /**
@@ -213,7 +211,7 @@ final class ImageUseFacade
         }
 
         if ($prepared->getResult()->is(AssetFileCopyStatus::Exists)) {
-            return $this->reuseExisting($targetMainFile, $source);
+            return ImageUseResolution::takenOver($targetMainFile, $source);
         }
 
         if (false === $prepared->getResult()->is(AssetFileCopyStatus::Copy)) {
@@ -225,57 +223,6 @@ final class ImageUseFacade
         $this->assetManager->updateExisting(asset: $targetAsset, trackModification: false);
 
         return ImageUseResolution::takenOver($targetMainFile, $source);
-    }
-
-    /**
-     * A file found by checksum did not necessarily get into the target licence by a take over, the same bytes
-     * uploaded manually land here too, with no root of their own. Such a file is adopted under the source root,
-     * otherwise the caller would store a photo with no link to the original.
-     *
-     * The root of the source itself, found by checksum when a copy is picked back into the licence of its root,
-     * is handed back as it is.
-     *
-     * A file already taken over from this exact root is the idempotent case, a retry or the same photo picked
-     * twice, and is handed back as it is. A file with a different root, or one that is a root itself, belongs to
-     * another group: adopting it would merge two groups, so it is refused. A file taken over from a single use
-     * source takes its single use flag, an upload made before the agency import is resolved by the pick.
-     *
-     * @throws ForbiddenOperationException
-     */
-    private function reuseExisting(AssetFile $existing, ImageFile $source): ImageUseResolution
-    {
-        if ((string) $existing->getId() === $source->getTakeOverRootId()) {
-            return $this->takenOverWithSourceUse($existing, $source);
-        }
-
-        $existingAttributes = $existing->getAssetAttributes();
-        if ($existingAttributes->isTakenOver()) {
-            if ($existingAttributes->getTakenOverFromId() === $source->getTakeOverRootId()) {
-                return $this->takenOverWithSourceUse($existing, $source);
-            }
-
-            throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
-        }
-        if ($this->assetFileRepository->existsTakenOverFrom((string) $existing->getId())) {
-            throw new ForbiddenOperationException(ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT);
-        }
-
-        $existingAttributes->setTakenOverFromId($source->getTakeOverRootId());
-
-        return $this->takenOverWithSourceUse($existing, $source, changed: true);
-    }
-
-    private function takenOverWithSourceUse(AssetFile $existing, ImageFile $source, bool $changed = false): ImageUseResolution
-    {
-        if ($source->getFlags()->isSingleUse() && false === $existing->getFlags()->isSingleUse()) {
-            $existing->getFlags()->setSingleUse(true);
-            $changed = true;
-        }
-        if ($changed) {
-            $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
-        }
-
-        return ImageUseResolution::takenOver($existing, $source);
     }
 
     /**
