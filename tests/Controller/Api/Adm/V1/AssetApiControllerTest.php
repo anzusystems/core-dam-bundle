@@ -269,6 +269,49 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
         ];
     }
 
+    #[DataProvider('singleUseGroupDataProvider')]
+    public function testMetadataBulkUpdateSpreadsSingleUseSwitchedOnToTheTakeOverGroup(string $rootId, string $copyId, string $switchedId, bool $singleUse): void
+    {
+        foreach ([$rootId, $copyId] as $imageId) {
+            $this->entityManager->find(ImageFile::class, $imageId)?->getFlags()->setSingleUse(false === $singleUse);
+        }
+        $this->entityManager->find(ImageFile::class, $copyId)?->getAssetAttributes()->setTakenOverFromId($rootId);
+        $this->entityManager->flush();
+        $otherId = $switchedId === $rootId ? $copyId : $rootId;
+        $assetId = (string) $this->entityManager->find(ImageFile::class, $switchedId)?->getAsset()->getId();
+        $otherAssetId = (string) $this->entityManager->find(ImageFile::class, $otherId)?->getAsset()->getId();
+        $dispatched = [];
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            AssetChangedEvent::class,
+            static function (AssetChangedEvent $event) use (&$dispatched): void {
+                $dispatched = [...$dispatched, ...CollectionHelper::traversableToIds($event->getAffectedAssets())];
+            },
+        );
+
+        $response = $this->getApiClient(User::ID_ADMIN)->patch('/api/adm/v1/asset/metadata-bulk-update', [[
+            'id' => $assetId,
+            'mainFileSingleUse' => $singleUse,
+        ]]);
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        $this->entityManager->clear();
+        self::assertSame($singleUse, $this->entityManager->find(ImageFile::class, $switchedId)?->getFlags()->isSingleUse());
+        self::assertTrue($this->entityManager->find(ImageFile::class, $otherId)?->getFlags()->isSingleUse());
+        self::assertSame($singleUse ? [$assetId, $otherAssetId] : [$assetId], $dispatched);
+    }
+
+    /**
+     * @return array<string, array{string, string, string, bool}>
+     */
+    public static function singleUseGroupDataProvider(): array
+    {
+        return [
+            'on at the original' => [ImageFixtures::IMAGE_ID_1_1, ImageFixtures::IMAGE_ID_1_2, ImageFixtures::IMAGE_ID_1_1, true],
+            'on at the copy' => [ImageFixtures::IMAGE_ID_1_1, ImageFixtures::IMAGE_ID_1_2, ImageFixtures::IMAGE_ID_1_2, true],
+            'off at the original' => [ImageFixtures::IMAGE_ID_1_1, ImageFixtures::IMAGE_ID_1_2, ImageFixtures::IMAGE_ID_1_1, false],
+        ];
+    }
+
     public function testMetadataBulkUpdateFlushesEachAssetUnderItsOwnSuggesterLock(): void
     {
         $assetIds = array_map(

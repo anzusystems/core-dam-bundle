@@ -51,6 +51,8 @@ final class AssetMetadataBulkFacade
         $updated = [];
         /** @var Asset[] $affectedAssets */
         $affectedAssets = [];
+        /** @var list<Asset> $groupAssets */
+        $groupAssets = [];
 
         foreach ($list as $updateDto) {
             $this->checkPermissions($updateDto);
@@ -66,15 +68,21 @@ final class AssetMetadataBulkFacade
                     $affectedAssets[] = $asset;
                 }
 
+                $wasSingleUse = $asset->getMainFile()?->getFlags()->isSingleUse();
                 $updated[] = FormProvidableMetadataBulkUpdateDto::getInstance(
                     asset: $this->assetMetadataBulkManager->updateFromMetadataBulkDto($asset, $updateDto, flush: false)
                 );
+                $mainFile = $asset->getMainFile();
+                if (false === $wasSingleUse && $mainFile?->getFlags()->isSingleUse()) {
+                    $groupAssets = [...$groupAssets, ...$this->assetMetadataBulkManager->spreadSingleUse($mainFile)];
+                }
                 $this->assetManager->flush();
             } finally {
                 $this->assetSuggesterLocker->unLock($asset);
             }
         }
 
+        $affectedAssets = [...$affectedAssets, ...$groupAssets];
         if (false === empty($affectedAssets)) {
             $this->assetMetadataBulkEventDispatcher->dispatchAssetChangedEvent(
                 new ArrayCollection($affectedAssets),
@@ -83,6 +91,9 @@ final class AssetMetadataBulkFacade
 
         foreach ($list as $updateDto) {
             $this->indexManager->index($updateDto->getAsset());
+        }
+        if (false === empty($groupAssets)) {
+            $this->indexManager->indexBulk($groupAssets);
         }
 
         return new ArrayCollection($updated);
