@@ -158,8 +158,8 @@ final class ImageControllerTest extends AbstractApiController
                 ]]],
                 'validationErrors' => ['items[0].targetAssetLicence' => [ValidationException::ERROR_INVALID_LICENCE]],
             ],
-            'force without a target licence' => [
-                'requestJson' => ['items' => [['imageFileId' => ImageFixtures::IMAGE_ID_1_1, 'force' => true]]],
+            'force take over without a target licence' => [
+                'requestJson' => ['items' => [['imageFileId' => ImageFixtures::IMAGE_ID_1_1, 'forceTakeOver' => true]]],
                 'validationErrors' => ['items[0].targetAssetLicence' => [ValidationException::ERROR_FIELD_EMPTY]],
             ],
         ];
