@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AnzuSystems\CoreDamBundle\Tests\Controller\Api\Adm\V1;
 
+use AnzuSystems\CommonBundle\Helper\CollectionHelper;
 use AnzuSystems\CommonBundle\Util\ResourceLocker;
 use AnzuSystems\CoreDamBundle\DataFixtures\AssetLicenceFixtures;
 use AnzuSystems\CoreDamBundle\DataFixtures\AuthorFixtures;
@@ -15,6 +16,7 @@ use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetMetadata;
 use AnzuSystems\CoreDamBundle\Entity\ImageFile;
 use AnzuSystems\CoreDamBundle\Entity\VideoFile;
+use AnzuSystems\CoreDamBundle\Event\AssetChangedEvent;
 use AnzuSystems\CoreDamBundle\Tests\Controller\Api\AbstractAssetFileApiController;
 use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Fixtures\DistributionCategoryFixtures;
@@ -26,6 +28,7 @@ use Doctrine\ORM\Events;
 use League\Flysystem\FilesystemException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\UuidV4;
 
@@ -227,6 +230,43 @@ final class AssetApiControllerTest extends AbstractAssetFileApiController
             $firstAsset->getKeywords()->map(fn ($author) => $author->getName())->getValues(),
             ['Podcast']
         );
+    }
+
+    #[DataProvider('singleUseChangeDataProvider')]
+    public function testMetadataBulkUpdateOfSingleUseDispatchesAssetChanged(bool $singleUse, bool $dispatches): void
+    {
+        $asset = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1)?->getAsset();
+        self::assertTrue($asset?->getMainFile()?->getFlags()->isSingleUse());
+        $assetId = (string) $asset->getId();
+        $dispatched = [];
+        $this->getService(EventDispatcherInterface::class)->addListener(
+            AssetChangedEvent::class,
+            static function (AssetChangedEvent $event) use (&$dispatched): void {
+                $dispatched[] = CollectionHelper::traversableToIds($event->getAffectedAssets());
+            },
+        );
+
+        $response = $this->getApiClient(User::ID_ADMIN)->patch('/api/adm/v1/asset/metadata-bulk-update', [[
+            'id' => $assetId,
+            'customData' => $asset->getMetadata()->getCustomData(),
+            'authors' => CollectionHelper::traversableToIds($asset->getAuthors()),
+            'sources' => CollectionHelper::traversableToIds($asset->getSources()),
+            'mainFileSingleUse' => $singleUse,
+        ]]);
+
+        self::assertStatusCode($response, Response::HTTP_OK);
+        self::assertSame($dispatches ? [[$assetId]] : [], $dispatched);
+    }
+
+    /**
+     * @return array<string, array{bool, bool}>
+     */
+    public static function singleUseChangeDataProvider(): array
+    {
+        return [
+            'changed' => [false, true],
+            'unchanged' => [true, false],
+        ];
     }
 
     public function testMetadataBulkUpdateFlushesEachAssetUnderItsOwnSuggesterLock(): void
