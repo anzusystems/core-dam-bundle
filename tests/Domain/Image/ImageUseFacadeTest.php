@@ -259,7 +259,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         $source = $this->createImage($this->createLicence());
         $target = $this->createLicence();
 
-        $result = $this->useOne($source, $target, force: true);
+        $result = $this->useOne($source, $target, forceTakeOver: true);
 
         self::assertNotSame((string) $source->getId(), $result->getImageFileId());
         self::assertSame((int) $target->getId(), $result->getLicenceId());
@@ -316,10 +316,10 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::fail(sprintf('Expected a forbidden operation (%s).', $detail));
     }
 
-    private function useOne(ImageFile $imageFile, ?AssetLicence $targetLicence = null, bool $force = false): ImageUseResultDto
+    private function useOne(ImageFile $imageFile, ?AssetLicence $targetLicence = null, bool $forceTakeOver = false): ImageUseResultDto
     {
         $results = $this->imageUseFacade->useImages(
-            (new ImageUseRequestDto())->setItems(new ArrayCollection([$this->item($imageFile, $targetLicence, $force)]))
+            (new ImageUseRequestDto())->setItems(new ArrayCollection([$this->item($imageFile, $targetLicence, $forceTakeOver)]))
         )->getResults();
 
         /** @var ImageUseResultDto $result */
@@ -340,12 +340,12 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         return $result;
     }
 
-    private function item(ImageFile $imageFile, ?AssetLicence $targetLicence = null, bool $force = false): ImageUseItemDto
+    private function item(ImageFile $imageFile, ?AssetLicence $targetLicence = null, bool $forceTakeOver = false): ImageUseItemDto
     {
         return (new ImageUseItemDto())
             ->setImageFile($imageFile)
             ->setTargetAssetLicence($targetLicence)
-            ->setForce($force);
+            ->setForceTakeOver($forceTakeOver);
     }
 
     private function findImage(string $imageId): ImageFile

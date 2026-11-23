@@ -25,13 +25,13 @@ final class ImageUseItemDto
 
     #[Serialize(handler: EntityIdHandler::class)]
     #[When(
-        expression: 'this.isForce()',
+        expression: 'this.isForceTakeOver()',
         constraints: [new NotNull(message: ValidationException::ERROR_FIELD_EMPTY)],
     )]
     private ?AssetLicence $targetAssetLicence = null;
 
     #[Serialize]
-    private bool $force = false;
+    private bool $forceTakeOver = false;
 
     public function __construct()
     {
@@ -62,14 +62,14 @@ final class ImageUseItemDto
         return $this;
     }
 
-    public function isForce(): bool
+    public function isForceTakeOver(): bool
     {
-        return $this->force;
+        return $this->forceTakeOver;
     }
 
-    public function setForce(bool $force): self
+    public function setForceTakeOver(bool $forceTakeOver): self
     {
-        $this->force = $force;
+        $this->forceTakeOver = $forceTakeOver;
 
         return $this;
     }

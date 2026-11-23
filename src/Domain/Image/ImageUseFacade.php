@@ -32,7 +32,7 @@ use Throwable;
 
 /**
  * Decides whether each image of a batch may be used as it is, or has to be taken over into the caller's
- * licence first, and records the first use. The licence flags own the take-over rule, so the caller never
+ * licence first. The licence flags own the take-over rule, so the caller never
  * decides it, it only receives the files to use.
  *
  * The whole batch runs under one transaction. Unlike {@see ImageCopyFacade::prepareCopyList()} every copy is
@@ -165,7 +165,7 @@ final class ImageUseFacade
 
         // The source licence flag decides first: a caller that mislabels the licence in its request must not
         // be able to skip the copy.
-        if ($directUseAllowed && false === $item->isForce()) {
+        if ($directUseAllowed && false === $item->isForceTakeOver()) {
             return ImageUseResolution::directUse($source);
         }
         if (false === $targetLicence instanceof AssetLicence) {
