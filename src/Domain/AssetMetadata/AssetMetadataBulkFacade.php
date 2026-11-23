@@ -96,7 +96,8 @@ final class AssetMetadataBulkFacade
             (false === $updateDto->isAuthorsUndefined() && false === CollectionHelper::colDiff($asset->getAuthors(), $updateDto->getAuthors())->isEmpty()) ||
             ($updateDto->isSourcesUndefined() && false === $asset->getSources()->isEmpty()) ||
             (false === $updateDto->isSourcesUndefined() && false === CollectionHelper::colDiff($asset->getSources(), $updateDto->getSources())->isEmpty()) ||
-            (false === $updateDto->isMainFileInternalUndefined() && null !== $asset->getMainFile() && $asset->getMainFile()->getFlags()->isInternal() !== $updateDto->isMainFileInternal());
+            (false === $updateDto->isMainFileInternalUndefined() && null !== $asset->getMainFile() && $asset->getMainFile()->getFlags()->isInternal() !== $updateDto->isMainFileInternal()) ||
+            (false === $updateDto->isMainFileSingleUndefined() && null !== $asset->getMainFile() && $asset->getMainFile()->getFlags()->isSingleUse() !== $updateDto->isMainFileSingleUse());
     }
 
     /**
