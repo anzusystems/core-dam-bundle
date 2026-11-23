@@ -115,6 +115,20 @@ final class AssetFileRepository extends AbstractAssetFileRepository
         ;
     }
 
+    /**
+     * @return list<AssetFile>
+     */
+    public function findNotSingleUseByTakeOverRoot(string $rootId): array
+    {
+        return $this->createQueryBuilder('entity')
+            ->where('entity.id = :rootId OR entity.assetAttributes.takenOverFromId = :rootId')
+            ->andWhere('entity.flags.singleUse = false')
+            ->setParameter('rootId', $rootId)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     protected function getEntityClass(): string
     {
         return AssetFile::class;

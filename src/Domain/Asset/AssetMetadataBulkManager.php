@@ -11,6 +11,7 @@ use AnzuSystems\CoreDamBundle\Domain\Author\AuthorProvider;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\FormProvidableMetadataBulkUpdateDto;
+use AnzuSystems\CoreDamBundle\Repository\AssetFileRepository;
 
 final class AssetMetadataBulkManager extends AbstractManager
 {
@@ -19,6 +20,7 @@ final class AssetMetadataBulkManager extends AbstractManager
         private readonly AssetMetadataManager $assetMetadataManager,
         private readonly AuthorProvider $authorProvider,
         private readonly AssetFileInternalRuleEvaluator $evaluator,
+        private readonly AssetFileRepository $assetFileRepository,
     ) {
     }
 
@@ -42,6 +44,25 @@ final class AssetMetadataBulkManager extends AbstractManager
         $this->evaluateInternalRules($asset);
 
         return $this->assetManager->updateExisting($asset, $flush);
+    }
+
+    /**
+     * All files of a take over group are the same photo, so a copy that stayed usable repeatedly would bypass the rule.
+     *
+     * @return list<Asset> assets of the files switched
+     */
+    public function spreadSingleUse(AssetFile $assetFile): array
+    {
+        $assets = [];
+        foreach ($this->assetFileRepository->findNotSingleUseByTakeOverRoot($assetFile->getTakeOverRootId()) as $groupFile) {
+            if ($groupFile->is($assetFile)) {
+                continue;
+            }
+            $groupFile->getFlags()->setSingleUse(true);
+            $assets[] = $groupFile->getAsset();
+        }
+
+        return $assets;
     }
 
     private function updateKeywords(Asset $asset, FormProvidableMetadataBulkUpdateDto $updateDto): void
