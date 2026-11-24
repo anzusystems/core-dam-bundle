@@ -31,13 +31,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Throwable;
 
 /**
- * Decides whether each image of a batch may be used as it is, or has to be taken over into the caller's
- * licence first. The licence flags own the take-over rule, so the caller never
- * decides it, it only receives the files to use.
- *
- * The whole batch runs under one transaction. Unlike {@see ImageCopyFacade::prepareCopyList()} every copy is
- * finished inside the request: the caller stores the returned ids immediately, so a target still being filled
- * asynchronously would be referenced before it has any data.
+ * The licence flags decide whether a file is used as it is or taken over into the caller's licence. Unlike
+ * {@see ImageCopyFacade::prepareCopyList()} every copy is finished inside the request and its one transaction: the
+ * caller stores the returned ids at once, and a target filled later would have no data yet.
  */
 final class ImageUseFacade
 {
