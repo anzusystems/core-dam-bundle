@@ -113,18 +113,35 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertSame($first->getImageFileId(), $second->getImageFileId());
     }
 
-    public function testReuseConflictsWithAFileTakenOverFromAnotherGroup(): void
+    public function testFileTakenOverFromAnotherGroupIsReusedInItsOwnGroup(): void
     {
         $firstSource = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
         $secondSource = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
         $target = $this->createLicence();
 
-        $this->useOne($firstSource, $target);
+        $first = $this->useOne($firstSource, $target);
 
-        $this->assertForbiddenDetail(
-            ForbiddenOperationException::IMAGE_TAKE_OVER_CONFLICT,
-            fn (): mixed => $this->useOne($secondSource, $target),
-        );
+        $second = $this->useOne($secondSource, $target);
+
+        self::assertSame($first->getImageFileId(), $second->getImageFileId());
+        self::assertSame((string) $firstSource->getId(), $second->getTakenOverFromId());
+        self::assertTrue($second->isSingleUse());
+    }
+
+    public function testRootOfAnotherGroupIsReusedInItsOwnGroupAndMadeSingleUse(): void
+    {
+        $target = $this->createLicence();
+        $root = $this->createImage($target);
+        $this->useOne($root, $this->createLicence(), forceTakeOver: true);
+        $source = $this->createImage($this->createLicence(directUseAllowed: false, singleUseEnforced: true));
+
+        $result = $this->useOne($source, $target);
+
+        self::assertSame((string) $root->getId(), $result->getImageFileId());
+        $this->entityManager->clear();
+        $reused = $this->findImage((string) $root->getId());
+        self::assertSame('', $reused->getAssetAttributes()->getTakenOverFromId());
+        self::assertTrue($reused->getFlags()->isSingleUse());
     }
 
     public function testSingleUseSourceAdoptsASharedFileUploadedBeforeItAndMakesItSingleUse(): void
@@ -240,7 +257,7 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
         self::assertTrue($adopted->getFlags()->isSingleUse());
     }
 
-    public function testCopyToLicenceDoesNotHandBackAFileOfAnotherGroup(): void
+    public function testCopyToLicenceHandsBackAFileOfAnotherGroupInItsOwnGroup(): void
     {
         $firstSource = $this->createImage($this->createLicence(directUseAllowed: false));
         $secondSource = $this->createImage($this->createLicence(directUseAllowed: false));
@@ -249,8 +266,8 @@ final class ImageUseFacadeTest extends CoreDamKernelTestCase
 
         $result = $this->copyOne($secondSource, $target);
 
-        self::assertSame(AssetFileCopyStatus::NotAllowed, $result->getResult());
-        self::assertNull($result->getTargetMainFile());
+        self::assertSame(AssetFileCopyStatus::Exists, $result->getResult());
+        self::assertSame((string) $taken->getId(), (string) $result->getTargetMainFile()?->getId());
         self::assertSame((string) $firstSource->getId(), $taken->getAssetAttributes()->getTakenOverFromId());
     }
 
