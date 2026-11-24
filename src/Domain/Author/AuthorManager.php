@@ -32,6 +32,7 @@ final class AuthorManager extends AbstractManager
             ->setIdentifier($newAuthor->getIdentifier())
             ->setFlags($newAuthor->getFlags())
             ->setType($newAuthor->getType())
+            ->setPriority($newAuthor->getPriority())
         ;
         $this->colUpdate(
             oldCollection: $author->getCurrentAuthors(),

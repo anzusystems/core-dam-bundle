@@ -41,6 +41,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     use TimeTrackingTrait;
 
     public const int NAME_MAX_LENGTH = 255;
+    public const int PRIORITY_MAX = 1_000;
 
     #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH)]
     #[Serialize]
@@ -98,6 +99,11 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     #[ORM\Column(enumType: AuthorType::class)]
     #[Serialize]
     private AuthorType $type;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['unsigned' => true, 'default' => App::ZERO])]
+    #[Serialize]
+    #[Assert\Range(notInRangeMessage: ValidationException::ERROR_FIELD_INVALID, min: App::ZERO, max: self::PRIORITY_MAX)]
+    private int $priority = App::ZERO;
 
     public function __construct()
     {
@@ -172,6 +178,18 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setType(AuthorType $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getPriority(): int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(int $priority): self
+    {
+        $this->priority = $priority;
 
         return $this;
     }

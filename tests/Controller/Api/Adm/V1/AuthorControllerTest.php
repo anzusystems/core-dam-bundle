@@ -238,6 +238,65 @@ final class AuthorControllerTest extends AbstractApiController
         $this->assertTrue($author->getFlags()->isSingleUseEnforced());
     }
 
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateStoresPriority(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AuthorUrl::createPath(), [
+            'name' => 'Priority author',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+        ]);
+        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        $created = $this->serializer->deserialize($response->getContent(), Author::class);
+        $this->assertSame(0, $created->getPriority());
+
+        $response = $client->put(AuthorUrl::update($created->getId()), [
+            'id' => $created->getId(),
+            'name' => $created->getName(),
+            'extSystem' => $created->getExtSystem()->getId(),
+            'priority' => 100,
+        ]);
+        $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+        $this->assertSame(100, $this->serializer->deserialize($response->getContent(), Author::class)->getPriority());
+        $this->assertSame(100, $this->getPriorityFromDb($created->getId()));
+    }
+
+    #[DataProvider('updatePriorityOutOfRangeDataProvider')]
+    public function testUpdatePriorityOutOfRange(int $priority): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $existingAuthor = self::getContainer()
+            ->get(AuthorRepository::class)
+            ->find(AuthorFixtures::AUTHOR_1);
+        $originalPriority = $existingAuthor->getPriority();
+
+        $response = $client->put(AuthorUrl::update($existingAuthor->getId()), [
+            'id' => $existingAuthor->getId(),
+            'name' => $existingAuthor->getName(),
+            'extSystem' => $existingAuthor->getExtSystem()->getId(),
+            'priority' => $priority,
+        ]);
+        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'priority' => [
+                ValidationException::ERROR_FIELD_INVALID,
+            ],
+        ]);
+        $this->assertSame($originalPriority, $this->getPriorityFromDb(AuthorFixtures::AUTHOR_1));
+    }
+
+    public static function updatePriorityOutOfRangeDataProvider(): array
+    {
+        return [
+            'below the minimum' => [-1],
+            'above the maximum' => [Author::PRIORITY_MAX + 1],
+        ];
+    }
+
     public static function updateSuccessDataProvider(): array
     {
         $existingAuthor = self::getContainer()
@@ -268,6 +327,13 @@ final class AuthorControllerTest extends AbstractApiController
         self::assertSame([AssetLicence::class], $content['dependencies']);
         $this->entityManager->clear();
         self::assertInstanceOf(Author::class, $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1));
+    }
+
+    private function getPriorityFromDb(string $authorId): int
+    {
+        $this->entityManager->clear();
+
+        return $this->entityManager->find(Author::class, $authorId)->getPriority();
     }
 
     private function makeDefaultSourceOfLicence(string $authorId, int $licenceId): void
