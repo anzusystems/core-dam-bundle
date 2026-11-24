@@ -113,7 +113,7 @@ final class ImageCopyFacade
      * A file found by checksum did not necessarily get into the target licence by a take over, the same bytes
      * uploaded manually land here too, with no root of their own. Such a file is adopted under the source root,
      * otherwise the caller would store a photo with no link to the original, and takes the single use flag of the
-     * source. A file of another group is refused: adopting it would merge two groups.
+     * source. A file of another group is handed back in its own group: adopting it would merge two groups.
      *
      * @throws Throwable
      */
@@ -123,20 +123,14 @@ final class ImageCopyFacade
         $existing = $prepared->getTargetMainFile();
         $source = $copyDto->getAsset()->getMainFile();
         if (
-            $prepared->getResult()->isNot(AssetFileCopyStatus::Exists)
-            || null === $existing
-            || null === $source
-            || $this->adopt($existing, $source)
+            $prepared->getResult()->is(AssetFileCopyStatus::Exists)
+            && $existing instanceof AssetFile
+            && $source instanceof AssetFile
         ) {
-            return $prepared;
+            $this->adopt($existing, $source);
         }
 
-        return AssetFileCopyResultDto::create(
-            asset: $copyDto->getAsset(),
-            targetAssetLicence: $copyDto->getTargetAssetLicence(),
-            result: AssetFileCopyStatus::NotAllowed,
-            assetConflicts: [$existing->getAsset()],
-        );
+        return $prepared;
     }
 
     /**
@@ -235,16 +229,17 @@ final class ImageCopyFacade
         }
     }
 
-    private function adopt(AssetFile $existing, AssetFile $source): bool
+    private function adopt(AssetFile $existing, AssetFile $source): void
     {
         $rootId = $source->getTakeOverRootId();
         $existingId = (string) $existing->getId();
         $attributes = $existing->getAssetAttributes();
         $changed = false;
-        if ($existingId !== $rootId && $attributes->getTakenOverFromId() !== $rootId) {
-            if ($attributes->isTakenOver() || $this->assetFileRepository->existsTakenOverFrom($existingId)) {
-                return false;
-            }
+        if (
+            $existingId !== $rootId
+            && false === $attributes->isTakenOver()
+            && false === $this->assetFileRepository->existsTakenOverFrom($existingId)
+        ) {
             $attributes->setTakenOverFromId($rootId);
             $changed = true;
         }
@@ -255,8 +250,6 @@ final class ImageCopyFacade
         if ($changed) {
             $this->assetFileManager->updateExisting(assetFile: $existing, trackModification: false);
         }
-
-        return true;
     }
 
     /**
