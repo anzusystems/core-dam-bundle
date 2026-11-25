@@ -7,6 +7,7 @@ namespace AnzuSystems\CoreDamBundle\Model\Dto\Asset;
 use AnzuSystems\CoreDamBundle\Entity\Asset;
 use AnzuSystems\CoreDamBundle\Entity\AssetFile;
 use AnzuSystems\CoreDamBundle\Entity\AssetLicence;
+use AnzuSystems\CoreDamBundle\Entity\Author;
 use AnzuSystems\CoreDamBundle\Entity\PodcastEpisode;
 use AnzuSystems\CoreDamBundle\Model\Dto\AbstractEntityDto;
 use AnzuSystems\CoreDamBundle\Model\Dto\Asset\Embeds\AssetAttributesAdmDto;
@@ -19,6 +20,7 @@ use AnzuSystems\CoreDamBundle\Serializer\Handler\Handlers\AssetFileHandler;
 use AnzuSystems\SerializerBundle\Attributes\Serialize;
 use AnzuSystems\SerializerBundle\Handler\Handlers\EntityIdHandler;
 use DateTimeImmutable;
+use Doctrine\Common\Collections\Collection;
 
 class AssetAdmListDto extends AbstractEntityDto
 {
@@ -114,6 +116,15 @@ class AssetAdmListDto extends AbstractEntityDto
     public function getLicence(): AssetLicence
     {
         return $this->getAsset()->getLicence();
+    }
+
+    /**
+     * @return Collection<string, Author>
+     */
+    #[Serialize(handler: EntityIdHandler::class, type: Author::class)]
+    public function getSources(): Collection
+    {
+        return $this->asset->getSources();
     }
 
     #[Serialize]

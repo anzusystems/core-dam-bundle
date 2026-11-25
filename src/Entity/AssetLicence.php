@@ -47,6 +47,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
     public const int COLLECTION_MAX = 20;
 
     public const int BADGE_MAX_LENGTH = 4;
+    public const string BADGE_PATTERN = '/^[A-Z0-9]*\z/';
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\Length(
@@ -83,7 +84,7 @@ class AssetLicence implements IdentifiableInterface, UserTrackingInterface, Time
 
     #[ORM\Column(type: Types::STRING, length: self::BADGE_MAX_LENGTH, options: ['default' => App::EMPTY_STRING])]
     #[Serialize]
-    #[Assert\Regex(pattern: '/^[A-Z0-9]*\z/', message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Regex(pattern: self::BADGE_PATTERN, message: ValidationException::ERROR_FIELD_INVALID)]
     #[Assert\Length(max: self::BADGE_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
     private string $badge;
 
