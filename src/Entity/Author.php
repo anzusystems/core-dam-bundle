@@ -42,6 +42,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
 
     public const int NAME_MAX_LENGTH = 255;
     public const int PRIORITY_MAX = 100_000;
+    public const int BADGE_COLUMN_LENGTH = 8;
 
     #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH)]
     #[Serialize]
@@ -104,6 +105,12 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     #[Serialize]
     #[Assert\Range(notInRangeMessage: ValidationException::ERROR_FIELD_INVALID, min: App::ZERO, max: self::PRIORITY_MAX)]
     private int $priority = App::ZERO;
+
+    #[ORM\Column(type: Types::STRING, length: self::BADGE_COLUMN_LENGTH, options: ['default' => App::EMPTY_STRING])]
+    #[Serialize]
+    #[Assert\Regex(pattern: AssetLicence::BADGE_PATTERN, message: ValidationException::ERROR_FIELD_INVALID)]
+    #[Assert\Length(max: AssetLicence::BADGE_MAX_LENGTH, maxMessage: ValidationException::ERROR_FIELD_LENGTH_MAX)]
+    private string $badge = App::EMPTY_STRING;
 
     public function __construct()
     {
@@ -190,6 +197,18 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     public function setPriority(int $priority): self
     {
         $this->priority = $priority;
+
+        return $this;
+    }
+
+    public function getBadge(): string
+    {
+        return $this->badge;
+    }
+
+    public function setBadge(string $badge): self
+    {
+        $this->badge = $badge;
 
         return $this;
     }

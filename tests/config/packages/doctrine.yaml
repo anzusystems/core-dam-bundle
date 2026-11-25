@@ -1,6 +1,8 @@
 doctrine:
     dbal:
         url: '%env(resolve:DB_CORE_DAM_BUNDLE_URL)%'
+        profiling: true
+        profiling_collect_backtrace: false
     orm:
         resolve_target_entities:
             AnzuSystems\CoreDamBundle\Entity\DamUser: AnzuSystems\CoreDamBundle\Tests\Data\Entity\User

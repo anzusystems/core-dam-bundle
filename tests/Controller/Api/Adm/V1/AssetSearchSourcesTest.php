@@ -17,6 +17,7 @@ use AnzuSystems\CoreDamBundle\Tests\Data\Entity\User;
 use AnzuSystems\CoreDamBundle\Tests\Data\Model\AssetUrl;
 use AnzuSystems\CoreDamBundle\Tests\Domain\Author\AuthorTreeTrait;
 use Elastic\Elasticsearch\Client;
+use Symfony\Bridge\Doctrine\Middleware\Debug\DebugDataHolder;
 use Symfony\Component\HttpFoundation\Response;
 
 final class AssetSearchSourcesTest extends AbstractApiController
@@ -69,6 +70,38 @@ final class AssetSearchSourcesTest extends AbstractApiController
         }
     }
 
+    public function testListReturnsSourcesInOneQuery(): void
+    {
+        $source = $this->createSource('Zebrafoto List Agency');
+        $sourceId = (string) $source->getId();
+        $firstAsset = $this->createIndexedImageWithSource($source);
+        $secondAsset = $this->createIndexedImageWithSource($source, ImageFixtures::IMAGE_ID_1_2);
+        $assetIds = [(string) $firstAsset->getId(), (string) $secondAsset->getId()];
+        $url = AssetUrl::licenceSearch([$firstAsset->getLicence()->getId()]);
+        $this->entityManager->clear();
+        $client = $this->getApiClient(User::ID_ADMIN);
+        /** @var DebugDataHolder $debugDataHolder */
+        $debugDataHolder = self::getContainer()->get('doctrine.debug_data_holder');
+        $debugDataHolder->reset();
+
+        try {
+            $response = $client->get($url);
+            $queries = array_column($debugDataHolder->getData()['default'] ?? [], 'sql');
+            self::assertStatusCode($response, Response::HTTP_OK);
+
+            $sources = array_column(json_decode((string) $response->getContent(), true)['data'], 'sources', 'id');
+            foreach ($assetIds as $assetId) {
+                self::assertSame([$sourceId], $sources[$assetId]);
+            }
+            self::assertContains([], $sources);
+            self::assertCount(1, array_filter($queries, static fn (string $sql): bool => str_contains($sql, 'asset_source')));
+        } finally {
+            foreach ($assetIds as $assetId) {
+                $this->reindexWithoutSources($assetId);
+            }
+        }
+    }
+
     private function createIndexedVideoWithAuthor(Author $author): string
     {
         $video = $this->entityManager->find(VideoFile::class, VideoFixtures::VIDEO_ID_1);
@@ -91,9 +124,9 @@ final class AssetSearchSourcesTest extends AbstractApiController
         $this->indexAsset($asset);
     }
 
-    private function createIndexedImageWithSource(Author $source): Asset
+    private function createIndexedImageWithSource(Author $source, string $imageId = ImageFixtures::IMAGE_ID_1_1): Asset
     {
-        $image = $this->entityManager->find(ImageFile::class, ImageFixtures::IMAGE_ID_1_1);
+        $image = $this->entityManager->find(ImageFile::class, $imageId);
         self::assertInstanceOf(ImageFile::class, $image);
         $asset = $image->getAsset();
         $asset->addSource($source);

@@ -261,7 +261,7 @@ final class AuthorControllerTest extends AbstractApiController
         ]);
         $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
         $this->assertSame(100, $this->serializer->deserialize($response->getContent(), Author::class)->getPriority());
-        $this->assertSame(100, $this->getPriorityFromDb($created->getId()));
+        $this->assertSame(100, $this->getAuthorFromDb($created->getId())->getPriority());
     }
 
     #[DataProvider('updatePriorityOutOfRangeDataProvider')]
@@ -286,7 +286,7 @@ final class AuthorControllerTest extends AbstractApiController
                 ValidationException::ERROR_FIELD_INVALID,
             ],
         ]);
-        $this->assertSame($originalPriority, $this->getPriorityFromDb(AuthorFixtures::AUTHOR_1));
+        $this->assertSame($originalPriority, $this->getAuthorFromDb(AuthorFixtures::AUTHOR_1)->getPriority());
     }
 
     public static function updatePriorityOutOfRangeDataProvider(): array
@@ -294,6 +294,68 @@ final class AuthorControllerTest extends AbstractApiController
         return [
             'below the minimum' => [-1],
             'above the maximum' => [Author::PRIORITY_MAX + 1],
+        ];
+    }
+
+    /**
+     * @throws SerializerException
+     */
+    public function testUpdateStoresBadge(): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+
+        $response = $client->post(AuthorUrl::createPath(), [
+            'name' => 'Badge author',
+            'extSystem' => ExtSystemFixtures::ID_CMS,
+        ]);
+        $this->assertSame(Response::HTTP_CREATED, $response->getStatusCode());
+        $created = $this->serializer->deserialize($response->getContent(), Author::class);
+        $this->assertSame('', $created->getBadge());
+
+        foreach (['TASR', ''] as $badge) {
+            $response = $client->put(AuthorUrl::update($created->getId()), [
+                'id' => $created->getId(),
+                'name' => $created->getName(),
+                'extSystem' => $created->getExtSystem()->getId(),
+                'badge' => $badge,
+            ]);
+            $this->assertSame(Response::HTTP_OK, $response->getStatusCode());
+            $this->assertSame($badge, $this->serializer->deserialize($response->getContent(), Author::class)->getBadge());
+            $this->assertSame($badge, $this->getAuthorFromDb($created->getId())->getBadge());
+        }
+    }
+
+    #[DataProvider('updateBadgeInvalidDataProvider')]
+    public function testUpdateBadgeInvalid(string $badge, string $error): void
+    {
+        $client = $this->getApiClient(User::ID_ADMIN);
+        $existingAuthor = self::getContainer()
+            ->get(AuthorRepository::class)
+            ->find(AuthorFixtures::AUTHOR_1);
+        $originalBadge = $existingAuthor->getBadge();
+
+        $response = $client->put(AuthorUrl::update($existingAuthor->getId()), [
+            'id' => $existingAuthor->getId(),
+            'name' => $existingAuthor->getName(),
+            'extSystem' => $existingAuthor->getExtSystem()->getId(),
+            'badge' => $badge,
+        ]);
+        $this->assertSame(Response::HTTP_UNPROCESSABLE_ENTITY, $response->getStatusCode());
+
+        $this->assertValidationErrors(json_decode($response->getContent(), true), [
+            'badge' => [
+                $error,
+            ],
+        ]);
+        $this->assertSame($originalBadge, $this->getAuthorFromDb(AuthorFixtures::AUTHOR_1)->getBadge());
+    }
+
+    public static function updateBadgeInvalidDataProvider(): array
+    {
+        return [
+            'too long' => ['ABCDE', ValidationException::ERROR_FIELD_LENGTH_MAX],
+            'lower case' => ['ab', ValidationException::ERROR_FIELD_INVALID],
+            'diacritics' => ['ČTK', ValidationException::ERROR_FIELD_INVALID],
         ];
     }
 
@@ -329,11 +391,11 @@ final class AuthorControllerTest extends AbstractApiController
         self::assertInstanceOf(Author::class, $this->entityManager->find(Author::class, AuthorFixtures::AUTHOR_1));
     }
 
-    private function getPriorityFromDb(string $authorId): int
+    private function getAuthorFromDb(string $authorId): Author
     {
         $this->entityManager->clear();
 
-        return $this->entityManager->find(Author::class, $authorId)->getPriority();
+        return $this->entityManager->find(Author::class, $authorId);
     }
 
     private function makeDefaultSourceOfLicence(string $authorId, int $licenceId): void

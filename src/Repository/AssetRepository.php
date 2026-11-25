@@ -28,6 +28,7 @@ final class AssetRepository extends AbstractAnzuRepository
 {
     /**
      * `mainFile` is a JOINED-inheritance root Doctrine cannot proxy — join-fetch avoids one query per row.
+     * `sources` is read by the asset list, so its join-fetch avoids one query per row too.
      *
      * @return ArrayCollection<int|string, Asset>
      */
@@ -37,6 +38,8 @@ final class AssetRepository extends AbstractAnzuRepository
             $this->createQueryBuilder('entity', 'entity.id')
                 ->leftJoin('entity.mainFile', 'mainFile')
                 ->addSelect('mainFile')
+                ->leftJoin('entity.sources', 'sources')
+                ->addSelect('sources')
                 ->where('entity.id IN (:ids)')
                 ->setParameter('ids', $id)
                 ->orderBy('FIELD(entity.id, :ids)')
