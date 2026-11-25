@@ -41,7 +41,7 @@ class Author implements UuidIdentifiableInterface, UserTrackingInterface, TimeTr
     use TimeTrackingTrait;
 
     public const int NAME_MAX_LENGTH = 255;
-    public const int PRIORITY_MAX = 1_000;
+    public const int PRIORITY_MAX = 100_000;
     public const int BADGE_COLUMN_LENGTH = 8;
 
     #[ORM\Column(type: Types::STRING, length: self::NAME_MAX_LENGTH)]
